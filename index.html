@@ -10,6 +10,9 @@
       --bg:#0b1220;--panel:#111827;--panel2:#172033;--line:#263246;--text:#f3f4f6;
       --muted:#94a3b8;--accent:#22c55e;--accent2:#16a34a;--danger:#ef4444;--warn:#f59e0b;
       --info:#3b82f6;--radius:14px;--shadow:0 8px 30px rgba(0,0,0,.22);
+      --team-primary:#22c55e;--team-secondary:#ffffff;--team-accent:#16a34a;
+      --team-primary-soft:rgba(34,197,94,.14);--team-primary-line:rgba(34,197,94,.36);
+      --team-secondary-soft:rgba(255,255,255,.10);--team-accent-soft:rgba(22,163,74,.16);
     }
     *{box-sizing:border-box} html{background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     body{margin:0;min-height:100vh;background:var(--bg)} button,input,select,textarea{font:inherit}
@@ -26,13 +29,13 @@
     .btn-sm{padding:7px 10px;font-size:.82rem}.btn-block{width:100%}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .shell{display:grid;grid-template-columns:238px 1fr;min-height:100vh}.sidebar{background:var(--panel);border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh;overflow:auto}
     .sidebar .brand{margin-bottom:18px}.nav{display:grid;gap:5px}.nav button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;color:var(--muted);padding:10px 11px;border-radius:10px;text-align:left}
-    .nav button.active,.nav button:hover{background:#1d293d;color:var(--text)}.nav .section{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;padding:15px 10px 4px}
+    .nav button.active,.nav button:hover{background:var(--team-primary-soft);color:var(--text);box-shadow:inset 3px 0 var(--team-primary)}.nav .section{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;padding:15px 10px 4px}
     .main{min-width:0}.topbar{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line);background:rgba(11,18,32,.92);position:sticky;top:0;z-index:20;backdrop-filter:blur(10px)}
     .topbar-left{min-width:0}.topbar-title{font-weight:800}.topbar-sub{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .content{padding:22px;max-width:1450px;margin:auto}.grid{display:grid;gap:14px}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
     .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}.card-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
     .stat{font-size:1.65rem;font-weight:900}.stat-label{font-size:.78rem;color:var(--muted)}
-    .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;background:#263246;color:#dbeafe;font-size:.74rem;font-weight:800}
+    .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;background:var(--team-secondary-soft);color:var(--text);border:1px solid var(--team-primary-line);font-size:.74rem;font-weight:800}
     .badge.green{background:#123b28;color:#86efac}.badge.red{background:#4b1d25;color:#fca5a5}.badge.yellow{background:#4b3514;color:#fcd34d}.badge.blue{background:#172d4d;color:#93c5fd}
     .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}.table{width:100%;border-collapse:collapse;min-width:640px}.table th,.table td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:left;font-size:.85rem;vertical-align:middle}
     .table th{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:#0f192a;position:sticky;top:0}.table tr:last-child td{border-bottom:0}
@@ -52,13 +55,29 @@
     .pitch-row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;align-items:center}.pitch-player{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);padding:7px 9px;border-radius:10px;font-size:.75rem;text-align:center;min-width:82px}
     .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.check{display:flex;align-items:center;gap:8px}.check input{width:auto}
     .perm-matrix th:first-child,.perm-matrix td:first-child{position:sticky;left:0;background:#111827;z-index:2}.perm-matrix input{width:18px;height:18px}
-    .section-note{font-size:.8rem;color:var(--muted);padding:10px 12px;background:#0f192a;border-radius:10px;border:1px solid var(--line)}
+    .section-note{font-size:.8rem;color:var(--muted);padding:10px 12px;background:var(--team-primary-soft);border-radius:10px;border:1px solid var(--team-primary-line)}
+    .team-logo-settings{display:grid;grid-template-columns:130px 1fr;gap:16px;align-items:start}
+    .team-logo-preview{width:130px;height:130px;border-radius:18px;border:1px solid var(--team-primary-line);background:var(--team-primary-soft);display:grid;place-items:center;overflow:hidden;font-weight:900;font-size:1.25rem}
+    .team-logo-preview img{width:100%;height:100%;object-fit:contain;padding:8px}
+    .color-field input[type=color]{height:56px;padding:4px;cursor:pointer}
+    .color-value{font-size:.76rem;color:var(--muted);margin-top:5px;font-variant-numeric:tabular-nums}
+    .palette-proposal{display:none;margin-top:12px;padding:12px;border:1px solid var(--team-primary-line);border-radius:12px;background:var(--team-primary-soft)}
+    .palette-proposal.show{display:block}
+    .palette-swatches{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}
+    .palette-swatch{width:42px;height:42px;border-radius:10px;border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+    .team-theme-preview{border:1px solid var(--line);border-radius:14px;padding:14px;background:#0d1626;margin:14px 0}
+    .team-theme-preview .preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--preview-line,var(--line))}
+    .team-theme-preview .preview-nav{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+    .team-theme-preview .preview-tab{padding:7px 10px;border-radius:999px;background:var(--preview-primary-soft);border:1px solid var(--preview-primary-line)}
+    .team-theme-preview .preview-cta{border:0;border-radius:9px;padding:8px 11px;font-weight:800;background:var(--preview-primary);color:var(--preview-primary-contrast)}
+    .team-theme-preview .preview-badge{display:inline-flex;padding:5px 8px;border-radius:999px;background:var(--preview-secondary-soft);border:1px solid var(--preview-primary-line)}
+    .team-theme-preview .preview-accent{height:5px;border-radius:999px;background:var(--preview-accent);margin-top:12px}
     @media(max-width:900px){
       .shell{display:block}.sidebar{display:none}.content{padding:16px 12px 82px}.topbar{padding:12px}.bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:#111827;border-top:1px solid var(--line);padding:6px max(6px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));overflow-x:auto}
-      .bottom-nav button{min-width:72px;flex:1;border:0;background:transparent;color:var(--muted);padding:6px 5px;border-radius:9px;font-size:.68rem}.bottom-nav button.active{background:#1d293d;color:#fff}.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}.page-title{align-items:center}
+      .bottom-nav button{min-width:72px;flex:1;border:0;background:transparent;color:var(--muted);padding:6px 5px;border-radius:9px;font-size:.68rem}.bottom-nav button.active{background:var(--team-primary-soft);color:#fff;box-shadow:inset 0 2px var(--team-primary)}.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}.page-title{align-items:center}
       .form-grid{grid-template-columns:1fr}.topbar-actions .btn span{display:none}.live-actions{grid-template-columns:repeat(2,1fr)}
     }
-    @media(max-width:480px){.auth-card{padding:18px}.card{padding:13px}.live-score .score{font-size:2rem}.affinity-row{grid-template-columns:58px 1fr 44px}}
+    @media(max-width:480px){.auth-card{padding:18px}.card{padding:13px}.live-score .score{font-size:2rem}.affinity-row{grid-template-columns:58px 1fr 44px}.team-logo-settings{grid-template-columns:1fr}.team-logo-preview{width:110px;height:110px}}
   </style>
 </head>
 <body>
@@ -137,24 +156,205 @@ function contrastColor(hex){
   return ((r*299+g*587+b*114)/1000)>150 ? "#07120a" : "#ffffff";
 }
 
+function hexToRgb(hex){
+  if(!isHex(hex)) return {r:0,g:0,b:0};
+  const n=parseInt(hex.slice(1),16);
+  return {r:(n>>16)&255,g:(n>>8)&255,b:n&255};
+}
+
+function rgbToHex(r,g,b){
+  const c=n=>Math.max(0,Math.min(255,Math.round(n))).toString(16).padStart(2,"0");
+  return `#${c(r)}${c(g)}${c(b)}`.toUpperCase();
+}
+
+function rgbaFromHex(hex,alpha){
+  const {r,g,b}=hexToRgb(hex);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function mixHex(a,b,t){
+  const x=hexToRgb(a),y=hexToRgb(b);
+  return rgbToHex(
+    x.r+(y.r-x.r)*t,
+    x.g+(y.g-x.g)*t,
+    x.b+(y.b-x.b)*t
+  );
+}
+
+function rgbToHsl(r,g,b){
+  r/=255;g/=255;b/=255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b);
+  let h=0,s=0;
+  const l=(max+min)/2;
+  const d=max-min;
+  if(d){
+    s=d/(1-Math.abs(2*l-1));
+    switch(max){
+      case r:h=((g-b)/d)%6;break;
+      case g:h=(b-r)/d+2;break;
+      default:h=(r-g)/d+4;
+    }
+    h*=60;if(h<0)h+=360;
+  }
+  return {h,s,l};
+}
+
+function colorDistance(a,b){
+  const x=hexToRgb(a),y=hexToRgb(b);
+  const dr=x.r-y.r,dg=x.g-y.g,db=x.b-y.b;
+  return Math.sqrt(dr*dr+dg*dg+db*db);
+}
+
+function derivePalette(colors){
+  const clean=[...new Set(colors.filter(isHex).map(x=>x.toUpperCase()))];
+  const primary=clean[0]||"#22C55E";
+
+  if(clean.length<2){
+    const {r,g,b}=hexToRgb(primary);
+    const light=(r*299+g*587+b*114)/1000;
+    clean.push(light>150 ? mixHex(primary,"#000000",.72) : mixHex(primary,"#FFFFFF",.82));
+  }
+
+  if(clean.length<3){
+    const base=clean[1];
+    clean.push(
+      colorDistance(primary,base)>120
+        ? mixHex(primary,base,.48)
+        : mixHex(primary,contrastColor(primary)==="#ffffff"?"#FFFFFF":"#000000",.42)
+    );
+  }
+
+  return clean.slice(0,3);
+}
+
+async function loadImageFile(file){
+  return await new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file);
+    const img=new Image();
+    img.onload=()=>{URL.revokeObjectURL(url);resolve(img)};
+    img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error("Immagine non leggibile"))};
+    img.src=url;
+  });
+}
+
+async function extractLogoPalette(file){
+  const img=await loadImageFile(file);
+  const maxSide=170;
+  const scale=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+  const w=Math.max(1,Math.round(img.naturalWidth*scale));
+  const h=Math.max(1,Math.round(img.naturalHeight*scale));
+
+  const canvas=document.createElement("canvas");
+  canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext("2d",{willReadFrequently:true});
+  ctx.clearRect(0,0,w,h);
+  ctx.drawImage(img,0,0,w,h);
+
+  const data=ctx.getImageData(0,0,w,h).data;
+  const bins=new Map();
+  const step=24;
+
+  for(let i=0;i<data.length;i+=4){
+    const a=data[i+3];
+    if(a<70) continue;
+
+    const r=data[i],g=data[i+1],b=data[i+2];
+    const qr=Math.min(255,Math.round(r/step)*step);
+    const qg=Math.min(255,Math.round(g/step)*step);
+    const qb=Math.min(255,Math.round(b/step)*step);
+    const key=`${qr},${qg},${qb}`;
+
+    const row=bins.get(key)||{count:0,r:0,g:0,b:0};
+    row.count++;
+    row.r+=r;row.g+=g;row.b+=b;
+    bins.set(key,row);
+  }
+
+  const candidates=[...bins.values()]
+    .filter(x=>x.count>=2)
+    .map(x=>{
+      const r=x.r/x.count,g=x.g/x.count,b=x.b/x.count;
+      const hex=rgbToHex(r,g,b);
+      const {s,l}=rgbToHsl(r,g,b);
+      const extreme=l<.06||l>.96;
+      const neutral=s<.10;
+      const score=x.count*(.55+s*.95)*(extreme?.16:1)*(neutral?.45:1);
+      return {hex,count:x.count,s,l,score};
+    });
+
+  const vivid=[...candidates].sort((a,b)=>b.score-a.score);
+  const byCount=[...candidates].sort((a,b)=>b.count-a.count);
+  const picked=[];
+
+  const tryPick=(arr,minDistance)=>{
+    for(const c of arr){
+      if(picked.length>=3) break;
+      if(!picked.some(x=>x===c.hex) && picked.every(x=>colorDistance(x,c.hex)>=minDistance)){
+        picked.push(c.hex);
+      }
+    }
+  };
+
+  tryPick(vivid,72);
+  tryPick(byCount,55);
+  tryPick(byCount,30);
+
+  return derivePalette(picked);
+}
+
+async function normalizeLogoToPng(file){
+  const img=await loadImageFile(file);
+  const maxSide=1024;
+  const scale=Math.min(1,maxSide/Math.max(img.naturalWidth,img.naturalHeight));
+  const w=Math.max(1,Math.round(img.naturalWidth*scale));
+  const h=Math.max(1,Math.round(img.naturalHeight*scale));
+
+  const canvas=document.createElement("canvas");
+  canvas.width=w;canvas.height=h;
+  const ctx=canvas.getContext("2d");
+  ctx.clearRect(0,0,w,h);
+  ctx.drawImage(img,0,0,w,h);
+
+  return await new Promise((resolve,reject)=>{
+    canvas.toBlob(
+      blob=>blob?resolve(blob):reject(new Error("Impossibile preparare lo stemma")),
+      "image/png"
+    );
+  });
+}
+
 function resetTeamBranding(){
   const root=document.documentElement;
-  root.style.setProperty("--accent","#22c55e");
-  root.style.setProperty("--accent2","#16a34a");
+  root.style.setProperty("--accent","#22C55E");
+  root.style.setProperty("--accent2","#16A34A");
   root.style.setProperty("--accent-contrast","#07120a");
-  root.style.setProperty("--team-secondary","#ffffff");
+  root.style.setProperty("--team-primary","#22C55E");
+  root.style.setProperty("--team-secondary","#FFFFFF");
+  root.style.setProperty("--team-accent","#16A34A");
+  root.style.setProperty("--team-primary-soft","rgba(34,197,94,.14)");
+  root.style.setProperty("--team-primary-line","rgba(34,197,94,.36)");
+  root.style.setProperty("--team-secondary-soft","rgba(255,255,255,.10)");
+  root.style.setProperty("--team-accent-soft","rgba(22,163,74,.16)");
 }
 
 function applyTeamBranding(team){
   if(!team) return resetTeamBranding();
-  const primary=isHex(team.primary_color)?team.primary_color:"#22c55e";
-  const secondary=isHex(team.secondary_color)?team.secondary_color:"#ffffff";
-  const accent=isHex(team.accent_color)?team.accent_color:"#16a34a";
+
+  const primary=isHex(team.primary_color)?team.primary_color.toUpperCase():"#22C55E";
+  const secondary=isHex(team.secondary_color)?team.secondary_color.toUpperCase():derivePalette([primary])[1];
+  const accent=isHex(team.accent_color)?team.accent_color.toUpperCase():derivePalette([primary,secondary])[2];
+
   const root=document.documentElement;
   root.style.setProperty("--accent",primary);
   root.style.setProperty("--accent2",accent);
   root.style.setProperty("--accent-contrast",contrastColor(primary));
+  root.style.setProperty("--team-primary",primary);
   root.style.setProperty("--team-secondary",secondary);
+  root.style.setProperty("--team-accent",accent);
+  root.style.setProperty("--team-primary-soft",rgbaFromHex(primary,.14));
+  root.style.setProperty("--team-primary-line",rgbaFromHex(primary,.36));
+  root.style.setProperty("--team-secondary-soft",rgbaFromHex(secondary,.11));
+  root.style.setProperty("--team-accent-soft",rgbaFromHex(accent,.16));
 }
 
 function teamMark(team, fallback="TM"){
@@ -1254,38 +1454,256 @@ async function adminAudit(){
   $("#admin-content").innerHTML=`<div class="table-wrap"><table class="table"><thead><tr><th>Quando</th><th>Azione</th><th>Entità</th><th>ID</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${fmtDateTime(x.created_at)}</td><td>${esc(x.action)}</td><td>${esc(x.entity_type)}</td><td>${esc(x.entity_id||"")}</td></tr>`).join("")}</tbody></table></div>`;
 }
 async function adminSettings(){
-  $("#admin-content").innerHTML=`<div class="card" style="max-width:720px">
+  let selectedLogoFile=null;
+  let logoRemoved=false;
+  let detectedPalette=null;
+  let previewObjectUrl=null;
+
+  const initialPalette=derivePalette([
+    state.team.primary_color||"#22C55E",
+    state.team.secondary_color||"#FFFFFF",
+    state.team.accent_color||"#16A34A"
+  ]);
+
+  $("#admin-content").innerHTML=`<div class="card" style="max-width:820px">
     <form id="team-settings">
       <div class="field"><label>Nome squadra</label><input id="ts-name" value="${esc(state.team.name)}" required></div>
 
       <div class="form-grid">
         <div class="field"><label>Nome breve / sigla</label><input id="ts-short" value="${esc(state.team.short_name||"")}"></div>
-        <div class="field"><label>Slug</label><input id="ts-slug" value="${esc(state.team.slug||"")}" required></div>
+        <div class="field">
+          <label>Slug</label>
+          <input id="ts-slug" value="${esc(state.team.slug||"")}" required>
+          <div class="muted" style="font-size:.72rem;margin-top:5px">Identificatore leggibile della squadra. Non modifica gli ID o lo storico.</div>
+        </div>
       </div>
 
-      <div class="field"><label>Logo URL</label><input id="ts-logo" value="${esc(state.team.logo_url||"")}" placeholder="https://..."></div>
+      <h3>Stemma squadra</h3>
+      <div class="team-logo-settings">
+        <div class="team-logo-preview" id="ts-logo-preview">
+          ${state.team.logo_url
+            ? `<img src="${esc(state.team.logo_url)}" alt="Stemma ${esc(state.team.name)}">`
+            : esc(state.team.short_name?.slice(0,3)||"TM")
+          }
+        </div>
 
-      <h3>Colori interfaccia</h3>
+        <div>
+          <div class="field">
+            <label>Carica stemma</label>
+            <input id="ts-logo-file" type="file" accept="image/png,image/jpeg,image/webp">
+            <div class="muted" style="font-size:.74rem;margin-top:6px">
+              PNG, JPG o WebP. L'app lo salva come PNG e rileva automaticamente fino a 3 colori rappresentativi.
+            </div>
+          </div>
+
+          <div class="actions">
+            ${state.team.logo_url?`<button class="btn btn-sm btn-danger" type="button" id="ts-logo-remove">Rimuovi stemma</button>`:""}
+          </div>
+
+          <div class="palette-proposal" id="palette-proposal">
+            <strong>Nuova palette rilevata</strong>
+            <div class="muted" id="palette-proposal-note" style="font-size:.76rem;margin-top:3px"></div>
+            <div class="palette-swatches" id="palette-proposal-swatches"></div>
+            <button class="btn btn-sm btn-primary" type="button" id="apply-detected-palette">Usa questa palette</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="height:18px"></div>
+      <h3>Colori squadra</h3>
+      <div class="section-note">
+        I colori definiscono automaticamente la palette grafica della squadra. Errori, ammonizioni, espulsioni e altri stati funzionali mantengono invece i loro colori standard.
+      </div>
+
+      <div style="height:12px"></div>
       <div class="grid grid-3">
-        <div class="field"><label>Primario</label><input id="ts-primary" type="color" value="${esc(state.team.primary_color||"#22C55E")}"></div>
-        <div class="field"><label>Secondario</label><input id="ts-secondary" type="color" value="${esc(state.team.secondary_color||"#FFFFFF")}"></div>
-        <div class="field"><label>Accento</label><input id="ts-accent" type="color" value="${esc(state.team.accent_color||"#16A34A")}"></div>
+        <div class="field color-field">
+          <label>1 · Primario</label>
+          <input id="ts-primary" type="color" value="${initialPalette[0]}">
+          <div class="color-value" id="ts-primary-value">${initialPalette[0]}</div>
+        </div>
+        <div class="field color-field">
+          <label>2 · Secondario</label>
+          <input id="ts-secondary" type="color" value="${initialPalette[1]}">
+          <div class="color-value" id="ts-secondary-value">${initialPalette[1]}</div>
+        </div>
+        <div class="field color-field">
+          <label>3 · Accento</label>
+          <input id="ts-accent" type="color" value="${initialPalette[2]}">
+          <div class="color-value" id="ts-accent-value">${initialPalette[2]}</div>
+        </div>
+      </div>
+
+      <div class="team-theme-preview" id="team-theme-preview">
+        <div class="preview-head">
+          <div>
+            <strong>${esc(state.team.short_name||state.team.name)}</strong>
+            <div class="muted" style="font-size:.75rem">Anteprima interfaccia</div>
+          </div>
+          <button type="button" class="preview-cta">Azione principale</button>
+        </div>
+        <div class="preview-nav">
+          <span class="preview-tab">Dashboard</span>
+          <span class="preview-tab">Rosa</span>
+          <span class="preview-badge">Badge squadra</span>
+        </div>
+        <div class="preview-accent"></div>
       </div>
 
       <label class="check"><input id="ts-discoverable" type="checkbox" ${state.team.is_discoverable?"checked":""}> Squadra visibile nella ricerca fan</label>
       <div style="height:8px"></div>
       <label class="check"><input id="ts-follow" type="checkbox" ${state.team.allow_fan_follow?"checked":""}> Consenti ai fan di seguirla autonomamente</label>
 
-      <div style="height:14px"></div>
+      <div style="height:16px"></div>
       <button class="btn btn-primary">Salva impostazioni</button>
     </form>
   </div>`;
 
+  const primary=$("#ts-primary");
+  const secondary=$("#ts-secondary");
+  const accent=$("#ts-accent");
+  const logoPreview=$("#ts-logo-preview");
+  const proposal=$("#palette-proposal");
+  const proposalSwatches=$("#palette-proposal-swatches");
+  const proposalNote=$("#palette-proposal-note");
+  const themePreview=$("#team-theme-preview");
+
+  const updateThemePreview=()=>{
+    const p=primary.value.toUpperCase();
+    const s=secondary.value.toUpperCase();
+    const a=accent.value.toUpperCase();
+
+    $("#ts-primary-value").textContent=p;
+    $("#ts-secondary-value").textContent=s;
+    $("#ts-accent-value").textContent=a;
+
+    themePreview.style.setProperty("--preview-primary",p);
+    themePreview.style.setProperty("--preview-primary-contrast",contrastColor(p));
+    themePreview.style.setProperty("--preview-primary-soft",rgbaFromHex(p,.16));
+    themePreview.style.setProperty("--preview-primary-line",rgbaFromHex(p,.42));
+    themePreview.style.setProperty("--preview-secondary-soft",rgbaFromHex(s,.15));
+    themePreview.style.setProperty("--preview-accent",a);
+  };
+
+  const setPalette=palette=>{
+    const finalPalette=derivePalette(palette);
+    primary.value=finalPalette[0];
+    secondary.value=finalPalette[1];
+    accent.value=finalPalette[2];
+    updateThemePreview();
+  };
+
+  [primary,secondary,accent].forEach(el=>el.addEventListener("input",updateThemePreview));
+  updateThemePreview();
+
+  $("#ts-logo-file").addEventListener("change",async e=>{
+    const file=e.target.files?.[0];
+    if(!file) return;
+
+    try{
+      if(!["image/png","image/jpeg","image/webp"].includes(file.type)){
+        throw new Error("Formato non supportato: usa PNG, JPG o WebP");
+      }
+      if(file.size>5*1024*1024){
+        throw new Error("Lo stemma non può superare 5 MB");
+      }
+
+      selectedLogoFile=file;
+      logoRemoved=false;
+
+      if(previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+      previewObjectUrl=URL.createObjectURL(file);
+      logoPreview.innerHTML=`<img src="${previewObjectUrl}" alt="Nuovo stemma">`;
+
+      proposal.classList.add("show");
+      proposalNote.textContent="Analisi dei colori in corso…";
+      proposalSwatches.innerHTML="";
+      $("#apply-detected-palette").disabled=true;
+
+      detectedPalette=await extractLogoPalette(file);
+      proposalSwatches.innerHTML=detectedPalette
+        .map(c=>`<span class="palette-swatch" title="${c}" style="background:${c}"></span>`)
+        .join("");
+
+      if(!state.team.logo_url){
+        setPalette(detectedPalette);
+        proposalNote.textContent="Palette rilevata e applicata automaticamente. Puoi comunque modificarla.";
+      }else{
+        proposalNote.textContent="Il nuovo stemma propone questi colori. Conferma solo se vuoi sostituire la palette attuale.";
+      }
+
+      $("#apply-detected-palette").disabled=false;
+    }catch(err){
+      selectedLogoFile=null;
+      detectedPalette=null;
+      if(previewObjectUrl){
+        URL.revokeObjectURL(previewObjectUrl);
+        previewObjectUrl=null;
+      }
+      logoPreview.innerHTML=state.team.logo_url
+        ? `<img src="${esc(state.team.logo_url)}" alt="Stemma ${esc(state.team.name)}">`
+        : esc(state.team.short_name?.slice(0,3)||"TM");
+      proposal.classList.remove("show");
+      e.target.value="";
+      toast(err.message,"error");
+    }
+  });
+
+  $("#apply-detected-palette").onclick=()=>{
+    if(!detectedPalette) return;
+    setPalette(detectedPalette);
+    proposalNote.textContent="Palette applicata. Puoi ancora modificare manualmente i tre colori.";
+  };
+
+  $("#ts-logo-remove")?.addEventListener("click",()=>{
+    selectedLogoFile=null;
+    detectedPalette=null;
+    logoRemoved=true;
+    if(previewObjectUrl){
+      URL.revokeObjectURL(previewObjectUrl);
+      previewObjectUrl=null;
+    }
+    logoPreview.textContent=state.team.short_name?.slice(0,3)||"TM";
+    proposal.classList.remove("show");
+    $("#ts-logo-file").value="";
+  });
+
   $("#team-settings").onsubmit=async e=>{
     e.preventDefault();
+
     try{
       const slug=slugify($("#ts-slug").value);
       if(!slug) throw new Error("Slug non valido");
+
+      let logoUrl=state.team.logo_url||null;
+      const logoPath=`${state.team.id}/logo.png`;
+
+      if(selectedLogoFile){
+        const logoBlob=await normalizeLogoToPng(selectedLogoFile);
+
+        const {error:uploadError}=await supabase.storage
+          .from("team-assets")
+          .upload(logoPath,logoBlob,{
+            contentType:"image/png",
+            cacheControl:"3600",
+            upsert:true
+          });
+
+        if(uploadError) throw uploadError;
+
+        const {data:publicData}=supabase.storage
+          .from("team-assets")
+          .getPublicUrl(logoPath);
+
+        logoUrl=`${publicData.publicUrl}?v=${Date.now()}`;
+      }else if(logoRemoved){
+        const {error:removeError}=await supabase.storage
+          .from("team-assets")
+          .remove([logoPath]);
+
+        if(removeError) console.warn("Rimozione file stemma:",removeError);
+        logoUrl=null;
+      }
 
       await must(
         supabase.from("teams")
@@ -1293,10 +1711,10 @@ async function adminSettings(){
             name:$("#ts-name").value.trim(),
             short_name:$("#ts-short").value.trim()||null,
             slug,
-            logo_url:$("#ts-logo").value.trim()||null,
-            primary_color:$("#ts-primary").value.toUpperCase(),
-            secondary_color:$("#ts-secondary").value.toUpperCase(),
-            accent_color:$("#ts-accent").value.toUpperCase(),
+            logo_url:logoUrl,
+            primary_color:primary.value.toUpperCase(),
+            secondary_color:secondary.value.toUpperCase(),
+            accent_color:accent.value.toUpperCase(),
             is_discoverable:$("#ts-discoverable").checked,
             allow_fan_follow:$("#ts-follow").checked
           })
@@ -1308,9 +1726,15 @@ async function adminSettings(){
       state.membership=state.team.membership;
       applyTeamBranding(state.team);
 
+      if(previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+
       toast("Squadra aggiornata","ok");
       adminSettings();
-    }catch(err){toast(err.message,"error")}
+
+    }catch(err){
+      console.error(err);
+      toast(err.message,"error");
+    }
   };
 }
 
