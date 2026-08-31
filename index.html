@@ -613,6 +613,48 @@
       }
     }
 
+
+    @media(min-width:901px){
+      /* Solo il Calendario viene bloccato nel viewport. */
+      .shell:not(.calendar-page){
+        height:auto !important;
+        min-height:100dvh;
+        overflow:visible !important;
+      }
+
+      .shell:not(.calendar-page) .main{
+        height:auto !important;
+        min-height:100dvh;
+        overflow:visible !important;
+      }
+
+      .shell:not(.calendar-page) .content{
+        height:auto !important;
+        min-height:0;
+        overflow:visible !important;
+      }
+
+      /* La sidebar resta ancorata e senza scrollbar;
+         a scorrere è soltanto il contenuto principale. */
+      .shell:not(.calendar-page) .sidebar{
+        position:sticky;
+        top:0;
+        height:100dvh;
+        max-height:100dvh;
+        overflow:hidden;
+      }
+
+      /* Per pagine/tabelle molto lunghe il documento principale
+         può quindi scorrere normalmente verso il basso. */
+      body{
+        overflow-y:auto;
+      }
+
+      body:has(.calendar-page){
+        overflow-y:hidden;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -782,7 +824,7 @@ function matchLocationIcon(homeAway){
   if(homeAway==="away")return "✈️";
   return "◇";
 }
-const can = key => state.permissions.has(key) || !!state.membership?.is_owner;
+const can = key => state.isSuperAdmin || state.permissions.has(key) || !!state.membership?.is_owner;
 const hasRole = role => state.roles.includes(role);
 const initials = (a,b) => ((a?.[0]||"")+(b?.[0]||"")).toUpperCase() || "?";
 const minute = sec => `${Math.floor((Number(sec)||0)/60)}'`;
@@ -3653,7 +3695,7 @@ async function openMatchSetup(){
     showModal("Setup partite",`
       <form id="match-setup-form">
         <div class="section-note">
-          Imposta quanto prima dell'inizio partita è previsto il ritrovo al campo. Il valore viene copiato automaticamente nelle convocazioni.
+          Imposta quante <strong>ore e minuti prima del calcio d'inizio</strong> è previsto il ritrovo al campo. Questo valore viene proposto automaticamente per ogni nuova partita e può poi essere corretto nelle convocazioni della singola gara.
         </div>
         <div style="height:12px"></div>
         <div class="form-grid">
@@ -4746,10 +4788,16 @@ async function pageMatches(){
         <h1>Partite</h1>
         <p>Competizione, convocazioni, formazione, LIVE e post partita.</p>
       </div>
-      ${can("matches.manage")
-        ? `<button class="btn btn-primary" id="new-match">Nuova partita</button>`
-        : ""
-      }
+      <div class="actions">
+        ${can("matches.setup")
+          ? `<button class="btn btn-sm setup-button" id="match-setup">⚙ Setup partite</button>`
+          : ""
+        }
+        ${can("matches.manage")
+          ? `<button class="btn btn-primary" id="new-match">Nuova partita</button>`
+          : ""
+        }
+      </div>
     </div>
 
     <div class="calendar-event-list">
