@@ -714,6 +714,52 @@
       .import-preview-wrap{max-height:310px}
     }
 
+
+    .roster-table th,.roster-table td{
+      padding:7px 9px;
+    }
+    .roster-player-link{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      color:var(--text);
+      cursor:pointer;
+      min-width:0;
+      text-decoration:none;
+    }
+    .roster-player-link:hover strong{
+      text-decoration:underline;
+      text-decoration-color:var(--team-accent);
+      text-underline-offset:3px;
+    }
+    .roster-player-link .avatar{
+      width:30px;
+      height:30px;
+      font-size:.72rem;
+    }
+    .roster-player-link strong{
+      display:block;
+      line-height:1.12;
+      white-space:nowrap;
+    }
+    .roster-table .badge{
+      padding:3px 7px;
+      font-size:.69rem;
+    }
+    .roster-table .btn-sm{
+      padding:5px 8px;
+      font-size:.74rem;
+    }
+    @media(max-width:700px){
+      .roster-table th,.roster-table td{
+        padding:6px 7px;
+      }
+      .roster-player-link .avatar{
+        width:28px;
+        height:28px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -3652,15 +3698,10 @@ async function pageRoster(){
 
     return `<tr>
       <td>
-        <button class="btn btn-ghost btn-sm" data-player="${p.id}">
-          <span class="player-name">
-            <span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}">`:initials(p.first_name,p.last_name)}</span>
-            <span>
-              <strong>${esc(p.last_name)} ${esc(p.first_name)}</strong><br>
-              <span class="muted">${active?"In rosa":"Storico"}</span>
-            </span>
-          </span>
-        </button>
+        <div class="roster-player-link" data-player="${p.id}" role="button" tabindex="0">
+          <span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}">`:initials(p.first_name,p.last_name)}</span>
+          <strong>${esc(p.last_name)} ${esc(p.first_name)}</strong>
+        </div>
       </td>
       <td>${last.shirt_number||"—"}</td>
       <td>${roles.length
@@ -3714,14 +3755,22 @@ async function pageRoster(){
     ${associationNotice}
 
     <div class="table-wrap">
-      <table class="table">
+      <table class="table roster-table">
         <thead><tr><th>Calciatore</th><th>#</th><th>Ruoli / affiatamento</th><th>Permanenza</th><th>Stato</th><th></th></tr></thead>
         <tbody>${rows||`<tr><td colspan="6">Nessun calciatore in questa stagione</td></tr>`}</tbody>
       </table>
     </div>
   `);
 
-  $$("[data-player]").forEach(b=>b.onclick=()=>route(`player/${b.dataset.player}`));
+  $$("[data-player]").forEach(b=>{
+    b.onclick=()=>route(`player/${b.dataset.player}`);
+    b.onkeydown=e=>{
+      if(e.key==="Enter"||e.key===" "){
+        e.preventDefault();
+        route(`player/${b.dataset.player}`);
+      }
+    };
+  });
 
   $("#my-affinity")?.addEventListener("click",()=>openAffinityAssessment(state.myPlayer,"self"));
 
