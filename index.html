@@ -312,6 +312,307 @@
       .match-team-slot{min-height:145px}
     }
 
+
+    /* =====================================================
+       DESKTOP: sidebar fissa + calendario mensile fit viewport
+       ===================================================== */
+    @media(min-width:901px){
+      .shell{
+        height:100dvh;
+        min-height:100dvh;
+        overflow:hidden;
+      }
+
+      .sidebar{
+        position:sticky;
+        top:0;
+        height:100dvh;
+        max-height:100dvh;
+        overflow:hidden;
+        padding:16px 13px 12px;
+        align-self:start;
+      }
+
+      .sidebar .brand{
+        margin-bottom:10px;
+        gap:10px;
+      }
+
+      .sidebar .brand-mark{
+        width:42px;
+        height:42px;
+        border-radius:12px;
+      }
+
+      .sidebar .nav{
+        gap:2px;
+        min-height:0;
+      }
+
+      .sidebar .nav button{
+        min-height:34px;
+        padding:7px 10px;
+        border-radius:10px;
+        font-size:.84rem;
+        line-height:1.05;
+      }
+
+      .sidebar .nav button span{
+        min-width:18px;
+      }
+
+      .sidebar .nav .section{
+        margin:7px 8px 3px;
+        font-size:.61rem;
+        line-height:1;
+      }
+
+      .topbar{
+        min-height:72px;
+        padding:10px 22px;
+      }
+
+      .calendar-page .main{
+        height:100dvh;
+        min-height:0;
+        overflow:hidden;
+      }
+
+      .calendar-page .content{
+        height:calc(100dvh - 72px);
+        min-height:0;
+        overflow:hidden;
+        padding:18px 22px 14px;
+        display:flex;
+        flex-direction:column;
+      }
+
+      .calendar-page .page-title{
+        flex:none;
+        margin-bottom:10px;
+      }
+
+      .calendar-page .page-title h1{
+        margin-bottom:3px;
+      }
+
+      .calendar-page .page-title p{
+        margin:0;
+      }
+
+      .calendar-controls-row{
+        flex:none;
+        display:grid;
+        grid-template-columns:auto minmax(220px,1fr) auto;
+        gap:10px;
+        align-items:center;
+        margin-bottom:8px;
+      }
+
+      .calendar-controls-row .calendar-view-toggle{
+        margin:0;
+        white-space:nowrap;
+      }
+
+      .calendar-controls-row .calendar-view-toggle button{
+        padding:6px 9px;
+        font-size:.76rem;
+      }
+
+      .calendar-search-compact{
+        min-width:0;
+      }
+
+      .calendar-search-compact input{
+        height:36px;
+        min-height:36px;
+        padding:7px 11px;
+        font-size:.82rem;
+      }
+
+      .calendar-controls-row .calendar-type-filters{
+        display:flex;
+        flex-wrap:nowrap;
+        gap:5px;
+        min-width:0;
+      }
+
+      .calendar-controls-row .filter-chip{
+        padding:5px 8px;
+        font-size:.68rem;
+        gap:4px;
+        white-space:nowrap;
+        min-height:32px;
+      }
+
+      .calendar-controls-row .filter-chip input{
+        width:14px;
+        height:14px;
+      }
+
+      .calendar-page #calendar-content{
+        flex:1;
+        min-height:0;
+        display:flex;
+        flex-direction:column;
+        overflow:hidden;
+      }
+
+      .calendar-page .month-nav{
+        flex:none;
+        margin:0 0 7px;
+        min-height:34px;
+      }
+
+      .calendar-page .month-nav .btn{
+        padding:5px 9px;
+        min-height:30px;
+      }
+
+      .calendar-page .month-title{
+        min-width:170px;
+        font-size:.88rem;
+      }
+
+      .calendar-page .month-calendar-wrap{
+        flex:1;
+        min-height:0;
+        height:auto;
+        overflow:hidden;
+      }
+
+      .calendar-page .month-calendar{
+        height:100%;
+        min-height:0;
+        display:flex;
+        flex-direction:column;
+      }
+
+      .calendar-page .month-calendar-head{
+        flex:none;
+      }
+
+      .calendar-page .month-calendar-head div{
+        padding:5px 2px;
+        font-size:.62rem;
+      }
+
+      .calendar-page .month-calendar-grid{
+        flex:1;
+        min-height:0;
+        height:100%;
+        grid-auto-rows:minmax(0,1fr);
+      }
+
+      .calendar-page .month-day{
+        min-height:0;
+        height:auto;
+        padding:4px;
+      }
+
+      .calendar-page .month-day-number{
+        font-size:.7rem;
+        margin-bottom:3px;
+      }
+
+      .calendar-page .month-day-events{
+        gap:2px;
+      }
+
+      .calendar-page .month-event{
+        padding:3px 4px;
+        font-size:.58rem;
+        min-height:22px;
+      }
+
+      .calendar-page .calendar-event-list{
+        min-height:0;
+        overflow:auto;
+        padding-right:2px;
+      }
+    }
+
+    @media(min-width:901px) and (max-height:820px){
+      .sidebar{
+        padding-top:10px;
+      }
+
+      .sidebar .brand{
+        margin-bottom:6px;
+      }
+
+      .sidebar .brand-mark{
+        width:36px;
+        height:36px;
+      }
+
+      .sidebar .nav{
+        gap:1px;
+      }
+
+      .sidebar .nav button{
+        min-height:30px;
+        padding:5px 9px;
+        font-size:.78rem;
+      }
+
+      .sidebar .nav .section{
+        margin-top:4px;
+      }
+
+      .calendar-page .content{
+        padding-top:12px;
+        padding-bottom:9px;
+      }
+
+      .calendar-page .page-title{
+        margin-bottom:6px;
+      }
+
+      .calendar-page .page-title h1{
+        font-size:1.35rem;
+      }
+
+      .calendar-page .page-title p{
+        font-size:.78rem;
+      }
+
+      .calendar-controls-row{
+        margin-bottom:5px;
+      }
+
+      .calendar-page .month-nav{
+        margin-bottom:4px;
+      }
+    }
+
+    @media(max-width:1200px) and (min-width:901px){
+      .calendar-controls-row{
+        grid-template-columns:auto minmax(150px,1fr) auto;
+        gap:7px;
+      }
+
+      .calendar-controls-row .filter-chip{
+        padding:5px 6px;
+        font-size:.62rem;
+      }
+    }
+
+    @media(max-width:900px){
+      .calendar-controls-row{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:8px;
+        margin-bottom:12px;
+      }
+
+      .calendar-controls-row .calendar-type-filters{
+        overflow-x:auto;
+        flex-wrap:nowrap;
+        padding-bottom:2px;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -2795,17 +3096,16 @@ async function pageCalendar(){
       ${can("calendar.manage")?`<button class="btn btn-primary" id="new-event">Nuovo evento</button>`:""}
     </div>
 
-    <div class="calendar-toolbar">
+    <div class="calendar-controls-row">
       <div class="calendar-view-toggle">
         <button type="button" id="cal-view-list" class="${view==="list"?"active":""}">☷ Lista</button>
         <button type="button" id="cal-view-month" class="${view==="month"?"active":""}">▦ Mese</button>
       </div>
-    </div>
 
-    <div class="calendar-filterbar">
-      <div class="field" style="margin:0">
+      <div class="calendar-search-compact">
         <input id="calendar-search" type="search" placeholder="Cerca titolo, luogo o note…" value="${esc(state.calendarFilters?.query||"")}">
       </div>
+
       <div class="calendar-type-filters">
         ${typeOptions.map(([value,label])=>`
           <label class="filter-chip">
@@ -2819,6 +3119,7 @@ async function pageCalendar(){
     <div id="calendar-content"></div>
   `);
 
+  $(".shell")?.classList.add("calendar-page");
   const content=$("#calendar-content");
 
   const filteredEvents=()=>{
