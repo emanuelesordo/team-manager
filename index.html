@@ -192,6 +192,56 @@
       .mobile-drawer{width:min(92vw,355px)}
       .mobile-appbar{padding-left:10px;padding-right:10px}
     }
+
+    .calendar-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .calendar-view-toggle{display:flex;gap:6px;padding:4px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+    .calendar-view-toggle button{border:0;background:transparent;color:var(--muted);padding:8px 11px;border-radius:9px;font-weight:800}
+    .calendar-view-toggle button.active{background:var(--team-accent-soft);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
+    .calendar-filterbar{display:grid;grid-template-columns:minmax(190px,1fr) auto;gap:12px;align-items:start;margin-bottom:16px}
+    .calendar-type-filters{display:flex;gap:7px;flex-wrap:wrap}
+    .filter-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-size:.78rem;font-weight:800;cursor:pointer}
+    .filter-chip input{width:auto;margin:0}
+    .calendar-event-list{display:grid;gap:9px}
+    .calendar-event-row{display:grid;grid-template-columns:64px minmax(0,1fr) auto;align-items:center;gap:13px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--panel);cursor:pointer}
+    .calendar-event-row:hover{background:var(--panel2)}
+    .calendar-date-tile{width:58px;min-height:58px;border:1px solid var(--line);border-radius:12px;background:var(--team-accent-soft);display:grid;place-items:center;align-content:center;line-height:1}
+    .calendar-date-day{font-size:1.28rem;font-weight:950}
+    .calendar-date-month{font-size:.68rem;font-weight:900;letter-spacing:.08em;color:var(--muted);margin-top:4px}
+    .calendar-event-main{min-width:0}
+    .calendar-event-title{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .calendar-event-place{font-size:.76rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px}
+    .calendar-event-time{font-size:.9rem;font-weight:900;white-space:nowrap;text-align:right}
+    .calendar-event-type{font-size:.67rem;color:var(--muted);margin-top:4px;text-align:right}
+    .month-calendar-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+    .month-calendar{min-width:760px}
+    .month-calendar-head{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--line)}
+    .month-calendar-head div{padding:9px;text-align:center;font-size:.72rem;color:var(--muted);font-weight:900;text-transform:uppercase}
+    .month-calendar-grid{display:grid;grid-template-columns:repeat(7,1fr)}
+    .month-day{min-height:112px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:7px;min-width:0}
+    .month-day:nth-child(7n){border-right:0}
+    .month-day.outside{opacity:.35;background:var(--panel2)}
+    .month-day.today{box-shadow:inset 0 0 0 2px var(--team-accent)}
+    .month-day-number{font-size:.78rem;font-weight:900;margin-bottom:6px}
+    .month-day-events{display:grid;gap:4px}
+    .month-event{display:block;width:100%;text-align:left;border:1px solid var(--line);border-radius:7px;padding:5px 6px;background:var(--team-accent-soft);color:var(--text);font-size:.68rem;line-height:1.18;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .month-event .time{color:var(--muted);font-weight:800;margin-right:3px}
+    .month-nav{display:flex;align-items:center;justify-content:center;gap:10px;margin:10px 0 14px}
+    .month-title{min-width:180px;text-align:center;font-weight:950;text-transform:capitalize}
+    .attendance-summary{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
+    .setup-button{display:inline-flex;align-items:center;gap:6px}
+    .competition-card .card-head{align-items:flex-start}
+    .competition-opponents{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+    .competition-opponent-checks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;max-height:260px;overflow:auto;padding:4px}
+    .competition-opponent-check{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px}
+    .competition-opponent-check input{width:auto}
+    @media(max-width:700px){
+      .calendar-filterbar{grid-template-columns:1fr}
+      .calendar-event-row{grid-template-columns:58px minmax(0,1fr) auto;gap:9px;padding:9px}
+      .calendar-date-tile{width:54px;min-height:54px}
+      .calendar-event-time{font-size:.82rem}
+      .competition-opponent-checks{grid-template-columns:1fr}
+    }
+
   </style>
 </head>
 <body>
@@ -241,6 +291,8 @@ const state = {
 
   liveChannel: null,
   liveTimer: null,
+  calendarMonth: null,
+  calendarFilters: { query:"", types:[] },
   currentPage: "dashboard",
   currentContext: "team"
 };
@@ -251,6 +303,64 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const fmtDate = d => d ? new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(d.length===10 ? d+"T12:00:00" : d)) : "—";
 const fmtDateTime = d => d ? new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(d)) : "—";
 const today = () => new Date().toISOString().slice(0,10);
+const eventTypeLabel = type => ({
+  training:"Allenamento",
+  match:"Partita",
+  meeting:"Riunione",
+  social:"Evento sociale",
+  other:"Altro"
+}[type]||type);
+
+const attendanceLabel = status => ({
+  unknown:"Da indicare",
+  present:"Presente",
+  absent:"Assente",
+  maybe:"Forse",
+  late:"Ritardo",
+  injured:"Infortunato",
+  excused:"Giustificato"
+}[status]||status);
+
+function localDateKey(value){
+  const d=value instanceof Date?value:new Date(value);
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,"0");
+  const day=String(d.getDate()).padStart(2,"0");
+  return `${y}-${m}-${day}`;
+}
+
+function monthKey(value=new Date()){
+  const d=value instanceof Date?value:new Date(value);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+}
+
+function calendarDateParts(value){
+  const d=new Date(value);
+  return {
+    day:new Intl.DateTimeFormat("it-IT",{day:"2-digit"}).format(d),
+    month:new Intl.DateTimeFormat("it-IT",{month:"short"}).format(d).replace(".","").toUpperCase(),
+    time:new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(d)
+  };
+}
+
+function calendarMonthLabel(key){
+  const [y,m]=key.split("-").map(Number);
+  return new Intl.DateTimeFormat("it-IT",{month:"long",year:"numeric"}).format(new Date(y,m-1,1));
+}
+
+function isoLocalInput(dateKey,time){
+  return `${dateKey}T${String(time||"00:00").slice(0,5)}`;
+}
+
+function competitionTypeLabel(type){
+  return ({
+    friendly:"Amichevole",
+    league:"Campionato",
+    cup:"Coppa",
+    tournament:"Torneo",
+    other:"Altro"
+  })[type]||type;
+}
 const can = key => state.permissions.has(key) || !!state.membership?.is_owner;
 const hasRole = role => state.roles.includes(role);
 const initials = (a,b) => ((a?.[0]||"")+(b?.[0]||"")).toUpperCase() || "?";
@@ -471,15 +581,15 @@ async function normalizeLogoToPng(file){
 
 function resetTeamBranding(){
   const root=document.documentElement;
-  const detail="#22C55E";
-  const background="#0B1220";
   const text="#F3F4F6";
+  const background="#0B1220";
+  const detail="#22C55E";
   const panel=surfaceFromBackground(background,.055);
   const panel2=surfaceFromBackground(background,.095);
 
-  root.style.setProperty("--team-primary",detail);
+  root.style.setProperty("--team-primary",text);
   root.style.setProperty("--team-secondary",background);
-  root.style.setProperty("--team-tertiary",text);
+  root.style.setProperty("--team-tertiary",detail);
   root.style.setProperty("--team-accent",detail);
 
   root.style.setProperty("--text",text);
@@ -505,7 +615,7 @@ function resetTeamBranding(){
 }
 
 function organizationPalette(org){
-  if(!org)return derivePalette(["#22C55E","#0B1220","#F3F4F6"]);
+  if(!org)return derivePalette(["#F3F4F6","#0B1220","#22C55E"]);
   return derivePalette([
     org.primary_color,
     org.secondary_color,
@@ -518,25 +628,25 @@ function activeBrandPalette(team,organization=state.organization){
     return organizationPalette(organization);
   }
   return derivePalette([
-    team?.primary_color||"#22C55E",
+    team?.primary_color||"#F3F4F6",
     team?.secondary_color||"#0B1220",
-    team?.accent_color||"#F3F4F6"
+    team?.accent_color||"#22C55E"
   ].filter(Boolean));
 }
 
 function applyTeamBranding(team,organization=state.organization){
   if(!team)return resetTeamBranding();
 
-  const [detailColor,backgroundColor,textColor]=activeBrandPalette(team,organization);
+  const [textColor,backgroundColor,detailColor]=activeBrandPalette(team,organization);
   const root=document.documentElement;
 
   const panel=surfaceFromBackground(backgroundColor,.055);
   const panel2=surfaceFromBackground(backgroundColor,.095);
   const inputBg=surfaceFromBackground(backgroundColor,.07);
 
-  root.style.setProperty("--team-primary",detailColor);
+  root.style.setProperty("--team-primary",textColor);
   root.style.setProperty("--team-secondary",backgroundColor);
-  root.style.setProperty("--team-tertiary",textColor);
+  root.style.setProperty("--team-tertiary",detailColor);
   root.style.setProperty("--team-accent",detailColor);
 
   root.style.setProperty("--text",textColor);
@@ -1956,8 +2066,10 @@ async function platformRequests(){
 const navItems=()=>[
   ["dashboard","Home","⌂","dashboard.view"],
   ["calendar","Calendario","▣","calendar.view"],
-  ["roster","Rosa","♟","roster.view"],
+  ["trainings","Allenamenti","◫","trainings.view"],
   ["matches","Partite","⚽","matches.view"],
+  ["competitions","Competizioni","🏆","competitions.view"],
+  ["roster","Rosa","♟","roster.view"],
   ["absences","Assenze","⊘",can("absences.view_own")||can("absences.view_all")?null:"__no"],
   ["opponents","Avversarie","VS","opponents.view"],
   ["venues","Campi","⌖","venues.view"],
@@ -2156,8 +2268,10 @@ async function route(path,push=true){
   const routes={
     dashboard:pageDashboard,
     calendar:pageCalendar,
-    roster:pageRoster,
+    trainings:pageTrainings,
     matches:pageMatches,
+    competitions:pageCompetitions,
+    roster:pageRoster,
     absences:pageAbsences,
     opponents:pageOpponents,
     venues:pageVenues,
@@ -2474,71 +2588,746 @@ async function pagePlayer(id){
 }
 
 /* =========================================================
-   CALENDARIO / PRESENZE
+   CALENDARIO / ALLENAMENTI / COMPETIZIONI
 ========================================================= */
-async function pageCalendar(){
-  const events=await must(supabase.from("events").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("start_at"));
-  renderShell("Calendario",`<div class="page-title"><div><h1>Calendario</h1><p>Allenamenti, partite e altri eventi.</p></div>${can("calendar.manage")?`<button class="btn btn-primary" id="new-event">Nuovo evento</button>`:""}</div>
-    <div class="list">${events.map(e=>`<div class="list-item"><div><strong>${esc(e.title)}</strong><div class="muted">${fmtDateTime(e.start_at)} · ${esc(e.location||"")}</div></div><div class="actions"><span class="badge">${esc(e.event_type)}</span><button class="btn btn-sm" data-event="${e.id}">Dettagli</button></div></div>`).join("")||`<div class="empty">Nessun evento</div>`}</div>`);
-  $("#new-event")?.addEventListener("click",openNewEvent);
-  $$("[data-event]").forEach(b=>b.onclick=()=>openEventDetail(b.dataset.event));
-}
-async function openNewEvent(){
+
+async function saveCalendarView(view){
+  state.preferences={...(state.preferences||{}),profile_id:state.profile.id,calendar_view:view};
   try{
-    const [venues,opponents]=await Promise.all([
+    await must(
+      supabase.from("user_preferences")
+        .upsert({
+          profile_id:state.profile.id,
+          calendar_view:view
+        },{onConflict:"profile_id"})
+    );
+  }catch(err){
+    console.warn("Impossibile salvare preferenza calendario",err);
+  }
+}
+
+function calendarEventRow(event,extra=""){
+  const d=calendarDateParts(event.start_at);
+  return `<div class="calendar-event-row" data-event="${event.id}">
+    <div class="calendar-date-tile">
+      <div class="calendar-date-day">${d.day}</div>
+      <div class="calendar-date-month">${d.month}</div>
+    </div>
+    <div class="calendar-event-main">
+      <div class="calendar-event-title">${esc(event.title)}</div>
+      <div class="calendar-event-place">${esc(event.location||"Luogo non indicato")}</div>
+      ${extra}
+    </div>
+    <div>
+      <div class="calendar-event-time">${d.time}</div>
+      <div class="calendar-event-type">${esc(eventTypeLabel(event.event_type))}</div>
+    </div>
+  </div>`;
+}
+
+async function pageCalendar(){
+  const events=await must(
+    supabase.from("events")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .eq("season_id",state.season.id)
+      .order("start_at")
+  );
+
+  let view=state.preferences?.calendar_view||"list";
+  const typeOptions=[
+    ["training","Allenamenti"],
+    ["match","Partite"],
+    ["meeting","Riunioni"],
+    ["social","Sociali"],
+    ["other","Altro"]
+  ];
+
+  if(!state.calendarMonth){
+    const nowKey=monthKey();
+    const startMonth=state.season.start_date.slice(0,7);
+    const endMonth=state.season.end_date.slice(0,7);
+    state.calendarMonth=(nowKey>=startMonth&&nowKey<=endMonth)?nowKey:startMonth;
+  }
+
+  renderShell("Calendario",`
+    <div class="page-title">
+      <div>
+        <h1>Calendario</h1>
+        <p>Allenamenti, partite e altri eventi della squadra.</p>
+      </div>
+      ${can("calendar.manage")?`<button class="btn btn-primary" id="new-event">Nuovo evento</button>`:""}
+    </div>
+
+    <div class="calendar-toolbar">
+      <div class="calendar-view-toggle">
+        <button type="button" id="cal-view-list" class="${view==="list"?"active":""}">☷ Lista</button>
+        <button type="button" id="cal-view-month" class="${view==="month"?"active":""}">▦ Mese</button>
+      </div>
+    </div>
+
+    <div class="calendar-filterbar">
+      <div class="field" style="margin:0">
+        <input id="calendar-search" type="search" placeholder="Cerca titolo, luogo o note…" value="${esc(state.calendarFilters?.query||"")}">
+      </div>
+      <div class="calendar-type-filters">
+        ${typeOptions.map(([value,label])=>`
+          <label class="filter-chip">
+            <input type="checkbox" data-cal-type="${value}" ${(state.calendarFilters?.types||[]).includes(value)?"checked":""}>
+            ${label}
+          </label>
+        `).join("")}
+      </div>
+    </div>
+
+    <div id="calendar-content"></div>
+  `);
+
+  const content=$("#calendar-content");
+
+  const filteredEvents=()=>{
+    const q=(state.calendarFilters?.query||"").trim().toLowerCase();
+    const types=state.calendarFilters?.types||[];
+
+    return events.filter(e=>{
+      if(types.length && !types.includes(e.event_type))return false;
+      if(!q)return true;
+      return `${e.title||""} ${e.location||""} ${e.notes||""} ${eventTypeLabel(e.event_type)}`
+        .toLowerCase()
+        .includes(q);
+    });
+  };
+
+  const wireEventButtons=()=>{
+    $$("[data-event]",content).forEach(el=>el.onclick=()=>openEventDetail(el.dataset.event));
+  };
+
+  const renderList=()=>{
+    const rows=filteredEvents();
+    content.innerHTML=`
+      <div class="calendar-event-list">
+        ${rows.map(e=>calendarEventRow(e)).join("")||`<div class="empty">Nessun evento con i filtri selezionati</div>`}
+      </div>
+    `;
+    wireEventButtons();
+  };
+
+  const renderMonth=()=>{
+    const rows=filteredEvents();
+    const [year,month]=state.calendarMonth.split("-").map(Number);
+    const first=new Date(year,month-1,1);
+    const last=new Date(year,month,0);
+    const startOffset=(first.getDay()+6)%7;
+    const totalCells=Math.ceil((startOffset+last.getDate())/7)*7;
+
+    const cells=[];
+    for(let i=0;i<totalCells;i++){
+      const date=new Date(year,month-1,1-startOffset+i);
+      const key=localDateKey(date);
+      const dayEvents=rows.filter(e=>localDateKey(e.start_at)===key);
+      const outside=date.getMonth()!==month-1;
+      const isToday=key===today();
+
+      cells.push(`<div class="month-day ${outside?"outside":""} ${isToday?"today":""}">
+        <div class="month-day-number">${date.getDate()}</div>
+        <div class="month-day-events">
+          ${dayEvents.map(e=>{
+            const p=calendarDateParts(e.start_at);
+            return `<button type="button" class="month-event" data-event="${e.id}" title="${esc(e.title)}">
+              <span class="time">${p.time}</span>${esc(e.title)}
+            </button>`;
+          }).join("")}
+        </div>
+      </div>`);
+    }
+
+    content.innerHTML=`
+      <div class="month-nav">
+        <button class="btn btn-sm" id="month-prev">←</button>
+        <div class="month-title">${esc(calendarMonthLabel(state.calendarMonth))}</div>
+        <button class="btn btn-sm" id="month-next">→</button>
+      </div>
+      <div class="month-calendar-wrap">
+        <div class="month-calendar">
+          <div class="month-calendar-head">
+            ${["Lun","Mar","Mer","Gio","Ven","Sab","Dom"].map(x=>`<div>${x}</div>`).join("")}
+          </div>
+          <div class="month-calendar-grid">${cells.join("")}</div>
+        </div>
+      </div>
+    `;
+
+    $("#month-prev").onclick=()=>{
+      const [y,m]=state.calendarMonth.split("-").map(Number);
+      state.calendarMonth=monthKey(new Date(y,m-2,1));
+      renderMonth();
+    };
+    $("#month-next").onclick=()=>{
+      const [y,m]=state.calendarMonth.split("-").map(Number);
+      state.calendarMonth=monthKey(new Date(y,m,1));
+      renderMonth();
+    };
+    wireEventButtons();
+  };
+
+  const renderCurrent=()=>view==="month"?renderMonth():renderList();
+
+  $("#cal-view-list").onclick=async()=>{
+    view="list";
+    $("#cal-view-list").classList.add("active");
+    $("#cal-view-month").classList.remove("active");
+    await saveCalendarView(view);
+    renderList();
+  };
+
+  $("#cal-view-month").onclick=async()=>{
+    view="month";
+    $("#cal-view-month").classList.add("active");
+    $("#cal-view-list").classList.remove("active");
+    await saveCalendarView(view);
+    renderMonth();
+  };
+
+  $("#calendar-search").oninput=e=>{
+    state.calendarFilters={...(state.calendarFilters||{}),query:e.target.value};
+    renderCurrent();
+  };
+
+  $$("[data-cal-type]").forEach(cb=>cb.onchange=()=>{
+    const selected=$$("[data-cal-type]").filter(x=>x.checked).map(x=>x.dataset.calType);
+    state.calendarFilters={...(state.calendarFilters||{}),types:selected};
+    renderCurrent();
+  });
+
+  $("#new-event")?.addEventListener("click",()=>openNewEvent(null,pageCalendar));
+  renderCurrent();
+}
+
+async function pageTrainings(){
+  const events=await must(
+    supabase.from("events")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .eq("season_id",state.season.id)
+      .eq("event_type","training")
+      .order("start_at",{ascending:false})
+  );
+
+  const ids=events.map(e=>e.id);
+  const attendance=ids.length
+    ? await must(supabase.from("event_attendance").select("*").in("event_id",ids))
+    : [];
+
+  const summaryFor=id=>{
+    const rows=attendance.filter(a=>a.event_id===id);
+    const count=status=>rows.filter(a=>a.status===status).length;
+    return {
+      present:count("present"),
+      absent:count("absent"),
+      late:count("late"),
+      injured:count("injured"),
+      excused:count("excused")
+    };
+  };
+
+  renderShell("Allenamenti",`
+    <div class="page-title">
+      <div>
+        <h1>Allenamenti</h1>
+        <p>Programmazione e gestione presenze, assenze e ritardi.</p>
+      </div>
+      <div class="actions">
+        ${can("trainings.setup")?`<button class="btn btn-sm setup-button" id="training-setup">⚙ Setup</button>`:""}
+        ${can("trainings.manage")?`<button class="btn btn-primary" id="new-training">Nuovo allenamento</button>`:""}
+      </div>
+    </div>
+
+    <div class="calendar-event-list">
+      ${events.map(e=>{
+        const a=summaryFor(e.id);
+        return calendarEventRow(e,`
+          <div class="attendance-summary">
+            <span class="badge green">Presenti ${a.present}</span>
+            <span class="badge">Ritardi ${a.late}</span>
+            <span class="badge ${a.absent?"red":""}">Assenti ${a.absent}</span>
+            ${a.injured?`<span class="badge red">Infortunati ${a.injured}</span>`:""}
+            ${a.excused?`<span class="badge">Giustificati ${a.excused}</span>`:""}
+          </div>
+        `);
+      }).join("")||`<div class="empty">Nessun allenamento programmato</div>`}
+    </div>
+  `);
+
+  $$("[data-event]").forEach(el=>el.onclick=()=>openEventDetail(el.dataset.event));
+  $("#new-training")?.addEventListener("click",()=>openNewEvent("training",pageTrainings));
+  $("#training-setup")?.addEventListener("click",openTrainingSetup);
+}
+
+async function openTrainingSetup(){
+  try{
+    const [venues,setting]=await Promise.all([
       must(supabase.from("venues").select("*").eq("team_id",state.team.id).order("name")),
-      must(supabase.from("opponent_teams").select("*").eq("team_id",state.team.id).eq("active",true).order("name"))
+      must(
+        supabase.from("training_settings")
+          .select("*")
+          .eq("team_id",state.team.id)
+          .eq("season_id",state.season.id)
+          .maybeSingle()
+      )
     ]);
 
-    showModal("Nuovo evento",`<form id="event-form">
-      <div class="field"><label>Tipo</label><select id="ev-type"><option value="training">Allenamento</option><option value="match">Partita</option><option value="meeting">Riunione</option><option value="social">Evento sociale</option><option value="other">Altro</option></select></div>
-      <div class="field"><label>Titolo</label><input id="ev-title" required></div>
+    showModal("Setup allenamenti",`
+      <form id="training-setup-form">
+        <div class="section-note">
+          Questi valori vengono proposti automaticamente quando crei un nuovo allenamento.
+        </div>
+        <div style="height:12px"></div>
 
-      <div class="form-grid">
-        <div class="field"><label>Inizio</label><input id="ev-start" type="datetime-local" required></div>
-        <div class="field"><label>Fine</label><input id="ev-end" type="datetime-local"></div>
-      </div>
-
-      <div class="field">
-        <label>Campo</label>
-        <select id="ev-venue"><option value="">Nessun campo censito / altro luogo</option></select>
-        <div class="muted" style="font-size:.72rem;margin-top:5px">Sono proposti solo i campi validi alla data dell'evento.</div>
-      </div>
-      <div class="field"><label>Luogo libero / integrazione</label><input id="ev-location" placeholder="Facoltativo"></div>
-
-      <div class="field"><label>Note</label><textarea id="ev-notes"></textarea></div>
-
-      <div id="match-extra" class="hidden">
-        <h3>Dati partita</h3>
         <div class="field">
-          <label>Avversaria</label>
-          <select id="ev-opponent-id">
-            <option value="">Altro / non censita</option>
-            ${opponents.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join("")}
+          <label>Campo predefinito</label>
+          <select id="training-default-venue">
+            <option value="">Nessun campo predefinito</option>
+            ${venues.map(v=>`<option value="${v.id}" ${setting?.default_venue_id===v.id?"selected":""}>${esc(v.name)}${venueAddress(v)?` · ${esc(venueAddress(v))}`:""}</option>`).join("")}
           </select>
         </div>
-        <div class="field"><label>Nome avversaria manuale</label><input id="ev-opponent" placeholder="Usato solo se non selezioni una squadra censita"></div>
+
         <div class="form-grid">
-          <div class="field"><label>Casa/trasferta</label><select id="ev-ha"><option value="home">Casa</option><option value="away">Trasferta</option><option value="neutral">Neutro</option></select></div>
-          <div class="field"><label>Giornata/turno</label><input id="ev-round"></div>
+          <div class="field">
+            <label>Ora inizio</label>
+            <input id="training-default-start" type="time" value="${String(setting?.default_start_time||"20:30").slice(0,5)}" required>
+          </div>
+          <div class="field">
+            <label>Ora fine</label>
+            <input id="training-default-end" type="time" value="${String(setting?.default_end_time||"22:00").slice(0,5)}" required>
+          </div>
+        </div>
+
+        <button class="btn btn-primary">Salva setup</button>
+      </form>
+    `,root=>{
+      $("#training-setup-form",root).onsubmit=async e=>{
+        e.preventDefault();
+        try{
+          const start=$("#training-default-start",root).value;
+          const end=$("#training-default-end",root).value;
+          if(end<=start)throw new Error("L'orario di fine deve essere successivo all'inizio");
+
+          await must(
+            supabase.from("training_settings")
+              .upsert({
+                team_id:state.team.id,
+                season_id:state.season.id,
+                default_venue_id:$("#training-default-venue",root).value||null,
+                default_start_time:start,
+                default_end_time:end,
+                updated_by:state.profile.id
+              },{onConflict:"team_id,season_id"})
+          );
+
+          closeModal();
+          toast("Setup allenamenti salvato","ok");
+        }catch(err){
+          toast(err.message,"error");
+        }
+      };
+    });
+  }catch(err){
+    toast(err.message,"error");
+  }
+}
+
+async function pageCompetitions(){
+  const [competitions,seasons,opponents,links]=await Promise.all([
+    must(supabase.from("competitions").select("*").eq("team_id",state.team.id).order("start_date",{ascending:false})),
+    Promise.resolve(state.seasons),
+    (can("opponents.view")||can("opponents.manage")||can("matches.manage"))
+      ? must(supabase.from("opponent_teams").select("*").eq("team_id",state.team.id).order("name"))
+      : Promise.resolve([]),
+    must(supabase.from("competition_opponents").select("*"))
+  ]);
+
+  const sm=new Map(seasons.map(x=>[x.id,x]));
+  const om=new Map(opponents.map(x=>[x.id,x]));
+
+  renderShell("Competizioni",`
+    <div class="page-title">
+      <div>
+        <h1>Competizioni</h1>
+        <p>Amichevoli, campionati, coppe e tornei per annata.</p>
+      </div>
+      ${can("competitions.manage")?`<button class="btn btn-primary" id="new-competition">Nuova competizione</button>`:""}
+    </div>
+
+    <div class="grid grid-2">
+      ${competitions.map(c=>{
+        const participants=links.filter(x=>x.competition_id===c.id).map(x=>om.get(x.opponent_id)).filter(Boolean);
+        const season=sm.get(c.season_id);
+        return `<div class="card competition-card">
+          <div class="card-head">
+            <div>
+              <h3 style="margin:0">${esc(c.name)}</h3>
+              <div class="muted">${esc(competitionTypeLabel(c.competition_type))} · ${esc(season?.name||"")}</div>
+            </div>
+            <span class="badge ${c.active?"green":"red"}">${c.active?"attiva":"archiviata"}</span>
+          </div>
+
+          <div class="muted">
+            ${c.start_date?fmtDate(c.start_date):"Data inizio non indicata"} → ${c.end_date?fmtDate(c.end_date):"senza fine"}
+          </div>
+
+          ${c.competition_type==="friendly"
+            ? `<div class="section-note" style="margin-top:10px">Nelle amichevoli sono disponibili tutte le avversarie attive censite.</div>`
+            : `<div class="competition-opponents">
+                ${participants.length
+                  ? participants.map(o=>`<span class="badge">${esc(o.short_name||o.name)}</span>`).join("")
+                  : `<span class="muted">Nessuna avversaria configurata</span>`
+                }
+              </div>`
+          }
+
+          ${c.notes?`<p>${esc(c.notes)}</p>`:""}
+
+          ${can("competitions.manage")
+            ? `<div class="actions" style="margin-top:12px"><button class="btn btn-sm" data-edit-competition="${c.id}">Modifica</button></div>`
+            : ""
+          }
+        </div>`;
+      }).join("")||`<div class="empty">Nessuna competizione configurata</div>`}
+    </div>
+  `);
+
+  $("#new-competition")?.addEventListener("click",()=>openCompetitionModal(null,opponents,[]));
+  $$("[data-edit-competition]").forEach(b=>{
+    const c=competitions.find(x=>x.id===b.dataset.editCompetition);
+    const selected=links.filter(x=>x.competition_id===c.id).map(x=>x.opponent_id);
+    b.onclick=()=>openCompetitionModal(c,opponents,selected);
+  });
+}
+
+function openCompetitionModal(competition,opponents,selectedOpponentIds=[]){
+  const season=state.seasons.find(s=>s.id===(competition?.season_id||state.season.id))||state.season;
+  const initialStart=competition?.start_date||season.start_date;
+  const initialEnd=competition?.end_date||season.end_date;
+
+  showModal(competition?"Modifica competizione":"Nuova competizione",`
+    <form id="competition-form">
+      <div class="field"><label>Nome competizione</label><input id="comp-name" value="${esc(competition?.name||"")}" placeholder="es. Campionato CSI" required></div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Tipologia</label>
+          <select id="comp-type">
+            ${[
+              ["friendly","Amichevoli"],
+              ["league","Campionato"],
+              ["cup","Coppa"],
+              ["tournament","Torneo"],
+              ["other","Altro"]
+            ].map(([v,l])=>`<option value="${v}" ${competition?.competition_type===v?"selected":""}>${l}</option>`).join("")}
+          </select>
+        </div>
+        <div class="field">
+          <label>Annata</label>
+          <select id="comp-season">
+            ${state.seasons.map(s=>`<option value="${s.id}" ${s.id===(competition?.season_id||state.season.id)?"selected":""}>${esc(s.name)}</option>`).join("")}
+          </select>
         </div>
       </div>
 
-      <button class="btn btn-primary">Salva</button>
-    </form>`,root=>{
+      <div class="form-grid">
+        <div class="field"><label>Data inizio</label><input id="comp-start" type="date" value="${initialStart}" required></div>
+        <div class="field"><label>Data fine</label><input id="comp-end" type="date" value="${initialEnd}" required></div>
+      </div>
+
+      <label class="check"><input id="comp-active" type="checkbox" ${competition?.active===false?"":"checked"}> Competizione attiva</label>
+
+      <div id="competition-opponents-box" style="margin-top:16px">
+        <h3>Squadre previste</h3>
+        <div class="section-note">Per campionati, coppe e tornei seleziona le avversarie che possono essere scelte nelle partite di questa competizione.</div>
+        <div style="height:10px"></div>
+        <div class="competition-opponent-checks">
+          ${opponents.filter(o=>o.active||selectedOpponentIds.includes(o.id)).map(o=>`
+            <label class="competition-opponent-check">
+              <input type="checkbox" data-comp-opponent="${o.id}" ${selectedOpponentIds.includes(o.id)?"checked":""}>
+              <span>${esc(o.name)}</span>
+            </label>
+          `).join("")||`<div class="empty">Prima censisci le squadre nel menu Avversarie.</div>`}
+        </div>
+      </div>
+
+      <div class="field" style="margin-top:14px"><label>Note</label><textarea id="comp-notes">${esc(competition?.notes||"")}</textarea></div>
+
+      <button class="btn btn-primary">Salva competizione</button>
+    </form>
+  `,root=>{
+    const type=$("#comp-type",root);
+    const box=$("#competition-opponents-box",root);
+    const seasonSelect=$("#comp-season",root);
+
+    const refreshType=()=>{
+      box.classList.toggle("hidden",type.value==="friendly");
+    };
+
+    seasonSelect.onchange=()=>{
+      const s=state.seasons.find(x=>x.id===seasonSelect.value);
+      if(!s)return;
+      $("#comp-start",root).value=s.start_date;
+      $("#comp-end",root).value=s.end_date;
+    };
+
+    type.onchange=refreshType;
+    refreshType();
+
+    $("#competition-form",root).onsubmit=async e=>{
+      e.preventDefault();
+      try{
+        const start=$("#comp-start",root).value;
+        const end=$("#comp-end",root).value;
+        if(end<start)throw new Error("La data di fine deve essere successiva all'inizio");
+
+        const row={
+          team_id:state.team.id,
+          season_id:seasonSelect.value,
+          name:$("#comp-name",root).value.trim(),
+          competition_type:type.value,
+          start_date:start,
+          end_date:end,
+          active:$("#comp-active",root).checked,
+          notes:$("#comp-notes",root).value.trim()||null,
+          created_by:competition?.created_by||state.profile.id
+        };
+
+        let saved;
+        if(competition){
+          saved=await must(
+            supabase.from("competitions")
+              .update(row)
+              .eq("id",competition.id)
+              .select("*")
+              .single()
+          );
+        }else{
+          saved=await must(
+            supabase.from("competitions")
+              .insert(row)
+              .select("*")
+              .single()
+          );
+        }
+
+        await must(
+          supabase.from("competition_opponents")
+            .delete()
+            .eq("competition_id",saved.id)
+        );
+
+        if(type.value!=="friendly"){
+          const selected=$$("[data-comp-opponent]",root)
+            .filter(x=>x.checked)
+            .map(x=>x.dataset.compOpponent);
+
+          if(selected.length){
+            await must(
+              supabase.from("competition_opponents")
+                .insert(selected.map(opponent_id=>({
+                  competition_id:saved.id,
+                  opponent_id
+                })))
+            );
+          }
+        }
+
+        closeModal();
+        toast("Competizione salvata","ok");
+        pageCompetitions();
+      }catch(err){
+        toast(err.message,"error");
+      }
+    };
+  });
+}
+
+async function openNewEvent(defaultType=null,afterSave=null){
+  try{
+    const [
+      venues,
+      opponents,
+      competitions,
+      competitionLinks,
+      trainingSetting
+    ]=await Promise.all([
+      must(supabase.from("venues").select("*").eq("team_id",state.team.id).order("name")),
+      (can("matches.manage")||can("competitions.view"))
+        ? must(supabase.from("opponent_teams").select("*").eq("team_id",state.team.id).eq("active",true).order("name"))
+        : Promise.resolve([]),
+      (can("matches.manage")||can("competitions.view"))
+        ? must(
+            supabase.from("competitions")
+              .select("*")
+              .eq("team_id",state.team.id)
+              .eq("season_id",state.season.id)
+              .eq("active",true)
+              .order("start_date")
+          )
+        : Promise.resolve([]),
+      (can("matches.manage")||can("competitions.view"))
+        ? must(supabase.from("competition_opponents").select("*"))
+        : Promise.resolve([]),
+      (can("trainings.view")||can("trainings.manage")||can("trainings.setup"))
+        ? must(
+            supabase.from("training_settings")
+              .select("*")
+              .eq("team_id",state.team.id)
+              .eq("season_id",state.season.id)
+              .maybeSingle()
+          )
+        : Promise.resolve(null)
+    ]);
+
+    const initialType=defaultType
+      || (can("trainings.manage")?"training":can("matches.manage")?"match":"meeting");
+    const trainingStart=String(trainingSetting?.default_start_time||"20:30").slice(0,5);
+    const trainingEnd=String(trainingSetting?.default_end_time||"22:00").slice(0,5);
+
+    showModal(defaultType==="training"?"Nuovo allenamento":defaultType==="match"?"Nuova partita":"Nuovo evento",`
+      <form id="event-form">
+        <div class="field">
+          <label>Tipo</label>
+          <select id="ev-type" ${defaultType?"disabled":""}>
+            ${can("trainings.manage")?`<option value="training" ${initialType==="training"?"selected":""}>Allenamento</option>`:""}
+            ${can("matches.manage")?`<option value="match" ${initialType==="match"?"selected":""}>Partita</option>`:""}
+            <option value="meeting" ${initialType==="meeting"?"selected":""}>Riunione</option>
+            <option value="social" ${initialType==="social"?"selected":""}>Evento sociale</option>
+            <option value="other" ${initialType==="other"?"selected":""}>Altro</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Titolo</label>
+          <input id="ev-title" required>
+          <div class="muted" id="ev-title-note" style="font-size:.72rem;margin-top:5px"></div>
+        </div>
+
+        <div class="form-grid">
+          <div class="field"><label>Inizio</label><input id="ev-start" type="datetime-local" required></div>
+          <div class="field"><label>Fine</label><input id="ev-end" type="datetime-local"></div>
+        </div>
+
+        <div class="field">
+          <label>Campo</label>
+          <select id="ev-venue"><option value="">Nessun campo censito / altro luogo</option></select>
+          <div class="muted" style="font-size:.72rem;margin-top:5px">Sono proposti solo i campi validi alla data dell'evento.</div>
+        </div>
+
+        <div class="field"><label>Luogo libero / integrazione</label><input id="ev-location" placeholder="Facoltativo"></div>
+        <div class="field"><label>Note</label><textarea id="ev-notes"></textarea></div>
+
+        <div id="match-extra" class="hidden">
+          <h3>Dati partita</h3>
+
+          <div class="field">
+            <label>Competizione</label>
+            <select id="ev-competition">
+              <option value="">Seleziona competizione…</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Avversaria</label>
+            <select id="ev-opponent-id">
+              <option value="">Seleziona avversaria…</option>
+            </select>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label>Casa/trasferta</label>
+              <select id="ev-ha">
+                <option value="home">Casa</option>
+                <option value="away">Trasferta</option>
+                <option value="neutral">Campo neutro</option>
+              </select>
+            </div>
+            <div class="field"><label>Giornata/turno</label><input id="ev-round"></div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary">Salva</button>
+      </form>
+    `,root=>{
       const type=$("#ev-type",root);
+      const title=$("#ev-title",root);
+      const titleNote=$("#ev-title-note",root);
       const start=$("#ev-start",root);
+      const end=$("#ev-end",root);
       const venueSelect=$("#ev-venue",root);
+      const competitionSelect=$("#ev-competition",root);
       const opponentSelect=$("#ev-opponent-id",root);
       const ha=$("#ev-ha",root);
 
+      let trainingDefaultsApplied=false;
+
+      const dateKey=()=>start.value?start.value.slice(0,10):today();
+
+      const validCompetitions=()=>{
+        const d=dateKey();
+        return competitions.filter(c=>
+          (!c.start_date||c.start_date<=d)
+          && (!c.end_date||c.end_date>=d)
+        );
+      };
+
       const refreshVenues=()=>{
-        const date=(start.value||today()).slice(0,10);
+        const d=dateKey();
         const current=venueSelect.value;
-        const valid=venues.filter(v=>venueIsValid(v,date));
+        const valid=venues.filter(v=>venueIsValid(v,d));
+
         venueSelect.innerHTML=`<option value="">Nessun campo censito / altro luogo</option>`+
           valid.map(v=>`<option value="${v.id}">${esc(v.name)}${venueAddress(v)?` · ${esc(venueAddress(v))}`:""}</option>`).join("");
-        if(valid.some(v=>v.id===current))venueSelect.value=current;
+
+        if(valid.some(v=>v.id===current)){
+          venueSelect.value=current;
+        }else if(type.value==="training" && trainingSetting?.default_venue_id && valid.some(v=>v.id===trainingSetting.default_venue_id)){
+          venueSelect.value=trainingSetting.default_venue_id;
+        }
+      };
+
+      const refreshCompetitions=()=>{
+        const current=competitionSelect.value;
+        const list=validCompetitions();
+
+        competitionSelect.innerHTML=`<option value="">Seleziona competizione…</option>`+
+          list.map(c=>`<option value="${c.id}">${esc(c.name)} · ${esc(competitionTypeLabel(c.competition_type))}</option>`).join("");
+
+        if(list.some(c=>c.id===current))competitionSelect.value=current;
+      };
+
+      const allowedOpponents=()=>{
+        const c=competitions.find(x=>x.id===competitionSelect.value);
+        if(!c)return [];
+
+        if(c.competition_type==="friendly"){
+          return opponents;
+        }
+
+        const ids=new Set(
+          competitionLinks
+            .filter(x=>x.competition_id===c.id)
+            .map(x=>x.opponent_id)
+        );
+
+        return opponents.filter(o=>ids.has(o.id));
+      };
+
+      const refreshOpponents=()=>{
+        const current=opponentSelect.value;
+        const list=allowedOpponents();
+
+        opponentSelect.innerHTML=`<option value="">Seleziona avversaria…</option>`+
+          list.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join("");
+
+        if(list.some(o=>o.id===current))opponentSelect.value=current;
+        updateMatchTitle();
       };
 
       const applyOpponentDefaultVenue=()=>{
@@ -2549,72 +3338,242 @@ async function openNewEvent(){
         }
       };
 
-      type.onchange=()=>$("#match-extra",root).classList.toggle("hidden",type.value!=="match");
-      start.onchange=()=>{refreshVenues();applyOpponentDefaultVenue()};
-      opponentSelect.onchange=()=>{
+      const updateMatchTitle=()=>{
+        if(type.value!=="match")return;
+        const comp=competitions.find(c=>c.id===competitionSelect.value);
         const opp=opponents.find(o=>o.id===opponentSelect.value);
-        if(opp)$("#ev-opponent",root).value=opp.name;
+        const our=state.team.short_name||state.team.name;
+        const other=opp?.short_name||opp?.name||"Avversaria";
+
+        const home=ha.value==="away"?other:our;
+        const away=ha.value==="away"?our:other;
+        title.value=comp?`${comp.name} · ${home} - ${away}`:`${home} - ${away}`;
+      };
+
+      const applyTrainingDefaults=()=>{
+        if(type.value!=="training")return;
+
+        title.value="Allenamento";
+        title.readOnly=true;
+        titleNote.textContent="Per gli allenamenti il titolo è sempre “Allenamento”.";
+
+        if(!trainingDefaultsApplied || !start.value){
+          start.value=isoLocalInput(today(),trainingStart);
+          end.value=isoLocalInput(today(),trainingEnd);
+          trainingDefaultsApplied=true;
+        }
+        refreshVenues();
+      };
+
+      const refreshType=()=>{
+        const isTraining=type.value==="training";
+        const isMatch=type.value==="match";
+
+        $("#match-extra",root).classList.toggle("hidden",!isMatch);
+
+        if(isTraining){
+          applyTrainingDefaults();
+        }else if(isMatch){
+          title.readOnly=true;
+          titleNote.textContent="Il titolo viene generato automaticamente da competizione e squadre.";
+          refreshCompetitions();
+          refreshOpponents();
+          updateMatchTitle();
+        }else{
+          title.readOnly=false;
+          titleNote.textContent="";
+          if(title.value==="Allenamento" || title.value.includes(" · "))title.value="";
+        }
+      };
+
+      start.onchange=()=>{
+        const chosenDay=start.value?start.value.slice(0,10):today();
+        refreshVenues();
+        refreshCompetitions();
+        refreshOpponents();
+
+        if(type.value==="training" && trainingSetting){
+          start.value=isoLocalInput(chosenDay,trainingStart);
+          end.value=isoLocalInput(chosenDay,trainingEnd);
+        }
+
         applyOpponentDefaultVenue();
       };
-      ha.onchange=applyOpponentDefaultVenue;
+
+      competitionSelect.onchange=()=>{
+        refreshOpponents();
+        applyOpponentDefaultVenue();
+        updateMatchTitle();
+      };
+
+      opponentSelect.onchange=()=>{
+        applyOpponentDefaultVenue();
+        updateMatchTitle();
+      };
+
+      ha.onchange=()=>{
+        applyOpponentDefaultVenue();
+        updateMatchTitle();
+      };
+
+      if(!defaultType)type.onchange=refreshType;
+
       refreshVenues();
+      refreshCompetitions();
+      refreshType();
 
       $("#event-form",root).onsubmit=async e=>{
         e.preventDefault();
+
         try{
+          const eventType=type.value;
           const startIso=new Date(start.value).toISOString();
-          const end=$("#ev-end",root).value?new Date($("#ev-end",root).value).toISOString():null;
+          const endIso=end.value?new Date(end.value).toISOString():null;
           const venue=venues.find(v=>v.id===venueSelect.value);
           const freeLocation=$("#ev-location",root).value.trim();
+
           const location=venue
             ? `${venue.name}${venueAddress(venue)?` · ${venueAddress(venue)}`:""}${freeLocation?` · ${freeLocation}`:""}`
             : (freeLocation||null);
 
-          const ev=await must(supabase.from("events").insert({
-            team_id:state.team.id,
-            season_id:state.season.id,
-            event_type:type.value,
-            title:$("#ev-title",root).value,
-            start_at:startIso,
-            end_at:end,
-            venue_id:venue?.id||null,
-            location,
-            notes:$("#ev-notes",root).value||null,
-            created_by:state.profile.id
-          }).select("*").single());
+          let finalTitle=title.value.trim();
+          let comp=null;
+          let opp=null;
 
-          if(type.value==="match"){
-            const opp=opponents.find(o=>o.id===opponentSelect.value);
-            const opponentName=opp?.name||$("#ev-opponent",root).value.trim()||"Avversario";
-            await must(supabase.from("matches").insert({
-              team_id:state.team.id,
-              season_id:state.season.id,
-              event_id:ev.id,
-              opponent_id:opp?.id||null,
-              opponent_name:opponentName,
-              home_away:ha.value,
-              round_label:$("#ev-round",root).value||null,
-              created_by:state.profile.id
-            }));
+          if(eventType==="training"){
+            finalTitle="Allenamento";
           }
 
-          toast("Evento creato","ok");
+          if(eventType==="match"){
+            comp=competitions.find(c=>c.id===competitionSelect.value);
+            opp=opponents.find(o=>o.id===opponentSelect.value);
+
+            if(!comp)throw new Error("Seleziona la competizione");
+            if(!opp)throw new Error("Seleziona l'avversaria");
+
+            const allowed=allowedOpponents();
+            if(!allowed.some(o=>o.id===opp.id)){
+              throw new Error("Questa avversaria non è prevista per la competizione selezionata");
+            }
+
+            const our=state.team.short_name||state.team.name;
+            const other=opp.short_name||opp.name;
+            const home=ha.value==="away"?other:our;
+            const away=ha.value==="away"?our:other;
+            finalTitle=`${comp.name} · ${home} - ${away}`;
+          }
+
+          if(!finalTitle)throw new Error("Inserisci il titolo dell'evento");
+
+          const ev=await must(
+            supabase.from("events")
+              .insert({
+                team_id:state.team.id,
+                season_id:state.season.id,
+                event_type:eventType,
+                title:finalTitle,
+                start_at:startIso,
+                end_at:endIso,
+                venue_id:venue?.id||null,
+                location,
+                notes:$("#ev-notes",root).value.trim()||null,
+                created_by:state.profile.id
+              })
+              .select("*")
+              .single()
+          );
+
+          if(eventType==="match"){
+            await must(
+              supabase.from("matches")
+                .insert({
+                  team_id:state.team.id,
+                  season_id:state.season.id,
+                  event_id:ev.id,
+                  competition_id:comp.id,
+                  opponent_id:opp.id,
+                  opponent_name:opp.name,
+                  home_away:ha.value,
+                  round_label:$("#ev-round",root).value.trim()||null,
+                  created_by:state.profile.id
+                })
+            );
+          }
+
           closeModal();
-          pageCalendar();
-        }catch(err){toast(err.message,"error")}
+          toast(eventType==="training"?"Allenamento creato":eventType==="match"?"Partita creata":"Evento creato","ok");
+
+          if(afterSave)await afterSave();
+          else await pageCalendar();
+
+        }catch(err){
+          toast(err.message,"error");
+        }
       };
     });
+
   }catch(err){
     toast(err.message,"error");
   }
 }
+
 async function openEventDetail(id){
   const ev=await must(supabase.from("events").select("*").eq("id",id).single());
-  const players=await must(supabase.rpc("get_active_roster",{p_team_id:state.team.id,p_season_id:state.season.id,p_at:ev.start_at.slice(0,10)}));
-  const attendance=await must(supabase.from("event_attendance").select("*").eq("event_id",id));
+  const players=await must(
+    supabase.rpc("get_active_roster",{
+      p_team_id:state.team.id,
+      p_season_id:state.season.id,
+      p_at:ev.start_at.slice(0,10)
+    })
+  );
+  const attendance=await must(
+    supabase.from("event_attendance").select("*").eq("event_id",id)
+  );
   const amap=new Map(attendance.map(a=>[a.player_id,a]));
-  showModal(ev.title,`<div class="section-note">${fmtDateTime(ev.start_at)} · ${esc(ev.location||"Luogo non indicato")}</div><div style="height:12px"></div><div class="list">${players.map(p=>{const a=amap.get(p.player_id);const own=p.profile_id===state.profile.id;const editable=can("attendance.manage")||(own&&can("attendance.edit_own"));return `<div class="list-item"><div>${esc(p.last_name)} ${esc(p.first_name)}</div>${editable?`<select data-att="${p.player_id}" style="width:150px"><option value="unknown">Da indicare</option>${["present","absent","maybe","late","injured","excused"].map(x=>`<option value="${x}" ${a?.status===x?"selected":""}>${x}</option>`).join("")}</select>`:`<span class="badge">${esc(a?.status||"unknown")}</span>`}</div>`}).join("")}</div>`,root=>{
-    $$("[data-att]",root).forEach(sel=>sel.onchange=async()=>{try{await must(supabase.from("event_attendance").upsert({event_id:id,player_id:sel.dataset.att,status:sel.value,updated_by:state.profile.id},{onConflict:"event_id,player_id"}));toast("Disponibilità aggiornata","ok")}catch(err){toast(err.message,"error")}});
+
+  showModal(ev.title,`
+    <div class="section-note">
+      ${fmtDateTime(ev.start_at)} · ${esc(ev.location||"Luogo non indicato")}
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="list">
+      ${players.map(p=>{
+        const a=amap.get(p.player_id);
+        const own=p.profile_id===state.profile.id;
+        const editable=can("attendance.manage")||(own&&can("attendance.edit_own"));
+
+        return `<div class="list-item">
+          <div>${esc(p.last_name)} ${esc(p.first_name)}</div>
+          ${editable
+            ? `<select data-att="${p.player_id}" style="width:165px">
+                ${["unknown","present","absent","late","maybe","injured","excused"]
+                  .map(x=>`<option value="${x}" ${a?.status===x?"selected":""}>${attendanceLabel(x)}</option>`)
+                  .join("")}
+              </select>`
+            : `<span class="badge">${esc(attendanceLabel(a?.status||"unknown"))}</span>`
+          }
+        </div>`;
+      }).join("")}
+    </div>
+  `,root=>{
+    $$("[data-att]",root).forEach(sel=>sel.onchange=async()=>{
+      try{
+        await must(
+          supabase.from("event_attendance")
+            .upsert({
+              event_id:id,
+              player_id:sel.dataset.att,
+              status:sel.value,
+              updated_by:state.profile.id
+            },{onConflict:"event_id,player_id"})
+        );
+        toast("Presenza aggiornata","ok");
+      }catch(err){
+        toast(err.message,"error");
+      }
+    });
   });
 }
 
@@ -2622,12 +3581,94 @@ async function openEventDetail(id){
    PARTITE / FORMAZIONE
 ========================================================= */
 async function pageMatches(){
-  const matches=await must(supabase.from("matches").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("created_at",{ascending:false}));
-  const events=await must(supabase.from("events").select("id,start_at,title,location").in("id",matches.map(m=>m.event_id).length?matches.map(m=>m.event_id):["00000000-0000-0000-0000-000000000000"]));
+  const matches=await must(
+    supabase.from("matches")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .eq("season_id",state.season.id)
+      .order("created_at",{ascending:false})
+  );
+
+  const eventIds=matches.map(m=>m.event_id).filter(Boolean);
+  const events=eventIds.length
+    ? await must(
+        supabase.from("events")
+          .select("id,start_at,title,location")
+          .in("id",eventIds)
+      )
+    : [];
+
   const em=new Map(events.map(e=>[e.id,e]));
-  const scores=await must(supabase.from("v_match_score").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id));const sm=new Map(scores.map(s=>[s.match_id,s]));
-  renderShell("Partite",`<div class="page-title"><div><h1>Partite</h1><p>Convocazioni, formazione, LIVE e post partita.</p></div></div><div class="list">${matches.map(m=>{const e=em.get(m.event_id),s=sm.get(m.id);return `<div class="list-item"><div><strong>${m.home_away==="home"?esc(state.team.short_name||state.team.name):esc(m.opponent_name)} ${s?`${s.goals_for}-${s.goals_against}`:"vs"} ${m.home_away==="home"?esc(m.opponent_name):esc(state.team.short_name||state.team.name)}</strong><div class="muted">${fmtDateTime(e?.start_at)} · ${esc(m.status)}</div></div><div class="actions">${m.status==="live"||m.status==="paused"?`<button class="btn btn-danger btn-sm" data-live="${m.id}">LIVE</button>`:""}<button class="btn btn-sm" data-match="${m.id}">Apri</button></div></div>`}).join("")||`<div class="empty">Nessuna partita</div>`}</div>`);
-  $$("[data-match]").forEach(b=>b.onclick=()=>route(`match/${b.dataset.match}`));$$("[data-live]").forEach(b=>b.onclick=()=>route(`live/${b.dataset.live}`));
+
+  const scores=await must(
+    supabase.from("v_match_score")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .eq("season_id",state.season.id)
+  );
+  const sm=new Map(scores.map(x=>[x.match_id,x]));
+
+  renderShell("Partite",`
+    <div class="page-title">
+      <div>
+        <h1>Partite</h1>
+        <p>Competizione, convocazioni, formazione, LIVE e post partita.</p>
+      </div>
+      ${can("matches.manage")
+        ? `<button class="btn btn-primary" id="new-match">Nuova partita</button>`
+        : ""
+      }
+    </div>
+
+    <div class="calendar-event-list">
+      ${matches.map(m=>{
+        const e=em.get(m.event_id);
+        const score=sm.get(m.id);
+        const fallbackTitle=m.home_away==="away"
+          ? `${m.opponent_name} - ${state.team.short_name||state.team.name}`
+          : `${state.team.short_name||state.team.name} - ${m.opponent_name}`;
+
+        const title=e?.title||fallbackTitle;
+        const d=e?calendarDateParts(e.start_at):{day:"--",month:"---",time:"--:--"};
+
+        return `<div class="calendar-event-row" data-match="${m.id}">
+          <div class="calendar-date-tile">
+            <div class="calendar-date-day">${d.day}</div>
+            <div class="calendar-date-month">${d.month}</div>
+          </div>
+          <div class="calendar-event-main">
+            <div class="calendar-event-title">${esc(title)}</div>
+            <div class="calendar-event-place">${esc(e?.location||"Luogo non indicato")}</div>
+            <div class="attendance-summary">
+              <span class="badge">${esc(m.status)}</span>
+              ${score?`<span class="badge green">${score.goals_for}-${score.goals_against}</span>`:""}
+            </div>
+          </div>
+          <div>
+            <div class="calendar-event-time">${d.time}</div>
+            <div class="actions" style="margin-top:6px">
+              ${m.status==="live"||m.status==="paused"
+                ? `<button class="btn btn-danger btn-sm" data-live="${m.id}">LIVE</button>`
+                : ""
+              }
+            </div>
+          </div>
+        </div>`;
+      }).join("")||`<div class="empty">Nessuna partita</div>`}
+    </div>
+  `);
+
+  $("#new-match")?.addEventListener("click",()=>openNewEvent("match",pageMatches));
+
+  $$("[data-match]").forEach(el=>el.onclick=e=>{
+    if(e.target.closest("[data-live]"))return;
+    route(`match/${el.dataset.match}`);
+  });
+
+  $$("[data-live]").forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    route(`live/${b.dataset.live}`);
+  });
 }
 async function pageMatch(id){
   const m=await must(supabase.from("matches").select("*").eq("id",id).single());
@@ -4041,7 +5082,7 @@ async function adminOrganizationSettings(){
 
       <div class="grid grid-3">
         <div class="field color-field">
-          <label>1 · Primario — Dettagli</label>
+          <label>1 · Primario — Testi</label>
           <input id="org-primary" type="color" value="${initialPalette[0]}">
           <div class="color-value" id="org-primary-value">${initialPalette[0]}</div>
         </div>
@@ -4051,7 +5092,7 @@ async function adminOrganizationSettings(){
           <div class="color-value" id="org-secondary-value">${initialPalette[1]}</div>
         </div>
         <div class="field color-field">
-          <label>3 · Terzo — Testi</label>
+          <label>3 · Terzo — Dettagli</label>
           <input id="org-accent" type="color" value="${initialPalette[2]}">
           <div class="color-value" id="org-accent-value">${initialPalette[2]}</div>
         </div>
@@ -4124,7 +5165,7 @@ async function adminOrganizationSettings(){
     $("#org-accent-value").textContent=a;
     $("#org-preview-code").textContent=codeInput.value||$("#org-name").value.slice(0,4).toUpperCase()||"SOC";
 
-    applyPreviewPalette(themePreview,a,s,p);
+    applyPreviewPalette(themePreview,p,s,a);
   };
 
   const setPalette=palette=>{
@@ -4400,13 +5441,13 @@ async function adminSettings(){
       <div style="height:18px"></div>
       <h3>Colori squadra</h3>
       <div class="section-note">
-        Il primario governa dettagli, contorni, selezioni e CTA; il secondario definisce lo sfondo; il terzo colora testi e scritte. Errori, ammonizioni, espulsioni e altri stati funzionali mantengono i loro colori standard.
+        Il primario colora testi e scritte; il secondario definisce lo sfondo; il terzo governa dettagli, contorni, selezioni e CTA. Errori, ammonizioni, espulsioni e altri stati funzionali mantengono i loro colori standard.
       </div>
 
       <div style="height:12px"></div>
       <div class="grid grid-3">
         <div class="field color-field">
-          <label>1 · Primario — Dettagli</label>
+          <label>1 · Primario — Testi</label>
           <input id="ts-primary" type="color" value="${initialPalette[0]}">
           <div class="color-value" id="ts-primary-value">${initialPalette[0]}</div>
         </div>
@@ -4416,7 +5457,7 @@ async function adminSettings(){
           <div class="color-value" id="ts-secondary-value">${initialPalette[1]}</div>
         </div>
         <div class="field color-field">
-          <label>3 · Terzo — Testi</label>
+          <label>3 · Terzo — Dettagli</label>
           <input id="ts-accent" type="color" value="${initialPalette[2]}">
           <div class="color-value" id="ts-accent-value">${initialPalette[2]}</div>
         </div>
@@ -4465,7 +5506,7 @@ async function adminSettings(){
     $("#ts-secondary-value").textContent=s;
     $("#ts-accent-value").textContent=a;
 
-    applyPreviewPalette(themePreview,a,s,p);
+    applyPreviewPalette(themePreview,p,s,a);
   };
 
   const setPalette=palette=>{
