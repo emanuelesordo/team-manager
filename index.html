@@ -949,7 +949,7 @@ const navItems=()=>[
   ["fines","Multe","€",can("fines.view_own")||can("fines.view_all")?null:"__no"],
   ["injuries","Infortuni","+",can("injuries.view_own")||can("injuries.view_all")?null:"__no"],
   ["profile","Profilo","●",null],
-  ["admin","Admin","⚙",can("users.manage")||can("permissions.manage")||can("seasons.manage")||can("team.settings.manage")||can("staff.manage")||can("contracts.manage")||can("audit.view")?null:"__no"]
+  ["admin","Admin","⚙",can("users.manage")||can("permissions.manage")||can("seasons.manage")||can("team.settings.manage")||can("staff.manage")||can("contracts.manage")||can("audit.view")||can("player_link.approve")?null:"__no"]
 ].filter(x=>x[3]===null || can(x[3]));
 function renderShell(title, content, nav=true){
   const navHtml=navItems().map(([id,label,icon])=>`<button data-nav="${id}" class="${state.currentPage===id?"active":""}"><span>${icon}</span>${esc(label)}</button>`).join("");
@@ -1085,21 +1085,186 @@ async function openAffinityAssessment(player,kind,mandatory=false){
    ROSA / CALCIATORI / CONTRATTI
 ========================================================= */
 async function pageRoster(){
-  const players=await must(supabase.from("players").select("*").eq("team_id",state.team.id).order("last_name"));
-  const rosterHistory=await must(supabase.rpc("get_season_roster_history",{p_team_id:state.team.id,p_season_id:state.season.id}));
-  const affinities=await must(supabase.rpc("get_roster_position_affinities",{p_team_id:state.team.id,p_season_id:state.season.id}));
-  const amap=new Map();affinities.forEach(a=>{if(!amap.has(a.player_id))amap.set(a.player_id,[]);amap.get(a.player_id).push(a)});
+  const players=await must(
+    supabase.from("players")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .order("last_name")
+  );
+
+  // L'associazione può essere stata approvata da un altro utente mentre
+  // questa sessione era già aperta. Sincronizziamo subito ruolo e permessi.
+  const linkedSelf=players.find(p=>p.profile_id===state.profile.id)||null;
+  if((state.myPlayer?.id||null)!==(linkedSelf?.id||null)){
+    state.myPlayer=linkedSelf;
+    state.roles=(await must(
+      supabase.rpc("get_my_effective_roles",{p_team_id:state.team.id})
+    )).map(x=>x.role_code);
+    state.permissions=new Set((await must(
+      supabase.rpc("get_my_permissions",{p_team_id:state.team.id})
+    )).map(x=>x.permission_key));
+  }
+
+  const rosterHistory=await must(
+    supabase.rpc("get_season_roster_history",{
+      p_team_id:state.team.id,
+      p_season_id:state.season.id
+    })
+  );
+
+  const affinities=await must(
+    supabase.rpc("get_roster_position_affinities",{
+      p_team_id:state.team.id,
+      p_season_id:state.season.id
+    })
+  );
+
+  const myLinkRequests=await must(
+    supabase.from("player_link_requests")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .eq("profile_id",state.profile.id)
+      .order("requested_at",{ascending:false})
+  );
+
+  const pendingLink=myLinkRequests.find(r=>r.status==="pending")||null;
+  const pendingPlayer=pendingLink?players.find(p=>p.id===pendingLink.player_id):null;
+
+  const amap=new Map();
+  affinities.forEach(a=>{
+    if(!amap.has(a.player_id))amap.set(a.player_id,[]);
+    amap.get(a.player_id).push(a);
+  });
+
   const rows=players.map(p=>{
-    const pcs=rosterHistory.filter(c=>c.player_id===p.id); if(!pcs.length)return null;
-    const active=pcs.some(c=>c.roster_status==="active"&&today()>=c.start_date&&today()<= (c.actual_end_date||c.planned_end_date));
-    const last=pcs[pcs.length-1]; const roles=amap.get(p.id)||[];
-    return `<tr><td><button class="btn btn-ghost btn-sm" data-player="${p.id}"><span class="player-name"><span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}">`:initials(p.first_name,p.last_name)}</span><span><strong>${esc(p.last_name)} ${esc(p.first_name)}</strong><br><span class="muted">${active?"In rosa":"Storico"}</span></span></span></button></td><td>${last.shirt_number||"—"}</td><td>${roles.length?roles.map(r=>`<span class="badge ${r.role_rank===1?"green":""}">${esc(r.position_code)} ${r.affinity_percent}%</span>`).join(" "):`<span class="muted">Nessun ruolo >50%</span>`}</td><td>${fmtDate(last.start_date)} → ${fmtDate(last.actual_end_date||last.planned_end_date)}</td><td><span class="badge ${active?"green":"red"}">${active?"attivo":esc(last.roster_status)}</span></td>
-      <td>${can("affinity.evaluate_players")?`<button class="btn btn-sm" data-eval="${p.id}">Valuta ruoli</button>`:""}</td></tr>`;
+    const pcs=rosterHistory.filter(c=>c.player_id===p.id);
+    if(!pcs.length)return null;
+
+    const active=pcs.some(c=>
+      c.roster_status==="active"
+      && today()>=c.start_date
+      && today()<=(c.actual_end_date||c.planned_end_date)
+    );
+
+    const last=pcs[pcs.length-1];
+    const roles=amap.get(p.id)||[];
+
+    let associationAction="";
+    if(state.myPlayer?.id===p.id){
+      associationAction=`<span class="badge green">Il mio profilo</span>`;
+    }else if(!state.myPlayer && can("player_link.request") && !p.profile_id){
+      if(pendingLink?.player_id===p.id){
+        associationAction=`<span class="badge">Associazione in attesa</span>`;
+      }else if(!pendingLink){
+        associationAction=`<button class="btn btn-sm" data-claim-player="${p.id}">Sono io</button>`;
+      }
+    }
+
+    return `<tr>
+      <td>
+        <button class="btn btn-ghost btn-sm" data-player="${p.id}">
+          <span class="player-name">
+            <span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}">`:initials(p.first_name,p.last_name)}</span>
+            <span>
+              <strong>${esc(p.last_name)} ${esc(p.first_name)}</strong><br>
+              <span class="muted">${active?"In rosa":"Storico"}</span>
+            </span>
+          </span>
+        </button>
+      </td>
+      <td>${last.shirt_number||"—"}</td>
+      <td>${roles.length
+        ? roles.map(r=>`<span class="badge ${r.role_rank===1?"green":""}">${esc(r.position_code)} ${r.affinity_percent}%</span>`).join(" ")
+        : `<span class="muted">Nessun ruolo >50%</span>`
+      }</td>
+      <td>${fmtDate(last.start_date)} → ${fmtDate(last.actual_end_date||last.planned_end_date)}</td>
+      <td><span class="badge ${active?"green":"red"}">${active?"attivo":esc(last.roster_status)}</span></td>
+      <td>
+        <div class="actions">
+          ${associationAction}
+          ${can("affinity.evaluate_players")?`<button class="btn btn-sm" data-eval="${p.id}">Valuta ruoli</button>`:""}
+        </div>
+      </td>
+    </tr>`;
   }).filter(Boolean).join("");
-  renderShell("Rosa",`<div class="page-title"><div><h1>Rosa ${esc(state.season.name)}</h1><p>Ruoli mostrati: massimo 3, solo con affiatamento ponderato superiore al 50%.</p></div><div class="actions">${can("roster.manage")?`<button class="btn btn-primary" id="new-player">Nuovo calciatore</button>`:""}${state.myPlayer&&can("affinity.evaluate_self")?`<button class="btn" id="my-affinity">I miei ruoli</button>`:""}</div></div>
-    <div class="table-wrap"><table class="table"><thead><tr><th>Calciatore</th><th>#</th><th>Ruoli / affiatamento</th><th>Permanenza</th><th>Stato</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="6">Nessun calciatore in questa stagione</td></tr>`}</tbody></table></div>`);
+
+  const associationNotice = pendingLink
+    ? `<div class="card" style="margin-bottom:14px">
+        <div class="list-item">
+          <div>
+            <strong>Richiesta associazione in attesa</strong>
+            <div class="muted">
+              Hai indicato ${esc(pendingPlayer?`${pendingPlayer.last_name} ${pendingPlayer.first_name}`:"un calciatore")}.
+              Diventerai calciatore nell'app solo dopo l'approvazione di un responsabile autorizzato.
+            </div>
+          </div>
+          <button class="btn btn-sm btn-danger" id="cancel-player-link">Annulla richiesta</button>
+        </div>
+      </div>`
+    : (!state.myPlayer && can("player_link.request")
+        ? `<div class="section-note" style="margin-bottom:14px">
+            Se sei uno dei calciatori presenti in rosa, usa <strong>Sono io</strong> sulla tua riga.
+            L'associazione non è immediata: deve essere approvata da Admin, Dirigente, Allenatore o Vice autorizzato.
+          </div>`
+        : "");
+
+  renderShell("Rosa",`
+    <div class="page-title">
+      <div>
+        <h1>Rosa ${esc(state.season.name)}</h1>
+        <p>Ruoli mostrati: massimo 3, solo con affiatamento ponderato superiore al 50%.</p>
+      </div>
+      <div class="actions">
+        ${can("roster.manage")?`<button class="btn btn-primary" id="new-player">Nuovo calciatore</button>`:""}
+        ${state.myPlayer&&can("affinity.evaluate_self")?`<button class="btn" id="my-affinity">I miei ruoli</button>`:""}
+      </div>
+    </div>
+
+    ${associationNotice}
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Calciatore</th><th>#</th><th>Ruoli / affiatamento</th><th>Permanenza</th><th>Stato</th><th></th></tr></thead>
+        <tbody>${rows||`<tr><td colspan="6">Nessun calciatore in questa stagione</td></tr>`}</tbody>
+      </table>
+    </div>
+  `);
+
   $$("[data-player]").forEach(b=>b.onclick=()=>route(`player/${b.dataset.player}`));
+
   $("#my-affinity")?.addEventListener("click",()=>openAffinityAssessment(state.myPlayer,"self"));
+
+  $$("[data-claim-player]").forEach(b=>b.onclick=async()=>{
+    const player=players.find(p=>p.id===b.dataset.claimPlayer);
+    if(!player)return;
+
+    if(!confirm(`Confermi di essere ${player.first_name} ${player.last_name}? La richiesta dovrà essere approvata.`))return;
+
+    try{
+      await must(supabase.rpc("request_player_link",{
+        p_team_id:state.team.id,
+        p_player_id:player.id
+      }));
+      toast("Richiesta di associazione inviata","ok");
+      pageRoster();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
+
+  $("#cancel-player-link")?.addEventListener("click",async()=>{
+    if(!pendingLink)return;
+    try{
+      await must(supabase.rpc("cancel_player_link_request",{
+        p_request_id:pendingLink.id
+      }));
+      toast("Richiesta annullata","ok");
+      pageRoster();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
+
   $$("[data-eval]").forEach(b=>b.onclick=async()=>{
     const p=players.find(x=>x.id===b.dataset.eval);
     let kind=hasRole("coach")?"coach":hasRole("assistant_coach")?"assistant_coach":null;
@@ -1108,6 +1273,7 @@ async function pageRoster(){
     }
     if(kind)openAffinityAssessment(p,kind);
   });
+
   $("#new-player")?.addEventListener("click",()=>openNewPlayer());
 }
 function openNewPlayer(){
@@ -1391,11 +1557,30 @@ async function pageProfile(){
    ADMIN
 ========================================================= */
 async function pageAdmin(tab="users"){
-  const tabs=[["users","Utenti",can("users.manage")],["permissions","Permessi",can("permissions.manage")],["seasons","Stagioni",can("seasons.manage")],["staff","Staff",can("staff.manage")||can("staff.view")],["contracts","Permanenze",can("contracts.manage")],["audit","Audit",can("audit.view")],["settings","Squadra",can("team.settings.manage")]].filter(x=>x[2]);
+  const tabs=[
+    ["users","Utenti",can("users.manage")],
+    ["player-links","Associazioni",can("player_link.approve")],
+    ["permissions","Permessi",can("permissions.manage")],
+    ["seasons","Stagioni",can("seasons.manage")],
+    ["staff","Staff",can("staff.manage")||can("staff.view")],
+    ["contracts","Permanenze",can("contracts.manage")],
+    ["audit","Audit",can("audit.view")],
+    ["settings","Squadra",can("team.settings.manage")]
+  ].filter(x=>x[2]);
+
   if(!tabs.some(x=>x[0]===tab))tab=tabs[0]?.[0];
-  renderShell("Amministrazione",`<div class="tabs">${tabs.map(x=>`<button class="tab ${x[0]===tab?"active":""}" data-admin-tab="${x[0]}">${x[1]}</button>`).join("")}</div><div id="admin-content"><div class="empty">Caricamento…</div></div>`);
+
+  renderShell("Amministrazione",`
+    <div class="tabs">
+      ${tabs.map(x=>`<button class="tab ${x[0]===tab?"active":""}" data-admin-tab="${x[0]}">${x[1]}</button>`).join("")}
+    </div>
+    <div id="admin-content"><div class="empty">Caricamento…</div></div>
+  `);
+
   $$("[data-admin-tab]").forEach(b=>b.onclick=()=>pageAdmin(b.dataset.adminTab));
+
   if(tab==="users")return adminUsers();
+  if(tab==="player-links")return adminPlayerLinks();
   if(tab==="permissions")return adminPermissions();
   if(tab==="seasons")return adminSeasons();
   if(tab==="staff")return adminStaff();
@@ -1404,30 +1589,528 @@ async function pageAdmin(tab="users"){
   if(tab==="settings")return adminSettings();
 }
 async function adminUsers(){
-  const members=await must(supabase.from("team_members").select("*").eq("team_id",state.team.id));
-  const profiles=await must(supabase.from("profiles").select("*").in("id",members.map(x=>x.profile_id)));
+  const members=await must(
+    supabase.from("team_members").select("*").eq("team_id",state.team.id)
+  );
+
+  const profiles=members.length
+    ? await must(supabase.from("profiles").select("*").in("id",members.map(x=>x.profile_id)))
+    : [];
+
   const roleRows=await must(supabase.from("roles").select("id,code"));
   const adminRole=roleRows.find(r=>r.code==="admin");
-  const memberRoles=adminRole?await must(supabase.from("team_member_roles").select("*").in("team_member_id",members.map(x=>x.id)).eq("role_id",adminRole.id)):[];
-  const adminMembers=new Set(memberRoles.filter(r=>r.active).map(r=>r.team_member_id));
-  const players=await must(supabase.from("players").select("*").eq("team_id",state.team.id));const linked=new Map(players.filter(p=>p.profile_id).map(p=>[p.profile_id,p]));
-  $("#admin-content").innerHTML=`<div class="page-title"><h2>Utenti</h2><button class="btn btn-primary" id="admin-new-user">Nuovo utente</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Utente</th><th>Username</th><th>Stato</th><th>Calciatore collegato</th><th></th></tr></thead><tbody>${members.map(m=>{const p=profiles.find(x=>x.id===m.profile_id),pl=linked.get(m.profile_id),isAdmin=adminMembers.has(m.id)||m.is_owner;return `<tr><td>${esc(p?.display_name||"")}${m.is_owner?` <span class="badge green">owner</span>`:isAdmin?` <span class="badge blue">admin</span>`:""}</td><td>@${esc(p?.username||"")}</td><td>${p?.is_active?"attivo":"disattivato"}</td><td>${pl?esc(pl.last_name+" "+pl.first_name):"—"}</td><td><div class="actions"><button class="btn btn-sm" data-admin-role="${m.profile_id}" data-admin-enabled="${isAdmin&&!m.is_owner}" ${m.is_owner?"disabled":""}>${isAdmin?"Revoca Admin":"Rendi Admin"}</button><button class="btn btn-sm" data-reset="${m.profile_id}">Reset psw</button><button class="btn btn-sm" data-link="${m.profile_id}">Collega player</button><button class="btn btn-sm ${p?.is_active?"btn-danger":""}" data-state="${m.profile_id}" data-active="${p?.is_active}">${p?.is_active?"Disattiva":"Riattiva"}</button></div></td></tr>`}).join("")}</tbody></table></div>`;
+
+  const memberRoles=adminRole && members.length
+    ? await must(
+        supabase.from("team_member_roles")
+          .select("*")
+          .in("team_member_id",members.map(x=>x.id))
+          .eq("role_id",adminRole.id)
+      )
+    : [];
+
+  const adminMembers=new Set(
+    memberRoles.filter(r=>r.active).map(r=>r.team_member_id)
+  );
+
+  const players=await must(
+    supabase.from("players")
+      .select("*")
+      .eq("team_id",state.team.id)
+  );
+
+  const linked=new Map(
+    players.filter(p=>p.profile_id).map(p=>[p.profile_id,p])
+  );
+
+  $("#admin-content").innerHTML=`
+    <div class="page-title">
+      <div>
+        <h2>Utenti</h2>
+        <p>Account della squadra. Le associazioni ai calciatori vengono gestite tramite il flusso di approvazione dedicato.</p>
+      </div>
+      <button class="btn btn-primary" id="admin-new-user">Nuovo utente</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Utente</th><th>Username</th><th>Stato</th><th>Calciatore associato</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${members.map(m=>{
+            const p=profiles.find(x=>x.id===m.profile_id);
+            const pl=linked.get(m.profile_id);
+            const isAdmin=adminMembers.has(m.id)||m.is_owner;
+
+            return `<tr>
+              <td>
+                ${esc(p?.display_name||"")}
+                ${m.is_owner
+                  ? `<span class="badge green">owner</span>`
+                  : isAdmin
+                    ? `<span class="badge blue">admin</span>`
+                    : ""
+                }
+              </td>
+              <td>@${esc(p?.username||"")}</td>
+              <td>${p?.is_active?"attivo":"disattivato"}</td>
+              <td>
+                ${pl
+                  ? `${esc(pl.last_name+" "+pl.first_name)}
+                     ${can("player_link.approve")?`<button class="btn btn-sm btn-ghost" data-unlink-player="${pl.id}">Scollega</button>`:""}`
+                  : "—"
+                }
+              </td>
+              <td>
+                <div class="actions">
+                  <button
+                    class="btn btn-sm"
+                    data-admin-role="${m.profile_id}"
+                    data-admin-enabled="${isAdmin&&!m.is_owner}"
+                    ${m.is_owner?"disabled":""}
+                  >${isAdmin?"Revoca Admin":"Rendi Admin"}</button>
+
+                  <button class="btn btn-sm" data-reset="${m.profile_id}">Reset psw</button>
+
+                  <button
+                    class="btn btn-sm ${p?.is_active?"btn-danger":""}"
+                    data-state="${m.profile_id}"
+                    data-active="${p?.is_active}"
+                  >${p?.is_active?"Disattiva":"Riattiva"}</button>
+                </div>
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
   $("#admin-new-user").onclick=()=>openAdminNewUser();
-  $$("[data-admin-role]").forEach(b=>b.onclick=async()=>{try{await must(supabase.rpc("set_member_admin_role",{p_team_id:state.team.id,p_profile_id:b.dataset.adminRole,p_enabled:b.dataset.adminEnabled!=="true"}));toast("Ruolo Admin aggiornato","ok");adminUsers()}catch(e){toast(e.message,"error")}});
-  $$("[data-reset]").forEach(b=>b.onclick=async()=>{const pwd=prompt("Nuova password temporanea (min 8 caratteri)");if(!pwd)return;try{await edge("admin-reset-password",{team_id:state.team.id,user_id:b.dataset.reset,password:pwd});toast("Password reimpostata","ok")}catch(e){toast(e.message,"error")}});
-  $$("[data-state]").forEach(b=>b.onclick=async()=>{try{await edge("admin-account-state",{team_id:state.team.id,user_id:b.dataset.state,active:b.dataset.active!=="true"});adminUsers()}catch(e){toast(e.message,"error")}});
-  $$("[data-link]").forEach(b=>b.onclick=()=>{const available=players.filter(p=>!p.profile_id||p.profile_id===b.dataset.link);showModal("Collega anagrafica calciatore",`<select id="link-player"><option value="">—</option>${available.map(p=>`<option value="${p.id}">${esc(p.last_name)} ${esc(p.first_name)}</option>`).join("")}</select><div style="height:12px"></div><button id="do-link" class="btn btn-primary">Collega</button>`,root=>{$("#do-link",root).onclick=async()=>{try{await must(supabase.rpc("link_profile_to_player",{p_team_id:state.team.id,p_player_id:$("#link-player",root).value,p_profile_id:b.dataset.link}));closeModal();adminUsers()}catch(e){toast(e.message,"error")}}})});
+
+  $$("[data-admin-role]").forEach(b=>b.onclick=async()=>{
+    try{
+      await must(supabase.rpc("set_member_admin_role",{
+        p_team_id:state.team.id,
+        p_profile_id:b.dataset.adminRole,
+        p_enabled:b.dataset.adminEnabled!=="true"
+      }));
+      toast("Ruolo Admin aggiornato","ok");
+      adminUsers();
+    }catch(e){toast(e.message,"error")}
+  });
+
+  $$("[data-reset]").forEach(b=>b.onclick=async()=>{
+    const pwd=prompt("Nuova password temporanea (min 8 caratteri)");
+    if(!pwd)return;
+    try{
+      await edge("admin-reset-password",{
+        team_id:state.team.id,
+        user_id:b.dataset.reset,
+        password:pwd
+      });
+      toast("Password reimpostata","ok");
+    }catch(e){toast(e.message,"error")}
+  });
+
+  $$("[data-state]").forEach(b=>b.onclick=async()=>{
+    try{
+      await edge("admin-account-state",{
+        team_id:state.team.id,
+        user_id:b.dataset.state,
+        active:b.dataset.active!=="true"
+      });
+      adminUsers();
+    }catch(e){toast(e.message,"error")}
+  });
+
+  $$("[data-unlink-player]").forEach(b=>b.onclick=async()=>{
+    const player=players.find(p=>p.id===b.dataset.unlinkPlayer);
+    if(!player)return;
+    const reason=prompt(`Motivo dello scollegamento di ${player.first_name} ${player.last_name}:`,"Correzione associazione");
+    if(reason===null)return;
+    try{
+      await must(supabase.rpc("unlink_player_profile",{
+        p_team_id:state.team.id,
+        p_player_id:player.id,
+        p_reason:reason||null
+      }));
+      toast("Associazione rimossa","ok");
+      adminUsers();
+    }catch(e){toast(e.message,"error")}
+  });
 }
+async function adminPlayerLinks(){
+  const requests=await must(
+    supabase.from("player_link_requests")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .order("requested_at",{ascending:false})
+      .limit(200)
+  );
+
+  const players=await must(
+    supabase.from("players")
+      .select("id,first_name,last_name,profile_id")
+      .eq("team_id",state.team.id)
+      .order("last_name")
+  );
+
+  const profileIds=[...new Set(requests.map(r=>r.profile_id))];
+  const profiles=profileIds.length
+    ? await must(
+        supabase.from("profiles")
+          .select("id,display_name,username,is_active")
+          .in("id",profileIds)
+      )
+    : [];
+
+  const pmap=new Map(players.map(p=>[p.id,p]));
+  const umap=new Map(profiles.map(p=>[p.id,p]));
+
+  const pending=requests.filter(r=>r.status==="pending");
+  const history=requests.filter(r=>r.status!=="pending");
+
+  const pendingHtml=pending.length
+    ? `<div class="list">
+        ${pending.map(r=>{
+          const player=pmap.get(r.player_id);
+          const user=umap.get(r.profile_id);
+          return `<div class="list-item">
+            <div>
+              <strong>${esc(user?.display_name||"Utente")}</strong>
+              <span class="muted">@${esc(user?.username||"")}</span>
+              <div style="margin-top:4px">
+                chiede di essere associato a
+                <strong>${esc(player?`${player.last_name} ${player.first_name}`:"Calciatore")}</strong>
+              </div>
+              <div class="muted">${fmtDateTime(r.requested_at)}</div>
+            </div>
+            <div class="actions">
+              <button class="btn btn-sm btn-primary" data-link-approve="${r.id}">Approva</button>
+              <button class="btn btn-sm btn-danger" data-link-reject="${r.id}">Rifiuta</button>
+            </div>
+          </div>`;
+        }).join("")}
+      </div>`
+    : `<div class="empty">Nessuna richiesta in attesa</div>`;
+
+  const historyHtml=history.length
+    ? `<div class="table-wrap">
+        <table class="table">
+          <thead><tr><th>Utente</th><th>Calciatore</th><th>Esito</th><th>Richiesta</th><th>Motivo</th></tr></thead>
+          <tbody>
+            ${history.map(r=>{
+              const player=pmap.get(r.player_id);
+              const user=umap.get(r.profile_id);
+              return `<tr>
+                <td>${esc(user?.display_name||"")}<div class="muted">@${esc(user?.username||"")}</div></td>
+                <td>${esc(player?`${player.last_name} ${player.first_name}`:"")}</td>
+                <td><span class="badge ${r.status==="approved"?"green":r.status==="rejected"?"red":""}">${esc(r.status)}</span></td>
+                <td>${fmtDateTime(r.requested_at)}</td>
+                <td>${esc(r.review_reason||"—")}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>`
+    : `<div class="empty">Nessuno storico disponibile</div>`;
+
+  $("#admin-content").innerHTML=`
+    <div class="page-title">
+      <div>
+        <h2>Associazioni account ↔ calciatore</h2>
+        <p>L'utente resta fan finché la richiesta non viene approvata.</p>
+      </div>
+      ${pending.length?`<span class="badge">${pending.length} in attesa</span>`:""}
+    </div>
+
+    <div class="card">
+      <h3>Da approvare</h3>
+      ${pendingHtml}
+    </div>
+
+    <div style="height:14px"></div>
+
+    <div class="card">
+      <h3>Storico richieste</h3>
+      ${historyHtml}
+    </div>
+  `;
+
+  $$("[data-link-approve]").forEach(b=>b.onclick=async()=>{
+    const req=requests.find(r=>r.id===b.dataset.linkApprove);
+    const player=pmap.get(req?.player_id);
+    const user=umap.get(req?.profile_id);
+
+    if(!confirm(`Associare ${user?.display_name||"l'utente"} a ${player?`${player.first_name} ${player.last_name}`:"questo calciatore"}?`))return;
+
+    try{
+      await must(supabase.rpc("review_player_link_request",{
+        p_request_id:b.dataset.linkApprove,
+        p_action:"approve",
+        p_reason:null
+      }));
+      toast("Associazione approvata","ok");
+      adminPlayerLinks();
+    }catch(e){toast(e.message,"error")}
+  });
+
+  $$("[data-link-reject]").forEach(b=>b.onclick=async()=>{
+    const reason=prompt("Motivo del rifiuto (facoltativo):","");
+    if(reason===null)return;
+
+    try{
+      await must(supabase.rpc("review_player_link_request",{
+        p_request_id:b.dataset.linkReject,
+        p_action:"reject",
+        p_reason:reason||null
+      }));
+      toast("Richiesta rifiutata","ok");
+      adminPlayerLinks();
+    }catch(e){toast(e.message,"error")}
+  });
+}
+
 function openAdminNewUser(){
   showModal("Nuovo utente",`<form id="anu-form"><div class="form-grid"><div class="field"><label>Nome visualizzato</label><input id="anu-display" required></div><div class="field"><label>Username</label><input id="anu-user" required></div></div><div class="form-grid"><div class="field"><label>Nome</label><input id="anu-first"></div><div class="field"><label>Cognome</label><input id="anu-last"></div></div><div class="field"><label>Password temporanea</label><input id="anu-pass" type="password" minlength="8" required></div><label class="check"><input id="anu-admin" type="checkbox"> Admin</label><div style="height:12px"></div><button class="btn btn-primary">Crea</button></form>`,root=>{
     $("#anu-form",root).onsubmit=async e=>{e.preventDefault();try{await edge("admin-create-user",{team_id:state.team.id,username:$("#anu-user",root).value,password:$("#anu-pass",root).value,display_name:$("#anu-display",root).value,first_name:$("#anu-first",root).value,last_name:$("#anu-last",root).value,roles:$("#anu-admin",root).checked?["admin"]:[],must_change_password:true});closeModal();adminUsers()}catch(err){toast(err.message,"error")}};
   });
 }
-async function adminPermissions(){
-  const roles=await must(supabase.from("roles").select("*").order("sort_order"));const perms=await must(supabase.from("permissions").select("*").order("category").order("permission_key"));
-  const matrix=await must(supabase.from("team_role_permissions").select("*").eq("team_id",state.team.id));const map=new Map(matrix.map(x=>[`${x.role_id}:${x.permission_id}`,x.enabled]));
-  $("#admin-content").innerHTML=`<div class="section-note">L'owner della squadra mantiene sempre i permessi amministrativi per evitare il blocco accidentale del sistema.</div><div style="height:12px"></div><div class="table-wrap"><table class="table perm-matrix"><thead><tr><th>Permesso</th>${roles.map(r=>`<th>${esc(r.label)}</th>`).join("")}</tr></thead><tbody>${perms.map(p=>`<tr><td><strong>${esc(p.label)}</strong><div class="muted">${esc(p.permission_key)}</div></td>${roles.map(r=>`<td><input type="checkbox" data-perm="${p.permission_key}" data-role="${r.code}" ${map.get(`${r.id}:${p.id}`)?"checked":""}></td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
-  $$("[data-perm]").forEach(c=>c.onchange=async()=>{try{await must(supabase.rpc("set_team_role_permission",{p_team_id:state.team.id,p_role_code:c.dataset.role,p_permission_key:c.dataset.perm,p_enabled:c.checked}));toast("Permesso aggiornato","ok")}catch(e){c.checked=!c.checked;toast(e.message,"error")}});
+async function adminPermissions(mode="roles",selectedProfileId=null){
+  const roles=await must(
+    supabase.from("roles").select("*").order("sort_order")
+  );
+
+  const perms=await must(
+    supabase.from("permissions")
+      .select("*")
+      .order("category")
+      .order("label")
+  );
+
+  const members=await must(
+    supabase.from("team_members")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .eq("is_active",true)
+  );
+
+  const profiles=members.length
+    ? await must(
+        supabase.from("profiles")
+          .select("id,display_name,username,is_active")
+          .in("id",members.map(x=>x.profile_id))
+          .order("display_name")
+      )
+    : [];
+
+  $("#admin-content").innerHTML=`
+    <div class="page-title">
+      <div>
+        <h2>Profili di accesso</h2>
+        <p>La matrice definisce i permessi di base dei ruoli. Le eccezioni individuali hanno priorità sulla matrice.</p>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab ${mode==="roles"?"active":""}" id="perm-mode-roles">Profili / ruoli</button>
+      <button class="tab ${mode==="users"?"active":""}" id="perm-mode-users">Eccezioni utenti</button>
+    </div>
+
+    <div id="permission-mode-content"></div>
+  `;
+
+  $("#perm-mode-roles").onclick=()=>adminPermissions("roles");
+  $("#perm-mode-users").onclick=()=>adminPermissions("users",selectedProfileId);
+
+  const content=$("#permission-mode-content");
+
+  if(mode==="roles"){
+    const matrix=await must(
+      supabase.from("team_role_permissions")
+        .select("*")
+        .eq("team_id",state.team.id)
+    );
+
+    const map=new Map(
+      matrix.map(x=>[`${x.role_id}:${x.permission_id}`,x.enabled])
+    );
+
+    let lastCategory=null;
+    const body=perms.map(p=>{
+      const catRow=p.category!==lastCategory
+        ? `<tr><td colspan="${roles.length+1}" style="background:var(--team-primary-soft)"><strong>${esc(p.category)}</strong></td></tr>`
+        : "";
+      lastCategory=p.category;
+
+      return `${catRow}<tr>
+        <td>
+          <strong>${esc(p.label)}</strong>
+          <div class="muted">${esc(p.permission_key)}</div>
+          ${p.description?`<div class="muted" style="font-size:.72rem">${esc(p.description)}</div>`:""}
+        </td>
+        ${roles.map(r=>`
+          <td style="text-align:center">
+            <input
+              type="checkbox"
+              data-perm="${p.permission_key}"
+              data-role="${r.code}"
+              ${map.get(`${r.id}:${p.id}`)?"checked":""}
+            >
+          </td>
+        `).join("")}
+      </tr>`;
+    }).join("");
+
+    content.innerHTML=`
+      <div class="section-note">
+        L'Owner della squadra mantiene sempre accesso completo indipendentemente dalla matrice, così non può verificarsi un lockout amministrativo.
+      </div>
+      <div style="height:12px"></div>
+      <div class="table-wrap">
+        <table class="table perm-matrix">
+          <thead>
+            <tr>
+              <th>Permesso</th>
+              ${roles.map(r=>`<th>${esc(r.label)}</th>`).join("")}
+            </tr>
+          </thead>
+          <tbody>${body}</tbody>
+        </table>
+      </div>
+    `;
+
+    $$("[data-perm]",content).forEach(c=>c.onchange=async()=>{
+      try{
+        await must(supabase.rpc("set_team_role_permission",{
+          p_team_id:state.team.id,
+          p_role_code:c.dataset.role,
+          p_permission_key:c.dataset.perm,
+          p_enabled:c.checked
+        }));
+        toast("Permesso del profilo aggiornato","ok");
+      }catch(e){
+        c.checked=!c.checked;
+        toast(e.message,"error");
+      }
+    });
+
+    return;
+  }
+
+  const sortedMembers=[...members].sort((a,b)=>{
+    const pa=profiles.find(p=>p.id===a.profile_id)?.display_name||"";
+    const pb=profiles.find(p=>p.id===b.profile_id)?.display_name||"";
+    return pa.localeCompare(pb,"it");
+  });
+
+  const selectedMember=
+    sortedMembers.find(m=>m.profile_id===selectedProfileId)
+    || sortedMembers.find(m=>!m.is_owner)
+    || sortedMembers[0]
+    || null;
+
+  if(!selectedMember){
+    content.innerHTML=`<div class="empty">Nessun utente nella squadra</div>`;
+    return;
+  }
+
+  const selectedProfile=profiles.find(p=>p.id===selectedMember.profile_id);
+
+  const overview=await must(
+    supabase.rpc("get_member_permission_overview",{
+      p_team_id:state.team.id,
+      p_profile_id:selectedMember.profile_id
+    })
+  );
+
+  content.innerHTML=`
+    <div class="card">
+      <div class="field">
+        <label>Utente</label>
+        <select id="permission-user">
+          ${sortedMembers.map(m=>{
+            const pr=profiles.find(p=>p.id===m.profile_id);
+            return `<option value="${m.profile_id}" ${m.profile_id===selectedMember.profile_id?"selected":""}>
+              ${esc(pr?.display_name||"")} ${m.is_owner?"(Owner)":""}
+            </option>`;
+          }).join("")}
+        </select>
+      </div>
+
+      <div class="section-note">
+        <strong>${esc(selectedProfile?.display_name||"")}</strong>
+        ${selectedMember.is_owner
+          ? ` è Owner: dispone sempre di tutti i permessi e non può ricevere override.`
+          : ` eredita normalmente i permessi dai propri ruoli attivi. Usa gli override solo per eccezioni specifiche.`
+        }
+      </div>
+    </div>
+
+    <div style="height:12px"></div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Permesso</th>
+            <th>Da ruolo</th>
+            <th>Override</th>
+            <th>Effettivo</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${overview.map(row=>`
+            <tr>
+              <td>
+                <strong>${esc(row.label)}</strong>
+                <div class="muted">${esc(row.permission_key)}</div>
+              </td>
+              <td>${row.role_granted?`<span class="badge green">consentito</span>`:`<span class="badge">no</span>`}</td>
+              <td>
+                <select
+                  data-user-override="${row.permission_key}"
+                  ${selectedMember.is_owner?"disabled":""}
+                  style="min-width:130px"
+                >
+                  <option value="inherit" ${!row.override_effect?"selected":""}>Eredita</option>
+                  <option value="allow" ${row.override_effect==="allow"?"selected":""}>Consenti</option>
+                  <option value="deny" ${row.override_effect==="deny"?"selected":""}>Nega</option>
+                </select>
+              </td>
+              <td>
+                <span class="badge ${row.effective?"green":"red"}">${row.effective?"Sì":"No"}</span>
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  $("#permission-user").onchange=e=>adminPermissions("users",e.target.value);
+
+  $$("[data-user-override]",content).forEach(sel=>sel.onchange=async()=>{
+    const previous=overview.find(x=>x.permission_key===sel.dataset.userOverride)?.override_effect||"inherit";
+
+    try{
+      await must(supabase.rpc("set_user_permission_override",{
+        p_team_id:state.team.id,
+        p_profile_id:selectedMember.profile_id,
+        p_permission_key:sel.dataset.userOverride,
+        p_effect:sel.value
+      }));
+
+      toast("Eccezione utente aggiornata","ok");
+      adminPermissions("users",selectedMember.profile_id);
+
+    }catch(e){
+      sel.value=previous;
+      toast(e.message,"error");
+    }
+  });
 }
 async function adminSeasons(){
   $("#admin-content").innerHTML=`<div class="page-title"><h2>Stagioni</h2><button class="btn btn-primary" id="new-season">Nuova stagione</button></div><div class="list">${state.seasons.map(s=>`<div class="list-item"><div><strong>${esc(s.name)}</strong><div class="muted">${fmtDate(s.start_date)} → ${fmtDate(s.end_date)}</div></div><span class="badge ${s.status==="active"?"green":""}">${esc(s.status)}</span></div>`).join("")}</div>`;
