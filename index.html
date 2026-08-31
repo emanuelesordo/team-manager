@@ -39,6 +39,7 @@
 
       --radius:14px;
       --shadow:0 8px 30px rgba(0,0,0,.22);
+      --ui-font-size:.84rem;
     }
     *{box-sizing:border-box} html{background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     body{margin:0;min-height:100vh;background:var(--bg)} button,input,select,textarea{font:inherit}
@@ -861,6 +862,30 @@
       }
     }
 
+
+    /* Testo ordinario uniforme con le voci del menu laterale */
+    body,button,input,select,textarea,label,
+    .nav button,.table th,.table td,.btn,.btn-sm,.badge,
+    .list-item,.section-note,.page-title p,.topbar-sub,.stat-label{
+      font-size:var(--ui-font-size)!important;
+    }
+
+    .sort-th{cursor:pointer;user-select:none}
+    .sort-th:hover{color:var(--text);background:var(--team-accent-soft)}
+    .sort-head{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+    .sort-arrow{min-width:10px;color:var(--team-accent);font-size:.72em}
+
+    .roster-favorite{max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+    .roster-flag{font-size:1rem;line-height:1;cursor:help}
+    .next-season-confirmed{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+
+    .roster-setup-list{display:grid;gap:9px}
+    .roster-setup-option{
+      display:flex;justify-content:space-between;align-items:flex-start;gap:14px;
+      padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:var(--panel2)
+    }
+    .roster-setup-option .check{margin:0;flex:none}
+
   </style>
 </head>
 <body>
@@ -909,6 +934,8 @@ const state = {
   roles: [],
   permissions: new Set(),
   myPlayer: null,
+  rosterSettings: null,
+  rosterSort: { key:"name", dir:"asc" },
 
   liveChannel: null,
   liveTimer: null,
@@ -1785,6 +1812,7 @@ async function enterTeam(teamId,{persist=true,targetPath="dashboard"}={}){
   state.team=team;
   state.membership=team.membership;
   state.organization=team.organization||null;
+  state.rosterSettings=null;
 
   if(!state.organization && team.organization_id){
     state.organization=await must(
@@ -2909,6 +2937,7 @@ function renderShell(title, content, nav=true){
 
   const switchSeason=async value=>{
     state.season=state.seasons.find(s=>s.id===value);
+    state.rosterSettings=null;
     closeMobileDrawer();
     await route(state.currentPage);
   };
@@ -3129,8 +3158,8 @@ function splitImportedFullName(value,format="first_last"){
 
 function downloadRosterImportTemplate(){
   const csv=[
-    ["Nome","Cognome","Data nascita","Piede","Numero maglia","Data ingresso","Scadenza","Note"],
-    ["Mario","Rossi","1995-06-12","Destro","8",state.season.start_date,state.season.end_date,""]
+    ["Nome","Cognome","Data nascita","Nazionalità","Squadra tifata","Piede","Numero maglia","Data ingresso","Scadenza","Note"],
+    ["Mario","Rossi","1995-06-12","IT","Padova","Destro","8",state.season.start_date,state.season.end_date,""]
   ].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
 
   const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
@@ -3154,7 +3183,7 @@ async function openRosterImport(){
     const [existingPlayers,currentContracts]=await Promise.all([
       must(
         supabase.from("players")
-          .select("id,first_name,last_name,birth_date,preferred_foot")
+          .select("id,first_name,last_name,birth_date,preferred_foot,nationality_code,favorite_team")
           .eq("team_id",state.team.id)
       ),
       must(
@@ -3178,6 +3207,8 @@ async function openRosterImport(){
       {key:"last_name",label:"Cognome",required:true,aliases:["cognome","surname","last name","lastname"]},
       {key:"full_name",label:"Nome completo",required:false,aliases:["nome completo","nominativo","calciatore","giocatore","player"]},
       {key:"birth_date",label:"Data nascita",required:false,aliases:["data nascita","nascita","birth date","birthdate","dob"]},
+      {key:"nationality_code",label:"Nazionalità",required:false,aliases:["nazionalita","nazionalità","nazione","nationality","country","paese"]},
+      {key:"favorite_team",label:"Squadra tifata",required:false,aliases:["squadra tifata","tifata","squadra del cuore","favorite team","favourite team","club tifato"]},
       {key:"preferred_foot",label:"Piede",required:false,aliases:["piede","piede preferito","preferred foot","foot"]},
       {key:"shirt_number",label:"Numero maglia",required:false,aliases:["numero maglia","maglia","numero","shirt number","shirt","n maglia"]},
       {key:"start_date",label:"Data ingresso",required:false,aliases:["data ingresso","ingresso","inizio","data inizio","start date","dal"]},
@@ -3250,6 +3281,8 @@ async function openRosterImport(){
                 <th>Riga</th>
                 <th>Calciatore</th>
                 <th>Nascita</th>
+                <th>Naz.</th>
+                <th>Tifata</th>
                 <th>Piede</th>
                 <th>#</th>
                 <th>Permanenza</th>
@@ -3402,6 +3435,8 @@ async function openRosterImport(){
           const birthRaw=cell(row,"birth_date");
           const birth=birthRaw!==null&&String(birthRaw).trim()!==""?importDateToIso(birthRaw):null;
 
+          const nationality=countryCodeFromValue(cell(row,"nationality_code"));
+          const favoriteTeam=String(cell(row,"favorite_team")??"").trim()||null;
           const foot=normalizeImportedFoot(cell(row,"preferred_foot"));
           const shirt=parseImportedShirtNumber(cell(row,"shirt_number"));
 
@@ -3417,6 +3452,8 @@ async function openRosterImport(){
             first_name:first,
             last_name:last,
             birth_date:birth,
+            nationality_code:nationality,
+            favorite_team:favoriteTeam,
             preferred_foot:foot,
             shirt_number:shirt,
             start_date:start,
@@ -3433,6 +3470,9 @@ async function openRosterImport(){
           }else if(birth==="__INVALID__"){
             rec.status="error";
             rec.message="Data nascita non valida";
+          }else if(nationality==="__INVALID__"){
+            rec.status="error";
+            rec.message="Nazionalità non riconosciuta";
           }else if(foot==="__INVALID__"){
             rec.status="error";
             rec.message="Piede non riconosciuto";
@@ -3520,12 +3560,14 @@ async function openRosterImport(){
             <td>${r.sourceRow}</td>
             <td><strong>${esc(r.last_name)} ${esc(r.first_name)}</strong>${r.warning?`<div class="muted">${esc(r.warning)}</div>`:""}</td>
             <td>${r.birth_date&&r.birth_date!=="__INVALID__"?fmtDate(r.birth_date):"—"}</td>
+            <td>${r.nationality_code&&r.nationality_code!=="__INVALID__"?`${countryFlag(r.nationality_code)} ${esc(r.nationality_code)}`:"—"}</td>
+            <td>${esc(r.favorite_team||"—")}</td>
             <td>${r.preferred_foot!=="__INVALID__"?esc(importedFootLabel(r.preferred_foot)):"—"}</td>
             <td>${typeof r.shirt_number==="number"?r.shirt_number:"—"}</td>
             <td>${r.start_date!=="__INVALID__"&&r.end_date!=="__INVALID__"?`${fmtDate(r.start_date)} → ${fmtDate(r.end_date)}`:"—"}</td>
             <td class="${cls}"><strong>${esc(r.message)}</strong></td>
           </tr>`;
-        }).join("")||`<tr><td colspan="7">Nessuna riga dati</td></tr>`;
+        }).join("")||`<tr><td colspan="9">Nessuna riga dati</td></tr>`;
 
         const mappingValid=hasSeparate||hasFull;
         importButton.disabled=!mappingValid||valid===0;
@@ -3653,7 +3695,7 @@ async function openRosterImport(){
         for(const row of rows){
           try{
             const response=await must(
-              supabase.rpc("import_roster_player",{
+              supabase.rpc("import_roster_player_extended",{
                 p_team_id:state.team.id,
                 p_season_id:state.season.id,
                 p_first_name:row.first_name,
@@ -3663,7 +3705,9 @@ async function openRosterImport(){
                 p_start_date:row.start_date,
                 p_end_date:row.end_date,
                 p_shirt_number:typeof row.shirt_number==="number"?row.shirt_number:null,
-                p_notes:row.notes
+                p_notes:row.notes,
+                p_nationality_code:row.nationality_code||null,
+                p_favorite_team:row.favorite_team||null
               })
             );
 
@@ -3722,50 +3766,22 @@ async function openRosterImport(){
    ROSA / CALCIATORI / CONTRATTI
 ========================================================= */
 async function pageRoster(){
-  const [players,rosterHistory,affinities,statusIndicators,myLinkRequests]=await Promise.all([
-    must(
-      supabase.from("players")
-        .select("*")
-        .eq("team_id",state.team.id)
-        .order("last_name")
-    ),
-    must(
-      supabase.rpc("get_season_roster_history",{
-        p_team_id:state.team.id,
-        p_season_id:state.season.id
-      })
-    ),
-    must(
-      supabase.rpc("get_roster_position_affinities",{
-        p_team_id:state.team.id,
-        p_season_id:state.season.id
-      })
-    ),
-    must(
-      supabase.rpc("get_roster_status_indicators",{
-        p_team_id:state.team.id,
-        p_season_id:state.season.id,
-        p_at:today()
-      })
-    ),
-    must(
-      supabase.from("player_link_requests")
-        .select("*")
-        .eq("team_id",state.team.id)
-        .eq("profile_id",state.profile.id)
-        .order("requested_at",{ascending:false})
-    )
+  const settings=await getRosterSettings();
+
+  const [players,rosterHistory,affinities,statusIndicators,nextSeasonRows,myLinkRequests]=await Promise.all([
+    must(supabase.from("players").select("*").eq("team_id",state.team.id).order("last_name")),
+    must(supabase.rpc("get_season_roster_history",{p_team_id:state.team.id,p_season_id:state.season.id})),
+    must(supabase.rpc("get_roster_position_affinities",{p_team_id:state.team.id,p_season_id:state.season.id})),
+    must(supabase.rpc("get_roster_status_indicators",{p_team_id:state.team.id,p_season_id:state.season.id,p_at:today()})),
+    must(supabase.rpc("get_roster_next_season_status",{p_team_id:state.team.id,p_season_id:state.season.id})),
+    must(supabase.from("player_link_requests").select("*").eq("team_id",state.team.id).eq("profile_id",state.profile.id).order("requested_at",{ascending:false}))
   ]);
 
   const linkedSelf=players.find(p=>p.profile_id===state.profile.id)||null;
   if((state.myPlayer?.id||null)!==(linkedSelf?.id||null)){
     state.myPlayer=linkedSelf;
-    state.roles=(await must(
-      supabase.rpc("get_my_effective_roles",{p_team_id:state.team.id})
-    )).map(x=>x.role_code);
-    state.permissions=new Set((await must(
-      supabase.rpc("get_my_permissions",{p_team_id:state.team.id})
-    )).map(x=>x.permission_key));
+    state.roles=(await must(supabase.rpc("get_my_effective_roles",{p_team_id:state.team.id}))).map(x=>x.role_code);
+    state.permissions=new Set((await must(supabase.rpc("get_my_permissions",{p_team_id:state.team.id}))).map(x=>x.permission_key));
   }
 
   const pendingLink=myLinkRequests.find(r=>r.status==="pending")||null;
@@ -3778,41 +3794,53 @@ async function pageRoster(){
   });
 
   const simap=new Map(statusIndicators.map(x=>[x.player_id,x]));
+  const nextMap=new Map();
+  nextSeasonRows.forEach(row=>{
+    if(!nextMap.has(row.player_id))nextMap.set(row.player_id,row);
+  });
 
   const canSeeMedicalFor=p=>
-    can("medical.view_all")
-    || (can("medical.view_own") && p.profile_id===state.profile.id);
+    can("medical.view_all")||(can("medical.view_own")&&p.profile_id===state.profile.id);
 
-  const signalHtml=(p,indicator)=>{
+  const makeSignals=(p,indicator,next)=>{
     const signals=[];
+    let severity=0;
 
     if(indicator?.injury_active){
-      signals.push(`<span class="roster-signal injury" title="Infortunato" aria-label="Infortunato">✚</span>`);
+      signals.push(`<span class="roster-signal injury" title="Infortunato">✚</span>`);
+      severity+=50;
     }
 
     const absence=absenceSignal(indicator?.absence_type);
     if(absence){
-      signals.push(`<span class="roster-signal" title="${esc(absence.label)}" aria-label="${esc(absence.label)}">${absence.icon}</span>`);
+      signals.push(`<span class="roster-signal" title="${esc(absence.label)}">${absence.icon}</span>`);
+      severity+=40;
     }
 
     if(indicator?.financial_pending){
-      signals.push(`<span class="roster-signal" title="Quota o multa da pagare" aria-label="Quota o multa da pagare">💰</span>`);
+      signals.push(`<span class="roster-signal" title="Quota o multa da pagare">💰</span>`);
+      severity+=30;
     }
 
     if(canSeeMedicalFor(p)){
       const days=medicalDaysToExpiry(indicator?.medical_expires_on);
-
-      if(!indicator?.medical_expires_on || days<0){
-        signals.push(`<span class="roster-signal" title="${indicator?.medical_expires_on?"Visita medica scaduta":"Visita medica mancante"}" aria-label="Visita medica non valida">☠️</span>`);
+      if(!indicator?.medical_expires_on||days<0){
+        signals.push(`<span class="roster-signal" title="${indicator?.medical_expires_on?"Visita medica scaduta":"Visita medica mancante"}">☠️</span>`);
+        severity+=20;
       }else if(days<=45){
-        signals.push(`<span class="roster-signal" title="Visita medica in scadenza tra ${days} giorni" aria-label="Visita medica in scadenza">🚨</span>`);
+        signals.push(`<span class="roster-signal" title="Visita medica in scadenza tra ${days} giorni">🚨</span>`);
+        severity+=10;
       }
     }
 
-    return signals.length?signals.join(""):`<span class="muted">—</span>`;
+    if(next?.next_season_confirmed){
+      signals.push(`<span class="roster-signal" title="Confermato anche per la prossima stagione">✅</span>`);
+    }
+
+    return {html:signals.length?signals.join(""):`<span class="muted">—</span>`,severity};
   };
 
-  const rows=players.map(p=>{
+  const data=players.map(p=>{
     const pcs=rosterHistory.filter(c=>c.player_id===p.id);
     if(!pcs.length)return null;
 
@@ -3825,11 +3853,14 @@ async function pageRoster(){
     const last=pcs[pcs.length-1];
     const roles=amap.get(p.id)||[];
     const indicator=simap.get(p.id)||{};
+    const next=nextMap.get(p.id)||{};
+    const signals=makeSignals(p,indicator,next);
+    const medicalExpiry=canSeeMedicalFor(p)?indicator.medical_expires_on:null;
 
     let associationAction="";
     if(state.myPlayer?.id===p.id){
       associationAction=`<span class="badge green" title="Account associato">Io</span>`;
-    }else if(!state.myPlayer && can("player_link.request") && !p.profile_id){
+    }else if(!state.myPlayer&&can("player_link.request")&&!p.profile_id){
       if(pendingLink?.player_id===p.id){
         associationAction=`<span class="badge" title="Richiesta in attesa">Pending</span>`;
       }else if(!pendingLink){
@@ -3837,10 +3868,33 @@ async function pageRoster(){
       }
     }
 
-    const medicalVisible=canSeeMedicalFor(p);
-    const medicalExpiry=medicalVisible
-      ? (indicator.medical_expires_on?shortDate(indicator.medical_expires_on):"—")
-      : "—";
+    return {
+      p,last,active,roles,indicator,next,signals,associationAction,medicalExpiry,
+      sort:{
+        name:`${p.last_name} ${p.first_name}`,
+        shirt:last.shirt_number??999,
+        birth:p.birth_date||"9999-12-31",
+        nationality:countryName(p.nationality_code)||"ZZZ",
+        favorite:p.favorite_team||"ZZZ",
+        roles:roles[0]?.position_code||"ZZZ",
+        medical:medicalExpiry||"9999-12-31",
+        signals:signals.severity,
+        permanence:last.start_date||"9999-12-31",
+        next:next.next_season_confirmed?1:0
+      }
+    };
+  }).filter(Boolean);
+
+  const sort=state.rosterSort||{key:"name",dir:"asc"};
+  data.sort((a,b)=>{
+    const result=compareRosterValues(a,b,sort.key);
+    return sort.dir==="asc"?result:-result;
+  });
+
+  const showNextColumn=!settings.show_contract_period&&(can("contracts.view")||can("contracts.manage"));
+
+  const rows=data.map(row=>{
+    const {p,last,active,roles,next,signals,associationAction,medicalExpiry}=row;
 
     return `<tr class="${active?"":"roster-row-inactive"}">
       <td>
@@ -3850,7 +3904,10 @@ async function pageRoster(){
         </div>
       </td>
 
-      <td>${last.shirt_number||"—"}</td>
+      ${settings.show_shirt_numbers?`<td>${last.shirt_number||"—"}</td>`:""}
+      <td>${p.birth_date?shortDate(p.birth_date):"—"}</td>
+      <td>${p.nationality_code?`<span class="roster-flag" title="${esc(countryName(p.nationality_code))}">${countryFlag(p.nationality_code)}</span>`:"—"}</td>
+      <td><span class="roster-favorite" title="${esc(p.favorite_team||"")}">${esc(p.favorite_team||"—")}</span></td>
 
       <td>
         ${roles.length
@@ -3859,18 +3916,24 @@ async function pageRoster(){
         }
       </td>
 
-      <td>
-        <span class="roster-medical">${medicalExpiry}</span>
-      </td>
+      <td>${medicalExpiry?shortDate(medicalExpiry):"—"}</td>
+      <td><div class="roster-signals">${signals.html}</div></td>
 
-      <td>
-        <div class="roster-signals">${signalHtml(p,indicator)}</div>
-      </td>
+      ${settings.show_contract_period
+        ? `<td>
+            <span class="roster-period">${shortDate(last.start_date)}–${shortDate(last.actual_end_date||last.planned_end_date)}</span>
+            ${active?"":`<span class="badge red">${esc(last.roster_status)}</span>`}
+          </td>`
+        : ""
+      }
 
-      <td>
-        <span class="roster-period">${shortDate(last.start_date)}–${shortDate(last.actual_end_date||last.planned_end_date)}</span>
-        ${active?"":`<span class="badge red">${esc(last.roster_status)}</span>`}
-      </td>
+      ${showNextColumn
+        ? `<td>${next.next_season_confirmed
+            ? `<span class="next-season-confirmed">✅ Confermato</span>`
+            : "—"
+          }</td>`
+        : ""
+      }
 
       <td>
         <div class="actions">
@@ -3880,7 +3943,7 @@ async function pageRoster(){
         </div>
       </td>
     </tr>`;
-  }).filter(Boolean).join("");
+  }).join("");
 
   const pendingNotice=pendingLink
     ? `<div class="section-note" style="margin-bottom:8px;padding:7px 10px">
@@ -3889,10 +3952,29 @@ async function pageRoster(){
       </div>`
     : "";
 
+  const headers=[
+    rosterSortHeader("Calciatore","name"),
+    settings.show_shirt_numbers?rosterSortHeader("#","shirt"):"",
+    rosterSortHeader("Nascita","birth"),
+    rosterSortHeader("Naz.","nationality"),
+    rosterSortHeader("Tifata","favorite"),
+    rosterSortHeader("Ruoli","roles"),
+    rosterSortHeader("Visita","medical"),
+    rosterSortHeader("Segn.","signals"),
+    settings.show_contract_period?rosterSortHeader("Permanenza","permanence"):"",
+    showNextColumn?rosterSortHeader("Prossima","next"):"",
+    `<th>Azioni</th>`
+  ].join("");
+
+  const columnCount=
+    1+(settings.show_shirt_numbers?1:0)+6+
+    (settings.show_contract_period?1:0)+(showNextColumn?1:0)+1;
+
   renderShell("Rosa",`
     <div class="page-title">
       <div><h1>Rosa ${esc(state.season.name)}</h1></div>
       <div class="actions">
+        ${can("roster.setup")?`<button class="btn" id="roster-setup">⚙ Setup Rosa</button>`:""}
         ${can("roster.manage")&&can("contracts.manage")?`<button class="btn" id="import-roster">⇧ Importa Excel/CSV</button>`:""}
         ${can("roster.manage")?`<button class="btn btn-primary" id="new-player">Nuovo calciatore</button>`:""}
         ${state.myPlayer&&can("affinity.evaluate_self")?`<button class="btn" id="my-affinity">I miei ruoli</button>`:""}
@@ -3903,21 +3985,21 @@ async function pageRoster(){
 
     <div class="table-wrap">
       <table class="table roster-table">
-        <thead>
-          <tr>
-            <th>Calciatore</th>
-            <th>#</th>
-            <th>Ruoli</th>
-            <th>Visita</th>
-            <th>Segn.</th>
-            <th>Permanenza</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>${rows||`<tr><td colspan="7">Nessun calciatore in questa stagione</td></tr>`}</tbody>
+        <thead><tr>${headers}</tr></thead>
+        <tbody>${rows||`<tr><td colspan="${columnCount}">Nessun calciatore in questa stagione</td></tr>`}</tbody>
       </table>
     </div>
   `);
+
+  $$("[data-roster-sort]").forEach(th=>th.onclick=()=>{
+    const key=th.dataset.rosterSort;
+    if(state.rosterSort?.key===key){
+      state.rosterSort.dir=state.rosterSort.dir==="asc"?"desc":"asc";
+    }else{
+      state.rosterSort={key,dir:"asc"};
+    }
+    pageRoster();
+  });
 
   $$("[data-player]").forEach(b=>{
     b.onclick=()=>route(`player/${b.dataset.player}`);
@@ -3929,6 +4011,7 @@ async function pageRoster(){
     };
   });
 
+  $("#roster-setup")?.addEventListener("click",openRosterSetup);
   $("#my-affinity")?.addEventListener("click",()=>openAffinityAssessment(state.myPlayer,"self"));
 
   $$("[data-edit-player]").forEach(b=>b.onclick=e=>{
@@ -3939,32 +4022,22 @@ async function pageRoster(){
   $$("[data-claim-player]").forEach(b=>b.onclick=async()=>{
     const player=players.find(p=>p.id===b.dataset.claimPlayer);
     if(!player)return;
-
     if(!confirm(`Confermi di essere ${player.first_name} ${player.last_name}?`))return;
 
     try{
-      await must(supabase.rpc("request_player_link",{
-        p_team_id:state.team.id,
-        p_player_id:player.id
-      }));
+      await must(supabase.rpc("request_player_link",{p_team_id:state.team.id,p_player_id:player.id}));
       toast("Richiesta inviata","ok");
       pageRoster();
-    }catch(err){
-      toast(err.message,"error");
-    }
+    }catch(err){toast(err.message,"error")}
   });
 
   $("#cancel-player-link")?.addEventListener("click",async()=>{
     if(!pendingLink)return;
     try{
-      await must(supabase.rpc("cancel_player_link_request",{
-        p_request_id:pendingLink.id
-      }));
+      await must(supabase.rpc("cancel_player_link_request",{p_request_id:pendingLink.id}));
       toast("Richiesta annullata","ok");
       pageRoster();
-    }catch(err){
-      toast(err.message,"error");
-    }
+    }catch(err){toast(err.message,"error")}
   });
 
   $$("[data-eval]").forEach(b=>b.onclick=async()=>{
@@ -3982,40 +4055,18 @@ async function pageRoster(){
 
 async function openEditRosterPlayer(playerId){
   try{
+    const settings=await getRosterSettings();
+
     const [player,contacts,contracts,exams]=await Promise.all([
-      must(
-        supabase.from("players")
-          .select("*")
-          .eq("id",playerId)
-          .eq("team_id",state.team.id)
-          .single()
-      ),
-      can("roster.manage")
-        ? must(
-            supabase.from("player_contacts")
-              .select("*")
-              .eq("player_id",playerId)
-              .maybeSingle()
-          )
+      must(supabase.from("players").select("*").eq("id",playerId).eq("team_id",state.team.id).single()),
+      can("roster.manage")&&settings.show_contact_options
+        ? must(supabase.from("player_contacts").select("*").eq("player_id",playerId).maybeSingle())
         : Promise.resolve(null),
       can("contracts.manage")
-        ? must(
-            supabase.from("player_contracts")
-              .select("*")
-              .eq("player_id",playerId)
-              .eq("season_id",state.season.id)
-              .order("start_date",{ascending:false})
-          )
+        ? must(supabase.from("player_contracts").select("*").eq("player_id",playerId).eq("season_id",state.season.id).order("start_date",{ascending:false}))
         : Promise.resolve([]),
       (can("medical.view_all")||can("medical.manage"))
-        ? must(
-            supabase.from("medical_examinations")
-              .select("*")
-              .eq("team_id",state.team.id)
-              .eq("player_id",playerId)
-              .order("issued_date",{ascending:false})
-              .limit(1)
-          )
+        ? must(supabase.from("medical_examinations").select("*").eq("team_id",state.team.id).eq("player_id",playerId).order("issued_date",{ascending:false}).limit(1))
         : Promise.resolve([])
     ]);
 
@@ -4025,6 +4076,7 @@ async function openEditRosterPlayer(playerId){
     showModal(`Modifica · ${player.first_name} ${player.last_name}`,`
       <form id="edit-roster-player-form">
         <h3>Anagrafica</h3>
+
         <div class="form-grid">
           <div class="field"><label>Nome</label><input id="erp-first" value="${esc(player.first_name)}" required></div>
           <div class="field"><label>Cognome</label><input id="erp-last" value="${esc(player.last_name)}" required></div>
@@ -4032,6 +4084,10 @@ async function openEditRosterPlayer(playerId){
 
         <div class="form-grid">
           <div class="field"><label>Data di nascita</label><input id="erp-birth" type="date" value="${player.birth_date||""}"></div>
+          <div class="field"><label>Nazionalità</label><select id="erp-nationality">${countryOptions(player.nationality_code)}</select></div>
+        </div>
+
+        <div class="form-grid">
           <div class="field">
             <label>Piede</label>
             <select id="erp-foot">
@@ -4041,43 +4097,44 @@ async function openEditRosterPlayer(playerId){
               <option value="both" ${player.preferred_foot==="both"?"selected":""}>Entrambi</option>
             </select>
           </div>
+          <div class="field"><label>Squadra tifata</label><input id="erp-favorite" value="${esc(player.favorite_team||"")}" placeholder="es. Padova"></div>
         </div>
 
-        <div class="field">
-          <label>Telefono</label>
-          <input id="erp-phone" type="tel" value="${esc(contacts?.phone||"")}" placeholder="+39 ...">
-        </div>
+        ${settings.show_contact_options?`
+          <div class="field"><label>Telefono</label><input id="erp-phone" type="tel" value="${esc(contacts?.phone||"")}" placeholder="+39 ..."></div>
+        `:""}
 
         ${currentContract&&can("contracts.manage")?`
           <h3>Permanenza ${esc(state.season.name)}</h3>
+
           <div class="form-grid">
             <div class="field"><label>Data ingresso</label><input id="erp-start" type="date" value="${currentContract.start_date}" required></div>
             <div class="field"><label>Scadenza</label><input id="erp-end" type="date" value="${currentContract.actual_end_date||currentContract.planned_end_date}" required></div>
           </div>
+
           <div class="field"><label>Numero maglia</label><input id="erp-shirt" type="number" min="1" max="99" value="${currentContract.shirt_number||""}"></div>
+
+          <label class="check">
+            <input id="erp-next-season" type="checkbox" ${currentContract.next_season_confirmed?"checked":""}>
+            Presente anche la prossima stagione
+          </label>
+          <div class="muted" style="margin:5px 0 12px">
+            Conferma gestionale; la permanenza della nuova stagione verrà creata separatamente.
+          </div>
         `:""}
 
         ${can("medical.manage")?`
           <h3>Visita medica</h3>
           <div class="form-grid">
-            <div class="field">
-              <label>Data effettuazione</label>
-              <input id="erp-medical-issued" type="date" value="${latestExam?.issued_date||""}">
-            </div>
-            <div class="field">
-              <label>Scadenza calcolata</label>
-              <input id="erp-medical-expiry" value="${latestExam?.expires_on?fmtDate(latestExam.expires_on):"—"}" disabled>
-            </div>
-          </div>
-          <div class="muted" style="font-size:.72rem;margin-top:-6px;margin-bottom:12px">
-            Se modifichi la data viene registrata una nuova visita e lo storico precedente resta invariato.
+            <div class="field"><label>Data effettuazione</label><input id="erp-medical-issued" type="date" value="${latestExam?.issued_date||""}"></div>
+            <div class="field"><label>Scadenza calcolata</label><input id="erp-medical-expiry" value="${latestExam?.expires_on?fmtDate(latestExam.expires_on):"—"}" disabled></div>
           </div>
         `:""}
 
         <button class="btn btn-primary">Salva modifiche</button>
       </form>
     `,root=>{
-      root.closest(".modal").style.width="min(760px,100%)";
+      root.closest(".modal").style.width="min(780px,100%)";
 
       const medicalIssued=$("#erp-medical-issued",root);
       const medicalExpiry=$("#erp-medical-expiry",root);
@@ -4096,7 +4153,6 @@ async function openEditRosterPlayer(playerId){
 
       $("#edit-roster-player-form",root).onsubmit=async e=>{
         e.preventDefault();
-
         try{
           await must(
             supabase.rpc("update_player_details",{
@@ -4106,7 +4162,9 @@ async function openEditRosterPlayer(playerId){
               p_last_name:$("#erp-last",root).value,
               p_birth_date:$("#erp-birth",root).value||null,
               p_preferred_foot:$("#erp-foot",root).value||null,
-              p_phone:$("#erp-phone",root).value.trim()||null
+              p_phone:settings.show_contact_options?($("#erp-phone",root)?.value.trim()||null):null,
+              p_nationality_code:$("#erp-nationality",root).value||null,
+              p_favorite_team:$("#erp-favorite",root).value.trim()||null
             })
           );
 
@@ -4119,9 +4177,19 @@ async function openEditRosterPlayer(playerId){
                 p_shirt_number:Number($("#erp-shirt",root).value)||null
               })
             );
+
+            const nextChecked=$("#erp-next-season",root).checked;
+            if(nextChecked!==!!currentContract.next_season_confirmed){
+              await must(
+                supabase.rpc("set_player_next_season_confirmation",{
+                  p_contract_id:currentContract.id,
+                  p_confirmed:nextChecked
+                })
+              );
+            }
           }
 
-          if(can("medical.manage") && medicalIssued?.value && medicalIssued.value!==(latestExam?.issued_date||"")){
+          if(can("medical.manage")&&medicalIssued?.value&&medicalIssued.value!==(latestExam?.issued_date||"")){
             await must(
               supabase.rpc("register_player_medical_date",{
                 p_team_id:state.team.id,
@@ -4135,29 +4203,46 @@ async function openEditRosterPlayer(playerId){
           closeModal();
           toast("Calciatore aggiornato","ok");
           pageRoster();
-
         }catch(err){
           toast(err.message,"error");
         }
       };
     });
-
   }catch(err){
     toast(err.message,"error");
   }
 }
 
-function openNewPlayer(){
+async function openNewPlayer(){
+  const settings=await getRosterSettings();
+
   showModal("Nuovo calciatore",`<form id="new-player-form">
     <div class="form-grid">
       <div class="field"><label>Nome</label><input id="np-first" required></div>
       <div class="field"><label>Cognome</label><input id="np-last" required></div>
     </div>
+
     <div class="form-grid">
       <div class="field"><label>Data di nascita</label><input id="np-birth" type="date"></div>
-      <div class="field"><label>Piede</label><select id="np-foot"><option value="">—</option><option value="right">Destro</option><option value="left">Sinistro</option><option value="both">Entrambi</option></select></div>
+      <div class="field"><label>Nazionalità</label><select id="np-nationality">${countryOptions("")}</select></div>
     </div>
-    <div class="field"><label>Telefono</label><input id="np-phone" type="tel" placeholder="+39 ..."></div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label>Piede</label>
+        <select id="np-foot">
+          <option value="">—</option>
+          <option value="right">Destro</option>
+          <option value="left">Sinistro</option>
+          <option value="both">Entrambi</option>
+        </select>
+      </div>
+      <div class="field"><label>Squadra tifata</label><input id="np-favorite" placeholder="es. Padova"></div>
+    </div>
+
+    ${settings.show_contact_options?`
+      <div class="field"><label>Telefono</label><input id="np-phone" type="tel" placeholder="+39 ..."></div>
+    `:""}
 
     <h3>Permanenza</h3>
     <div class="form-grid">
@@ -4167,10 +4252,7 @@ function openNewPlayer(){
     <div class="field"><label>Numero maglia</label><input id="np-number" type="number" min="1" max="99"></div>
 
     ${can("medical.manage")?`
-      <div class="field">
-        <label>Data visita medica (facoltativa)</label>
-        <input id="np-medical" type="date">
-      </div>
+      <div class="field"><label>Data visita medica (facoltativa)</label><input id="np-medical" type="date"></div>
     `:""}
 
     <button class="btn btn-primary">Crea e inserisci in rosa</button>
@@ -4185,6 +4267,8 @@ function openNewPlayer(){
               first_name:$("#np-first",root).value,
               last_name:$("#np-last",root).value,
               birth_date:$("#np-birth",root).value||null,
+              nationality_code:$("#np-nationality",root).value||null,
+              favorite_team:$("#np-favorite",root).value.trim()||null,
               preferred_foot:$("#np-foot",root).value||null
             })
             .select("*")
@@ -4210,11 +4294,13 @@ function openNewPlayer(){
             p_last_name:$("#np-last",root).value,
             p_birth_date:$("#np-birth",root).value||null,
             p_preferred_foot:$("#np-foot",root).value||null,
-            p_phone:$("#np-phone",root).value.trim()||null
+            p_phone:settings.show_contact_options?($("#np-phone",root)?.value.trim()||null):null,
+            p_nationality_code:$("#np-nationality",root).value||null,
+            p_favorite_team:$("#np-favorite",root).value.trim()||null
           })
         );
 
-        if(can("medical.manage") && $("#np-medical",root)?.value){
+        if(can("medical.manage")&&$("#np-medical",root)?.value){
           await must(
             supabase.rpc("register_player_medical_date",{
               p_team_id:state.team.id,
@@ -4228,14 +4314,15 @@ function openNewPlayer(){
         toast("Calciatore inserito","ok");
         closeModal();
         pageRoster();
-
       }catch(err){
         toast(err.message,"error");
       }
     };
   });
 }
+
 async function pagePlayer(id){
+  const settings=await getRosterSettings();
   const p=await must(supabase.from("players").select("*").eq("id",id).single());
 
   const [contracts,statsRows,pos,affinity,contacts,exams]=await Promise.all([
@@ -4243,7 +4330,7 @@ async function pagePlayer(id){
     must(supabase.from("v_player_season_stats").select("*").eq("player_id",id).eq("season_id",state.season.id)),
     must(supabase.from("v_player_position_minutes").select("*").eq("player_id",id).eq("season_id",state.season.id).order("minutes",{ascending:false})),
     must(supabase.rpc("get_roster_position_affinities",{p_team_id:state.team.id,p_season_id:state.season.id})),
-    can("roster.manage")
+    can("roster.manage")&&settings.show_contact_options
       ? must(supabase.from("player_contacts").select("*").eq("player_id",id).maybeSingle())
       : Promise.resolve(null),
     (can("medical.view_all")||(can("medical.view_own")&&p.profile_id===state.profile.id))
@@ -4254,6 +4341,17 @@ async function pagePlayer(id){
   const stats=statsRows[0]||{};
   const roles=affinity.filter(a=>a.player_id===id);
   const exam=exams[0]||null;
+
+  const metaCards=[
+    `<div class="card"><div class="stat-label">Nascita</div><strong>${p.birth_date?fmtDate(p.birth_date):"—"}</strong></div>`,
+    `<div class="card"><div class="stat-label">Nazionalità</div><strong>${p.nationality_code?`${countryFlag(p.nationality_code)} ${esc(countryName(p.nationality_code))}`:"—"}</strong></div>`,
+    `<div class="card"><div class="stat-label">Squadra tifata</div><strong>${esc(p.favorite_team||"—")}</strong></div>`,
+    `<div class="card"><div class="stat-label">Piede</div><strong>${esc(playerFootLabel(p.preferred_foot))}</strong></div>`,
+    settings.show_contact_options
+      ? `<div class="card"><div class="stat-label">Telefono</div><strong>${esc(contacts?.phone||"—")}</strong></div>`
+      : "",
+    `<div class="card"><div class="stat-label">Visita medica</div><strong>${exam?`${fmtDate(exam.issued_date)} → ${fmtDate(exam.expires_on)}`:"—"}</strong></div>`
+  ].filter(Boolean).join("");
 
   renderShell(`${p.first_name} ${p.last_name}`,`
     <div class="page-title">
@@ -4267,12 +4365,7 @@ async function pagePlayer(id){
       </div>
     </div>
 
-    <div class="player-detail-meta">
-      <div class="card"><div class="stat-label">Nascita</div><strong>${p.birth_date?fmtDate(p.birth_date):"—"}</strong></div>
-      <div class="card"><div class="stat-label">Piede</div><strong>${esc(playerFootLabel(p.preferred_foot))}</strong></div>
-      <div class="card"><div class="stat-label">Telefono</div><strong>${esc(contacts?.phone||"—")}</strong></div>
-      <div class="card"><div class="stat-label">Visita medica</div><strong>${exam?`${fmtDate(exam.issued_date)} → ${fmtDate(exam.expires_on)}`:"—"}</strong></div>
-    </div>
+    <div class="player-detail-meta">${metaCards}</div>
 
     <div style="height:14px"></div>
 
@@ -4292,7 +4385,7 @@ async function pagePlayer(id){
           ${contracts.map(c=>`<div class="list-item">
             <div>
               ${fmtDate(c.start_date)} → ${fmtDate(c.actual_end_date||c.planned_end_date)}
-              <div class="muted">${esc(c.status)} · #${c.shirt_number||"—"}</div>
+              <div class="muted">${esc(c.status)} · #${c.shirt_number||"—"} ${c.next_season_confirmed?"· ✅ prossima stagione":""}</div>
             </div>
             ${can("contracts.manage")&&c.status==="active"?`<button class="btn btn-sm btn-danger" data-term="${c.id}">Termina</button>`:""}
           </div>`).join("")||`<div class="empty">Nessuna permanenza</div>`}
@@ -6587,6 +6680,199 @@ function shortDate(value){
 
 function playerFootLabel(value){
   return value==="right"?"Destro":value==="left"?"Sinistro":value==="both"?"Entrambi":"—";
+}
+
+const ISO_COUNTRY_CODES = `
+AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ
+CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR
+GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO
+JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR
+MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO
+RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV
+TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW
+`.trim().split(/\s+/);
+
+const countryDisplayNames = typeof Intl.DisplayNames==="function"
+  ? new Intl.DisplayNames(["it"],{type:"region"})
+  : null;
+
+function countryFlag(code){
+  const c=String(code||"").trim().toUpperCase();
+  if(!/^[A-Z]{2}$/.test(c))return "";
+  return [...c].map(ch=>String.fromCodePoint(127397+ch.charCodeAt(0))).join("");
+}
+
+function countryName(code){
+  const c=String(code||"").trim().toUpperCase();
+  if(!c)return "";
+  try{return countryDisplayNames?.of(c)||c}catch{return c}
+}
+
+function countryOptions(selected=""){
+  const current=String(selected||"").toUpperCase();
+  return `<option value="">—</option>`+
+    ISO_COUNTRY_CODES
+      .map(code=>({code,name:countryName(code)}))
+      .sort((a,b)=>a.name.localeCompare(b.name,"it"))
+      .map(x=>`<option value="${x.code}" ${x.code===current?"selected":""}>${countryFlag(x.code)} ${esc(x.name)}</option>`)
+      .join("");
+}
+
+function countryCodeFromValue(value){
+  const raw=String(value??"").trim();
+  if(!raw)return null;
+
+  const upper=raw.toUpperCase();
+  if(/^[A-Z]{2}$/.test(upper)&&ISO_COUNTRY_CODES.includes(upper))return upper;
+
+  const norm=normalizeImportText(raw);
+  const aliases={
+    italia:"IT",italiana:"IT",italiano:"IT",
+    francia:"FR",francese:"FR",
+    germania:"DE",tedesca:"DE",tedesco:"DE",
+    spagna:"ES",spagnola:"ES",spagnolo:"ES",
+    portogallo:"PT",portoghese:"PT",
+    inghilterra:"GB",regno_unito:"GB",gran_bretagna:"GB",britannica:"GB",britannico:"GB",
+    brasile:"BR",brasiliana:"BR",brasiliano:"BR",
+    argentina:"AR",argentino:"AR",
+    croazia:"HR",croata:"HR",
+    serbia:"RS",serba:"RS",serbo:"RS",
+    romania:"RO",rumena:"RO",rumeno:"RO",
+    albania:"AL",albanese:"AL",
+    slovenia:"SI",slovena:"SI",sloveno:"SI",
+    bosnia:"BA",bosniaca:"BA",bosniaco:"BA",
+    svizzera:"CH",svizzero:"CH",
+    austria:"AT",austriaco:"AT",
+    belgio:"BE",belga:"BE",
+    olanda:"NL",paesi_bassi:"NL",olandese:"NL",
+    marocco:"MA",marocchino:"MA",
+    tunisia:"TN",tunisino:"TN",
+    nigeria:"NG",nigeriano:"NG",
+    senegal:"SN",senegalese:"SN",
+    ghana:"GH",ghanese:"GH",
+    usa:"US",stati_uniti:"US",statunitense:"US"
+  };
+
+  const aliasKey=norm.replace(/\s+/g,"_");
+  if(aliases[aliasKey])return aliases[aliasKey];
+
+  const match=ISO_COUNTRY_CODES.find(code=>normalizeImportText(countryName(code))===norm);
+  return match||"__INVALID__";
+}
+
+async function getRosterSettings(force=false){
+  if(
+    !force
+    && state.rosterSettings?.team_id===state.team.id
+    && state.rosterSettings?.season_id===state.season.id
+  ){
+    return state.rosterSettings;
+  }
+
+  const row=await must(
+    supabase.from("roster_settings")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .eq("season_id",state.season.id)
+      .maybeSingle()
+  );
+
+  state.rosterSettings=row||{
+    team_id:state.team.id,
+    season_id:state.season.id,
+    show_contract_period:true,
+    show_shirt_numbers:true,
+    show_contact_options:true
+  };
+
+  return state.rosterSettings;
+}
+
+function rosterSortHeader(label,key){
+  const current=state.rosterSort||{key:"name",dir:"asc"};
+  const arrow=current.key===key?(current.dir==="asc"?"▲":"▼"):"";
+  return `<th class="sort-th" data-roster-sort="${key}">
+    <span class="sort-head">${esc(label)}<span class="sort-arrow">${arrow}</span></span>
+  </th>`;
+}
+
+function compareRosterValues(a,b,key){
+  const av=a.sort?.[key];
+  const bv=b.sort?.[key];
+
+  if(av===null||av===undefined||av===""){
+    if(bv===null||bv===undefined||bv==="")return 0;
+    return 1;
+  }
+  if(bv===null||bv===undefined||bv==="")return -1;
+
+  if(typeof av==="number"&&typeof bv==="number")return av-bv;
+  if(typeof av==="boolean"&&typeof bv==="boolean")return Number(av)-Number(bv);
+
+  return String(av).localeCompare(String(bv),"it",{numeric:true,sensitivity:"base"});
+}
+
+function openRosterSetup(){
+  getRosterSettings().then(settings=>{
+    showModal("Setup Rosa",`
+      <form id="roster-setup-form">
+        <div class="roster-setup-list">
+          <div class="roster-setup-option">
+            <div>
+              <strong>Visualizza permanenza</strong>
+              <div class="muted">Mostra in tabella le date di ingresso e scadenza.</div>
+            </div>
+            <label class="check"><input id="rs-contract" type="checkbox" ${settings.show_contract_period?"checked":""}></label>
+          </div>
+
+          <div class="roster-setup-option">
+            <div>
+              <strong>Visualizza numeri di maglia</strong>
+              <div class="muted">Mostra la colonna del numero assegnato nella stagione.</div>
+            </div>
+            <label class="check"><input id="rs-shirt" type="checkbox" ${settings.show_shirt_numbers?"checked":""}></label>
+          </div>
+
+          <div class="roster-setup-option">
+            <div>
+              <strong>Mostra opzioni di contatto</strong>
+              <div class="muted">Abilita telefono e relative opzioni nelle schede calciatore autorizzate.</div>
+            </div>
+            <label class="check"><input id="rs-contact" type="checkbox" ${settings.show_contact_options?"checked":""}></label>
+          </div>
+        </div>
+
+        <div style="height:14px"></div>
+        <button class="btn btn-primary">Salva Setup Rosa</button>
+      </form>
+    `,root=>{
+      $("#roster-setup-form",root).onsubmit=async e=>{
+        e.preventDefault();
+        try{
+          const saved=await must(
+            supabase.from("roster_settings")
+              .upsert({
+                team_id:state.team.id,
+                season_id:state.season.id,
+                show_contract_period:$("#rs-contract",root).checked,
+                show_shirt_numbers:$("#rs-shirt",root).checked,
+                show_contact_options:$("#rs-contact",root).checked,
+                updated_by:state.profile.id
+              },{onConflict:"team_id,season_id"})
+              .select("*")
+              .single()
+          );
+
+          state.rosterSettings=saved;
+          closeModal();
+          toast("Setup Rosa aggiornato","ok");
+          pageRoster();
+        }catch(err){
+          toast(err.message,"error");
+        }
+      };
+    });
+  }).catch(err=>toast(err.message,"error"));
 }
 
 async function pageAbsences(){
