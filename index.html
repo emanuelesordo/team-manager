@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#111827">
+  <title>Team Manager</title>
+  <style>
+    :root{
+      --bg:#0b1220;--panel:#111827;--panel2:#172033;--line:#263246;--text:#f3f4f6;
+      --muted:#94a3b8;--accent:#22c55e;--accent2:#16a34a;--danger:#ef4444;--warn:#f59e0b;
+      --info:#3b82f6;--radius:14px;--shadow:0 8px 30px rgba(0,0,0,.22);
+    }
+    *{box-sizing:border-box} html{background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    body{margin:0;min-height:100vh;background:var(--bg)} button,input,select,textarea{font:inherit}
+    button{cursor:pointer}.hidden{display:none!important}.muted{color:var(--muted)}.danger{color:var(--danger)}
+    .app{min-height:100vh}.auth-wrap{min-height:100vh;display:grid;place-items:center;padding:22px}
+    .auth-card{width:min(440px,100%);background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:var(--shadow)}
+    .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.brand-mark{width:44px;height:44px;border-radius:13px;background:var(--accent);display:grid;place-items:center;color:#07120a;font-weight:900}
+    h1,h2,h3{margin:0 0 12px}h1{font-size:1.5rem}h2{font-size:1.25rem}h3{font-size:1rem}
+    label{display:block;font-size:.84rem;color:var(--muted);margin:0 0 6px}.field{margin-bottom:14px}
+    input,select,textarea{width:100%;border:1px solid var(--line);background:#0d1626;color:var(--text);border-radius:11px;padding:11px 12px;outline:none}
+    input:focus,select:focus,textarea:focus{border-color:var(--accent)}textarea{min-height:90px;resize:vertical}
+    .btn{border:0;border-radius:11px;padding:10px 14px;background:#253147;color:var(--text);font-weight:700}
+    .btn:hover{filter:brightness(1.08)}.btn-primary{background:var(--accent);color:#07120a}.btn-danger{background:#7f1d1d}.btn-warn{background:#78350f}.btn-ghost{background:transparent;border:1px solid var(--line)}
+    .btn-sm{padding:7px 10px;font-size:.82rem}.btn-block{width:100%}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .shell{display:grid;grid-template-columns:238px 1fr;min-height:100vh}.sidebar{background:var(--panel);border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh;overflow:auto}
+    .sidebar .brand{margin-bottom:18px}.nav{display:grid;gap:5px}.nav button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;color:var(--muted);padding:10px 11px;border-radius:10px;text-align:left}
+    .nav button.active,.nav button:hover{background:#1d293d;color:var(--text)}.nav .section{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;padding:15px 10px 4px}
+    .main{min-width:0}.topbar{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line);background:rgba(11,18,32,.92);position:sticky;top:0;z-index:20;backdrop-filter:blur(10px)}
+    .topbar-left{min-width:0}.topbar-title{font-weight:800}.topbar-sub{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .content{padding:22px;max-width:1450px;margin:auto}.grid{display:grid;gap:14px}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}.card-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
+    .stat{font-size:1.65rem;font-weight:900}.stat-label{font-size:.78rem;color:var(--muted)}
+    .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;background:#263246;color:#dbeafe;font-size:.74rem;font-weight:800}
+    .badge.green{background:#123b28;color:#86efac}.badge.red{background:#4b1d25;color:#fca5a5}.badge.yellow{background:#4b3514;color:#fcd34d}.badge.blue{background:#172d4d;color:#93c5fd}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}.table{width:100%;border-collapse:collapse;min-width:640px}.table th,.table td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:left;font-size:.85rem;vertical-align:middle}
+    .table th{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:#0f192a;position:sticky;top:0}.table tr:last-child td{border-bottom:0}
+    .player-name{display:flex;align-items:center;gap:9px}.avatar{width:34px;height:34px;border-radius:50%;background:#334155;display:grid;place-items:center;font-weight:900;overflow:hidden;flex:none}.avatar img{width:100%;height:100%;object-fit:cover}
+    .tabs{display:flex;gap:6px;overflow:auto;margin-bottom:14px}.tab{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:8px 12px;white-space:nowrap}.tab.active{background:var(--accent);border-color:var(--accent);color:#07120a;font-weight:800}
+    .list{display:grid;gap:8px}.list-item{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:11px;background:#0e1728}
+    .empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
+    .page-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}.page-title p{margin:3px 0 0;color:var(--muted);font-size:.86rem}
+    .bottom-nav{display:none}.toast-wrap{position:fixed;right:16px;bottom:16px;z-index:1000;display:grid;gap:8px}.toast{background:#111827;border:1px solid var(--line);padding:11px 14px;border-radius:10px;box-shadow:var(--shadow);max-width:340px}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:grid;place-items:center;padding:16px}.modal{width:min(720px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+    .modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.close{border:0;background:transparent;color:var(--muted);font-size:1.4rem}
+    .affinity-row{display:grid;grid-template-columns:70px 1fr 50px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.affinity-row input[type=range]{padding:0}
+    .live-score{text-align:center;padding:10px}.live-score .score{font-size:2.6rem;font-weight:1000;letter-spacing:-.04em}.live-clock{font-variant-numeric:tabular-nums;font-size:1.1rem;color:#d1fae5}
+    .timeline{display:grid;gap:8px}.timeline-item{border-left:3px solid #334155;padding:8px 11px;background:#0f192a;border-radius:0 10px 10px 0}.timeline-item.pending{border-left-color:var(--warn);background:#241b0d}
+    .live-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.live-actions .btn{min-height:58px}
+    .pitch{background:linear-gradient(90deg,#155e36,#166534);border:2px solid rgba(255,255,255,.5);border-radius:14px;min-height:360px;position:relative;padding:18px;display:grid;grid-template-rows:repeat(4,1fr);gap:10px}
+    .pitch-row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;align-items:center}.pitch-player{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);padding:7px 9px;border-radius:10px;font-size:.75rem;text-align:center;min-width:82px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.check{display:flex;align-items:center;gap:8px}.check input{width:auto}
+    .perm-matrix th:first-child,.perm-matrix td:first-child{position:sticky;left:0;background:#111827;z-index:2}.perm-matrix input{width:18px;height:18px}
+    .section-note{font-size:.8rem;color:var(--muted);padding:10px 12px;background:#0f192a;border-radius:10px;border:1px solid var(--line)}
+    @media(max-width:900px){
+      .shell{display:block}.sidebar{display:none}.content{padding:16px 12px 82px}.topbar{padding:12px}.bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:#111827;border-top:1px solid var(--line);padding:6px max(6px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));overflow-x:auto}
+      .bottom-nav button{min-width:72px;flex:1;border:0;background:transparent;color:var(--muted);padding:6px 5px;border-radius:9px;font-size:.68rem}.bottom-nav button.active{background:#1d293d;color:#fff}.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}.page-title{align-items:center}
+      .form-grid{grid-template-columns:1fr}.topbar-actions .btn span{display:none}.live-actions{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:480px){.auth-card{padding:18px}.card{padding:13px}.live-score .score{font-size:2rem}.affinity-row{grid-template-columns:58px 1fr 44px}}
+  </style>
+</head>
+<body>
+<div id="root" class="app"></div>
+<div id="modal-root"></div>
+<div id="toast-root" class="toast-wrap"></div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+/* =========================================================
+   CONFIGURAZIONE — COMPILARE PRIMA DEL DEPLOY
+========================================================= */
+const CONFIG = {
+  SUPABASE_URL: "https://YOUR_PROJECT_REF.supabase.co",
+  SUPABASE_PUBLISHABLE_KEY: "YOUR_SB_PUBLISHABLE_KEY",
+  TEAM_SLUG: "your-team-slug",
+  APP_NAME: "Team Manager"
+};
+
+const supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_PUBLISHABLE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+});
+
+/* =========================================================
+   STATO
+========================================================= */
+const state = {
+  session: null, profile: null, membership: null, team: null,
+  season: null, seasons: [], roles: [], permissions: new Set(),
+  myPlayer: null, liveChannel: null, liveTimer: null, currentPage: "dashboard"
+};
+
+const $ = (s, root=document) => root.querySelector(s);
+const $$ = (s, root=document) => [...root.querySelectorAll(s)];
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtDate = d => d ? new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"2-digit",year:"numeric"}).format(new Date(d.length===10 ? d+"T12:00:00" : d)) : "—";
+const fmtDateTime = d => d ? new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(d)) : "—";
+const today = () => new Date().toISOString().slice(0,10);
+const can = key => state.permissions.has(key) || !!state.membership?.is_owner;
+const hasRole = role => state.roles.includes(role);
+const initials = (a,b) => ((a?.[0]||"")+(b?.[0]||"")).toUpperCase() || "?";
+const minute = sec => `${Math.floor((Number(sec)||0)/60)}'`;
+const clockText = sec => {
+  sec=Math.max(0,Math.floor(Number(sec)||0)); const m=Math.floor(sec/60),s=sec%60;
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+};
+function toast(message, type="info"){
+  const el=document.createElement("div"); el.className="toast";
+  el.innerHTML=`<strong>${type==="error"?"Errore":type==="ok"?"Fatto":"Info"}</strong><div class="muted">${esc(message)}</div>`;
+  $("#toast-root").append(el); setTimeout(()=>el.remove(),4200);
+}
+function configReady(){
+  return !CONFIG.SUPABASE_URL.includes("YOUR_") && !CONFIG.SUPABASE_PUBLISHABLE_KEY.includes("YOUR_") && !CONFIG.TEAM_SLUG.includes("your-");
+}
+function showModal(title, body, onMount){
+  $("#modal-root").innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>${esc(title)}</h2><button class="close" data-close>&times;</button></div><div id="modal-body">${body}</div></div></div>`;
+  $("[data-close]").onclick=closeModal;
+  $(".modal-backdrop").addEventListener("click",e=>{if(e.target.classList.contains("modal-backdrop"))closeModal()});
+  onMount?.($("#modal-body"));
+}
+function closeModal(){ $("#modal-root").innerHTML=""; }
+async function edge(name, body, authenticated=true){
+  const headers={"Content-Type":"application/json","apikey":CONFIG.SUPABASE_PUBLISHABLE_KEY};
+  if(authenticated){
+    const {data:{session}}=await supabase.auth.getSession();
+    if(session?.access_token) headers.Authorization=`Bearer ${session.access_token}`;
+  }
+  const r=await fetch(`${CONFIG.SUPABASE_URL}/functions/v1/${name}`,{method:"POST",headers,body:JSON.stringify(body)});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok || data.ok===false) throw new Error(data.error || `HTTP ${r.status}`);
+  return data;
+}
+async function must(dataPromise){
+  const {data,error}=await dataPromise;
+  if(error) throw error;
+  return data;
+}
+
+/* =========================================================
+   AUTH
+========================================================= */
+function renderLogin(){
+  stopLive();
+  $("#root").innerHTML=`<div class="auth-wrap"><div class="auth-card">
+    <div class="brand"><div class="brand-mark">TM</div><div><h1>${esc(CONFIG.APP_NAME)}</h1><div class="muted">Gestione squadra</div></div></div>
+    ${!configReady()?`<div class="section-note" style="margin-bottom:14px">Compila SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY e TEAM_SLUG dentro <code>index.html</code>.</div>`:""}
+    <form id="login-form">
+      <div class="field"><label>Username</label><input id="login-user" autocomplete="username" required></div>
+      <div class="field"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password" required></div>
+      <button class="btn btn-primary btn-block" ${!configReady()?"disabled":""}>Accedi</button>
+    </form>
+    <div style="height:12px"></div>
+    <button class="btn btn-ghost btn-block" id="show-register">Registrati come fan</button>
+  </div></div>`;
+  $("#login-form").onsubmit=async e=>{
+    e.preventDefault();
+    try{
+      const res=await edge("auth-login",{username:$("#login-user").value,password:$("#login-pass").value},false);
+      const {error}=await supabase.auth.setSession({access_token:res.session.access_token,refresh_token:res.session.refresh_token});
+      if(error) throw error;
+      await boot();
+    }catch(err){toast(err.message,"error")}
+  };
+  $("#show-register").onclick=renderFanRegister;
+}
+function renderFanRegister(){
+  $("#root").innerHTML=`<div class="auth-wrap"><div class="auth-card">
+    <h1>Registrazione fan</h1><p class="muted">L'account fan resta lo stesso anche se in futuro verrai collegato a un'anagrafica calciatore.</p>
+    <form id="register-form">
+      <div class="field"><label>Nome visualizzato</label><input id="reg-display" required></div>
+      <div class="form-grid"><div class="field"><label>Nome</label><input id="reg-first"></div><div class="field"><label>Cognome</label><input id="reg-last"></div></div>
+      <div class="field"><label>Username</label><input id="reg-user" pattern="[A-Za-z0-9._-]{3,32}" required></div>
+      <div class="field"><label>Password (min. 8 caratteri)</label><input id="reg-pass" type="password" minlength="8" required></div>
+      <button class="btn btn-primary btn-block">Crea account</button>
+    </form><div style="height:10px"></div><button class="btn btn-ghost btn-block" id="back-login">Torna al login</button>
+  </div></div>`;
+  $("#back-login").onclick=renderLogin;
+  $("#register-form").onsubmit=async e=>{
+    e.preventDefault();
+    try{
+      await edge("fan-register",{team_slug:CONFIG.TEAM_SLUG,username:$("#reg-user").value,password:$("#reg-pass").value,display_name:$("#reg-display").value,first_name:$("#reg-first").value,last_name:$("#reg-last").value},false);
+      toast("Account creato. Ora puoi accedere.","ok"); renderLogin();
+    }catch(err){toast(err.message,"error")}
+  };
+}
+async function logout(){ await supabase.auth.signOut(); Object.assign(state,{session:null,profile:null,membership:null,team:null,season:null,seasons:[],roles:[],permissions:new Set(),myPlayer:null}); renderLogin(); }
+async function changePasswordPage(){
+  renderShell("Cambio password",`<div class="card" style="max-width:520px"><h2>Imposta una nuova password</h2><form id="pwd-form"><div class="field"><label>Nuova password</label><input id="pwd1" type="password" minlength="8" required></div><div class="field"><label>Conferma</label><input id="pwd2" type="password" minlength="8" required></div><button class="btn btn-primary">Salva password</button></form></div>`,false);
+  $("#pwd-form").onsubmit=async e=>{
+    e.preventDefault(); if($("#pwd1").value!==$("#pwd2").value)return toast("Le password non coincidono","error");
+    try{const {error}=await supabase.auth.updateUser({password:$("#pwd1").value});if(error)throw error;await must(supabase.rpc("complete_password_change"));state.profile.must_change_password=false;toast("Password aggiornata","ok");route("dashboard")}catch(err){toast(err.message,"error")}
+  };
+}
+
+/* =========================================================
+   BOOT / CONTESTO
+========================================================= */
+async function boot(){
+  if(!configReady()) return renderLogin();
+  const {data:{session}}=await supabase.auth.getSession();
+  if(!session) return renderLogin();
+  state.session=session;
+  try{
+    state.profile=await must(supabase.from("profiles").select("*").eq("id",session.user.id).single());
+    const members=await must(supabase.from("team_members").select("*").eq("profile_id",session.user.id).eq("is_active",true));
+    if(!members.length) throw new Error("Utente non associato a una squadra");
+    let membership=members[0];
+    if(CONFIG.TEAM_SLUG){
+      const teams=await must(supabase.from("teams").select("*").eq("slug",CONFIG.TEAM_SLUG));
+      const wanted=teams[0] && members.find(m=>m.team_id===teams[0].id);
+      if(wanted)membership=wanted;
+    }
+    state.membership=membership;
+    state.team=await must(supabase.from("teams").select("*").eq("id",membership.team_id).single());
+    state.seasons=await must(supabase.from("seasons").select("*").eq("team_id",state.team.id).order("start_date",{ascending:false}));
+    state.season=state.seasons.find(s=>s.status==="active") || state.seasons[0] || null;
+    state.roles=(await must(supabase.rpc("get_my_effective_roles",{p_team_id:state.team.id}))).map(x=>x.role_code);
+    state.permissions=new Set((await must(supabase.rpc("get_my_permissions",{p_team_id:state.team.id}))).map(x=>x.permission_key));
+    const myPlayers=await must(supabase.from("players").select("*").eq("team_id",state.team.id).eq("profile_id",state.profile.id));
+    state.myPlayer=myPlayers[0]||null;
+
+    if(state.profile.must_change_password) return changePasswordPage();
+    if(state.myPlayer && state.season && hasRole("player")){
+      const need=await must(supabase.rpc("needs_self_affinity_assessment",{p_team_id:state.team.id,p_season_id:state.season.id}));
+      if(need) await openAffinityAssessment(state.myPlayer,"self",true);
+    }
+    const hash=location.hash.replace(/^#\/?/,"")||"dashboard";
+    await route(hash,false);
+  }catch(err){console.error(err);toast(err.message,"error");}
+}
+
+/* =========================================================
+   SHELL / ROUTING
+========================================================= */
+const navItems=()=>[
+  ["dashboard","Home","⌂","dashboard.view"],
+  ["calendar","Calendario","▣","calendar.view"],
+  ["roster","Rosa","♟","roster.view"],
+  ["matches","Partite","⚽","matches.view"],
+  ["stats","Statistiche","▥","stats.view"],
+  ["discipline","Squalifiche","!","suspensions.view"],
+  ["fines","Multe","€",can("fines.view_own")||can("fines.view_all")?null:"__no"],
+  ["injuries","Infortuni","+",can("injuries.view_own")||can("injuries.view_all")?null:"__no"],
+  ["profile","Profilo","●",null],
+  ["admin","Admin","⚙",can("users.manage")||can("permissions.manage")||can("seasons.manage")?null:"__no"]
+].filter(x=>x[3]===null || can(x[3]));
+function renderShell(title, content, nav=true){
+  const navHtml=navItems().map(([id,label,icon])=>`<button data-nav="${id}" class="${state.currentPage===id?"active":""}"><span>${icon}</span>${esc(label)}</button>`).join("");
+  $("#root").innerHTML=`<div class="shell">
+    <aside class="sidebar"><div class="brand"><div class="brand-mark">TM</div><div><strong>${esc(state.team?.short_name||state.team?.name||CONFIG.APP_NAME)}</strong><div class="muted" style="font-size:.72rem">${esc(state.season?.name||"")}</div></div></div><nav class="nav">${navHtml}<div class="section">Account</div><button id="logout-side">↪ Esci</button></nav></aside>
+    <main class="main"><header class="topbar"><div class="topbar-left"><div class="topbar-title">${esc(title)}</div><div class="topbar-sub">${esc(state.profile?.display_name||"")} · ${esc(state.roles.join(", "))}</div></div><div class="topbar-actions actions">
+      ${state.seasons.length>1?`<select id="season-switch" style="width:auto">${state.seasons.map(s=>`<option value="${s.id}" ${s.id===state.season?.id?"selected":""}>${esc(s.name)}</option>`).join("")}</select>`:""}
+      <button class="btn btn-sm btn-ghost" id="logout-top">Esci</button></div></header>
+      <div class="content">${content}</div>
+    </main>
+    ${nav?`<nav class="bottom-nav">${navHtml}</nav>`:""}
+  </div>`;
+  $$("[data-nav]").forEach(b=>b.onclick=()=>route(b.dataset.nav));
+  $("#logout-side")?.addEventListener("click",logout);$("#logout-top")?.addEventListener("click",logout);
+  $("#season-switch")?.addEventListener("change",async e=>{state.season=state.seasons.find(s=>s.id===e.target.value);await route(state.currentPage)});
+}
+async function route(path,push=true){
+  stopLive();
+  const [page,id,sub]=path.split("/");
+  state.currentPage=page||"dashboard"; if(push)location.hash=`#/${path}`;
+  const routes={dashboard:pageDashboard,calendar:pageCalendar,roster:pageRoster,matches:pageMatches,stats:pageStats,discipline:pageDiscipline,fines:pageFines,injuries:pageInjuries,admin:pageAdmin,profile:pageProfile};
+  if(page==="match"&&id)return pageMatch(id);
+  if(page==="live"&&id)return pageLive(id);
+  if(page==="player"&&id)return pagePlayer(id);
+  const fn=routes[page]||pageDashboard; await fn(sub);
+}
+window.addEventListener("hashchange",()=>{const p=location.hash.replace(/^#\/?/,"")||"dashboard";if(p.split("/")[0]!==state.currentPage)route(p,false)});
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+async function pageDashboard(){
+  const now=new Date().toISOString();
+  const events=await must(supabase.from("events").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).gte("start_at",now).order("start_at").limit(4));
+  const teamStats=(await must(supabase.from("v_team_season_stats").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id)))[0]||{};
+  const pendingContracts=can("contracts.manage")?(await must(supabase.from("player_contract_requests").select("id").eq("team_id",state.team.id).eq("status","pending"))).length:0;
+  let ownFine=0;
+  if(can("fines.view_own")){const fs=await must(supabase.from("fines").select("amount,status").eq("team_id",state.team.id).eq("season_id",state.season.id).eq("status","pending"));ownFine=fs.reduce((a,x)=>a+Number(x.amount||0),0)}
+  renderShell("Dashboard",`
+    <div class="page-title"><div><h1>${esc(state.team.name)}</h1><p>Stagione ${esc(state.season.name)}</p></div></div>
+    <div class="grid grid-4">
+      <div class="card"><div class="stat">${teamStats.matches_played||0}</div><div class="stat-label">Partite</div></div>
+      <div class="card"><div class="stat">${teamStats.wins||0}</div><div class="stat-label">Vittorie</div></div>
+      <div class="card"><div class="stat">${teamStats.goals_for||0}:${teamStats.goals_against||0}</div><div class="stat-label">Gol fatti/subiti</div></div>
+      <div class="card"><div class="stat">${can("contracts.manage")?pendingContracts:`€ ${ownFine.toFixed(2)}`}</div><div class="stat-label">${can("contracts.manage")?"Rinnovi da gestire":"Multe pendenti"}</div></div>
+    </div>
+    <div style="height:14px"></div>
+    <div class="grid grid-2"><div class="card"><div class="card-head"><h2>Prossimi eventi</h2><button class="btn btn-sm" data-go="calendar">Calendario</button></div>
+      <div class="list">${events.length?events.map(e=>`<div class="list-item"><div><strong>${esc(e.title)}</strong><div class="muted">${fmtDateTime(e.start_at)} · ${esc(e.location||"")}</div></div><span class="badge">${esc(e.event_type)}</span></div>`).join(""):`<div class="empty">Nessun evento programmato</div>`}</div>
+    </div><div class="card"><h2>Il tuo accesso</h2><div class="actions">${state.roles.map(r=>`<span class="badge green">${esc(r)}</span>`).join("")}</div><div style="height:12px"></div><div class="muted">I permessi sono determinati dalla matrice amministrativa, dai tuoi incarichi attivi e dall'eventuale permanenza in rosa.</div></div></div>
+  `);
+  $$("[data-go]").forEach(b=>b.onclick=()=>route(b.dataset.go));
+}
+
+/* =========================================================
+   AFFIATAMENTO POSIZIONI
+========================================================= */
+async function openAffinityAssessment(player,kind,mandatory=false){
+  const positions=await must(supabase.from("football_positions").select("*").eq("active",true).order("sort_order"));
+  const current=await must(supabase.rpc("get_my_position_affinity_evaluation",{p_team_id:state.team.id,p_player_id:player.id,p_season_id:state.season.id,p_evaluator_kind:kind}));
+  const values=new Map(current.map(x=>[x.position_id,x.affinity??0]));
+  const who=kind==="self"?"la tua autovalutazione":kind==="coach"?"la valutazione dell'allenatore":"la valutazione del vice";
+  showModal("Affiatamento nei ruoli",`
+    <div class="section-note">${kind==="self"?"Indica quanto ti senti <strong>affiatato/a tuo agio</strong> in ogni posizione.":"Indica quanto ritieni che questo calciatore sia <strong>affiatato/a suo agio</strong> in ogni posizione."} Non è un voto di bravura o un overall stile videogioco. I valori grezzi restano privati. Il risultato pubblico combina 60% calciatore, 30% allenatore e 10% vice.</div>
+    <div style="height:10px"></div><div id="affinity-list">${positions.map(p=>`<div class="affinity-row"><strong>${esc(p.code)}</strong><input type="range" min="0" max="100" value="${values.get(p.id)||0}" data-pos="${p.id}"><span data-val="${p.id}">${values.get(p.id)||0}%</span></div>`).join("")}</div>
+    <div style="height:14px"></div><div class="actions"><button class="btn btn-primary" id="save-affinity">Salva ${esc(who)}</button>${mandatory?"":`<button class="btn btn-ghost" data-close2>Annulla</button>`}</div>
+  `,root=>{
+    $$("input[type=range]",root).forEach(r=>r.oninput=()=>root.querySelector(`[data-val="${r.dataset.pos}"]`).textContent=r.value+"%");
+    root.querySelector("[data-close2]")?.addEventListener("click",closeModal);
+    root.querySelector("#save-affinity").onclick=async()=>{
+      try{
+        const ratings=$$("input[type=range]",root).map(r=>({position_id:r.dataset.pos,affinity:Number(r.value)}));
+        await must(supabase.rpc("save_position_affinity_evaluations",{p_team_id:state.team.id,p_player_id:player.id,p_season_id:state.season.id,p_evaluator_kind:kind,p_ratings:ratings}));
+        toast("Valutazione salvata","ok");closeModal();
+      }catch(err){toast(err.message,"error")}
+    };
+  });
+  if(mandatory){
+    const backdrop=$(".modal-backdrop"); backdrop.onclick=e=>e.stopPropagation(); $("[data-close]")?.remove();
+  }
+}
+
+/* =========================================================
+   ROSA / CALCIATORI / CONTRATTI
+========================================================= */
+async function pageRoster(){
+  const players=await must(supabase.from("players").select("*").eq("team_id",state.team.id).order("last_name"));
+  const rosterHistory=await must(supabase.rpc("get_season_roster_history",{p_team_id:state.team.id,p_season_id:state.season.id}));
+  const affinities=await must(supabase.rpc("get_roster_position_affinities",{p_team_id:state.team.id,p_season_id:state.season.id}));
+  const amap=new Map();affinities.forEach(a=>{if(!amap.has(a.player_id))amap.set(a.player_id,[]);amap.get(a.player_id).push(a)});
+  const rows=players.map(p=>{
+    const pcs=rosterHistory.filter(c=>c.player_id===p.id); if(!pcs.length)return null;
+    const active=pcs.some(c=>c.roster_status==="active"&&today()>=c.start_date&&today()<= (c.actual_end_date||c.planned_end_date));
+    const last=pcs[pcs.length-1]; const roles=amap.get(p.id)||[];
+    return `<tr><td><button class="btn btn-ghost btn-sm" data-player="${p.id}"><span class="player-name"><span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}">`:initials(p.first_name,p.last_name)}</span><span><strong>${esc(p.last_name)} ${esc(p.first_name)}</strong><br><span class="muted">${active?"In rosa":"Storico"}</span></span></span></button></td><td>${last.shirt_number||"—"}</td><td>${roles.length?roles.map(r=>`<span class="badge ${r.role_rank===1?"green":""}">${esc(r.position_code)} ${r.affinity_percent}%</span>`).join(" "):`<span class="muted">Nessun ruolo >50%</span>`}</td><td>${fmtDate(last.start_date)} → ${fmtDate(last.actual_end_date||last.planned_end_date)}</td><td><span class="badge ${active?"green":"red"}">${active?"attivo":esc(last.roster_status)}</span></td>
+      <td>${can("affinity.evaluate_players")?`<button class="btn btn-sm" data-eval="${p.id}">Valuta ruoli</button>`:""}</td></tr>`;
+  }).filter(Boolean).join("");
+  renderShell("Rosa",`<div class="page-title"><div><h1>Rosa ${esc(state.season.name)}</h1><p>Ruoli mostrati: massimo 3, solo con affiatamento ponderato superiore al 50%.</p></div><div class="actions">${can("roster.manage")?`<button class="btn btn-primary" id="new-player">Nuovo calciatore</button>`:""}${state.myPlayer&&can("affinity.evaluate_self")?`<button class="btn" id="my-affinity">I miei ruoli</button>`:""}</div></div>
+    <div class="table-wrap"><table class="table"><thead><tr><th>Calciatore</th><th>#</th><th>Ruoli / affiatamento</th><th>Permanenza</th><th>Stato</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="6">Nessun calciatore in questa stagione</td></tr>`}</tbody></table></div>`);
+  $$("[data-player]").forEach(b=>b.onclick=()=>route(`player/${b.dataset.player}`));
+  $("#my-affinity")?.addEventListener("click",()=>openAffinityAssessment(state.myPlayer,"self"));
+  $$("[data-eval]").forEach(b=>b.onclick=async()=>{
+    const p=players.find(x=>x.id===b.dataset.eval);
+    let kind=hasRole("coach")?"coach":hasRole("assistant_coach")?"assistant_coach":null;
+    if(hasRole("coach")&&hasRole("assistant_coach")){
+      kind=prompt("Valutare come 'coach' o 'assistant_coach'?","coach");
+    }
+    if(kind)openAffinityAssessment(p,kind);
+  });
+  $("#new-player")?.addEventListener("click",()=>openNewPlayer());
+}
+function openNewPlayer(){
+  showModal("Nuovo calciatore",`<form id="new-player-form">
+    <div class="form-grid"><div class="field"><label>Nome</label><input id="np-first" required></div><div class="field"><label>Cognome</label><input id="np-last" required></div></div>
+    <div class="form-grid"><div class="field"><label>Data di nascita</label><input id="np-birth" type="date"></div><div class="field"><label>Piede</label><select id="np-foot"><option value="">—</option><option value="right">Destro</option><option value="left">Sinistro</option><option value="both">Entrambi</option></select></div></div>
+    <h3>Permanenza</h3><div class="form-grid"><div class="field"><label>Data ingresso</label><input id="np-start" type="date" value="${today()}" required></div><div class="field"><label>Scadenza</label><input id="np-end" type="date" value="${state.season.end_date}" required></div></div>
+    <div class="field"><label>Numero maglia</label><input id="np-number" type="number" min="1" max="99"></div>
+    <button class="btn btn-primary">Crea e inserisci in rosa</button></form>`,root=>{
+      root.querySelector("#new-player-form").onsubmit=async e=>{
+        e.preventDefault();
+        try{
+          const p=await must(supabase.from("players").insert({team_id:state.team.id,first_name:$("#np-first",root).value,last_name:$("#np-last",root).value,birth_date:$("#np-birth",root).value||null,preferred_foot:$("#np-foot",root).value||null}).select("*").single());
+          await must(supabase.rpc("create_player_contract",{p_player_id:p.id,p_season_id:state.season.id,p_start_date:$("#np-start",root).value,p_end_date:$("#np-end",root).value,p_shirt_number:Number($("#np-number",root).value)||null,p_notes:null}));
+          toast("Calciatore inserito","ok");closeModal();pageRoster();
+        }catch(err){toast(err.message,"error")}
+      };
+  });
+}
+async function pagePlayer(id){
+  const p=await must(supabase.from("players").select("*").eq("id",id).single());
+  const contracts=await must(supabase.from("player_contracts").select("*").eq("player_id",id).order("start_date",{ascending:false}));
+  const stats=(await must(supabase.from("v_player_season_stats").select("*").eq("player_id",id).eq("season_id",state.season.id)))[0]||{};
+  const pos=await must(supabase.from("v_player_position_minutes").select("*").eq("player_id",id).eq("season_id",state.season.id).order("minutes",{ascending:false}));
+  const affinity=await must(supabase.rpc("get_roster_position_affinities",{p_team_id:state.team.id,p_season_id:state.season.id}));
+  const roles=affinity.filter(a=>a.player_id===id);
+  renderShell(`${p.first_name} ${p.last_name}`,`<div class="page-title"><div><h1>${esc(p.first_name)} ${esc(p.last_name)}</h1><div class="actions">${roles.map(r=>`<span class="badge green">${esc(r.position_code)} ${r.affinity_percent}%</span>`).join("")}</div></div><button class="btn" data-back>← Rosa</button></div>
+    <div class="grid grid-4"><div class="card"><div class="stat">${stats.appearances||0}</div><div class="stat-label">Presenze</div></div><div class="card"><div class="stat">${stats.minutes||0}</div><div class="stat-label">Minuti</div></div><div class="card"><div class="stat">${stats.goals||0}</div><div class="stat-label">Gol</div></div><div class="card"><div class="stat">${stats.assists||0}</div><div class="stat-label">Assist</div></div></div>
+    <div style="height:14px"></div><div class="grid grid-2"><div class="card"><h2>Permanenze</h2><div class="list">${contracts.map(c=>`<div class="list-item"><div>${fmtDate(c.start_date)} → ${fmtDate(c.actual_end_date||c.planned_end_date)}<div class="muted">${esc(c.status)} · #${c.shirt_number||"—"}</div></div>${can("contracts.manage")&&c.status==="active"?`<button class="btn btn-sm btn-danger" data-term="${c.id}">Termina</button>`:""}</div>`).join("")||`<div class="empty">Nessuna permanenza</div>`}</div></div>
+    <div class="card"><h2>Minuti per ruolo</h2><div class="list">${pos.map(x=>`<div class="list-item"><strong>${esc(x.position_code)}</strong><span>${x.minutes} min</span></div>`).join("")||`<div class="empty">Nessun dato</div>`}</div></div></div>`);
+  $("[data-back]").onclick=()=>route("roster");
+  $$("[data-term]").forEach(b=>b.onclick=async()=>{const d=prompt("Data uscita (AAAA-MM-GG)",today());if(!d)return;try{await must(supabase.rpc("terminate_player_contract",{p_contract_id:b.dataset.term,p_actual_end_date:d,p_notes:null}));toast("Permanenza terminata","ok");pagePlayer(id)}catch(err){toast(err.message,"error")}});
+}
+
+/* =========================================================
+   CALENDARIO / PRESENZE
+========================================================= */
+async function pageCalendar(){
+  const events=await must(supabase.from("events").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("start_at"));
+  renderShell("Calendario",`<div class="page-title"><div><h1>Calendario</h1><p>Allenamenti, partite e altri eventi.</p></div>${can("calendar.manage")?`<button class="btn btn-primary" id="new-event">Nuovo evento</button>`:""}</div>
+    <div class="list">${events.map(e=>`<div class="list-item"><div><strong>${esc(e.title)}</strong><div class="muted">${fmtDateTime(e.start_at)} · ${esc(e.location||"")}</div></div><div class="actions"><span class="badge">${esc(e.event_type)}</span><button class="btn btn-sm" data-event="${e.id}">Dettagli</button></div></div>`).join("")||`<div class="empty">Nessun evento</div>`}</div>`);
+  $("#new-event")?.addEventListener("click",openNewEvent);
+  $$("[data-event]").forEach(b=>b.onclick=()=>openEventDetail(b.dataset.event));
+}
+function openNewEvent(){
+  showModal("Nuovo evento",`<form id="event-form"><div class="field"><label>Tipo</label><select id="ev-type"><option value="training">Allenamento</option><option value="match">Partita</option><option value="meeting">Riunione</option><option value="social">Evento sociale</option><option value="other">Altro</option></select></div>
+    <div class="field"><label>Titolo</label><input id="ev-title" required></div><div class="form-grid"><div class="field"><label>Inizio</label><input id="ev-start" type="datetime-local" required></div><div class="field"><label>Fine</label><input id="ev-end" type="datetime-local"></div></div><div class="field"><label>Luogo</label><input id="ev-location"></div><div class="field"><label>Note</label><textarea id="ev-notes"></textarea></div>
+    <div id="match-extra" class="hidden"><h3>Dati partita</h3><div class="field"><label>Avversario</label><input id="ev-opponent"></div><div class="form-grid"><div class="field"><label>Casa/trasferta</label><select id="ev-ha"><option value="home">Casa</option><option value="away">Trasferta</option><option value="neutral">Neutro</option></select></div><div class="field"><label>Giornata/turno</label><input id="ev-round"></div></div></div>
+    <button class="btn btn-primary">Salva</button></form>`,root=>{
+      const type=$("#ev-type",root);type.onchange=()=>$("#match-extra",root).classList.toggle("hidden",type.value!=="match");
+      $("#event-form",root).onsubmit=async e=>{
+        e.preventDefault();
+        try{
+          const start=new Date($("#ev-start",root).value).toISOString(),end=$("#ev-end",root).value?new Date($("#ev-end",root).value).toISOString():null;
+          const ev=await must(supabase.from("events").insert({team_id:state.team.id,season_id:state.season.id,event_type:type.value,title:$("#ev-title",root).value,start_at:start,end_at:end,location:$("#ev-location",root).value||null,notes:$("#ev-notes",root).value||null,created_by:state.profile.id}).select("*").single());
+          if(type.value==="match"){
+            await must(supabase.from("matches").insert({team_id:state.team.id,season_id:state.season.id,event_id:ev.id,opponent_name:$("#ev-opponent",root).value||"Avversario",home_away:$("#ev-ha",root).value,round_label:$("#ev-round",root).value||null,created_by:state.profile.id}));
+          }
+          toast("Evento creato","ok");closeModal();pageCalendar();
+        }catch(err){toast(err.message,"error")}
+      };
+  });
+}
+async function openEventDetail(id){
+  const ev=await must(supabase.from("events").select("*").eq("id",id).single());
+  const players=await must(supabase.rpc("get_active_roster",{p_team_id:state.team.id,p_season_id:state.season.id,p_at:ev.start_at.slice(0,10)}));
+  const attendance=await must(supabase.from("event_attendance").select("*").eq("event_id",id));
+  const amap=new Map(attendance.map(a=>[a.player_id,a]));
+  showModal(ev.title,`<div class="section-note">${fmtDateTime(ev.start_at)} · ${esc(ev.location||"Luogo non indicato")}</div><div style="height:12px"></div><div class="list">${players.map(p=>{const a=amap.get(p.player_id);const own=p.profile_id===state.profile.id;const editable=can("attendance.manage")||(own&&can("attendance.edit_own"));return `<div class="list-item"><div>${esc(p.last_name)} ${esc(p.first_name)}</div>${editable?`<select data-att="${p.player_id}" style="width:150px"><option value="unknown">Da indicare</option>${["present","absent","maybe","late","injured","excused"].map(x=>`<option value="${x}" ${a?.status===x?"selected":""}>${x}</option>`).join("")}</select>`:`<span class="badge">${esc(a?.status||"unknown")}</span>`}</div>`}).join("")}</div>`,root=>{
+    $$("[data-att]",root).forEach(sel=>sel.onchange=async()=>{try{await must(supabase.from("event_attendance").upsert({event_id:id,player_id:sel.dataset.att,status:sel.value,updated_by:state.profile.id},{onConflict:"event_id,player_id"}));toast("Disponibilità aggiornata","ok")}catch(err){toast(err.message,"error")}});
+  });
+}
+
+/* =========================================================
+   PARTITE / FORMAZIONE
+========================================================= */
+async function pageMatches(){
+  const matches=await must(supabase.from("matches").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("created_at",{ascending:false}));
+  const events=await must(supabase.from("events").select("id,start_at,title,location").in("id",matches.map(m=>m.event_id).length?matches.map(m=>m.event_id):["00000000-0000-0000-0000-000000000000"]));
+  const em=new Map(events.map(e=>[e.id,e]));
+  const scores=await must(supabase.from("v_match_score").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id));const sm=new Map(scores.map(s=>[s.match_id,s]));
+  renderShell("Partite",`<div class="page-title"><div><h1>Partite</h1><p>Convocazioni, formazione, LIVE e post partita.</p></div></div><div class="list">${matches.map(m=>{const e=em.get(m.event_id),s=sm.get(m.id);return `<div class="list-item"><div><strong>${m.home_away==="home"?esc(state.team.short_name||state.team.name):esc(m.opponent_name)} ${s?`${s.goals_for}-${s.goals_against}`:"vs"} ${m.home_away==="home"?esc(m.opponent_name):esc(state.team.short_name||state.team.name)}</strong><div class="muted">${fmtDateTime(e?.start_at)} · ${esc(m.status)}</div></div><div class="actions">${m.status==="live"||m.status==="paused"?`<button class="btn btn-danger btn-sm" data-live="${m.id}">LIVE</button>`:""}<button class="btn btn-sm" data-match="${m.id}">Apri</button></div></div>`}).join("")||`<div class="empty">Nessuna partita</div>`}</div>`);
+  $$("[data-match]").forEach(b=>b.onclick=()=>route(`match/${b.dataset.match}`));$$("[data-live]").forEach(b=>b.onclick=()=>route(`live/${b.dataset.live}`));
+}
+async function pageMatch(id){
+  const m=await must(supabase.from("matches").select("*").eq("id",id).single());
+  const ev=await must(supabase.from("events").select("*").eq("id",m.event_id).single());
+  const roster=await must(supabase.rpc("get_active_roster",{p_team_id:state.team.id,p_season_id:state.season.id,p_at:ev.start_at.slice(0,10)}));
+  const mps=await must(supabase.from("match_players").select("*").eq("match_id",id));const mm=new Map(mps.map(x=>[x.player_id,x]));
+  const positions=await must(supabase.from("football_positions").select("*").eq("active",true).order("sort_order"));
+  const score=(await must(supabase.from("v_match_score").select("*").eq("match_id",id)))[0]||{goals_for:0,goals_against:0};
+  renderShell("Dettaglio partita",`<div class="page-title"><div><h1>${esc(state.team.short_name||state.team.name)} ${score.goals_for}-${score.goals_against} ${esc(m.opponent_name)}</h1><p>${fmtDateTime(ev.start_at)} · ${esc(ev.location||"")} · ${esc(m.status)}</p></div><div class="actions">${can("live.view")?`<button class="btn btn-primary" id="open-live">Apri LIVE</button>`:""}${m.status==="finished"&&can("matches.finalize")?`<button class="btn" id="finalize">Finalizza</button>`:""}</div></div>
+    <div class="grid grid-2"><div class="card"><div class="card-head"><h2>Convocati e formazione</h2></div><div class="table-wrap"><table class="table"><thead><tr><th>Giocatore</th><th>Conv.</th><th>Titolare</th><th>Ruolo iniziale</th></tr></thead><tbody>${roster.map(p=>{const mp=mm.get(p.player_id)||{};return `<tr><td>${esc(p.last_name)} ${esc(p.first_name)}</td><td><input type="checkbox" data-call="${p.player_id}" ${mp.called_up?"checked":""} ${can("callups.manage")?"":"disabled"}></td><td><input type="checkbox" data-start="${p.player_id}" ${mp.starter?"checked":""} ${can("lineup.manage")?"":"disabled"}></td><td><select data-pos="${p.player_id}" ${can("lineup.manage")?"":"disabled"}><option value="">—</option>${positions.map(x=>`<option value="${x.id}" ${mp.starting_position_id===x.id?"selected":""}>${esc(x.code)}</option>`).join("")}</select></td></tr>`}).join("")}</tbody></table></div></div>
+    <div class="card"><h2>Campo</h2><div class="pitch">${["forward","midfielder","defender","goalkeeper"].map(cat=>`<div class="pitch-row">${roster.filter(p=>{const mp=mm.get(p.player_id);const pos=positions.find(x=>x.id===mp?.starting_position_id);return mp?.starter&&pos?.category===cat}).map(p=>`<div class="pitch-player">${esc(p.last_name)}<br><span class="muted">${esc(positions.find(x=>x.id===mm.get(p.player_id)?.starting_position_id)?.code||"")}</span></div>`).join("")}</div>`).join("")}</div></div></div>
+    ${m.status==="finished"||m.status==="finalized"?`<div style="height:14px"></div><button class="btn btn-primary" id="rate-match">Vota la partita</button>`:""}`);
+  $("#open-live")?.addEventListener("click",()=>route(`live/${id}`));$("#rate-match")?.addEventListener("click",()=>openRatings(id));
+  $("#finalize")?.addEventListener("click",async()=>{try{await edge("match-finalize",{match_id:id});toast("Partita finalizzata","ok");pageMatch(id)}catch(err){toast(err.message,"error")}});
+  async function saveMP(pid,patch){
+    const cur=mm.get(pid)||{match_id:id,player_id:pid,called_up:false,starter:false};
+    const row={...cur,...patch,match_id:id,player_id:pid};delete row.notes;
+    await must(supabase.from("match_players").upsert(row,{onConflict:"match_id,player_id"}));mm.set(pid,row);
+  }
+  $$("[data-call]").forEach(x=>x.onchange=async()=>{try{await saveMP(x.dataset.call,{called_up:x.checked});}catch(e){toast(e.message,"error")}});
+  $$("[data-start]").forEach(x=>x.onchange=async()=>{try{await saveMP(x.dataset.start,{starter:x.checked,called_up:x.checked||mm.get(x.dataset.start)?.called_up});}catch(e){toast(e.message,"error")}});
+  $$("[data-pos]").forEach(x=>x.onchange=async()=>{try{await saveMP(x.dataset.pos,{starting_position_id:x.value||null});}catch(e){toast(e.message,"error")}});
+}
+
+/* =========================================================
+   LIVE
+========================================================= */
+async function pageLive(id){
+  const m=await must(supabase.from("matches").select("*").eq("id",id).single());
+  state.currentPage="live";
+  await renderLiveView(id,m);
+  subscribeLive(id);
+}
+async function loadLiveData(id){
+  const m=await must(supabase.from("matches").select("*").eq("id",id).single());
+  const ev=await must(supabase.from("events").select("*").eq("id",m.event_id).single());
+  const official=await must(supabase.from("match_events").select("*").eq("match_id",id).order("match_second"));
+  const pending=await must(supabase.rpc("get_live_pending_groups",{p_match_id:id}));
+  const score=(await must(supabase.from("v_match_score").select("*").eq("match_id",id)))[0]||{goals_for:0,goals_against:0};
+  const players=await must(supabase.from("players").select("id,first_name,last_name").eq("team_id",state.team.id));const pm=new Map(players.map(p=>[p.id,p]));
+  const positions=await must(supabase.from("football_positions").select("*").eq("active",true));const posm=new Map(positions.map(p=>[p.id,p]));
+  const clock=(await must(supabase.rpc("get_match_clock",{p_match_id:id})))[0]||{elapsed_seconds:0,clock_running:false};
+  return {m,ev,official,pending,score,players,pm,positions,posm,clock};
+}
+function eventLabel(e,pm,posm){
+  const p=pm.get(e.player_id),s=pm.get(e.secondary_player_id),pos=posm.get(e.position_id);
+  const n=p?`${p.last_name} ${p.first_name}`:"";
+  if(e.event_type==="goal"||e.event_type==="penalty_goal")return `⚽ ${n}${s?` · assist ${s.last_name}`:""}`;
+  if(e.event_type==="own_goal")return `⚽ Autogol ${n}`;
+  if(e.event_type==="substitution")return `🔄 ${n} entra${s?`, ${s.last_name} esce`:""}${pos?` · ${pos.code}`:""}`;
+  if(e.event_type==="position_change")return `↔ ${n} → ${pos?.code||""}`;
+  if(e.event_type==="yellow_card")return `🟨 ${n||"Cartellino"}`;
+  if(e.event_type==="red_card"||e.event_type==="second_yellow")return `🟥 ${n||"Espulsione"}`;
+  if(e.event_type==="injury")return `🩹 ${n||"Infortunio"}`;
+  return `📝 ${esc(e.notes||e.event_type)}`;
+}
+async function renderLiveView(id){
+  const d=await loadLiveData(id);
+  const pendingFor=d.pending.filter(x=>["goal","penalty_goal"].includes(x.event_type)&&x.team_side==="us").length + d.pending.filter(x=>x.event_type==="own_goal"&&x.team_side==="opponent").length;
+  const pendingAgainst=d.pending.filter(x=>["goal","penalty_goal"].includes(x.event_type)&&x.team_side==="opponent").length + d.pending.filter(x=>x.event_type==="own_goal"&&x.team_side==="us").length;
+  const timeline=[...d.official.map(x=>({...x,pending:false})),...d.pending.map(x=>({...x,match_second:x.approx_match_second,pending:true}))].sort((a,b)=>b.match_second-a.match_second);
+  renderShell("LIVE",`<div class="live-score card"><div class="muted">${esc(d.m.period.replaceAll("_"," "))}</div><div class="score">${d.score.goals_for+(pendingFor?`*`:"")} - ${d.score.goals_against+(pendingAgainst?`*`:"")}</div><div>${esc(state.team.short_name||state.team.name)} · ${esc(d.m.opponent_name)}</div><div class="live-clock" id="live-clock" data-base="${d.clock.elapsed_seconds}" data-running="${d.clock.clock_running}">${clockText(d.clock.elapsed_seconds)}</div>${d.pending.length?`<div class="badge yellow">${d.pending.length} eventi da validare</div>`:""}</div>
+    <div style="height:12px"></div><div class="actions">${can("live.submit")?`<button class="btn btn-primary" id="report-mode">＋ Segnala evento</button>`:""}${can("live.control")?`<button class="btn" data-control="${d.m.status==="live"?"pause":d.m.status==="paused"?"resume":"start"}">${d.m.status==="live"?"Pausa":d.m.status==="paused"?"Riprendi":"Avvia"}</button><select id="live-period" style="width:auto"><option value="first_half" ${d.m.period==="first_half"?"selected":""}>1° tempo</option><option value="halftime" ${d.m.period==="halftime"?"selected":""}>Intervallo</option><option value="second_half" ${d.m.period==="second_half"?"selected":""}>2° tempo</option><option value="extra_time_1" ${d.m.period==="extra_time_1"?"selected":""}>1° supplementare</option><option value="extra_time_break" ${d.m.period==="extra_time_break"?"selected":""}>Intervallo suppl.</option><option value="extra_time_2" ${d.m.period==="extra_time_2"?"selected":""}>2° supplementare</option><option value="penalties" ${d.m.period==="penalties"?"selected":""}>Rigori</option></select>${!["finished","finalized"].includes(d.m.status)?`<button class="btn btn-danger" data-control="finish">Termina</button>`:""}`:""}</div>
+    <div style="height:12px"></div>${can("live.validate")&&d.pending.length?`<div class="card"><h2>Da validare</h2><div class="list">${d.pending.map(g=>`<div class="list-item"><div><strong>${minute(g.approx_match_second)} ${esc(g.event_type)}</strong><div class="muted">${g.report_count} segnalazioni · ${g.suggested_player_id?esc(d.pm.get(g.suggested_player_id)?.last_name||""):""}</div></div><div class="actions"><button class="btn btn-sm btn-primary" data-confirm="${g.group_id}">Conferma</button><button class="btn btn-sm" data-modify-pending="${g.group_id}">Modifica</button><button class="btn btn-sm btn-danger" data-reject="${g.group_id}">Rifiuta</button></div></div>`).join("")}</div></div><div style="height:12px"></div>`:""}
+    <div class="card"><h2>Timeline</h2><div class="timeline">${timeline.map(e=>e.pending?`<div class="timeline-item pending"><strong>${minute(e.match_second)} ⚠️ ${esc(e.event_type)}</strong><div class="muted">Da confermare · ${e.report_count||1} segnalazioni</div></div>`:`<div class="timeline-item"><div class="card-head"><div><strong>${minute(e.match_second)} ${eventLabel(e,d.pm,d.posm)}</strong><div class="muted">${esc(e.team_side==="us"?"Noi":"Avversario")}</div></div>${can("live.edit")?`<div class="actions"><button class="btn btn-sm" data-edit-event="${e.id}">Modifica</button>${can("live.delete")?`<button class="btn btn-sm btn-danger" data-delete-event="${e.id}">×</button>`:""}</div>`:""}</div></div>`).join("")||`<div class="empty">Nessun evento</div>`}</div></div>`);
+  startClockTicker();
+  $("#report-mode")?.addEventListener("click",()=>renderLiveReporter(id,d));
+  $$("[data-control]").forEach(b=>b.onclick=async()=>{try{await edge("live-match-control",{match_id:id,action:b.dataset.control,period:b.dataset.control==="start"?"first_half":null});await renderLiveView(id)}catch(err){toast(err.message,"error")}});
+  $("#live-period")?.addEventListener("change",async e=>{try{await edge("live-match-control",{match_id:id,action:"period",period:e.target.value});await renderLiveView(id)}catch(err){toast(err.message,"error")}});
+  $$("[data-modify-pending]").forEach(b=>b.onclick=()=>{const g=d.pending.find(x=>x.group_id===b.dataset.modifyPending);openPendingValidationEdit(id,d,g)});
+  $$("[data-confirm]").forEach(b=>b.onclick=async()=>{const g=d.pending.find(x=>x.group_id===b.dataset.confirm);try{await edge("live-validate-event",{group_id:g.group_id,action:"confirm",player_id:g.suggested_player_id,secondary_player_id:g.suggested_secondary_player_id,position_id:g.suggested_position_id,match_second:g.approx_match_second});await renderLiveView(id)}catch(err){toast(err.message,"error")}});
+  $$("[data-reject]").forEach(b=>b.onclick=async()=>{const reason=prompt("Motivo del rifiuto (opzionale)","");try{await edge("live-validate-event",{group_id:b.dataset.reject,action:"reject",notes:reason});await renderLiveView(id)}catch(err){toast(err.message,"error")}});
+  $$("[data-delete-event]").forEach(b=>b.onclick=async()=>{if(!confirm("Eliminare l'evento ufficiale?"))return;try{await must(supabase.rpc("delete_match_event",{p_event_id:b.dataset.deleteEvent}));await renderLiveView(id)}catch(err){toast(err.message,"error")}});
+  $$("[data-edit-event]").forEach(b=>b.onclick=()=>openEditOfficialEvent(id,d,b.dataset.editEvent));
+}
+function startClockTicker(){
+  clearInterval(state.liveTimer);const el=$("#live-clock");if(!el)return;let base=Number(el.dataset.base||0),running=el.dataset.running==="true",started=Date.now();
+  state.liveTimer=setInterval(()=>{if(running&&$("#live-clock"))$("#live-clock").textContent=clockText(base+Math.floor((Date.now()-started)/1000))},1000);
+}
+function stopLive(){clearInterval(state.liveTimer);state.liveTimer=null;if(state.liveChannel){supabase.removeChannel(state.liveChannel);state.liveChannel=null}}
+function subscribeLive(id){
+  if(state.liveChannel)supabase.removeChannel(state.liveChannel);
+  const ch=supabase.channel(`match:${id}`,{config:{private:true}});
+  ["INSERT","UPDATE","DELETE"].forEach(ev=>ch.on("broadcast",{event:ev},()=>{if(state.currentPage==="live")renderLiveView(id).catch(console.error)}));
+  ch.subscribe();state.liveChannel=ch;
+}
+function renderLiveReporter(id,d){
+  renderShell("Segnala evento",`<div class="page-title"><div><h1>Invia segnalazione</h1><p>${can("live.submit_trusted")?"Il tuo evento entra direttamente nella cronaca ufficiale.":"Il dato sarà mostrato subito come da confermare."}</p></div><button class="btn" id="back-live">← Torna alla LIVE</button></div><div class="live-actions">
+    <button class="btn btn-primary" data-report="goal">⚽ Gol nostro</button><button class="btn" data-report="opp_goal">⚽ Gol avversario</button>
+    <button class="btn" data-report="substitution">🔄 Cambio</button><button class="btn" data-report="position_change">↔ Cambio ruolo</button>
+    <button class="btn" data-report="yellow_card">🟨 Giallo</button><button class="btn btn-danger" data-report="red_card">🟥 Rosso</button>
+    <button class="btn" data-report="injury">🩹 Infortunio</button><button class="btn" data-report="note">📝 Altro</button>
+  </div>`);
+  $("#back-live").onclick=()=>renderLiveView(id);
+  $$("[data-report]").forEach(b=>b.onclick=()=>openLiveReportForm(id,d,b.dataset.report));
+}
+function openLiveReportForm(id,d,type){
+  let eventType=type,side="us";
+  if(type==="opp_goal"){eventType="goal";side="opponent"}
+  const playerOpts=`<option value="">—</option>${d.players.map(p=>`<option value="${p.id}">${esc(p.last_name)} ${esc(p.first_name)}</option>`).join("")}`;
+  const posOpts=`<option value="">—</option>${d.positions.map(p=>`<option value="${p.id}">${esc(p.code)} - ${esc(p.label)}</option>`).join("")}`;
+  showModal("Segnalazione LIVE",`<form id="live-report-form"><div class="section-note">Il minuto viene preso automaticamente dal cronometro LIVE; puoi correggerlo in secondi solo se stai segnalando in ritardo.</div><div style="height:10px"></div>
+    ${side==="us"&&eventType!=="note"?`<div class="field"><label>${eventType==="substitution"?"Giocatore che entra":"Giocatore"}</label><select id="lr-player">${playerOpts}</select></div>`:""}
+    ${eventType==="goal"?`<div class="field"><label>Assist (opzionale)</label><select id="lr-second">${playerOpts}</select></div>`:""}
+    ${eventType==="substitution"?`<div class="field"><label>Giocatore che esce</label><select id="lr-second">${playerOpts}</select></div>`:""}
+    ${["substitution","position_change"].includes(eventType)?`<div class="field"><label>Posizione dopo l'evento</label><select id="lr-position">${posOpts}</select></div>`:""}
+    <div class="field"><label>Note</label><textarea id="lr-notes"></textarea></div>
+    <button class="btn btn-primary">Invia</button></form>`,root=>{
+      $("#live-report-form",root).onsubmit=async e=>{
+        e.preventDefault();
+        try{
+          await edge("live-submit-event",{match_id:id,event_type:eventType,team_side:side,player_id:$("#lr-player",root)?.value||null,secondary_player_id:$("#lr-second",root)?.value||null,position_id:$("#lr-position",root)?.value||null,notes:$("#lr-notes",root).value||null});
+          toast(can("live.submit_trusted")?"Evento registrato":"Segnalazione inviata: in attesa di validazione","ok");closeModal();await renderLiveView(id);
+        }catch(err){toast(err.message,"error")}
+      };
+  });
+}
+
+function openPendingValidationEdit(matchId,d,g){
+  const playerOpts=`<option value="">—</option>${d.players.map(p=>`<option value="${p.id}" ${g.suggested_player_id===p.id?"selected":""}>${esc(p.last_name)} ${esc(p.first_name)}</option>`).join("")}`;
+  const posOpts=`<option value="">—</option>${d.positions.map(p=>`<option value="${p.id}" ${g.suggested_position_id===p.id?"selected":""}>${esc(p.code)} - ${esc(p.label)}</option>`).join("")}`;
+  showModal("Modifica e conferma segnalazione",`<form id="pending-edit"><div class="field"><label>Tipo</label><select id="pe-type">${["goal","own_goal","penalty_goal","penalty_missed","yellow_card","second_yellow","red_card","substitution","position_change","injury","note"].map(x=>`<option value="${x}" ${g.event_type===x?"selected":""}>${x}</option>`).join("")}</select></div><div class="field"><label>Lato</label><select id="pe-side"><option value="us" ${g.team_side==="us"?"selected":""}>Noi</option><option value="opponent" ${g.team_side==="opponent"?"selected":""}>Avversario</option></select></div><div class="field"><label>Giocatore</label><select id="pe-player">${playerOpts}</select></div><div class="field"><label>Secondo giocatore</label><select id="pe-second">${playerOpts}</select></div><div class="field"><label>Posizione</label><select id="pe-pos">${posOpts}</select></div><div class="field"><label>Secondo partita</label><input id="pe-sec" type="number" min="0" value="${g.approx_match_second}"></div><div class="field"><label>Note</label><textarea id="pe-notes"></textarea></div><button class="btn btn-primary">Modifica e conferma</button></form>`,root=>{
+    $("#pending-edit",root).onsubmit=async e=>{e.preventDefault();try{await edge("live-validate-event",{group_id:g.group_id,action:"modify_and_confirm",event_type:$("#pe-type",root).value,team_side:$("#pe-side",root).value,player_id:$("#pe-player",root).value||null,secondary_player_id:$("#pe-second",root).value||null,position_id:$("#pe-pos",root).value||null,match_second:Number($("#pe-sec",root).value),notes:$("#pe-notes",root).value||null});closeModal();await renderLiveView(matchId)}catch(err){toast(err.message,"error")}};
+  });
+}
+function openEditOfficialEvent(matchId,d,eventId){
+  const e=d.official.find(x=>x.id===eventId);if(!e)return;
+  const opts=`<option value="">—</option>${d.players.map(p=>`<option value="${p.id}" ${e.player_id===p.id?"selected":""}>${esc(p.last_name)} ${esc(p.first_name)}</option>`).join("")}`;
+  showModal("Modifica evento",`<form id="edit-event"><div class="field"><label>Tipo</label><select id="ee-type">${["goal","own_goal","penalty_goal","penalty_missed","yellow_card","second_yellow","red_card","substitution","position_change","injury","note"].map(x=>`<option ${e.event_type===x?"selected":""}>${x}</option>`).join("")}</select></div><div class="field"><label>Giocatore</label><select id="ee-player">${opts}</select></div><div class="field"><label>Secondo giocatore</label><select id="ee-second">${opts}</select></div><div class="field"><label>Secondo partita</label><input id="ee-sec" type="number" value="${e.match_second}"></div><div class="field"><label>Note</label><textarea id="ee-notes">${esc(e.notes||"")}</textarea></div><button class="btn btn-primary">Salva</button></form>`,root=>{
+    $("#edit-event",root).onsubmit=async ev=>{ev.preventDefault();try{await must(supabase.rpc("edit_match_event",{p_event_id:eventId,p_event_type:$("#ee-type",root).value,p_team_side:e.team_side,p_player_id:$("#ee-player",root).value||null,p_secondary_player_id:$("#ee-second",root).value||null,p_position_id:e.position_id,p_match_second:Number($("#ee-sec",root).value),p_notes:$("#ee-notes",root).value||null}));closeModal();await renderLiveView(matchId)}catch(err){toast(err.message,"error")}};
+  });
+}
+
+/* =========================================================
+   VOTI
+========================================================= */
+async function openRatings(matchId){
+  const mps=await must(supabase.from("match_players").select("*").eq("match_id",matchId));
+  const playedIds=mps.filter(x=>x.starter||x.called_up).map(x=>x.player_id);
+  const players=playedIds.length?await must(supabase.from("players").select("*").in("id",playedIds)):[];
+  const mine=await must(supabase.from("match_ratings").select("*").eq("match_id",matchId).eq("rated_by",state.profile.id));const rm=new Map(mine.map(x=>[x.rated_player_id,x]));
+  showModal("Voti post partita",`<form id="ratings-form"><div class="list">${players.map(p=>{const r=rm.get(p.id);return `<div class="list-item"><div><strong>${esc(p.last_name)} ${esc(p.first_name)}</strong></div><div class="actions"><input data-rate="${p.id}" type="number" min="1" max="10" step=".5" value="${r?.score||6}" style="width:75px"><label class="check"><input type="checkbox" data-mvp="${p.id}" ${r?.mvp?"checked":""}> MVP</label></div></div>`}).join("")}</div><div style="height:12px"></div><button class="btn btn-primary">Salva voti</button></form>`,root=>{
+    $("#ratings-form",root).onsubmit=async e=>{e.preventDefault();try{const rows=$$("[data-rate]",root).map(i=>({match_id:matchId,rated_player_id:i.dataset.rate,rated_by:state.profile.id,score:Number(i.value),mvp:$(`[data-mvp="${i.dataset.rate}"]`,root).checked,source_role:hasRole("player")?"player":hasRole("coach")?"coach":hasRole("assistant_coach")?"assistant_coach":hasRole("management")?"management":"fan"}));await must(supabase.from("match_ratings").upsert(rows,{onConflict:"match_id,rated_player_id,rated_by"}));toast("Voti salvati","ok");closeModal()}catch(err){toast(err.message,"error")}};
+  });
+}
+
+/* =========================================================
+   STATISTICHE
+========================================================= */
+async function pageStats(){
+  const stats=await must(supabase.from("v_player_season_stats").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("goals",{ascending:false}));
+  const ratings=can("ratings.view_results")?await must(supabase.from("v_player_rating_stats").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id)):[];
+  const rm=new Map(ratings.map(x=>[x.player_id,x]));
+  const team=(await must(supabase.from("v_team_season_stats").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id)))[0]||{};
+  renderShell("Statistiche",`<div class="grid grid-4"><div class="card"><div class="stat">${team.matches_played||0}</div><div class="stat-label">Partite</div></div><div class="card"><div class="stat">${team.wins||0}-${team.draws||0}-${team.losses||0}</div><div class="stat-label">V-N-P</div></div><div class="card"><div class="stat">${team.goals_for||0}</div><div class="stat-label">GF</div></div><div class="card"><div class="stat">${team.goals_against||0}</div><div class="stat-label">GS</div></div></div><div style="height:14px"></div>
+    <div class="table-wrap"><table class="table"><thead><tr><th>Giocatore</th><th>PG</th><th>Tit.</th><th>Min</th><th>Gol</th><th>Assist</th><th>G/90</th><th>A/90</th><th>Media</th><th>MVP</th></tr></thead><tbody>${stats.map(s=>`<tr><td>${esc(s.last_name)} ${esc(s.first_name)}</td><td>${s.appearances}</td><td>${s.starts}</td><td>${s.minutes}</td><td>${s.goals}</td><td>${s.assists}</td><td>${s.goals_per_90}</td><td>${s.assists_per_90}</td><td>${rm.get(s.player_id)?.average_rating||"—"}</td><td>${rm.get(s.player_id)?.mvp_votes||0}</td></tr>`).join("")}</tbody></table></div>`);
+}
+
+/* =========================================================
+   INFORTUNI / SQUALIFICHE / MULTE
+========================================================= */
+async function pageInjuries(){
+  const q=supabase.from("injuries").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("injury_date",{ascending:false});
+  const rows=await must(q);const players=await must(supabase.from("players").select("id,first_name,last_name").eq("team_id",state.team.id));const pm=new Map(players.map(p=>[p.id,p]));
+  renderShell("Infortuni",`<div class="page-title"><div><h1>Infortuni</h1><p>Le note riservate dello staff sono separate dai dati visibili al calciatore.</p></div>${can("injuries.manage")?`<button class="btn btn-primary" id="new-injury">Nuovo</button>`:""}</div><div class="list">${rows.map(x=>`<div class="list-item"><div><strong>${esc(pm.get(x.player_id)?.last_name||"")} · ${esc(x.public_summary||"Infortunio")}</strong><div class="muted">${fmtDate(x.injury_date)} · rientro previsto ${fmtDate(x.expected_return)} · ${esc(x.status)}</div></div></div>`).join("")||`<div class="empty">Nessun infortunio visibile</div>`}</div>`);
+  $("#new-injury")?.addEventListener("click",()=>simpleEntityModal("Nuovo infortunio",players,async(root,pid)=>{await must(supabase.from("injuries").insert({team_id:state.team.id,season_id:state.season.id,player_id:pid,status:"active",injury_date:$("#entity-date",root).value,expected_return:$("#entity-end",root).value||null,public_summary:$("#entity-reason",root).value,created_by:state.profile.id}));pageInjuries()}));
+}
+async function pageDiscipline(){
+  const rows=await must(supabase.from("suspensions").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("issued_date",{ascending:false}));
+  const players=await must(supabase.from("players").select("id,first_name,last_name").eq("team_id",state.team.id));const pm=new Map(players.map(p=>[p.id,p]));
+  renderShell("Squalifiche",`<div class="page-title"><div><h1>Squalifiche</h1></div>${can("suspensions.manage")?`<button class="btn btn-primary" id="new-susp">Nuova</button>`:""}</div><div class="table-wrap"><table class="table"><thead><tr><th>Giocatore</th><th>Motivo</th><th>Giornate</th><th>Servite</th><th>Stato</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(pm.get(x.player_id)?.last_name||"")}</td><td>${esc(x.reason||x.suspension_type)}</td><td>${x.matches_count}</td><td>${x.matches_served}</td><td>${esc(x.status)}</td></tr>`).join("")}</tbody></table></div>`);
+  $("#new-susp")?.addEventListener("click",()=>simpleEntityModal("Nuova squalifica",players,async(root,pid)=>{await must(supabase.from("suspensions").insert({team_id:state.team.id,season_id:state.season.id,player_id:pid,suspension_type:"disciplinary",reason:$("#entity-reason",root).value,issued_date:$("#entity-date",root).value,matches_count:Number($("#entity-count",root).value)||1,status:"active",created_by:state.profile.id}));pageDiscipline()},true));
+}
+async function pageFines(){
+  const rows=await must(supabase.from("fines").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("fine_date",{ascending:false}));
+  const players=await must(supabase.from("players").select("id,first_name,last_name,profile_id").eq("team_id",state.team.id));const pm=new Map(players.map(p=>[p.id,p]));
+  renderShell("Multe",`<div class="page-title"><div><h1>Multe</h1><p>${can("fines.view_all")?"Vista squadra":"Sono mostrate solo le tue multe."}</p></div>${can("fines.manage")?`<button class="btn btn-primary" id="new-fine">Nuova multa</button>`:""}</div><div class="table-wrap"><table class="table"><thead><tr><th>Data</th><th>Persona</th><th>Motivo</th><th>Importo</th><th>Stato</th><th></th></tr></thead><tbody>${rows.map(x=>`<tr><td>${fmtDate(x.fine_date)}</td><td>${esc(pm.get(x.player_id)?.last_name||"")}</td><td>${esc(x.reason)}</td><td>€ ${Number(x.amount).toFixed(2)}</td><td>${esc(x.status)}</td><td>${can("fines.manage")&&x.status==="pending"?`<button class="btn btn-sm" data-paid="${x.id}">Pagata</button>`:""}</td></tr>`).join("")}</tbody></table></div>`);
+  $("#new-fine")?.addEventListener("click",()=>simpleEntityModal("Nuova multa",players,async(root,pid)=>{await must(supabase.from("fines").insert({team_id:state.team.id,season_id:state.season.id,player_id:pid,profile_id:pm.get(pid)?.profile_id||null,fine_date:$("#entity-date",root).value,amount:Number($("#entity-amount",root).value),reason:$("#entity-reason",root).value,status:"pending",issued_by:state.profile.id}));pageFines()},false,true));
+  $$("[data-paid]").forEach(b=>b.onclick=async()=>{try{await must(supabase.from("fines").update({status:"paid",paid_at:new Date().toISOString()}).eq("id",b.dataset.paid));pageFines()}catch(e){toast(e.message,"error")}});
+}
+function simpleEntityModal(title,players,save,withCount=false,withAmount=false){
+  showModal(title,`<form id="entity-form"><div class="field"><label>Calciatore</label><select id="entity-player">${players.map(p=>`<option value="${p.id}">${esc(p.last_name)} ${esc(p.first_name)}</option>`).join("")}</select></div><div class="field"><label>Data</label><input id="entity-date" type="date" value="${today()}"></div><div class="field"><label>Motivo / descrizione</label><textarea id="entity-reason" required></textarea></div>${withCount?`<div class="field"><label>Giornate</label><input id="entity-count" type="number" min="0" value="1"></div>`:""}${withAmount?`<div class="field"><label>Importo €</label><input id="entity-amount" type="number" min="0" step=".5" value="2"></div>`:`<div class="field"><label>Rientro previsto</label><input id="entity-end" type="date"></div>`}<button class="btn btn-primary">Salva</button></form>`,root=>{
+    $("#entity-form",root).onsubmit=async e=>{e.preventDefault();try{await save(root,$("#entity-player",root).value);closeModal();toast("Salvato","ok")}catch(err){toast(err.message,"error")}};
+  });
+}
+
+/* =========================================================
+   PROFILO / RINNOVO
+========================================================= */
+async function pageProfile(){
+  const contract=state.myPlayer?(await must(supabase.from("player_contracts").select("*").eq("player_id",state.myPlayer.id).eq("status","active").order("planned_end_date",{ascending:false}).limit(1)))[0]:null;
+  const future=contract?[...state.seasons].filter(s=>s.start_date>contract.planned_end_date).sort((a,b)=>a.start_date.localeCompare(b.start_date))[0]:null;
+  renderShell("Profilo",`<div class="card" style="max-width:680px"><h1>${esc(state.profile.display_name)}</h1><div class="muted">@${esc(state.profile.username)}</div><div style="height:14px"></div>${contract?`<h3>Permanenza da calciatore</h3><p>${fmtDate(contract.start_date)} → ${fmtDate(contract.planned_end_date)}</p>${future&&can("contracts.request_own")?`<button class="btn btn-primary" id="request-renew">Richiedi conferma ${esc(future.name)}</button>`:""}`:`<p class="muted">Attualmente accesso fan/staff, senza permanenza calciatore attiva.</p>`}</div>`);
+  $("#request-renew")?.addEventListener("click",async()=>{try{await must(supabase.rpc("request_contract_extension",{p_team_id:state.team.id,p_requested_season_id:future.id,p_message:null}));toast("Richiesta inviata","ok")}catch(e){toast(e.message,"error")}});
+}
+
+/* =========================================================
+   ADMIN
+========================================================= */
+async function pageAdmin(tab="users"){
+  const tabs=[["users","Utenti",can("users.manage")],["permissions","Permessi",can("permissions.manage")],["seasons","Stagioni",can("seasons.manage")],["staff","Staff",can("staff.manage")||can("staff.view")],["contracts","Permanenze",can("contracts.manage")],["audit","Audit",can("audit.view")],["settings","Squadra",can("seasons.manage")]].filter(x=>x[2]);
+  if(!tabs.some(x=>x[0]===tab))tab=tabs[0]?.[0];
+  renderShell("Amministrazione",`<div class="tabs">${tabs.map(x=>`<button class="tab ${x[0]===tab?"active":""}" data-admin-tab="${x[0]}">${x[1]}</button>`).join("")}</div><div id="admin-content"><div class="empty">Caricamento…</div></div>`);
+  $$("[data-admin-tab]").forEach(b=>b.onclick=()=>pageAdmin(b.dataset.adminTab));
+  if(tab==="users")return adminUsers();
+  if(tab==="permissions")return adminPermissions();
+  if(tab==="seasons")return adminSeasons();
+  if(tab==="staff")return adminStaff();
+  if(tab==="contracts")return adminContracts();
+  if(tab==="audit")return adminAudit();
+  if(tab==="settings")return adminSettings();
+}
+async function adminUsers(){
+  const members=await must(supabase.from("team_members").select("*").eq("team_id",state.team.id));
+  const profiles=await must(supabase.from("profiles").select("*").in("id",members.map(x=>x.profile_id)));
+  const roleRows=await must(supabase.from("roles").select("id,code"));
+  const adminRole=roleRows.find(r=>r.code==="admin");
+  const memberRoles=adminRole?await must(supabase.from("team_member_roles").select("*").in("team_member_id",members.map(x=>x.id)).eq("role_id",adminRole.id)):[];
+  const adminMembers=new Set(memberRoles.filter(r=>r.active).map(r=>r.team_member_id));
+  const players=await must(supabase.from("players").select("*").eq("team_id",state.team.id));const linked=new Map(players.filter(p=>p.profile_id).map(p=>[p.profile_id,p]));
+  $("#admin-content").innerHTML=`<div class="page-title"><h2>Utenti</h2><button class="btn btn-primary" id="admin-new-user">Nuovo utente</button></div><div class="table-wrap"><table class="table"><thead><tr><th>Utente</th><th>Username</th><th>Stato</th><th>Calciatore collegato</th><th></th></tr></thead><tbody>${members.map(m=>{const p=profiles.find(x=>x.id===m.profile_id),pl=linked.get(m.profile_id),isAdmin=adminMembers.has(m.id)||m.is_owner;return `<tr><td>${esc(p?.display_name||"")}${m.is_owner?` <span class="badge green">owner</span>`:isAdmin?` <span class="badge blue">admin</span>`:""}</td><td>@${esc(p?.username||"")}</td><td>${p?.is_active?"attivo":"disattivato"}</td><td>${pl?esc(pl.last_name+" "+pl.first_name):"—"}</td><td><div class="actions"><button class="btn btn-sm" data-admin-role="${m.profile_id}" data-admin-enabled="${isAdmin&&!m.is_owner}" ${m.is_owner?"disabled":""}>${isAdmin?"Revoca Admin":"Rendi Admin"}</button><button class="btn btn-sm" data-reset="${m.profile_id}">Reset psw</button><button class="btn btn-sm" data-link="${m.profile_id}">Collega player</button><button class="btn btn-sm ${p?.is_active?"btn-danger":""}" data-state="${m.profile_id}" data-active="${p?.is_active}">${p?.is_active?"Disattiva":"Riattiva"}</button></div></td></tr>`}).join("")}</tbody></table></div>`;
+  $("#admin-new-user").onclick=()=>openAdminNewUser();
+  $$("[data-admin-role]").forEach(b=>b.onclick=async()=>{try{await must(supabase.rpc("set_member_admin_role",{p_team_id:state.team.id,p_profile_id:b.dataset.adminRole,p_enabled:b.dataset.adminEnabled!=="true"}));toast("Ruolo Admin aggiornato","ok");adminUsers()}catch(e){toast(e.message,"error")}});
+  $$("[data-reset]").forEach(b=>b.onclick=async()=>{const pwd=prompt("Nuova password temporanea (min 8 caratteri)");if(!pwd)return;try{await edge("admin-reset-password",{team_id:state.team.id,user_id:b.dataset.reset,password:pwd});toast("Password reimpostata","ok")}catch(e){toast(e.message,"error")}});
+  $$("[data-state]").forEach(b=>b.onclick=async()=>{try{await edge("admin-account-state",{team_id:state.team.id,user_id:b.dataset.state,active:b.dataset.active!=="true"});adminUsers()}catch(e){toast(e.message,"error")}});
+  $$("[data-link]").forEach(b=>b.onclick=()=>{const available=players.filter(p=>!p.profile_id||p.profile_id===b.dataset.link);showModal("Collega anagrafica calciatore",`<select id="link-player"><option value="">—</option>${available.map(p=>`<option value="${p.id}">${esc(p.last_name)} ${esc(p.first_name)}</option>`).join("")}</select><div style="height:12px"></div><button id="do-link" class="btn btn-primary">Collega</button>`,root=>{$("#do-link",root).onclick=async()=>{try{await must(supabase.rpc("link_profile_to_player",{p_team_id:state.team.id,p_player_id:$("#link-player",root).value,p_profile_id:b.dataset.link}));closeModal();adminUsers()}catch(e){toast(e.message,"error")}}})});
+}
+function openAdminNewUser(){
+  showModal("Nuovo utente",`<form id="anu-form"><div class="form-grid"><div class="field"><label>Nome visualizzato</label><input id="anu-display" required></div><div class="field"><label>Username</label><input id="anu-user" required></div></div><div class="form-grid"><div class="field"><label>Nome</label><input id="anu-first"></div><div class="field"><label>Cognome</label><input id="anu-last"></div></div><div class="field"><label>Password temporanea</label><input id="anu-pass" type="password" minlength="8" required></div><label class="check"><input id="anu-admin" type="checkbox"> Admin</label><div style="height:12px"></div><button class="btn btn-primary">Crea</button></form>`,root=>{
+    $("#anu-form",root).onsubmit=async e=>{e.preventDefault();try{await edge("admin-create-user",{team_id:state.team.id,username:$("#anu-user",root).value,password:$("#anu-pass",root).value,display_name:$("#anu-display",root).value,first_name:$("#anu-first",root).value,last_name:$("#anu-last",root).value,roles:$("#anu-admin",root).checked?["admin"]:[],must_change_password:true});closeModal();adminUsers()}catch(err){toast(err.message,"error")}};
+  });
+}
+async function adminPermissions(){
+  const roles=await must(supabase.from("roles").select("*").order("sort_order"));const perms=await must(supabase.from("permissions").select("*").order("category").order("permission_key"));
+  const matrix=await must(supabase.from("team_role_permissions").select("*").eq("team_id",state.team.id));const map=new Map(matrix.map(x=>[`${x.role_id}:${x.permission_id}`,x.enabled]));
+  $("#admin-content").innerHTML=`<div class="section-note">L'owner della squadra mantiene sempre i permessi amministrativi per evitare il blocco accidentale del sistema.</div><div style="height:12px"></div><div class="table-wrap"><table class="table perm-matrix"><thead><tr><th>Permesso</th>${roles.map(r=>`<th>${esc(r.label)}</th>`).join("")}</tr></thead><tbody>${perms.map(p=>`<tr><td><strong>${esc(p.label)}</strong><div class="muted">${esc(p.permission_key)}</div></td>${roles.map(r=>`<td><input type="checkbox" data-perm="${p.permission_key}" data-role="${r.code}" ${map.get(`${r.id}:${p.id}`)?"checked":""}></td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+  $$("[data-perm]").forEach(c=>c.onchange=async()=>{try{await must(supabase.rpc("set_team_role_permission",{p_team_id:state.team.id,p_role_code:c.dataset.role,p_permission_key:c.dataset.perm,p_enabled:c.checked}));toast("Permesso aggiornato","ok")}catch(e){c.checked=!c.checked;toast(e.message,"error")}});
+}
+async function adminSeasons(){
+  $("#admin-content").innerHTML=`<div class="page-title"><h2>Stagioni</h2><button class="btn btn-primary" id="new-season">Nuova stagione</button></div><div class="list">${state.seasons.map(s=>`<div class="list-item"><div><strong>${esc(s.name)}</strong><div class="muted">${fmtDate(s.start_date)} → ${fmtDate(s.end_date)}</div></div><span class="badge ${s.status==="active"?"green":""}">${esc(s.status)}</span></div>`).join("")}</div>`;
+  $("#new-season").onclick=()=>showModal("Nuova stagione",`<form id="season-form"><div class="field"><label>Nome</label><input id="s-name" placeholder="2027/28" required></div><div class="form-grid"><div class="field"><label>Inizio</label><input id="s-start" type="date" required></div><div class="field"><label>Fine</label><input id="s-end" type="date" required></div></div><div class="field"><label>Stato</label><select id="s-status"><option value="future">Futura</option><option value="active">Attiva</option><option value="archived">Archiviata</option></select></div><button class="btn btn-primary">Crea</button></form>`,root=>{$("#season-form",root).onsubmit=async e=>{e.preventDefault();try{await must(supabase.from("seasons").insert({team_id:state.team.id,name:$("#s-name",root).value,start_date:$("#s-start",root).value,end_date:$("#s-end",root).value,status:$("#s-status",root).value}));closeModal();await boot()}catch(err){toast(err.message,"error")}}});
+}
+async function adminStaff(){
+  const assignments=await must(supabase.from("staff_assignments").select("*").eq("team_id",state.team.id).order("start_date",{ascending:false}));
+  const members=await must(supabase.from("team_members").select("*").eq("team_id",state.team.id));const profiles=await must(supabase.from("profiles").select("*").in("id",members.map(x=>x.profile_id)));const pmap=new Map(profiles.map(p=>[p.id,p])),mmap=new Map(members.map(m=>[m.id,m]));
+  $("#admin-content").innerHTML=`<div class="page-title"><h2>Staff e storico</h2>${can("staff.manage")?`<button class="btn btn-primary" id="new-staff">Nuovo incarico</button>`:""}</div><div class="table-wrap"><table class="table"><thead><tr><th>Persona</th><th>Ruolo</th><th>Dal</th><th>Al</th><th>Stato</th><th></th></tr></thead><tbody>${assignments.map(a=>`<tr><td>${esc(pmap.get(mmap.get(a.team_member_id)?.profile_id)?.display_name||"")}</td><td>${esc(a.role_code)}</td><td>${fmtDate(a.start_date)}</td><td>${fmtDate(a.actual_end_date||a.planned_end_date)}</td><td>${esc(a.status)}</td><td>${can("staff.manage")&&a.status==="active"?`<button class="btn btn-sm btn-danger" data-end-staff="${a.id}">Termina</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
+  $("#new-staff")?.addEventListener("click",()=>showModal("Nuovo incarico",`<form id="staff-form"><div class="field"><label>Utente</label><select id="st-member">${members.map(m=>`<option value="${m.id}">${esc(pmap.get(m.profile_id)?.display_name||"")}</option>`).join("")}</select></div><div class="field"><label>Ruolo</label><select id="st-role"><option value="coach">Allenatore</option><option value="assistant_coach">Vice</option><option value="management">Dirigenza</option></select></div><div class="form-grid"><div class="field"><label>Inizio</label><input id="st-start" type="date" value="${state.season.start_date}"></div><div class="field"><label>Scadenza</label><input id="st-end" type="date" value="${state.season.end_date}"></div></div><button class="btn btn-primary">Salva</button></form>`,root=>{const role=$("#st-role",root),end=$("#st-end",root);role.onchange=()=>{end.value=role.value==="management"?"":state.season.end_date};$("#staff-form",root).onsubmit=async e=>{e.preventDefault();try{await must(supabase.from("staff_assignments").insert({team_id:state.team.id,season_id:state.season.id,team_member_id:$("#st-member",root).value,role_code:role.value,start_date:$("#st-start",root).value,planned_end_date:end.value||null,status:"active",created_by:state.profile.id}));closeModal();adminStaff()}catch(err){toast(err.message,"error")}}}));
+  $$("[data-end-staff]").forEach(b=>b.onclick=async()=>{const d=prompt("Data fine incarico",today());if(!d)return;try{await must(supabase.from("staff_assignments").update({actual_end_date:d,status:"terminated"}).eq("id",b.dataset.endStaff));adminStaff()}catch(err){toast(err.message,"error")}});
+}
+async function adminContracts(){
+  const contracts=await must(supabase.from("player_contracts").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("planned_end_date"));
+  const requests=await must(supabase.from("player_contract_requests").select("*").eq("team_id",state.team.id).eq("status","pending"));
+  const players=await must(supabase.from("players").select("*").eq("team_id",state.team.id));const pm=new Map(players.map(p=>[p.id,p]));
+  $("#admin-content").innerHTML=`<div class="page-title"><h2>Permanenze</h2><button class="btn btn-primary" id="new-contract">Nuova / rinnova permanenza</button></div>${requests.length?`<div class="card"><h2>Richieste di conferma</h2><div class="list">${requests.map(r=>`<div class="list-item"><div><strong>${esc(pm.get(r.player_id)?.last_name||"")}</strong><div class="muted">${fmtDate(r.requested_start_date)} → ${fmtDate(r.requested_end_date)}</div></div><div class="actions"><button class="btn btn-sm btn-primary" data-renew-yes="${r.id}">Approva</button><button class="btn btn-sm btn-danger" data-renew-no="${r.id}">Rifiuta</button></div></div>`).join("")}</div></div><div style="height:14px"></div>`:""}<h3>${esc(state.season.name)}</h3><div class="table-wrap"><table class="table"><thead><tr><th>Giocatore</th><th>Inizio</th><th>Scadenza</th><th>Uscita eff.</th><th>Stato</th></tr></thead><tbody>${contracts.map(c=>`<tr><td>${esc(pm.get(c.player_id)?.last_name||"")}</td><td>${fmtDate(c.start_date)}</td><td>${fmtDate(c.planned_end_date)}</td><td>${fmtDate(c.actual_end_date)}</td><td>${esc(c.status)}</td></tr>`).join("")}</tbody></table></div>`;
+  $("#new-contract")?.addEventListener("click",()=>showModal("Nuova permanenza",`<form id="contract-form"><div class="field"><label>Calciatore</label><select id="ct-player">${players.map(p=>`<option value="${p.id}">${esc(p.last_name)} ${esc(p.first_name)}</option>`).join("")}</select></div><div class="field"><label>Stagione</label><select id="ct-season">${state.seasons.map(s=>`<option value="${s.id}" ${s.id===state.season.id?"selected":""}>${esc(s.name)}</option>`).join("")}</select></div><div class="form-grid"><div class="field"><label>Inizio</label><input id="ct-start" type="date" value="${state.season.start_date}"></div><div class="field"><label>Scadenza</label><input id="ct-end" type="date" value="${state.season.end_date}"></div></div><div class="field"><label>Numero maglia</label><input id="ct-shirt" type="number" min="1" max="99"></div><button class="btn btn-primary">Conferma permanenza</button></form>`,root=>{const seasonSel=$("#ct-season",root);seasonSel.onchange=()=>{const ss=state.seasons.find(x=>x.id===seasonSel.value);$("#ct-start",root).value=ss.start_date;$("#ct-end",root).value=ss.end_date};$("#contract-form",root).onsubmit=async e=>{e.preventDefault();try{await must(supabase.rpc("create_player_contract",{p_player_id:$("#ct-player",root).value,p_season_id:seasonSel.value,p_start_date:$("#ct-start",root).value,p_end_date:$("#ct-end",root).value,p_shirt_number:Number($("#ct-shirt",root).value)||null,p_notes:null}));closeModal();adminContracts()}catch(err){toast(err.message,"error")}}}));
+  $$("[data-renew-yes]").forEach(b=>b.onclick=async()=>{try{await must(supabase.rpc("review_contract_request",{p_request_id:b.dataset.renewYes,p_action:"approve",p_note:null}));adminContracts()}catch(e){toast(e.message,"error")}});
+  $$("[data-renew-no]").forEach(b=>b.onclick=async()=>{try{await must(supabase.rpc("review_contract_request",{p_request_id:b.dataset.renewNo,p_action:"reject",p_note:null}));adminContracts()}catch(e){toast(e.message,"error")}});
+}
+async function adminAudit(){
+  const rows=await must(supabase.from("audit_log").select("*").eq("team_id",state.team.id).order("created_at",{ascending:false}).limit(200));
+  $("#admin-content").innerHTML=`<div class="table-wrap"><table class="table"><thead><tr><th>Quando</th><th>Azione</th><th>Entità</th><th>ID</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${fmtDateTime(x.created_at)}</td><td>${esc(x.action)}</td><td>${esc(x.entity_type)}</td><td>${esc(x.entity_id||"")}</td></tr>`).join("")}</tbody></table></div>`;
+}
+async function adminSettings(){
+  $("#admin-content").innerHTML=`<div class="card" style="max-width:650px"><form id="team-settings"><div class="field"><label>Nome squadra</label><input id="ts-name" value="${esc(state.team.name)}"></div><div class="field"><label>Nome breve</label><input id="ts-short" value="${esc(state.team.short_name||"")}"></div><button class="btn btn-primary">Salva</button></form></div>`;
+  $("#team-settings").onsubmit=async e=>{e.preventDefault();try{await must(supabase.from("teams").update({name:$("#ts-name").value,short_name:$("#ts-short").value||null}).eq("id",state.team.id));state.team=await must(supabase.from("teams").select("*").eq("id",state.team.id).single());toast("Squadra aggiornata","ok")}catch(err){toast(err.message,"error")}};
+}
+
+/* =========================================================
+   AVVIO
+========================================================= */
+supabase.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT")renderLogin();state.session=session});
+boot();
+</script>
+</body>
+</html>
