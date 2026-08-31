@@ -109,6 +109,10 @@ const state = {
   profile: null,
   preferences: null,
 
+  platformRoles: [],
+  isSuperAdmin: false,
+  canCreateTeam: false,
+
   teamMemberships: [],
   teams: [],
   membership: null,
@@ -122,7 +126,8 @@ const state = {
 
   liveChannel: null,
   liveTimer: null,
-  currentPage: "dashboard"
+  currentPage: "dashboard",
+  currentContext: "team"
 };
 
 const $ = (s, root=document) => root.querySelector(s);
@@ -402,126 +407,128 @@ async function must(dataPromise){
 ========================================================= */
 function renderLogin(){
   stopLive();
+  resetTeamBranding();
+
   $("#root").innerHTML=`<div class="auth-wrap"><div class="auth-card">
     <div class="brand"><div class="brand-mark">TM</div><div><h1>${esc(CONFIG.APP_NAME)}</h1><div class="muted">Gestione squadre</div></div></div>
-    ${!configReady()?`<div class="section-note" style="margin-bottom:14px">Compila SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY dentro <code>index.html</code>.</div>`:""}
+
+    ${!configReady()
+      ? `<div class="section-note" style="margin-bottom:14px">Compila SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY dentro <code>index.html</code>.</div>`
+      : ""
+    }
+
     <form id="login-form">
       <div class="field"><label>Username</label><input id="login-user" autocomplete="username" required></div>
       <div class="field"><label>Password</label><input id="login-pass" type="password" autocomplete="current-password" required></div>
       <button class="btn btn-primary btn-block" ${!configReady()?"disabled":""}>Accedi</button>
     </form>
+
     <div style="height:12px"></div>
-    <button class="btn btn-ghost btn-block" id="show-register">Registrati come fan</button>
-    <div style="height:8px"></div>
-    <button class="btn btn-ghost btn-block" id="show-bootstrap">Prima configurazione</button>
+    <button class="btn btn-ghost btn-block" id="show-register">Registrati</button>
+
+    <div id="initial-setup-slot" style="display:none">
+      <div style="height:8px"></div>
+      <button class="btn btn-ghost btn-block" id="show-platform-setup">Prima configurazione piattaforma</button>
+    </div>
   </div></div>`;
+
   $("#login-form").onsubmit=async e=>{
     e.preventDefault();
     try{
-      const res=await edge("auth-login",{username:$("#login-user").value,password:$("#login-pass").value},false);
-      const {error}=await supabase.auth.setSession({access_token:res.session.access_token,refresh_token:res.session.refresh_token});
-      if(error) throw error;
-      await boot();
-    }catch(err){toast(err.message,"error")}
-  };
-  $("#show-register").onclick=renderFanRegister;
-  $("#show-bootstrap").onclick=renderBootstrapSetup;
-}
-
-function renderBootstrapSetup(){
-  const defaultSeason = (() => {
-    const now = new Date();
-    const y = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear()-1;
-    return {
-      name: `${y}/${String(y+1).slice(-2)}`,
-      start: `${y}-07-01`,
-      end: `${y+1}-06-30`
-    };
-  })();
-
-  $("#root").innerHTML=`<div class="auth-wrap"><div class="auth-card">
-    <div class="brand"><div class="brand-mark">TM</div><div><h1>Prima configurazione</h1><div class="muted">Crea squadra, stagione e primo amministratore</div></div></div>
-    <div class="section-note" style="margin-bottom:14px">
-      Usa questa schermata una sola volta. Il <strong>BOOTSTRAP_SECRET</strong> è il valore che hai inserito nei Secrets delle Edge Functions e non viene salvato nel browser.
-    </div>
-    <form id="bootstrap-form">
-      <div class="field"><label>Bootstrap secret</label><input id="bs-secret" type="password" required></div>
-
-      <h3>Società e squadra</h3>
-      <div class="field"><label>Nome società</label><input id="bs-org" required></div>
-      <div class="field"><label>Nome squadra</label><input id="bs-team" required></div>
-      <div class="form-grid">
-        <div class="field"><label>Nome breve / sigla</label><input id="bs-short"></div>
-        <div class="field"><label>Team slug</label><input id="bs-slug" placeholder="es. calcio-caselle" required><div class="muted" style="font-size:.72rem;margin-top:5px">Identificatore tecnico leggibile: viene proposto automaticamente dal nome squadra.</div></div>
-      </div>
-
-      <h3>Stagione iniziale</h3>
-      <div class="field"><label>Nome stagione</label><input id="bs-season-name" value="${defaultSeason.name}" required></div>
-      <div class="form-grid">
-        <div class="field"><label>Inizio</label><input id="bs-season-start" type="date" value="${defaultSeason.start}" required></div>
-        <div class="field"><label>Fine</label><input id="bs-season-end" type="date" value="${defaultSeason.end}" required></div>
-      </div>
-
-      <h3>Primo amministratore</h3>
-      <div class="field"><label>Nome visualizzato</label><input id="bs-display" required></div>
-      <div class="form-grid">
-        <div class="field"><label>Nome</label><input id="bs-first"></div>
-        <div class="field"><label>Cognome</label><input id="bs-last"></div>
-      </div>
-      <div class="field"><label>Username</label><input id="bs-user" pattern="[A-Za-z0-9._-]{3,32}" required></div>
-      <div class="field"><label>Password</label><input id="bs-pass" type="password" minlength="8" required></div>
-
-      <button class="btn btn-primary btn-block">Crea e accedi</button>
-    </form>
-    <div style="height:10px"></div>
-    <button class="btn btn-ghost btn-block" id="bootstrap-back">Torna al login</button>
-  </div></div>`;
-
-  $("#bootstrap-back").onclick=renderLogin;
-
-  const teamNameInput=$("#bs-team");
-  const slugInput=$("#bs-slug");
-  let slugTouched=false;
-  slugInput.addEventListener("input",()=>slugTouched=true);
-  teamNameInput.addEventListener("input",()=>{
-    if(!slugTouched) slugInput.value=slugify(teamNameInput.value);
-  });
-
-  $("#bootstrap-form").onsubmit=async e=>{
-    e.preventDefault();
-    try{
-      const payload={
-        bootstrap_secret: $("#bs-secret").value,
-        organization_name: $("#bs-org").value.trim(),
-        team_name: $("#bs-team").value.trim(),
-        team_short_name: $("#bs-short").value.trim() || null,
-        team_slug: $("#bs-slug").value.trim().toLowerCase(),
-        season_name: $("#bs-season-name").value.trim(),
-        season_start: $("#bs-season-start").value,
-        season_end: $("#bs-season-end").value,
-        username: $("#bs-user").value.trim().toLowerCase(),
-        password: $("#bs-pass").value,
-        display_name: $("#bs-display").value.trim(),
-        first_name: $("#bs-first").value.trim() || null,
-        last_name: $("#bs-last").value.trim() || null
-      };
-
-      const created=await edge("bootstrap-admin",payload,false);
-
-
-      const login=await edge("auth-login",{
-        username: payload.username,
-        password: payload.password
+      const res=await edge("auth-login",{
+        username:$("#login-user").value,
+        password:$("#login-pass").value
       },false);
 
       const {error}=await supabase.auth.setSession({
-        access_token: login.session.access_token,
-        refresh_token: login.session.refresh_token
+        access_token:res.session.access_token,
+        refresh_token:res.session.refresh_token
       });
-      if(error) throw error;
+      if(error)throw error;
 
-      toast("Configurazione iniziale completata","ok");
       await boot();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  };
+
+  $("#show-register").onclick=renderRegistration;
+
+  if(configReady()){
+    supabase.rpc("platform_setup_status").then(({data,error})=>{
+      if(error)return;
+      const row=Array.isArray(data)?data[0]:data;
+      if(row && !row.super_admin_exists){
+        const slot=$("#initial-setup-slot");
+        if(slot){
+          slot.style.display="";
+          $("#show-platform-setup").onclick=renderInitialPlatformSetup;
+        }
+      }
+    });
+  }
+}
+
+function renderInitialPlatformSetup(){
+  $("#root").innerHTML=`<div class="auth-wrap"><div class="auth-card">
+    <div class="brand">
+      <div class="brand-mark">TM</div>
+      <div>
+        <h1>Configura la piattaforma</h1>
+        <div class="muted">Crea il primo Super Admin globale</div>
+      </div>
+    </div>
+
+    <div class="section-note" style="margin-bottom:14px">
+      Non serve alcun Bootstrap Secret. Questa procedura funziona una sola volta:
+      il primo account diventa <strong>Super Admin della piattaforma</strong>.
+      Le squadre verranno create successivamente dal pannello globale.
+    </div>
+
+    <form id="platform-setup-form">
+      <div class="field"><label>Nome visualizzato</label><input id="ps-display" required></div>
+      <div class="form-grid">
+        <div class="field"><label>Nome</label><input id="ps-first"></div>
+        <div class="field"><label>Cognome</label><input id="ps-last"></div>
+      </div>
+      <div class="field"><label>Username</label><input id="ps-user" pattern="[A-Za-z0-9._-]{3,32}" required></div>
+      <div class="field"><label>Password</label><input id="ps-pass" type="password" minlength="8" required></div>
+      <button class="btn btn-primary btn-block">Crea Super Admin</button>
+    </form>
+
+    <div style="height:10px"></div>
+    <button class="btn btn-ghost btn-block" id="platform-setup-back">Torna al login</button>
+  </div></div>`;
+
+  $("#platform-setup-back").onclick=renderLogin;
+
+  $("#platform-setup-form").onsubmit=async e=>{
+    e.preventDefault();
+
+    const username=$("#ps-user").value.trim().toLowerCase();
+    const password=$("#ps-pass").value;
+
+    try{
+      await edge("fan-register",{
+        username,
+        password,
+        display_name:$("#ps-display").value.trim(),
+        first_name:$("#ps-first").value.trim()||null,
+        last_name:$("#ps-last").value.trim()||null
+      },false);
+
+      const login=await edge("auth-login",{username,password},false);
+      const {error}=await supabase.auth.setSession({
+        access_token:login.session.access_token,
+        refresh_token:login.session.refresh_token
+      });
+      if(error)throw error;
+
+      await must(supabase.rpc("claim_initial_super_admin"));
+
+      toast("Super Admin globale configurato","ok");
+      await boot();
+
     }catch(err){
       console.error(err);
       toast(err.message,"error");
@@ -529,24 +536,57 @@ function renderBootstrapSetup(){
   };
 }
 
-function renderFanRegister(){
+function renderRegistration(){
   $("#root").innerHTML=`<div class="auth-wrap"><div class="auth-card">
-    <h1>Registrazione fan</h1><p class="muted">L'account fan resta lo stesso anche se in futuro verrai collegato a un'anagrafica calciatore.</p>
+    <h1>Registrazione</h1>
+    <p class="muted">
+      L'account è globale. Dopo l'accesso potrai seguire squadre oppure richiedere la creazione di una squadra come dirigente.
+    </p>
+
     <form id="register-form">
       <div class="field"><label>Nome visualizzato</label><input id="reg-display" required></div>
-      <div class="form-grid"><div class="field"><label>Nome</label><input id="reg-first"></div><div class="field"><label>Cognome</label><input id="reg-last"></div></div>
+      <div class="form-grid">
+        <div class="field"><label>Nome</label><input id="reg-first"></div>
+        <div class="field"><label>Cognome</label><input id="reg-last"></div>
+      </div>
       <div class="field"><label>Username</label><input id="reg-user" pattern="[A-Za-z0-9._-]{3,32}" required></div>
       <div class="field"><label>Password (min. 8 caratteri)</label><input id="reg-pass" type="password" minlength="8" required></div>
+
+      <div class="field">
+        <label>Come vuoi iniziare?</label>
+        <select id="reg-intent">
+          <option value="fan">Voglio seguire una o più squadre</option>
+          <option value="manager">Sono un dirigente / voglio creare una squadra</option>
+        </select>
+        <div class="muted" style="font-size:.74rem;margin-top:5px">
+          La scelta “dirigente” non assegna privilegi automaticamente: invierà una richiesta al Super Admin.
+        </div>
+      </div>
+
       <button class="btn btn-primary btn-block">Crea account</button>
-    </form><div style="height:10px"></div><button class="btn btn-ghost btn-block" id="back-login">Torna al login</button>
+    </form>
+
+    <div style="height:10px"></div>
+    <button class="btn btn-ghost btn-block" id="back-login">Torna al login</button>
   </div></div>`;
+
   $("#back-login").onclick=renderLogin;
+
   $("#register-form").onsubmit=async e=>{
     e.preventDefault();
+
     try{
       const username=$("#reg-user").value.trim().toLowerCase();
       const password=$("#reg-pass").value;
-      await edge("fan-register",{username,password,display_name:$("#reg-display").value,first_name:$("#reg-first").value,last_name:$("#reg-last").value},false);
+      const intent=$("#reg-intent").value;
+
+      await edge("fan-register",{
+        username,
+        password,
+        display_name:$("#reg-display").value,
+        first_name:$("#reg-first").value||null,
+        last_name:$("#reg-last").value||null
+      },false);
 
       const login=await edge("auth-login",{username,password},false);
       const {error}=await supabase.auth.setSession({
@@ -557,17 +597,27 @@ function renderFanRegister(){
 
       toast("Account creato","ok");
       await boot();
-    }catch(err){toast(err.message,"error")}
+
+      if(intent==="manager"){
+        setTimeout(()=>openTeamCreationRequest(),0);
+      }
+
+    }catch(err){
+      toast(err.message,"error");
+    }
   };
 }
+
 async function logout(){
   await supabase.auth.signOut();
   stopLive();
   resetTeamBranding();
   Object.assign(state,{
     session:null,profile:null,preferences:null,
+    platformRoles:[],isSuperAdmin:false,canCreateTeam:false,
     teamMemberships:[],teams:[],membership:null,team:null,
-    season:null,seasons:[],roles:[],permissions:new Set(),myPlayer:null
+    season:null,seasons:[],roles:[],permissions:new Set(),myPlayer:null,
+    currentContext:"team"
   });
   renderLogin();
 }
@@ -582,6 +632,52 @@ async function changePasswordPage(){
 /* =========================================================
    BOOT / CONTESTO MULTI-SQUADRA
 ========================================================= */
+function renderExistingAccountSuperAdminClaim(){
+  stopLive();
+  resetTeamBranding();
+
+  $("#root").innerHTML=`<div class="auth-wrap"><div class="auth-card">
+    <div class="brand">
+      <div class="brand-mark">TM</div>
+      <div>
+        <h1>Completa configurazione</h1>
+        <div class="muted">${esc(state.profile?.display_name||"")}</div>
+      </div>
+    </div>
+
+    <div class="section-note">
+      Non esiste ancora un Super Admin globale. Puoi usare questo account per completare la configurazione iniziale, senza Bootstrap Secret.
+    </div>
+
+    <div style="height:14px"></div>
+    <button class="btn btn-primary btn-block" id="claim-existing-superadmin">Rendi questo account Super Admin</button>
+
+    <div style="height:10px"></div>
+    <button class="btn btn-ghost btn-block" id="claim-existing-logout">Esci</button>
+  </div></div>`;
+
+  $("#claim-existing-superadmin").onclick=async()=>{
+    try{
+      await must(supabase.rpc("claim_initial_super_admin"));
+      toast("Super Admin globale configurato","ok");
+      await boot();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  };
+
+  $("#claim-existing-logout").onclick=logout;
+}
+
+async function loadPlatformAccess(){
+  state.platformRoles=(await must(
+    supabase.rpc("get_my_platform_roles")
+  )).map(x=>x.role_code);
+
+  state.isSuperAdmin=state.platformRoles.includes("platform_super_admin");
+  state.canCreateTeam=state.isSuperAdmin || state.platformRoles.includes("team_creator");
+}
+
 async function loadAccountTeams(){
   const memberships=await must(
     supabase.from("team_members")
@@ -592,7 +688,25 @@ async function loadAccountTeams(){
 
   state.teamMemberships=memberships;
 
-  if(!memberships.length){
+  if(state.isSuperAdmin){
+    const allTeams=await must(
+      supabase.from("teams")
+        .select("*")
+        .order("name")
+    );
+
+    state.teams=allTeams.map(team=>({
+      ...team,
+      membership:memberships.find(m=>m.team_id===team.id)||{
+        team_id:team.id,
+        profile_id:state.profile.id,
+        is_owner:false,
+        is_active:true,
+        is_hidden:false,
+        platform_access:true
+      }
+    }));
+  }else if(!memberships.length){
     state.teams=[];
   }else{
     const teamRows=await must(
@@ -614,18 +728,29 @@ async function loadAccountTeams(){
       .eq("profile_id",state.profile.id)
       .maybeSingle()
   );
-  state.preferences=prefs||{profile_id:state.profile.id,last_team_id:null};
+
+  state.preferences=prefs||{
+    profile_id:state.profile.id,
+    last_team_id:null,
+    last_context:state.isSuperAdmin?"platform":"team"
+  };
 }
 
 function visibleTeams(){
+  if(state.isSuperAdmin)return state.teams;
   return state.teams.filter(t=>t.membership?.is_active && !t.membership?.is_hidden);
 }
 
 async function enterTeam(teamId,{persist=true,targetPath="dashboard"}={}){
-  const team=state.teams.find(t=>t.id===teamId && t.membership?.is_active);
-  if(!team) throw new Error("Squadra non disponibile");
+  const team=state.teams.find(t=>
+    t.id===teamId
+    && (state.isSuperAdmin || t.membership?.is_active)
+  );
+
+  if(!team)throw new Error("Squadra non disponibile");
 
   stopLive();
+  state.currentContext="team";
   state.team=team;
   state.membership=team.membership;
   applyTeamBranding(team);
@@ -636,11 +761,16 @@ async function enterTeam(teamId,{persist=true,targetPath="dashboard"}={}){
       .eq("team_id",team.id)
       .order("start_date",{ascending:false})
   );
-  state.season=state.seasons.find(s=>s.status==="active") || state.seasons[0] || null;
 
-  state.roles=(await must(
+  state.season=state.seasons.find(s=>s.status==="active")||state.seasons[0]||null;
+
+  const teamRoles=(await must(
     supabase.rpc("get_my_effective_roles",{p_team_id:team.id})
   )).map(x=>x.role_code);
+
+  state.roles=state.isSuperAdmin
+    ? ["platform_super_admin",...teamRoles]
+    : teamRoles;
 
   state.permissions=new Set((await must(
     supabase.rpc("get_my_permissions",{p_team_id:team.id})
@@ -654,9 +784,14 @@ async function enterTeam(teamId,{persist=true,targetPath="dashboard"}={}){
   );
   state.myPlayer=myPlayers[0]||null;
 
-  if(persist && !team.membership?.is_hidden){
+  if(persist){
     await must(supabase.rpc("set_last_team",{p_team_id:team.id}));
-    state.preferences={...(state.preferences||{}),profile_id:state.profile.id,last_team_id:team.id};
+    state.preferences={
+      ...(state.preferences||{}),
+      profile_id:state.profile.id,
+      last_team_id:team.id,
+      last_context:"team"
+    };
   }
 
   if(state.profile.must_change_password){
@@ -670,7 +805,7 @@ async function enterTeam(teamId,{persist=true,targetPath="dashboard"}={}){
         p_season_id:state.season.id
       })
     );
-    if(need) openAffinityAssessment(state.myPlayer,"self",true);
+    if(need)openAffinityAssessment(state.myPlayer,"self",true);
   }
 
   await route(targetPath,false);
@@ -678,6 +813,11 @@ async function enterTeam(teamId,{persist=true,targetPath="dashboard"}={}){
 
 async function chooseFallbackTeam(){
   const visible=visibleTeams();
+
+  if(state.isSuperAdmin && !visible.length){
+    return platformRoute("dashboard",false);
+  }
+
   if(!visible.length){
     state.team=null;
     state.membership=null;
@@ -690,7 +830,7 @@ async function chooseFallbackTeam(){
     return renderTeamChooser();
   }
 
-  if(visible.length===1){
+  if(visible.length===1 && !state.isSuperAdmin){
     return enterTeam(visible[0].id,{persist:true,targetPath:"dashboard"});
   }
 
@@ -698,10 +838,10 @@ async function chooseFallbackTeam(){
 }
 
 async function boot(){
-  if(!configReady()) return renderLogin();
+  if(!configReady())return renderLogin();
 
   const {data:{session}}=await supabase.auth.getSession();
-  if(!session) return renderLogin();
+  if(!session)return renderLogin();
 
   state.session=session;
 
@@ -713,14 +853,42 @@ async function boot(){
         .single()
     );
 
+    await loadPlatformAccess();
+
+    if(!state.isSuperAdmin){
+      const setupData=await must(supabase.rpc("platform_setup_status"));
+      const setupRow=Array.isArray(setupData)?setupData[0]:setupData;
+
+      if(setupRow && !setupRow.super_admin_exists){
+        return renderExistingAccountSuperAdminClaim();
+      }
+    }
+
     await loadAccountTeams();
+
+    if(state.profile.must_change_password){
+      state.team=null;
+      state.currentContext=state.isSuperAdmin?"platform":"team";
+      return changePasswordPage();
+    }
+
+    if(state.isSuperAdmin && state.preferences?.last_context==="platform"){
+      return platformRoute("dashboard",false);
+    }
 
     const visible=visibleTeams();
     const preferred=visible.find(t=>t.id===state.preferences?.last_team_id);
 
     if(preferred){
       const hash=location.hash.replace(/^#\/?/,"")||"dashboard";
+      if(hash.startsWith("platform") && state.isSuperAdmin){
+        return platformRoute(hash.split("/")[1]||"dashboard",false);
+      }
       return enterTeam(preferred.id,{persist:false,targetPath:hash});
+    }
+
+    if(state.isSuperAdmin){
+      return platformRoute("dashboard",false);
     }
 
     if(visible.length===1){
@@ -738,32 +906,60 @@ async function boot(){
 function renderTeamChooser(){
   stopLive();
   resetTeamBranding();
+  state.currentContext="team";
+
   const visible=visibleTeams();
 
   $("#root").innerHTML=`<div class="auth-wrap"><div class="auth-card" style="width:min(760px,100%)">
-    <div class="brand"><div class="brand-mark">TM</div><div><h1>${esc(CONFIG.APP_NAME)}</h1><div class="muted">${esc(state.profile?.display_name||"")} · scegli la squadra</div></div></div>
+    <div class="brand">
+      <div class="brand-mark">TM</div>
+      <div>
+        <h1>${esc(CONFIG.APP_NAME)}</h1>
+        <div class="muted">${esc(state.profile?.display_name||"")} · scegli il contesto</div>
+      </div>
+    </div>
+
+    ${state.isSuperAdmin
+      ? `<button class="card" id="open-platform" style="width:100%;text-align:left;color:inherit;cursor:pointer;margin-bottom:12px">
+          <strong>Pannello piattaforma</strong>
+          <div class="muted">Super Admin globale · tutte le squadre, utenti e richieste</div>
+        </button>`
+      : ""
+    }
 
     ${visible.length
-      ? `<div class="grid grid-2">${visible.map(t=>`<button class="card" data-enter-team="${t.id}" style="text-align:left;color:inherit;cursor:pointer">
-          <div class="brand" style="margin:0">
-            <div class="brand-mark" style="background:${esc(t.primary_color||"#22c55e")};color:${contrastColor(t.primary_color||"#22c55e")}">${teamMark(t,"TM")}</div>
-            <div><strong>${esc(t.name)}</strong><div class="muted">${esc(t.short_name||t.slug)}</div></div>
-          </div>
-        </button>`).join("")}</div>`
-      : `<div class="empty">Non hai ancora squadre attive nel selettore.</div>`
+      ? `<div class="grid grid-2">
+          ${visible.map(t=>`<button class="card" data-enter-team="${t.id}" style="text-align:left;color:inherit;cursor:pointer">
+            <div class="brand" style="margin:0">
+              <div class="brand-mark" style="background:${esc(t.primary_color||"#22c55e")};color:${contrastColor(t.primary_color||"#22c55e")}">${teamMark(t,"TM")}</div>
+              <div>
+                <strong>${esc(t.name)}</strong>
+                <div class="muted">${esc(t.short_name||t.slug)}</div>
+              </div>
+            </div>
+          </button>`).join("")}
+        </div>`
+      : `<div class="empty">Non hai ancora squadre nel tuo selettore.</div>`
     }
 
     <div style="height:14px"></div>
+
     <div class="actions">
       <button class="btn btn-primary" id="manage-teams-chooser">Gestisci / segui squadre</button>
-      <button class="btn" id="create-team-chooser">Crea una squadra</button>
+      <button class="btn" id="team-create-action">
+        ${state.canCreateTeam?"Crea una squadra":"Richiedi nuova squadra"}
+      </button>
       <button class="btn btn-ghost" id="logout-chooser">Esci</button>
     </div>
   </div></div>`;
 
-  $$("[data-enter-team]").forEach(b=>b.onclick=()=>enterTeam(b.dataset.enterTeam,{persist:true,targetPath:"dashboard"}));
+  $$("[data-enter-team]").forEach(b=>
+    b.onclick=()=>enterTeam(b.dataset.enterTeam,{persist:true,targetPath:"dashboard"})
+  );
+
+  $("#open-platform")?.addEventListener("click",()=>platformRoute("dashboard"));
   $("#manage-teams-chooser").onclick=openManageTeams;
-  $("#create-team-chooser").onclick=openCreateTeam;
+  $("#team-create-action").onclick=()=>state.canCreateTeam?openCreateTeam():openTeamCreationRequest();
   $("#logout-chooser").onclick=logout;
 }
 
@@ -788,6 +984,10 @@ async function refreshTeamsAfterMembershipChange(){
 }
 
 async function openManageTeams(){
+  if(state.isSuperAdmin){
+    return platformRoute("teams");
+  }
+
   try{
     await loadAccountTeams();
 
@@ -811,7 +1011,7 @@ async function openManageTeams(){
       <div style="height:12px"></div>
       <div class="list" id="team-manager-list"></div>
       <div style="height:12px"></div>
-      <button class="btn btn-primary" id="create-team-from-manager">Crea nuova squadra</button>
+      <button class="btn btn-primary" id="create-team-from-manager">${state.canCreateTeam?"Crea nuova squadra":"Richiedi nuova squadra"}</button>
     `,root=>{
       const list=$("#team-manager-list",root);
       const search=$("#team-search",root);
@@ -880,7 +1080,10 @@ async function openManageTeams(){
       };
 
       search.oninput=draw;
-      $("#create-team-from-manager",root).onclick=()=>{closeModal();openCreateTeam()};
+      $("#create-team-from-manager",root).onclick=()=>{
+        closeModal();
+        state.canCreateTeam?openCreateTeam():openTeamCreationRequest();
+      };
       draw();
     });
   }catch(err){
@@ -888,51 +1091,542 @@ async function openManageTeams(){
   }
 }
 
-function openCreateTeam(){
+function teamWorkspaceForm(prefix,{includeMessage=false,submitLabel="Invia"}={}){
   const now=new Date();
   const y=now.getMonth()>=6?now.getFullYear():now.getFullYear()-1;
   const seasonName=`${y}/${String(y+1).slice(-2)}`;
 
+  return `
+    <div class="field"><label>Nome società / organizzazione</label><input id="${prefix}-org" required></div>
+    <div class="field"><label>Nome squadra</label><input id="${prefix}-team" required></div>
+
+    <div class="form-grid">
+      <div class="field"><label>Sigla / nome breve</label><input id="${prefix}-short"></div>
+      <div class="field">
+        <label>Slug</label>
+        <input id="${prefix}-slug" required>
+        <div class="muted" style="font-size:.72rem;margin-top:5px">Generato automaticamente dal nome e modificabile.</div>
+      </div>
+    </div>
+
+    <h3>Prima stagione</h3>
+    <div class="field"><label>Nome stagione</label><input id="${prefix}-season" value="${seasonName}" required></div>
+
+    <div class="form-grid">
+      <div class="field"><label>Inizio</label><input id="${prefix}-start" type="date" value="${y}-07-01" required></div>
+      <div class="field"><label>Fine</label><input id="${prefix}-end" type="date" value="${y+1}-06-30" required></div>
+    </div>
+
+    ${includeMessage
+      ? `<div class="field"><label>Messaggio al Super Admin</label><textarea id="${prefix}-message" rows="3" placeholder="Informazioni utili sulla squadra o sulla tua richiesta"></textarea></div>`
+      : ""
+    }
+
+    <button class="btn btn-primary">${submitLabel}</button>
+  `;
+}
+
+function wireTeamSlug(prefix,root){
+  const name=$(`#${prefix}-team`,root);
+  const slug=$(`#${prefix}-slug`,root);
+  let touched=false;
+
+  slug.oninput=()=>touched=true;
+  name.oninput=()=>{
+    if(!touched)slug.value=slugify(name.value);
+  };
+}
+
+function openCreateTeam(){
+  if(!state.canCreateTeam){
+    return openTeamCreationRequest();
+  }
+
   showModal("Crea nuova squadra",`
+    <div class="section-note" style="margin-bottom:12px">
+      ${state.isSuperAdmin
+        ? `La squadra viene creata a livello piattaforma. Come Super Admin potrai amministrarla senza dover essere inserito artificialmente nella sua membership.`
+        : `Hai l'autorizzazione globale “Creatore squadre”: diventerai Owner, Admin e Dirigente della nuova squadra.`
+      }
+    </div>
     <form id="create-team-form">
-      <div class="field"><label>Nome società / organizzazione</label><input id="ctw-org" required></div>
-      <div class="field"><label>Nome squadra</label><input id="ctw-team" required></div>
-      <div class="form-grid">
-        <div class="field"><label>Sigla / nome breve</label><input id="ctw-short"></div>
-        <div class="field"><label>Slug</label><input id="ctw-slug" required></div>
-      </div>
-      <h3>Prima stagione</h3>
-      <div class="field"><label>Nome stagione</label><input id="ctw-season" value="${seasonName}" required></div>
-      <div class="form-grid">
-        <div class="field"><label>Inizio</label><input id="ctw-start" type="date" value="${y}-07-01" required></div>
-        <div class="field"><label>Fine</label><input id="ctw-end" type="date" value="${y+1}-06-30" required></div>
-      </div>
-      <button class="btn btn-primary">Crea squadra</button>
+      ${teamWorkspaceForm("ctw",{submitLabel:"Crea squadra"})}
     </form>
   `,root=>{
-    const name=$("#ctw-team",root),slug=$("#ctw-slug",root);
-    let touched=false;
-    slug.oninput=()=>touched=true;
-    name.oninput=()=>{if(!touched)slug.value=slugify(name.value)};
+    wireTeamSlug("ctw",root);
 
     $("#create-team-form",root).onsubmit=async e=>{
       e.preventDefault();
+
       try{
         const teamId=await must(supabase.rpc("create_team_workspace",{
           p_organization_name:$("#ctw-org",root).value,
-          p_team_name:name.value,
+          p_team_name:$("#ctw-team",root).value,
           p_team_short_name:$("#ctw-short",root).value||null,
-          p_team_slug:slug.value,
+          p_team_slug:$("#ctw-slug",root).value,
           p_season_name:$("#ctw-season",root).value,
           p_season_start:$("#ctw-start",root).value,
           p_season_end:$("#ctw-end",root).value
         }));
+
         closeModal();
         await loadAccountTeams();
         toast("Squadra creata","ok");
         await enterTeam(teamId,{persist:true,targetPath:"dashboard"});
-      }catch(err){toast(err.message,"error")}
+
+      }catch(err){
+        toast(err.message,"error");
+      }
     };
+  });
+}
+
+function openTeamCreationRequest(){
+  showModal("Richiedi creazione squadra",`
+    <div class="section-note" style="margin-bottom:12px">
+      La richiesta verrà inviata al Super Admin. Solo dopo l'approvazione verranno create società, squadra e stagione e diventerai Owner/Dirigente della squadra.
+    </div>
+
+    <form id="request-team-form">
+      ${teamWorkspaceForm("rct",{includeMessage:true,submitLabel:"Invia richiesta"})}
+    </form>
+  `,root=>{
+    wireTeamSlug("rct",root);
+
+    $("#request-team-form",root).onsubmit=async e=>{
+      e.preventDefault();
+
+      try{
+        await must(supabase.rpc("request_team_creation",{
+          p_organization_name:$("#rct-org",root).value,
+          p_team_name:$("#rct-team",root).value,
+          p_team_short_name:$("#rct-short",root).value||null,
+          p_team_slug:$("#rct-slug",root).value,
+          p_season_name:$("#rct-season",root).value,
+          p_season_start:$("#rct-start",root).value,
+          p_season_end:$("#rct-end",root).value,
+          p_message:$("#rct-message",root).value||null
+        }));
+
+        closeModal();
+        toast("Richiesta inviata al Super Admin","ok");
+        await renderTeamChooser();
+
+      }catch(err){
+        toast(err.message,"error");
+      }
+    };
+  });
+}
+
+/* =========================================================
+   PLATFORM SUPER ADMIN
+========================================================= */
+
+function renderPlatformShell(title,content,active="dashboard"){
+  stopLive();
+  resetTeamBranding();
+  state.currentContext="platform";
+  state.currentPage=`platform-${active}`;
+
+  const items=[
+    ["dashboard","Dashboard","⌂"],
+    ["teams","Squadre","◆"],
+    ["users","Utenti","●"],
+    ["requests","Richieste","▣"]
+  ];
+
+  const nav=items.map(([id,label,icon])=>
+    `<button data-platform-nav="${id}" class="${active===id?"active":""}"><span>${icon}</span>${label}</button>`
+  ).join("");
+
+  $("#root").innerHTML=`<div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark">TM</div>
+        <div>
+          <strong>${esc(CONFIG.APP_NAME)}</strong>
+          <div class="muted" style="font-size:.72rem">Super Admin</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        ${nav}
+        <div class="section">Contesto</div>
+        <button id="platform-team-switch">⇄ Squadre</button>
+        <button id="platform-logout">↪ Esci</button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="topbar-title">${esc(title)}</div>
+          <div class="topbar-sub">${esc(state.profile?.display_name||"")} · platform_super_admin</div>
+        </div>
+        <div class="topbar-actions actions">
+          <button class="btn btn-sm" id="platform-create-team">Nuova squadra</button>
+          <button class="btn btn-sm btn-ghost" id="platform-logout-top">Esci</button>
+        </div>
+      </header>
+      <div class="content">${content}</div>
+    </main>
+
+    <nav class="bottom-nav">${nav}</nav>
+  </div>`;
+
+  $$("[data-platform-nav]").forEach(b=>b.onclick=()=>platformRoute(b.dataset.platformNav));
+  $("#platform-team-switch")?.addEventListener("click",renderTeamChooser);
+  $("#platform-create-team")?.addEventListener("click",openCreateTeam);
+  $("#platform-logout")?.addEventListener("click",logout);
+  $("#platform-logout-top")?.addEventListener("click",logout);
+}
+
+async function platformRoute(page="dashboard",push=true){
+  if(!state.isSuperAdmin){
+    return chooseFallbackTeam();
+  }
+
+  if(push)location.hash=`#/platform/${page}`;
+
+  try{
+    await must(supabase.rpc("set_platform_context"));
+    state.preferences={
+      ...(state.preferences||{}),
+      profile_id:state.profile.id,
+      last_context:"platform"
+    };
+  }catch(_){}
+
+  if(page==="teams")return platformTeams();
+  if(page==="users")return platformUsers();
+  if(page==="requests")return platformRequests();
+  return platformDashboard();
+}
+
+async function platformDashboard(){
+  const teams=await must(supabase.from("teams").select("id,name"));
+  const profiles=await must(supabase.from("profiles").select("id,is_active"));
+  const pending=await must(
+    supabase.from("team_creation_requests")
+      .select("id")
+      .eq("status","pending")
+  );
+
+  renderPlatformShell("Piattaforma",`
+    <div class="page-title">
+      <div>
+        <h1>Amministrazione globale</h1>
+        <p>Questo livello è indipendente dai ruoli delle singole squadre.</p>
+      </div>
+    </div>
+
+    <div class="grid grid-3">
+      <button class="card" data-platform-go="teams" style="text-align:left;color:inherit;cursor:pointer">
+        <div class="stat">${teams.length}</div>
+        <div class="stat-label">Squadre</div>
+      </button>
+
+      <button class="card" data-platform-go="users" style="text-align:left;color:inherit;cursor:pointer">
+        <div class="stat">${profiles.filter(x=>x.is_active).length}</div>
+        <div class="stat-label">Utenti attivi</div>
+      </button>
+
+      <button class="card" data-platform-go="requests" style="text-align:left;color:inherit;cursor:pointer">
+        <div class="stat">${pending.length}</div>
+        <div class="stat-label">Richieste squadra</div>
+      </button>
+    </div>
+
+    <div style="height:14px"></div>
+
+    <div class="card">
+      <h2>Privilegi Super Admin</h2>
+      <div class="muted">
+        Puoi entrare in qualunque squadra e il backend ti riconosce automaticamente tutti i permessi del team senza creare una membership fittizia.
+      </div>
+    </div>
+  `,"dashboard");
+
+  $$("[data-platform-go]").forEach(b=>b.onclick=()=>platformRoute(b.dataset.platformGo));
+}
+
+async function platformTeams(){
+  const teams=await must(
+    supabase.from("teams")
+      .select("*")
+      .order("name")
+  );
+
+  renderPlatformShell("Squadre",`
+    <div class="page-title">
+      <div>
+        <h1>Squadre della piattaforma</h1>
+        <p>${teams.length} squadre configurate.</p>
+      </div>
+      <button class="btn btn-primary" id="platform-team-new">Crea squadra</button>
+    </div>
+
+    <div class="grid grid-2">
+      ${teams.length
+        ? teams.map(t=>`<div class="card">
+            <div class="list-item">
+              <div class="player-name">
+                <span class="avatar" style="background:${esc(t.primary_color||"#334155")};color:${contrastColor(t.primary_color||"#334155")}">${teamMark(t,"TM")}</span>
+                <div>
+                  <strong>${esc(t.name)}</strong>
+                  <div class="muted">${esc(t.short_name||"")} · ${esc(t.slug)}</div>
+                </div>
+              </div>
+              <button class="btn btn-sm btn-primary" data-platform-enter-team="${t.id}">Entra</button>
+            </div>
+          </div>`).join("")
+        : `<div class="empty">Nessuna squadra ancora creata</div>`
+      }
+    </div>
+  `,"teams");
+
+  $("#platform-team-new").onclick=openCreateTeam;
+
+  $$("[data-platform-enter-team]").forEach(b=>b.onclick=async()=>{
+    await loadAccountTeams();
+    await enterTeam(b.dataset.platformEnterTeam,{persist:true,targetPath:"dashboard"});
+  });
+}
+
+async function platformUsers(){
+  const profiles=await must(
+    supabase.from("profiles")
+      .select("*")
+      .order("display_name")
+  );
+
+  const roleRows=await must(
+    supabase.from("platform_user_roles")
+      .select("*")
+  );
+
+  const roleMap=new Map();
+  roleRows.filter(r=>r.active).forEach(r=>{
+    if(!roleMap.has(r.profile_id))roleMap.set(r.profile_id,new Set());
+    roleMap.get(r.profile_id).add(r.role_code);
+  });
+
+  renderPlatformShell("Utenti",`
+    <div class="page-title">
+      <div>
+        <h1>Utenti globali</h1>
+        <p>Ruoli di piattaforma separati dai ruoli delle singole squadre.</p>
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Utente</th><th>Username</th><th>Stato</th><th>Ruoli piattaforma</th><th></th></tr>
+        </thead>
+        <tbody>
+          ${profiles.map(p=>{
+            const roles=roleMap.get(p.id)||new Set();
+            const superAdmin=roles.has("platform_super_admin");
+            const creator=roles.has("team_creator");
+
+            return `<tr>
+              <td>
+                <strong>${esc(p.display_name)}</strong>
+                ${p.id===state.profile.id?`<span class="badge green">tu</span>`:""}
+              </td>
+              <td>@${esc(p.username)}</td>
+              <td><span class="badge ${p.is_active?"green":"red"}">${p.is_active?"attivo":"disattivato"}</span></td>
+              <td>
+                ${superAdmin?`<span class="badge green">Super Admin</span>`:""}
+                ${creator?`<span class="badge blue">Creatore squadre</span>`:""}
+                ${!superAdmin&&!creator?`<span class="muted">—</span>`:""}
+              </td>
+              <td>
+                <div class="actions">
+                  <button class="btn btn-sm" data-platform-role="team_creator" data-user="${p.id}" data-enabled="${creator}">
+                    ${creator?"Revoca Creator":"Autorizza Creator"}
+                  </button>
+
+                  <button class="btn btn-sm" data-platform-role="platform_super_admin" data-user="${p.id}" data-enabled="${superAdmin}" ${p.id===state.profile.id?"disabled":""}>
+                    ${superAdmin?"Revoca Super Admin":"Rendi Super Admin"}
+                  </button>
+
+                  <button class="btn btn-sm" data-platform-reset="${p.id}">Reset psw</button>
+
+                  <button class="btn btn-sm ${p.is_active?"btn-danger":""}" data-platform-state="${p.id}" data-active="${p.is_active}" ${p.id===state.profile.id?"disabled":""}>
+                    ${p.is_active?"Disattiva":"Riattiva"}
+                  </button>
+                </div>
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  `,"users");
+
+  $$("[data-platform-role]").forEach(b=>b.onclick=async()=>{
+    try{
+      await must(supabase.rpc("set_platform_role",{
+        p_profile_id:b.dataset.user,
+        p_role_code:b.dataset.platformRole,
+        p_enabled:b.dataset.enabled!=="true"
+      }));
+      toast("Ruolo piattaforma aggiornato","ok");
+      platformUsers();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
+
+  $$("[data-platform-reset]").forEach(b=>b.onclick=async()=>{
+    const pwd=prompt("Nuova password temporanea (min 8 caratteri)");
+    if(!pwd)return;
+
+    try{
+      await edge("admin-reset-password",{
+        platform_scope:true,
+        user_id:b.dataset.platformReset,
+        password:pwd
+      });
+      toast("Password reimpostata","ok");
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
+
+  $$("[data-platform-state]").forEach(b=>b.onclick=async()=>{
+    try{
+      await edge("admin-account-state",{
+        platform_scope:true,
+        user_id:b.dataset.platformState,
+        active:b.dataset.active!=="true"
+      });
+      toast("Stato account aggiornato","ok");
+      platformUsers();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
+}
+
+async function platformRequests(){
+  const requests=await must(
+    supabase.from("team_creation_requests")
+      .select("*")
+      .order("requested_at",{ascending:false})
+      .limit(300)
+  );
+
+  const profileIds=[...new Set(requests.map(r=>r.profile_id))];
+  const profiles=profileIds.length
+    ? await must(
+        supabase.from("profiles")
+          .select("id,display_name,username,is_active")
+          .in("id",profileIds)
+      )
+    : [];
+
+  const pmap=new Map(profiles.map(p=>[p.id,p]));
+  const pending=requests.filter(r=>r.status==="pending");
+  const history=requests.filter(r=>r.status!=="pending");
+
+  renderPlatformShell("Richieste",`
+    <div class="page-title">
+      <div>
+        <h1>Richieste creazione squadra</h1>
+        <p>I nuovi utenti che si presentano come dirigenti non ricevono privilegi finché non approvi la richiesta.</p>
+      </div>
+      ${pending.length?`<span class="badge">${pending.length} in attesa</span>`:""}
+    </div>
+
+    <div class="card">
+      <h2>Da approvare</h2>
+      ${pending.length
+        ? `<div class="list">
+            ${pending.map(r=>{
+              const u=pmap.get(r.profile_id);
+              return `<div class="list-item">
+                <div>
+                  <strong>${esc(r.team_name)}</strong>
+                  <div>${esc(r.organization_name)} · ${esc(r.team_slug)}</div>
+                  <div class="muted">
+                    Richiesta da ${esc(u?.display_name||"")} @${esc(u?.username||"")} · ${fmtDateTime(r.requested_at)}
+                  </div>
+                  ${r.message?`<div style="margin-top:5px">${esc(r.message)}</div>`:""}
+                </div>
+                <div class="actions">
+                  <button class="btn btn-sm btn-primary" data-team-request-approve="${r.id}">Approva</button>
+                  <button class="btn btn-sm btn-danger" data-team-request-reject="${r.id}">Rifiuta</button>
+                </div>
+              </div>`;
+            }).join("")}
+          </div>`
+        : `<div class="empty">Nessuna richiesta in attesa</div>`
+      }
+    </div>
+
+    <div style="height:14px"></div>
+
+    <div class="card">
+      <h2>Storico</h2>
+      ${history.length
+        ? `<div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Squadra</th><th>Richiedente</th><th>Stato</th><th>Data</th><th>Motivo</th></tr></thead>
+              <tbody>
+                ${history.map(r=>{
+                  const u=pmap.get(r.profile_id);
+                  return `<tr>
+                    <td>${esc(r.team_name)}<div class="muted">${esc(r.team_slug)}</div></td>
+                    <td>${esc(u?.display_name||"")}<div class="muted">@${esc(u?.username||"")}</div></td>
+                    <td><span class="badge ${r.status==="approved"?"green":r.status==="rejected"?"red":""}">${esc(r.status)}</span></td>
+                    <td>${fmtDateTime(r.requested_at)}</td>
+                    <td>${esc(r.review_reason||"—")}</td>
+                  </tr>`;
+                }).join("")}
+              </tbody>
+            </table>
+          </div>`
+        : `<div class="empty">Nessuno storico</div>`
+      }
+    </div>
+  `,"requests");
+
+  $$("[data-team-request-approve]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Approvi la creazione della squadra? Il richiedente diventerà Owner, Admin e Dirigente."))return;
+
+    try{
+      await must(supabase.rpc("review_team_creation_request",{
+        p_request_id:b.dataset.teamRequestApprove,
+        p_action:"approve",
+        p_reason:null
+      }));
+      await loadAccountTeams();
+      toast("Squadra approvata e creata","ok");
+      platformRequests();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
+
+  $$("[data-team-request-reject]").forEach(b=>b.onclick=async()=>{
+    const reason=prompt("Motivo del rifiuto (facoltativo):","");
+    if(reason===null)return;
+
+    try{
+      await must(supabase.rpc("review_team_creation_request",{
+        p_request_id:b.dataset.teamRequestReject,
+        p_action:"reject",
+        p_reason:reason||null
+      }));
+      toast("Richiesta rifiutata","ok");
+      platformRequests();
+    }catch(err){
+      toast(err.message,"error");
+    }
   });
 }
 
@@ -961,7 +1655,7 @@ function renderShell(title, content, nav=true){
         <div class="brand-mark">${teamMark(state.team,"TM")}</div>
         <div><strong>${esc(state.team?.short_name||state.team?.name||CONFIG.APP_NAME)}</strong><div class="muted" style="font-size:.72rem">${esc(state.season?.name||"")}</div></div>
       </div>
-      <nav class="nav">${navHtml}<div class="section">Account</div><button id="manage-teams-side">⇄ Squadre</button><button id="logout-side">↪ Esci</button></nav>
+      <nav class="nav">${navHtml}<div class="section">Account</div>${state.isSuperAdmin?`<button id="platform-side">◆ Piattaforma</button>`:""}<button id="manage-teams-side">⇄ Squadre</button><button id="logout-side">↪ Esci</button></nav>
     </aside>
 
     <main class="main">
@@ -985,6 +1679,7 @@ function renderShell(title, content, nav=true){
             : ""
           }
 
+          ${state.isSuperAdmin?`<button class="btn btn-sm" id="platform-top">Piattaforma</button>`:""}
           <button class="btn btn-sm btn-ghost" id="logout-top">Esci</button>
         </div>
       </header>
@@ -999,6 +1694,8 @@ function renderShell(title, content, nav=true){
   $("#logout-side")?.addEventListener("click",logout);
   $("#logout-top")?.addEventListener("click",logout);
   $("#manage-teams-side")?.addEventListener("click",openManageTeams);
+  $("#platform-side")?.addEventListener("click",()=>platformRoute("dashboard"));
+  $("#platform-top")?.addEventListener("click",()=>platformRoute("dashboard"));
 
   $("#team-switch")?.addEventListener("change",async e=>{
     if(e.target.value==="__manage"){
@@ -1017,15 +1714,55 @@ function renderShell(title, content, nav=true){
 }
 async function route(path,push=true){
   stopLive();
+
   const [page,id,sub]=path.split("/");
-  state.currentPage=page||"dashboard"; if(push)location.hash=`#/${path}`;
-  const routes={dashboard:pageDashboard,calendar:pageCalendar,roster:pageRoster,matches:pageMatches,stats:pageStats,discipline:pageDiscipline,fines:pageFines,injuries:pageInjuries,admin:pageAdmin,profile:pageProfile};
+
+  if(page==="platform"){
+    return platformRoute(id||"dashboard",push);
+  }
+
+  if(!state.team){
+    return chooseFallbackTeam();
+  }
+
+  state.currentContext="team";
+  state.currentPage=page||"dashboard";
+
+  if(push)location.hash=`#/${path}`;
+
+  const routes={
+    dashboard:pageDashboard,
+    calendar:pageCalendar,
+    roster:pageRoster,
+    matches:pageMatches,
+    stats:pageStats,
+    discipline:pageDiscipline,
+    fines:pageFines,
+    injuries:pageInjuries,
+    admin:pageAdmin,
+    profile:pageProfile
+  };
+
   if(page==="match"&&id)return pageMatch(id);
   if(page==="live"&&id)return pageLive(id);
   if(page==="player"&&id)return pagePlayer(id);
-  const fn=routes[page]||pageDashboard; await fn(sub);
+
+  const fn=routes[page]||pageDashboard;
+  await fn(sub);
 }
-window.addEventListener("hashchange",()=>{const p=location.hash.replace(/^#\/?/,"")||"dashboard";if(p.split("/")[0]!==state.currentPage)route(p,false)});
+
+window.addEventListener("hashchange",()=>{
+  const p=location.hash.replace(/^#\/?/,"")||"dashboard";
+  if(p.startsWith("platform/")){
+    if(state.currentContext!=="platform" || `platform-${p.split("/")[1]}`!==state.currentPage){
+      route(p,false);
+    }
+    return;
+  }
+  if(state.currentContext!=="team" || p.split("/")[0]!==state.currentPage){
+    route(p,false);
+  }
+});
 
 /* =========================================================
    DASHBOARD
