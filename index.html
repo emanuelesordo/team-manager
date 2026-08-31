@@ -655,12 +655,73 @@
       }
     }
 
+
+    .roster-import-drop{
+      border:2px dashed var(--line);
+      border-radius:16px;
+      padding:22px;
+      text-align:center;
+      background:var(--team-accent-soft);
+      transition:.15s ease
+    }
+    .roster-import-drop.drag-over{
+      border-color:var(--team-accent);
+      box-shadow:inset 0 0 0 1px var(--team-accent)
+    }
+    .roster-import-drop input[type=file]{display:none}
+    .import-mapping-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px
+    }
+    .import-mapping-grid .field{margin:0}
+    .import-preview-wrap{
+      max-height:360px;
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:12px
+    }
+    .import-preview-wrap .table{margin:0}
+    .import-preview-wrap .table th{top:0}
+    .import-status-created{color:var(--success)}
+    .import-status-reused{color:var(--info)}
+    .import-status-skip{color:var(--muted)}
+    .import-status-error{color:var(--danger)}
+    .import-summary{
+      display:flex;
+      gap:7px;
+      flex-wrap:wrap;
+      margin:10px 0
+    }
+    .import-progress{
+      height:8px;
+      border-radius:999px;
+      background:var(--panel2);
+      overflow:hidden;
+      margin:10px 0
+    }
+    .import-progress > div{
+      height:100%;
+      width:0;
+      background:var(--team-accent);
+      transition:width .15s ease
+    }
+    @media(max-width:800px){
+      .import-mapping-grid{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:520px){
+      .import-mapping-grid{grid-template-columns:1fr}
+      .import-preview-wrap{max-height:310px}
+    }
+
   </style>
 </head>
 <body>
 <div id="root" class="app"></div>
 <div id="modal-root"></div>
 <div id="toast-root" class="toast-wrap"></div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
@@ -2823,6 +2884,693 @@ async function openAffinityAssessment(player,kind,mandatory=false){
   }
 }
 
+function normalizeImportText(value){
+  return String(value??"")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g," ")
+    .trim();
+}
+
+function importDateToIso(value){
+  if(value===null || value===undefined || value==="")return null;
+
+  if(value instanceof Date && !Number.isNaN(value.getTime())){
+    const y=value.getFullYear();
+    const m=String(value.getMonth()+1).padStart(2,"0");
+    const d=String(value.getDate()).padStart(2,"0");
+    return `${y}-${m}-${d}`;
+  }
+
+  if(typeof value==="number" && window.XLSX?.SSF?.parse_date_code){
+    const parsed=window.XLSX.SSF.parse_date_code(value);
+    if(parsed?.y && parsed?.m && parsed?.d){
+      return `${parsed.y}-${String(parsed.m).padStart(2,"0")}-${String(parsed.d).padStart(2,"0")}`;
+    }
+  }
+
+  const text=String(value).trim();
+  if(!text)return null;
+
+  if(/^\d{4}-\d{1,2}-\d{1,2}$/.test(text)){
+    const [y,m,d]=text.split("-").map(Number);
+    return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+  }
+
+  const eu=text.match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/);
+  if(eu){
+    let [,d,m,y]=eu;
+    if(y.length===2)y=Number(y)>=70?`19${y}`:`20${y}`;
+    return `${y}-${String(Number(m)).padStart(2,"0")}-${String(Number(d)).padStart(2,"0")}`;
+  }
+
+  const parsed=new Date(text);
+  if(!Number.isNaN(parsed.getTime())){
+    return localDateKey(parsed);
+  }
+
+  return "__INVALID__";
+}
+
+function normalizeImportedFoot(value){
+  const v=normalizeImportText(value);
+  if(!v)return null;
+  if(["d","dx","destro","destra","right"].includes(v))return "right";
+  if(["s","sx","sinistro","sinistra","left"].includes(v))return "left";
+  if(["a","ambi","ambidestro","ambidextra","entrambi","both"].includes(v))return "both";
+  return "__INVALID__";
+}
+
+function importedFootLabel(value){
+  return value==="right"?"Destro":value==="left"?"Sinistro":value==="both"?"Entrambi":"—";
+}
+
+function parseImportedShirtNumber(value){
+  if(value===null || value===undefined || String(value).trim()==="")return null;
+  const n=Number(String(value).replace(/[^\d]/g,""));
+  return Number.isInteger(n)&&n>=1&&n<=99?n:"__INVALID__";
+}
+
+function splitImportedFullName(value,format="first_last"){
+  const text=String(value??"").trim().replace(/\s+/g," ");
+  if(!text)return {first_name:"",last_name:""};
+
+  if(text.includes(",")){
+    const [last,...rest]=text.split(",");
+    return {
+      first_name:rest.join(",").trim(),
+      last_name:last.trim()
+    };
+  }
+
+  const bits=text.split(" ").filter(Boolean);
+  if(bits.length<2)return {first_name:"",last_name:text};
+
+  if(format==="last_first"){
+    return {
+      last_name:bits[0],
+      first_name:bits.slice(1).join(" ")
+    };
+  }
+
+  return {
+    first_name:bits[0],
+    last_name:bits.slice(1).join(" ")
+  };
+}
+
+function downloadRosterImportTemplate(){
+  const csv=[
+    ["Nome","Cognome","Data nascita","Piede","Numero maglia","Data ingresso","Scadenza","Note"],
+    ["Mario","Rossi","1995-06-12","Destro","8",state.season.start_date,state.season.end_date,""]
+  ].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
+
+  const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=`modello-rosa-${slugify(state.team.short_name||state.team.name)}-${slugify(state.season.name)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function openRosterImport(){
+  if(!window.XLSX){
+    toast("Modulo Excel non disponibile. Ricarica la pagina e riprova.","error");
+    return;
+  }
+
+  try{
+    const [existingPlayers,currentContracts]=await Promise.all([
+      must(
+        supabase.from("players")
+          .select("id,first_name,last_name,birth_date,preferred_foot")
+          .eq("team_id",state.team.id)
+      ),
+      must(
+        supabase.from("player_contracts")
+          .select("id,player_id,season_id,status,shirt_number")
+          .eq("team_id",state.team.id)
+          .eq("season_id",state.season.id)
+      )
+    ]);
+
+    let workbook=null;
+    let sheetName=null;
+    let headers=[];
+    let sourceRows=[];
+    let importRows=[];
+    let mapping={};
+    let headerRowIndex=0;
+
+    const fields=[
+      {key:"first_name",label:"Nome",required:true,aliases:["nome","first name","firstname"]},
+      {key:"last_name",label:"Cognome",required:true,aliases:["cognome","surname","last name","lastname"]},
+      {key:"full_name",label:"Nome completo",required:false,aliases:["nome completo","nominativo","calciatore","giocatore","player"]},
+      {key:"birth_date",label:"Data nascita",required:false,aliases:["data nascita","nascita","birth date","birthdate","dob"]},
+      {key:"preferred_foot",label:"Piede",required:false,aliases:["piede","piede preferito","preferred foot","foot"]},
+      {key:"shirt_number",label:"Numero maglia",required:false,aliases:["numero maglia","maglia","numero","shirt number","shirt","n maglia"]},
+      {key:"start_date",label:"Data ingresso",required:false,aliases:["data ingresso","ingresso","inizio","data inizio","start date","dal"]},
+      {key:"end_date",label:"Scadenza",required:false,aliases:["scadenza","data fine","fine","end date","al"]},
+      {key:"notes",label:"Note",required:false,aliases:["note","notes"]}
+    ];
+
+    showModal("Importa rosa da Excel / CSV",`
+      <div class="section-note">
+        Importa l'anagrafica e la permanenza nella stagione <strong>${esc(state.season.name)}</strong>.
+        I calciatori già presenti nello storico vengono riutilizzati senza duplicare l'anagrafica.
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="roster-import-drop" id="roster-import-drop">
+        <strong>Trascina qui Excel o CSV</strong>
+        <div class="muted" style="margin:5px 0 12px">.xlsx · .xls · .csv</div>
+        <button class="btn btn-primary" type="button" id="choose-roster-file">Scegli file</button>
+        <input id="roster-import-file" type="file" accept=".xlsx,.xls,.csv,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
+        <button class="btn btn-ghost" type="button" id="download-roster-template" style="margin-left:6px">Scarica modello CSV</button>
+      </div>
+
+      <div id="roster-import-config" class="hidden">
+        <div style="height:16px"></div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label>Foglio</label>
+            <select id="roster-import-sheet"></select>
+          </div>
+          <div class="field">
+            <label>Riga intestazioni</label>
+            <select id="roster-header-row"></select>
+          </div>
+        </div>
+
+        <h3>Mappatura colonne</h3>
+        <div class="muted" style="font-size:.76rem;margin-bottom:9px">
+          Nome + Cognome sono preferibili. In alternativa puoi usare una sola colonna “Nome completo”.
+        </div>
+        <div class="import-mapping-grid" id="roster-import-mapping"></div>
+
+        <div class="field hidden" id="full-name-format-field" style="margin-top:10px">
+          <label>Formato Nome completo</label>
+          <select id="full-name-format">
+            <option value="first_last">Nome Cognome</option>
+            <option value="last_first">Cognome Nome</option>
+          </select>
+        </div>
+
+        <div style="height:14px"></div>
+        <h3>Valori predefiniti</h3>
+        <div class="form-grid">
+          <div class="field">
+            <label>Data ingresso se assente nel file</label>
+            <input id="import-default-start" type="date" value="${state.season.start_date}" required>
+          </div>
+          <div class="field">
+            <label>Scadenza se assente nel file</label>
+            <input id="import-default-end" type="date" value="${state.season.end_date}" required>
+          </div>
+        </div>
+
+        <div class="import-summary" id="roster-import-summary"></div>
+        <div class="import-preview-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Riga</th>
+                <th>Calciatore</th>
+                <th>Nascita</th>
+                <th>Piede</th>
+                <th>#</th>
+                <th>Permanenza</th>
+                <th>Esito previsto</th>
+              </tr>
+            </thead>
+            <tbody id="roster-import-preview"></tbody>
+          </table>
+        </div>
+
+        <div class="import-progress hidden" id="roster-import-progress"><div></div></div>
+        <div id="roster-import-result" class="muted" style="margin-top:8px"></div>
+
+        <div class="actions" style="margin-top:14px">
+          <button class="btn btn-primary" type="button" id="run-roster-import">Importa rosa</button>
+        </div>
+      </div>
+    `,root=>{
+      root.closest(".modal").style.width="min(1120px,100%)";
+
+      const fileInput=$("#roster-import-file",root);
+      const drop=$("#roster-import-drop",root);
+      const config=$("#roster-import-config",root);
+      const sheetSelect=$("#roster-import-sheet",root);
+      const headerSelect=$("#roster-header-row",root);
+      const mappingBox=$("#roster-import-mapping",root);
+      const preview=$("#roster-import-preview",root);
+      const summary=$("#roster-import-summary",root);
+      const importButton=$("#run-roster-import",root);
+      const progress=$("#roster-import-progress",root);
+      const progressBar=$("#roster-import-progress > div",root);
+      const resultBox=$("#roster-import-result",root);
+
+      const normalizedHeader=value=>normalizeImportText(value);
+
+      const autoMap=()=>{
+        const result={};
+        fields.forEach(field=>{
+          const aliases=field.aliases.map(normalizedHeader);
+          let idx=headers.findIndex(h=>aliases.includes(normalizedHeader(h)));
+
+          if(idx<0){
+            idx=headers.findIndex(h=>{
+              const nh=normalizedHeader(h);
+              return aliases.some(alias=>nh.includes(alias)||alias.includes(nh));
+            });
+          }
+
+          result[field.key]=idx>=0?String(idx):"";
+        });
+
+        // Se Nome e Cognome sono stati trovati, non serve Nome completo.
+        if(result.first_name!=="" && result.last_name!==""){
+          result.full_name="";
+        }
+
+        mapping=result;
+      };
+
+      const buildHeaderOptions=selected=>{
+        return `<option value="">— non usare —</option>`+
+          headers.map((h,i)=>`<option value="${i}" ${String(selected)===String(i)?"selected":""}>${esc(h||`Colonna ${i+1}`)}</option>`).join("");
+      };
+
+      const renderMapping=()=>{
+        mappingBox.innerHTML=fields.map(f=>`
+          <div class="field">
+            <label>${esc(f.label)}${f.required?" *":""}</label>
+            <select data-import-map="${f.key}">
+              ${buildHeaderOptions(mapping[f.key])}
+            </select>
+          </div>
+        `).join("");
+
+        $$("[data-import-map]",mappingBox).forEach(sel=>sel.onchange=()=>{
+          mapping[sel.dataset.importMap]=sel.value;
+          if(sel.dataset.importMap==="first_name" || sel.dataset.importMap==="last_name"){
+            if(mapping.first_name!=="" && mapping.last_name!==""){
+              mapping.full_name="";
+              const full=$('[data-import-map="full_name"]',mappingBox);
+              if(full)full.value="";
+            }
+          }
+          updateFullNameFormatVisibility();
+          analyze();
+        });
+
+        updateFullNameFormatVisibility();
+      };
+
+      const updateFullNameFormatVisibility=()=>{
+        const usingFull=mapping.full_name!=="" && (mapping.first_name==="" || mapping.last_name==="");
+        $("#full-name-format-field",root).classList.toggle("hidden",!usingFull);
+      };
+
+      const cell=(row,key)=>{
+        const idx=mapping[key];
+        return idx===""||idx===undefined?null:row[Number(idx)];
+      };
+
+      const resolveExisting=record=>{
+        const same=existingPlayers.filter(p=>
+          normalizeImportText(p.first_name)===normalizeImportText(record.first_name)
+          && normalizeImportText(p.last_name)===normalizeImportText(record.last_name)
+        );
+
+        if(record.birth_date){
+          const exact=same.filter(p=>p.birth_date===record.birth_date);
+          if(exact.length===1)return {player:exact[0],ambiguous:false};
+          if(exact.length>1)return {player:null,ambiguous:true};
+
+          if(same.length===1 && !same[0].birth_date){
+            return {player:same[0],ambiguous:false};
+          }
+
+          if(same.length>1)return {player:null,ambiguous:true};
+
+          // Un omonimo con data diversa viene considerato un'altra persona.
+          return {player:null,ambiguous:false};
+        }
+
+        if(same.length===1)return {player:same[0],ambiguous:false};
+        if(same.length>1)return {player:null,ambiguous:true};
+        return {player:null,ambiguous:false};
+      };
+
+      const analyze=()=>{
+        if(!headers.length)return;
+
+        const defaultStart=$("#import-default-start",root).value||state.season.start_date;
+        const defaultEnd=$("#import-default-end",root).value||state.season.end_date;
+        const fullFormat=$("#full-name-format",root).value;
+
+        const hasSeparate=mapping.first_name!=="" && mapping.last_name!=="";
+        const hasFull=mapping.full_name!=="";
+
+        importRows=[];
+        const seen=new Set();
+
+        sourceRows.forEach((row,index)=>{
+          let first=hasSeparate?String(cell(row,"first_name")??"").trim():"";
+          let last=hasSeparate?String(cell(row,"last_name")??"").trim():"";
+
+          if((!first||!last) && hasFull){
+            const split=splitImportedFullName(cell(row,"full_name"),fullFormat);
+            first=first||split.first_name;
+            last=last||split.last_name;
+          }
+
+          const birthRaw=cell(row,"birth_date");
+          const birth=birthRaw!==null&&String(birthRaw).trim()!==""?importDateToIso(birthRaw):null;
+
+          const foot=normalizeImportedFoot(cell(row,"preferred_foot"));
+          const shirt=parseImportedShirtNumber(cell(row,"shirt_number"));
+
+          const startRaw=cell(row,"start_date");
+          const endRaw=cell(row,"end_date");
+          const start=startRaw!==null&&String(startRaw).trim()!==""?importDateToIso(startRaw):defaultStart;
+          const end=endRaw!==null&&String(endRaw).trim()!==""?importDateToIso(endRaw):defaultEnd;
+
+          const notes=String(cell(row,"notes")??"").trim()||null;
+
+          const rec={
+            sourceRow:headerRowIndex+2+index,
+            first_name:first,
+            last_name:last,
+            birth_date:birth,
+            preferred_foot:foot,
+            shirt_number:shirt,
+            start_date:start,
+            end_date:end,
+            notes,
+            action:"new",
+            status:"ok",
+            message:"Nuovo calciatore"
+          };
+
+          if(!first||!last){
+            rec.status="error";
+            rec.message="Nome/Cognome mancanti";
+          }else if(birth==="__INVALID__"){
+            rec.status="error";
+            rec.message="Data nascita non valida";
+          }else if(foot==="__INVALID__"){
+            rec.status="error";
+            rec.message="Piede non riconosciuto";
+          }else if(shirt==="__INVALID__"){
+            rec.status="error";
+            rec.message="Numero maglia non valido";
+          }else if(start==="__INVALID__"||end==="__INVALID__"||!start||!end){
+            rec.status="error";
+            rec.message="Date permanenza non valide";
+          }else if(end<start){
+            rec.status="error";
+            rec.message="Scadenza precedente all'ingresso";
+          }
+
+          const dedupeKey=`${normalizeImportText(first)}|${normalizeImportText(last)}|${birth||""}`;
+          if(rec.status==="ok" && seen.has(dedupeKey)){
+            rec.status="error";
+            rec.message="Duplicato nel file";
+          }
+          seen.add(dedupeKey);
+
+          if(rec.status==="ok"){
+            const existing=resolveExisting(rec);
+
+            if(existing.ambiguous){
+              rec.status="error";
+              rec.message="Omonimo ambiguo: aggiungi la data di nascita";
+            }else if(existing.player){
+              rec.existing_player_id=existing.player.id;
+
+              const contract=currentContracts.find(c=>
+                c.player_id===existing.player.id
+                && c.status!=="cancelled"
+              );
+
+              if(contract){
+                rec.action="skip";
+                rec.status="skip";
+                rec.message="Già nella stagione";
+              }else{
+                rec.action="reuse";
+                rec.message="Riusa anagrafica storica";
+              }
+            }
+          }
+
+          importRows.push(rec);
+        });
+
+        // Avviso sui numeri maglia duplicati tra righe da importare.
+        const numberCounts=new Map();
+        importRows.filter(r=>["ok"].includes(r.status)&&typeof r.shirt_number==="number").forEach(r=>{
+          numberCounts.set(r.shirt_number,(numberCounts.get(r.shirt_number)||0)+1);
+        });
+        importRows.forEach(r=>{
+          if(r.status==="ok" && r.shirt_number && numberCounts.get(r.shirt_number)>1){
+            r.warning=`Numero #${r.shirt_number} ripetuto nel file`;
+          }
+        });
+
+        const valid=importRows.filter(r=>r.status==="ok").length;
+        const reused=importRows.filter(r=>r.status==="ok"&&r.action==="reuse").length;
+        const newRows=importRows.filter(r=>r.status==="ok"&&r.action==="new").length;
+        const skipped=importRows.filter(r=>r.status==="skip").length;
+        const errors=importRows.filter(r=>r.status==="error").length;
+
+        summary.innerHTML=`
+          <span class="badge green">${valid} da importare</span>
+          <span class="badge">${newRows} nuovi</span>
+          <span class="badge blue">${reused} storici da riutilizzare</span>
+          ${skipped?`<span class="badge">${skipped} già presenti</span>`:""}
+          ${errors?`<span class="badge red">${errors} con errori</span>`:""}
+        `;
+
+        preview.innerHTML=importRows.map(r=>{
+          const cls=r.status==="error"
+            ?"import-status-error"
+            : r.status==="skip"
+              ?"import-status-skip"
+              : r.action==="reuse"
+                ?"import-status-reused"
+                :"import-status-created";
+
+          return `<tr>
+            <td>${r.sourceRow}</td>
+            <td><strong>${esc(r.last_name)} ${esc(r.first_name)}</strong>${r.warning?`<div class="muted">${esc(r.warning)}</div>`:""}</td>
+            <td>${r.birth_date&&r.birth_date!=="__INVALID__"?fmtDate(r.birth_date):"—"}</td>
+            <td>${r.preferred_foot!=="__INVALID__"?esc(importedFootLabel(r.preferred_foot)):"—"}</td>
+            <td>${typeof r.shirt_number==="number"?r.shirt_number:"—"}</td>
+            <td>${r.start_date!=="__INVALID__"&&r.end_date!=="__INVALID__"?`${fmtDate(r.start_date)} → ${fmtDate(r.end_date)}`:"—"}</td>
+            <td class="${cls}"><strong>${esc(r.message)}</strong></td>
+          </tr>`;
+        }).join("")||`<tr><td colspan="7">Nessuna riga dati</td></tr>`;
+
+        const mappingValid=hasSeparate||hasFull;
+        importButton.disabled=!mappingValid||valid===0;
+        importButton.textContent=valid?`Importa ${valid} righe`:"Nessuna riga importabile";
+      };
+
+      const loadSheet=()=>{
+        if(!workbook||!sheetName)return;
+
+        const sheet=workbook.Sheets[sheetName];
+        const matrix=window.XLSX.utils.sheet_to_json(sheet,{
+          header:1,
+          raw:true,
+          defval:"",
+          blankrows:false
+        });
+
+        const nonEmpty=matrix
+          .map((row,i)=>({row,i}))
+          .filter(x=>x.row.some(v=>String(v??"").trim()!==""));
+
+        if(!nonEmpty.length)throw new Error("Il foglio è vuoto");
+
+        headerSelect.innerHTML=nonEmpty.slice(0,10).map(x=>
+          `<option value="${x.i}">Riga ${x.i+1}: ${esc(x.row.slice(0,5).map(v=>String(v)).join(" · "))}</option>`
+        ).join("");
+
+        // Di default usa la prima riga non vuota come intestazione.
+        headerRowIndex=nonEmpty[0].i;
+        headerSelect.value=String(headerRowIndex);
+
+        const applyHeaderRow=()=>{
+          headerRowIndex=Number(headerSelect.value);
+          const headerRow=matrix[headerRowIndex]||[];
+
+          let lastIndex=headerRow.length-1;
+          while(lastIndex>=0 && String(headerRow[lastIndex]??"").trim()==="")lastIndex--;
+
+          headers=headerRow.slice(0,lastIndex+1).map((v,i)=>String(v??"").trim()||`Colonna ${i+1}`);
+          sourceRows=matrix
+            .slice(headerRowIndex+1)
+            .map(row=>row.slice(0,headers.length))
+            .filter(row=>row.some(v=>String(v??"").trim()!==""));
+
+          autoMap();
+          renderMapping();
+          analyze();
+        };
+
+        headerSelect.onchange=applyHeaderRow;
+        applyHeaderRow();
+      };
+
+      const openWorkbookFile=async file=>{
+        if(!file)return;
+
+        const ext=file.name.split(".").pop()?.toLowerCase();
+        if(!["xlsx","xls","csv"].includes(ext)){
+          throw new Error("Formato non supportato: usa XLSX, XLS o CSV");
+        }
+
+        const buffer=await file.arrayBuffer();
+        workbook=window.XLSX.read(buffer,{
+          type:"array",
+          cellDates:true
+        });
+
+        if(!workbook.SheetNames?.length)throw new Error("Nessun foglio trovato nel file");
+
+        sheetSelect.innerHTML=workbook.SheetNames.map(name=>`<option value="${esc(name)}">${esc(name)}</option>`).join("");
+        sheetName=workbook.SheetNames[0];
+        sheetSelect.value=sheetName;
+        sheetSelect.onchange=()=>{
+          sheetName=sheetSelect.value;
+          loadSheet();
+        };
+
+        config.classList.remove("hidden");
+        resultBox.textContent=`File: ${file.name}`;
+        loadSheet();
+      };
+
+      $("#choose-roster-file",root).onclick=()=>fileInput.click();
+      $("#download-roster-template",root).onclick=downloadRosterImportTemplate;
+      fileInput.onchange=async()=>{
+        try{
+          await openWorkbookFile(fileInput.files?.[0]);
+        }catch(err){
+          toast(err.message,"error");
+        }
+      };
+
+      drop.addEventListener("dragover",e=>{
+        e.preventDefault();
+        drop.classList.add("drag-over");
+      });
+      drop.addEventListener("dragleave",()=>drop.classList.remove("drag-over"));
+      drop.addEventListener("drop",async e=>{
+        e.preventDefault();
+        drop.classList.remove("drag-over");
+        try{
+          await openWorkbookFile(e.dataTransfer.files?.[0]);
+        }catch(err){
+          toast(err.message,"error");
+        }
+      });
+
+      $("#full-name-format",root).onchange=analyze;
+      $("#import-default-start",root).onchange=analyze;
+      $("#import-default-end",root).onchange=analyze;
+
+      importButton.onclick=async()=>{
+        const rows=importRows.filter(r=>r.status==="ok");
+        if(!rows.length)return;
+
+        if(!confirm(`Importare ${rows.length} calciatori nella rosa ${state.season.name}?`))return;
+
+        importButton.disabled=true;
+        progress.classList.remove("hidden");
+        progressBar.style.width="0%";
+
+        const results=[];
+        let done=0;
+
+        for(const row of rows){
+          try{
+            const response=await must(
+              supabase.rpc("import_roster_player",{
+                p_team_id:state.team.id,
+                p_season_id:state.season.id,
+                p_first_name:row.first_name,
+                p_last_name:row.last_name,
+                p_birth_date:row.birth_date||null,
+                p_preferred_foot:row.preferred_foot||null,
+                p_start_date:row.start_date,
+                p_end_date:row.end_date,
+                p_shirt_number:typeof row.shirt_number==="number"?row.shirt_number:null,
+                p_notes:row.notes
+              })
+            );
+
+            const result=Array.isArray(response)?response[0]:response;
+            results.push({
+              row,
+              ok:true,
+              code:result?.result_code||"imported"
+            });
+          }catch(err){
+            results.push({
+              row,
+              ok:false,
+              error:err.message
+            });
+          }
+
+          done++;
+          progressBar.style.width=`${Math.round(done/rows.length*100)}%`;
+          resultBox.textContent=`Importazione ${done}/${rows.length}…`;
+        }
+
+        const ok=results.filter(x=>x.ok).length;
+        const failed=results.filter(x=>!x.ok);
+
+        resultBox.innerHTML=`
+          <strong>${ok} righe elaborate correttamente.</strong>
+          ${failed.length
+            ? `<div class="danger" style="margin-top:6px">${failed.length} errori: ${failed.slice(0,5).map(x=>`riga ${x.row.sourceRow}: ${esc(x.error)}`).join(" · ")}</div>`
+            : ""
+          }
+        `;
+
+        if(ok){
+          toast(`Import rosa completato: ${ok} righe`,"ok");
+        }
+        if(failed.length){
+          toast(`${failed.length} righe non importate`,"error");
+        }
+
+        importButton.textContent="Aggiorna Rosa";
+        importButton.disabled=false;
+        importButton.onclick=()=>{
+          closeModal();
+          pageRoster();
+        };
+      };
+    });
+
+  }catch(err){
+    toast(err.message,"error");
+  }
+}
+
 /* =========================================================
    ROSA / CALCIATORI / CONTRATTI
 ========================================================= */
@@ -2957,6 +3705,7 @@ async function pageRoster(){
         <p>Ruoli mostrati: massimo 3, solo con affiatamento ponderato superiore al 50%.</p>
       </div>
       <div class="actions">
+        ${can("roster.manage")&&can("contracts.manage")?`<button class="btn" id="import-roster">⇧ Importa Excel/CSV</button>`:""}
         ${can("roster.manage")?`<button class="btn btn-primary" id="new-player">Nuovo calciatore</button>`:""}
         ${state.myPlayer&&can("affinity.evaluate_self")?`<button class="btn" id="my-affinity">I miei ruoli</button>`:""}
       </div>
@@ -3016,6 +3765,7 @@ async function pageRoster(){
     if(kind)openAffinityAssessment(p,kind);
   });
 
+  $("#import-roster")?.addEventListener("click",openRosterImport);
   $("#new-player")?.addEventListener("click",()=>openNewPlayer());
 }
 function openNewPlayer(){
