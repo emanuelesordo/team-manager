@@ -7,12 +7,37 @@
   <title>Team Manager</title>
   <style>
     :root{
-      --bg:#0b1220;--panel:#111827;--panel2:#172033;--line:#263246;--text:#f3f4f6;
-      --muted:#94a3b8;--accent:#22c55e;--accent2:#16a34a;--danger:#ef4444;--warn:#f59e0b;
-      --info:#3b82f6;--radius:14px;--shadow:0 8px 30px rgba(0,0,0,.22);
-      --team-primary:#22c55e;--team-secondary:#ffffff;--team-accent:#16a34a;
-      --team-primary-soft:rgba(34,197,94,.14);--team-primary-line:rgba(34,197,94,.36);
-      --team-secondary-soft:rgba(255,255,255,.10);--team-accent-soft:rgba(22,163,74,.16);
+      /* Palette UI: primario=testo, secondario=sfondo, terzo=dettagli */
+      --team-primary:#f3f4f6;
+      --team-secondary:#0b1220;
+      --team-accent:#22c55e;
+
+      --bg:#0b1220;
+      --panel:#111827;
+      --panel2:#172033;
+      --input-bg:#0d1626;
+      --topbar-bg:rgba(11,18,32,.94);
+
+      --text:#f3f4f6;
+      --muted:#94a3b8;
+      --line:#263246;
+
+      --accent:#22c55e;
+      --accent2:#22c55e;
+      --accent-contrast:#07120a;
+
+      --team-primary-soft:rgba(243,244,246,.10);
+      --team-primary-line:rgba(34,197,94,.42);
+      --team-secondary-soft:rgba(11,18,32,.12);
+      --team-accent-soft:rgba(34,197,94,.16);
+
+      --danger:#ef4444;
+      --warn:#f59e0b;
+      --info:#3b82f6;
+      --success:#22c55e;
+
+      --radius:14px;
+      --shadow:0 8px 30px rgba(0,0,0,.22);
     }
     *{box-sizing:border-box} html{background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
     body{margin:0;min-height:100vh;background:var(--bg)} button,input,select,textarea{font:inherit}
@@ -22,15 +47,15 @@
     .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}.brand-mark{width:44px;height:44px;border-radius:13px;background:var(--accent);display:grid;place-items:center;color:var(--accent-contrast,#07120a);font-weight:900;font-size:.78rem;letter-spacing:.025em;overflow:hidden}.brand-mark img{width:100%;height:100%;object-fit:cover}
     h1,h2,h3{margin:0 0 12px}h1{font-size:1.5rem}h2{font-size:1.25rem}h3{font-size:1rem}
     label{display:block;font-size:.84rem;color:var(--muted);margin:0 0 6px}.field{margin-bottom:14px}
-    input,select,textarea{width:100%;border:1px solid var(--line);background:#0d1626;color:var(--text);border-radius:11px;padding:11px 12px;outline:none}
+    input,select,textarea{width:100%;border:1px solid var(--line);background:var(--input-bg);color:var(--text);border-radius:11px;padding:11px 12px;outline:none}
     input:focus,select:focus,textarea:focus{border-color:var(--accent)}textarea{min-height:90px;resize:vertical}
-    .btn{border:0;border-radius:11px;padding:10px 14px;background:#253147;color:var(--text);font-weight:700}
-    .btn:hover{filter:brightness(1.08)}.btn-primary{background:var(--accent);color:var(--accent-contrast,#07120a)}.btn-danger{background:#7f1d1d}.btn-warn{background:#78350f}.btn-ghost{background:transparent;border:1px solid var(--line)}
+    .btn{border:0;border-radius:11px;padding:10px 14px;background:var(--panel2);color:var(--text);font-weight:700;border:1px solid transparent}
+    .btn:hover{filter:brightness(1.08)}.btn-primary{background:var(--accent);color:var(--accent-contrast,#07120a);border-color:var(--accent)}.btn-danger{background:#7f1d1d}.btn-warn{background:#78350f}.btn-ghost{background:transparent;border:1px solid var(--line)}
     .btn-sm{padding:7px 10px;font-size:.82rem}.btn-block{width:100%}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .shell{display:grid;grid-template-columns:238px 1fr;min-height:100vh}.sidebar{background:var(--panel);border-right:1px solid var(--line);padding:18px;position:sticky;top:0;height:100vh;overflow:auto}
     .sidebar .brand{margin-bottom:18px}.nav{display:grid;gap:5px}.nav button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;color:var(--muted);padding:10px 11px;border-radius:10px;text-align:left}
-    .nav button.active,.nav button:hover{background:var(--team-primary-soft);color:var(--text);box-shadow:inset 3px 0 var(--team-primary)}.nav .section{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;padding:15px 10px 4px}
-    .main{min-width:0}.topbar{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line);background:rgba(11,18,32,.92);position:sticky;top:0;z-index:20;backdrop-filter:blur(10px)}
+    .nav button.active,.nav button:hover{background:var(--team-accent-soft);color:var(--text);box-shadow:inset 3px 0 var(--team-accent)}.nav .section{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:#64748b;padding:15px 10px 4px}
+    .main{min-width:0}.topbar{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line);background:var(--topbar-bg);position:sticky;top:0;z-index:20;backdrop-filter:blur(10px)}
     .topbar-left{min-width:0}.topbar-title{font-weight:800}.topbar-sub{font-size:.78rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .content{padding:22px;max-width:1450px;margin:auto}.grid{display:grid;gap:14px}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
     .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}.card-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px}
@@ -38,13 +63,13 @@
     .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 8px;background:var(--team-secondary-soft);color:var(--text);border:1px solid var(--team-primary-line);font-size:.74rem;font-weight:800}
     .badge.green{background:#123b28;color:#86efac}.badge.red{background:#4b1d25;color:#fca5a5}.badge.yellow{background:#4b3514;color:#fcd34d}.badge.blue{background:#172d4d;color:#93c5fd}
     .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}.table{width:100%;border-collapse:collapse;min-width:640px}.table th,.table td{padding:10px 11px;border-bottom:1px solid var(--line);text-align:left;font-size:.85rem;vertical-align:middle}
-    .table th{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:#0f192a;position:sticky;top:0}.table tr:last-child td{border-bottom:0}
+    .table th{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;background:var(--panel2);position:sticky;top:0}.table tr:last-child td{border-bottom:0}
     .player-name{display:flex;align-items:center;gap:9px}.avatar{width:34px;height:34px;border-radius:50%;background:#334155;display:grid;place-items:center;font-weight:900;overflow:hidden;flex:none}.avatar img{width:100%;height:100%;object-fit:cover}
     .tabs{display:flex;gap:6px;overflow:auto;margin-bottom:14px}.tab{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:8px 12px;white-space:nowrap}.tab.active{background:var(--accent);border-color:var(--accent);color:var(--accent-contrast,#07120a);font-weight:800}
-    .list{display:grid;gap:8px}.list-item{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:11px;background:#0e1728}
+    .list{display:grid;gap:8px}.list-item{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid var(--line);border-radius:11px;padding:11px;background:var(--panel2)}
     .empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}
     .page-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}.page-title p{margin:3px 0 0;color:var(--muted);font-size:.86rem}
-    .bottom-nav{display:none}.toast-wrap{position:fixed;right:16px;bottom:16px;z-index:1000;display:grid;gap:8px}.toast{background:#111827;border:1px solid var(--line);padding:11px 14px;border-radius:10px;box-shadow:var(--shadow);max-width:340px}
+    .bottom-nav{display:none}.toast-wrap{position:fixed;right:16px;bottom:16px;z-index:1000;display:grid;gap:8px}.toast{background:var(--panel);border:1px solid var(--line);padding:11px 14px;border-radius:10px;box-shadow:var(--shadow);max-width:340px}
     .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:100;display:grid;place-items:center;padding:16px}.modal{width:min(720px,100%);max-height:90vh;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
     .modal-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.close{border:0;background:transparent;color:var(--muted);font-size:1.4rem}
     .affinity-row{display:grid;grid-template-columns:70px 1fr 50px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.affinity-row input[type=range]{padding:0}
@@ -54,30 +79,118 @@
     .pitch{background:linear-gradient(90deg,#155e36,#166534);border:2px solid rgba(255,255,255,.5);border-radius:14px;min-height:360px;position:relative;padding:18px;display:grid;grid-template-rows:repeat(4,1fr);gap:10px}
     .pitch-row{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;align-items:center}.pitch-player{background:rgba(0,0,0,.45);border:1px solid rgba(255,255,255,.25);padding:7px 9px;border-radius:10px;font-size:.75rem;text-align:center;min-width:82px}
     .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.check{display:flex;align-items:center;gap:8px}.check input{width:auto}
-    .perm-matrix th:first-child,.perm-matrix td:first-child{position:sticky;left:0;background:#111827;z-index:2}.perm-matrix input{width:18px;height:18px}
-    .section-note{font-size:.8rem;color:var(--muted);padding:10px 12px;background:var(--team-primary-soft);border-radius:10px;border:1px solid var(--team-primary-line)}
+    .perm-matrix th:first-child,.perm-matrix td:first-child{position:sticky;left:0;background:var(--panel);z-index:2}.perm-matrix input{width:18px;height:18px}
+    .section-note{font-size:.8rem;color:var(--muted);padding:10px 12px;background:var(--team-accent-soft);border-radius:10px;border:1px solid var(--team-primary-line)}
     .team-logo-settings{display:grid;grid-template-columns:130px 1fr;gap:16px;align-items:start}
-    .team-logo-preview{width:130px;height:130px;border-radius:18px;border:1px solid var(--team-primary-line);background:var(--team-primary-soft);display:grid;place-items:center;overflow:hidden;font-weight:900;font-size:1.25rem}
+    .team-logo-preview{width:130px;height:130px;border-radius:18px;border:1px solid var(--team-primary-line);background:var(--team-accent-soft);display:grid;place-items:center;overflow:hidden;font-weight:900;font-size:1.25rem}
     .team-logo-preview img{width:100%;height:100%;object-fit:contain;padding:8px}
     .color-field input[type=color]{height:56px;padding:4px;cursor:pointer}
     .color-value{font-size:.76rem;color:var(--muted);margin-top:5px;font-variant-numeric:tabular-nums}
-    .palette-proposal{display:none;margin-top:12px;padding:12px;border:1px solid var(--team-primary-line);border-radius:12px;background:var(--team-primary-soft)}
+    .palette-proposal{display:none;margin-top:12px;padding:12px;border:1px solid var(--team-primary-line);border-radius:12px;background:var(--team-accent-soft)}
     .palette-proposal.show{display:block}
     .palette-swatches{display:flex;gap:8px;flex-wrap:wrap;margin:9px 0}
     .palette-swatch{width:42px;height:42px;border-radius:10px;border:1px solid rgba(255,255,255,.22);box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
-    .team-theme-preview{border:1px solid var(--line);border-radius:14px;padding:14px;background:#0d1626;margin:14px 0}
+    .team-theme-preview{
+      border:1px solid var(--preview-detail,var(--line));
+      border-radius:14px;
+      padding:14px;
+      background:var(--preview-bg,var(--panel));
+      color:var(--preview-text,var(--text));
+      margin:14px 0
+    }
+    .team-theme-preview .muted{color:var(--preview-muted,var(--muted))}
     .team-theme-preview .preview-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-bottom:10px;border-bottom:1px solid var(--preview-line,var(--line))}
     .team-theme-preview .preview-nav{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
-    .team-theme-preview .preview-tab{padding:7px 10px;border-radius:999px;background:var(--preview-primary-soft);border:1px solid var(--preview-primary-line)}
-    .team-theme-preview .preview-cta{border:0;border-radius:9px;padding:8px 11px;font-weight:800;background:var(--preview-primary);color:var(--preview-primary-contrast)}
-    .team-theme-preview .preview-badge{display:inline-flex;padding:5px 8px;border-radius:999px;background:var(--preview-secondary-soft);border:1px solid var(--preview-primary-line)}
-    .team-theme-preview .preview-accent{height:5px;border-radius:999px;background:var(--preview-accent);margin-top:12px}
-    @media(max-width:900px){
-      .shell{display:block}.sidebar{display:none}.content{padding:16px 12px 82px}.topbar{padding:12px}.bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:#111827;border-top:1px solid var(--line);padding:6px max(6px,env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));overflow-x:auto}
-      .bottom-nav button{min-width:72px;flex:1;border:0;background:transparent;color:var(--muted);padding:6px 5px;border-radius:9px;font-size:.68rem}.bottom-nav button.active{background:var(--team-primary-soft);color:#fff;box-shadow:inset 0 2px var(--team-primary)}.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}.page-title{align-items:center}
-      .form-grid{grid-template-columns:1fr}.topbar-actions .btn span{display:none}.live-actions{grid-template-columns:repeat(2,1fr)}
+    .team-theme-preview .preview-tab{padding:7px 10px;border-radius:999px;background:var(--preview-surface);border:1px solid var(--preview-line)}
+    .team-theme-preview .preview-cta{border:1px solid var(--preview-detail);border-radius:9px;padding:8px 11px;font-weight:800;background:var(--preview-detail);color:var(--preview-detail-contrast)}
+    .team-theme-preview .preview-badge{display:inline-flex;padding:5px 8px;border-radius:999px;background:var(--preview-surface);border:1px solid var(--preview-line)}
+    .team-theme-preview .preview-accent{height:5px;border-radius:999px;background:var(--preview-detail);margin-top:12px}
+
+    /* Navigazione mobile */
+    .mobile-appbar,.mobile-drawer-backdrop,.mobile-drawer{display:none}
+    .mobile-menu-btn{
+      width:44px;height:44px;border-radius:13px;border:1px solid var(--line);
+      background:var(--panel);color:var(--text);font-size:1.25rem;
+      display:grid;place-items:center;flex:none
     }
-    @media(max-width:480px){.auth-card{padding:18px}.card{padding:13px}.live-score .score{font-size:2rem}.affinity-row{grid-template-columns:58px 1fr 44px}.team-logo-settings{grid-template-columns:1fr}.team-logo-preview{width:110px;height:110px}}
+    .mobile-appbar-brand{
+      width:42px;height:42px;border-radius:13px;background:var(--accent);
+      color:var(--accent-contrast);display:grid;place-items:center;overflow:hidden;
+      font-weight:900;font-size:.72rem;letter-spacing:.025em;flex:none
+    }
+    .mobile-appbar-brand img{width:100%;height:100%;object-fit:cover}
+    .mobile-appbar-copy{min-width:0;flex:1}
+    .mobile-appbar-title{font-size:.98rem;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .mobile-appbar-sub{font-size:.72rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .mobile-drawer-backdrop{
+      position:fixed;inset:0;z-index:79;background:rgba(0,0,0,.54);
+      backdrop-filter:blur(2px)
+    }
+    .mobile-drawer{
+      position:fixed;top:0;right:0;bottom:0;z-index:80;
+      width:min(88vw,370px);background:var(--panel);
+      border-left:1px solid var(--line);box-shadow:-18px 0 55px rgba(0,0,0,.32);
+      padding:calc(14px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom));
+      overflow:auto;transform:translateX(102%);transition:transform .22s ease
+    }
+    .mobile-drawer-backdrop.open{display:block}
+    .mobile-drawer.open{display:block;transform:translateX(0)}
+    .mobile-drawer-head{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      padding:4px 2px 14px;border-bottom:1px solid var(--line);margin-bottom:12px
+    }
+    .mobile-drawer-brand{display:flex;align-items:center;gap:11px;min-width:0}
+    .mobile-drawer .nav{gap:7px}
+    .mobile-drawer .nav button{
+      min-height:48px;padding:12px 13px;border-radius:13px;font-size:.94rem;
+      border:1px solid transparent
+    }
+    .mobile-drawer .nav button.active{
+      background:var(--team-accent-soft);border-color:var(--line);
+      box-shadow:inset 4px 0 var(--team-accent)
+    }
+    .mobile-drawer-context{
+      display:grid;gap:10px;padding:12px 2px;border-top:1px solid var(--line);margin-top:12px
+    }
+    .mobile-drawer-context label{margin:0 0 5px}
+    .mobile-drawer-account{
+      display:grid;gap:8px;padding:12px 2px 2px;border-top:1px solid var(--line);margin-top:12px
+    }
+    .mobile-drawer-account .btn{min-height:46px;text-align:left}
+    body.mobile-menu-open{overflow:hidden}
+
+    @media(max-width:900px){
+      .shell{display:block}
+      .sidebar,.topbar,.bottom-nav{display:none!important}
+      .main{min-width:0}
+      .mobile-appbar{
+        display:flex;align-items:center;gap:10px;
+        position:sticky;top:0;z-index:45;
+        padding:calc(9px + env(safe-area-inset-top)) 12px 9px;
+        background:var(--topbar-bg);border-bottom:1px solid var(--line);
+        backdrop-filter:blur(14px)
+      }
+      .mobile-drawer{display:block}
+      .content{padding:16px 12px 28px}
+      .grid-4,.grid-3,.grid-2{grid-template-columns:1fr}
+      .page-title{align-items:flex-start;flex-direction:column}
+      .form-grid{grid-template-columns:1fr}
+      .live-actions{grid-template-columns:repeat(2,1fr)}
+      .tabs{scrollbar-width:none}
+      .tabs::-webkit-scrollbar{display:none}
+      .toast-wrap{left:12px;right:12px;bottom:12px}
+      .toast{max-width:none;width:100%}
+    }
+    @media(max-width:480px){
+      .auth-card{padding:18px}
+      .card{padding:13px}
+      .live-score .score{font-size:2rem}
+      .affinity-row{grid-template-columns:58px 1fr 44px}
+      .team-logo-settings{grid-template-columns:1fr}
+      .team-logo-preview{width:110px;height:110px}
+      .mobile-drawer{width:min(92vw,355px)}
+      .mobile-appbar{padding-left:10px;padding-right:10px}
+    }
   </style>
 </head>
 <body>
@@ -185,6 +298,32 @@ function mixHex(a,b,t){
     x.g+(y.g-x.g)*t,
     x.b+(y.b-x.b)*t
   );
+}
+
+function perceivedBrightness(hex){
+  const {r,g,b}=hexToRgb(hex);
+  return (r*299+g*587+b*114)/1000;
+}
+
+function surfaceFromBackground(background,amount=.07){
+  const toward=perceivedBrightness(background)<145?"#FFFFFF":"#000000";
+  return mixHex(background,toward,amount);
+}
+
+function mutedFromText(text,background){
+  return mixHex(text,background,.42);
+}
+
+function applyPreviewPalette(el,textColor,backgroundColor,detailColor){
+  if(!el)return;
+  const surface=surfaceFromBackground(backgroundColor,.08);
+  el.style.setProperty("--preview-text",textColor);
+  el.style.setProperty("--preview-bg",backgroundColor);
+  el.style.setProperty("--preview-detail",detailColor);
+  el.style.setProperty("--preview-detail-contrast",contrastColor(detailColor));
+  el.style.setProperty("--preview-muted",mutedFromText(textColor,backgroundColor));
+  el.style.setProperty("--preview-surface",surface);
+  el.style.setProperty("--preview-line",rgbaFromHex(detailColor,.52));
 }
 
 function rgbToHsl(r,g,b){
@@ -331,20 +470,40 @@ async function normalizeLogoToPng(file){
 
 function resetTeamBranding(){
   const root=document.documentElement;
-  root.style.setProperty("--accent","#22C55E");
-  root.style.setProperty("--accent2","#16A34A");
-  root.style.setProperty("--accent-contrast","#07120a");
-  root.style.setProperty("--team-primary","#22C55E");
-  root.style.setProperty("--team-secondary","#FFFFFF");
-  root.style.setProperty("--team-accent","#16A34A");
-  root.style.setProperty("--team-primary-soft","rgba(34,197,94,.14)");
-  root.style.setProperty("--team-primary-line","rgba(34,197,94,.36)");
-  root.style.setProperty("--team-secondary-soft","rgba(255,255,255,.10)");
-  root.style.setProperty("--team-accent-soft","rgba(22,163,74,.16)");
+  const text="#F3F4F6";
+  const background="#0B1220";
+  const detail="#22C55E";
+  const panel=surfaceFromBackground(background,.055);
+  const panel2=surfaceFromBackground(background,.095);
+
+  root.style.setProperty("--team-primary",text);
+  root.style.setProperty("--team-secondary",background);
+  root.style.setProperty("--team-accent",detail);
+
+  root.style.setProperty("--text",text);
+  root.style.setProperty("--muted",mutedFromText(text,background));
+  root.style.setProperty("--bg",background);
+  root.style.setProperty("--panel",panel);
+  root.style.setProperty("--panel2",panel2);
+  root.style.setProperty("--input-bg",surfaceFromBackground(background,.07));
+  root.style.setProperty("--topbar-bg",rgbaFromHex(background,.94));
+
+  root.style.setProperty("--accent",detail);
+  root.style.setProperty("--accent2",detail);
+  root.style.setProperty("--accent-contrast",contrastColor(detail));
+  root.style.setProperty("--line",rgbaFromHex(detail,.40));
+
+  root.style.setProperty("--team-primary-soft",rgbaFromHex(text,.09));
+  root.style.setProperty("--team-primary-line",rgbaFromHex(detail,.44));
+  root.style.setProperty("--team-secondary-soft",rgbaFromHex(background,.14));
+  root.style.setProperty("--team-accent-soft",rgbaFromHex(detail,.16));
+
+  const theme=document.querySelector('meta[name="theme-color"]');
+  if(theme)theme.setAttribute("content",background);
 }
 
 function organizationPalette(org){
-  if(!org)return derivePalette(["#22C55E"]);
+  if(!org)return derivePalette(["#F3F4F6","#0B1220","#22C55E"]);
   return derivePalette([
     org.primary_color,
     org.secondary_color,
@@ -357,28 +516,46 @@ function activeBrandPalette(team,organization=state.organization){
     return organizationPalette(organization);
   }
   return derivePalette([
-    team?.primary_color||"#22C55E",
-    team?.secondary_color,
-    team?.accent_color
+    team?.primary_color||"#F3F4F6",
+    team?.secondary_color||"#0B1220",
+    team?.accent_color||"#22C55E"
   ].filter(Boolean));
 }
 
 function applyTeamBranding(team,organization=state.organization){
   if(!team)return resetTeamBranding();
 
-  const [primary,secondary,accent]=activeBrandPalette(team,organization);
-
+  const [textColor,backgroundColor,detailColor]=activeBrandPalette(team,organization);
   const root=document.documentElement;
-  root.style.setProperty("--accent",primary);
-  root.style.setProperty("--accent2",accent);
-  root.style.setProperty("--accent-contrast",contrastColor(primary));
-  root.style.setProperty("--team-primary",primary);
-  root.style.setProperty("--team-secondary",secondary);
-  root.style.setProperty("--team-accent",accent);
-  root.style.setProperty("--team-primary-soft",rgbaFromHex(primary,.14));
-  root.style.setProperty("--team-primary-line",rgbaFromHex(primary,.36));
-  root.style.setProperty("--team-secondary-soft",rgbaFromHex(secondary,.11));
-  root.style.setProperty("--team-accent-soft",rgbaFromHex(accent,.16));
+
+  const panel=surfaceFromBackground(backgroundColor,.055);
+  const panel2=surfaceFromBackground(backgroundColor,.095);
+  const inputBg=surfaceFromBackground(backgroundColor,.07);
+
+  root.style.setProperty("--team-primary",textColor);
+  root.style.setProperty("--team-secondary",backgroundColor);
+  root.style.setProperty("--team-accent",detailColor);
+
+  root.style.setProperty("--text",textColor);
+  root.style.setProperty("--muted",mutedFromText(textColor,backgroundColor));
+  root.style.setProperty("--bg",backgroundColor);
+  root.style.setProperty("--panel",panel);
+  root.style.setProperty("--panel2",panel2);
+  root.style.setProperty("--input-bg",inputBg);
+  root.style.setProperty("--topbar-bg",rgbaFromHex(backgroundColor,.94));
+
+  root.style.setProperty("--accent",detailColor);
+  root.style.setProperty("--accent2",detailColor);
+  root.style.setProperty("--accent-contrast",contrastColor(detailColor));
+  root.style.setProperty("--line",rgbaFromHex(detailColor,.40));
+
+  root.style.setProperty("--team-primary-soft",rgbaFromHex(textColor,.09));
+  root.style.setProperty("--team-primary-line",rgbaFromHex(detailColor,.44));
+  root.style.setProperty("--team-secondary-soft",rgbaFromHex(backgroundColor,.14));
+  root.style.setProperty("--team-accent-soft",rgbaFromHex(detailColor,.16));
+
+  const theme=document.querySelector('meta[name="theme-color"]');
+  if(theme)theme.setAttribute("content",backgroundColor);
 }
 
 function organizationMark(org,fallback="TM"){
@@ -397,6 +574,30 @@ function teamMark(team,fallback="TM",organization=state.organization){
     return `<img src="${esc(team.logo_url)}" alt="" onerror="this.remove()">`;
   }
   return esc((team?.short_name||fallback).slice(0,4).toUpperCase());
+}
+
+function openMobileDrawer(){
+  document.body.classList.add("mobile-menu-open");
+  $(".mobile-drawer")?.classList.add("open");
+  $(".mobile-drawer-backdrop")?.classList.add("open");
+}
+
+function closeMobileDrawer(){
+  document.body.classList.remove("mobile-menu-open");
+  $(".mobile-drawer")?.classList.remove("open");
+  $(".mobile-drawer-backdrop")?.classList.remove("open");
+}
+
+function wireMobileDrawer(){
+  $("#mobile-menu-open")?.addEventListener("click",openMobileDrawer);
+  $("#mobile-menu-close")?.addEventListener("click",closeMobileDrawer);
+  $(".mobile-drawer-backdrop")?.addEventListener("click",closeMobileDrawer);
+
+  document.onkeydown=e=>{
+    if(e.key==="Escape" && document.body.classList.contains("mobile-menu-open")){
+      closeMobileDrawer();
+    }
+  };
 }
 
 function toast(message, type="info"){
@@ -1284,6 +1485,7 @@ function openTeamCreationRequest(){
 
 function renderPlatformShell(title,content,active="dashboard"){
   stopLive();
+  closeMobileDrawer();
   resetTeamBranding();
   state.currentContext="platform";
   state.currentPage=`platform-${active}`;
@@ -1318,6 +1520,15 @@ function renderPlatformShell(title,content,active="dashboard"){
     </aside>
 
     <main class="main">
+      <header class="mobile-appbar">
+        <div class="mobile-appbar-brand">TM</div>
+        <div class="mobile-appbar-copy">
+          <div class="mobile-appbar-title">${esc(title)}</div>
+          <div class="mobile-appbar-sub">${esc(CONFIG.APP_NAME)} · Super Admin</div>
+        </div>
+        <button class="mobile-menu-btn" id="mobile-menu-open" aria-label="Apri menu">☰</button>
+      </header>
+
       <header class="topbar">
         <div class="topbar-left">
           <div class="topbar-title">${esc(title)}</div>
@@ -1328,17 +1539,57 @@ function renderPlatformShell(title,content,active="dashboard"){
           <button class="btn btn-sm btn-ghost" id="platform-logout-top">Esci</button>
         </div>
       </header>
+
       <div class="content">${content}</div>
     </main>
 
-    <nav class="bottom-nav">${nav}</nav>
+    <div class="mobile-drawer-backdrop"></div>
+    <aside class="mobile-drawer" aria-label="Menu piattaforma">
+      <div class="mobile-drawer-head">
+        <div class="mobile-drawer-brand">
+          <div class="mobile-appbar-brand">TM</div>
+          <div style="min-width:0">
+            <strong>${esc(CONFIG.APP_NAME)}</strong>
+            <div class="muted" style="font-size:.74rem">Piattaforma · Super Admin</div>
+          </div>
+        </div>
+        <button class="mobile-menu-btn" id="mobile-menu-close" aria-label="Chiudi menu">×</button>
+      </div>
+
+      <nav class="nav">
+        ${nav}
+      </nav>
+
+      <div class="mobile-drawer-account">
+        <button class="btn" id="platform-create-team-mobile">＋ Nuova squadra</button>
+        <button class="btn" id="platform-team-switch-mobile">⇄ Vai alle squadre</button>
+        <button class="btn btn-ghost" id="platform-logout-mobile">↪ Esci</button>
+      </div>
+    </aside>
   </div>`;
 
-  $$("[data-platform-nav]").forEach(b=>b.onclick=()=>platformRoute(b.dataset.platformNav));
+  $$("[data-platform-nav]").forEach(b=>b.onclick=()=>{
+    closeMobileDrawer();
+    platformRoute(b.dataset.platformNav);
+  });
+
   $("#platform-team-switch")?.addEventListener("click",renderTeamChooser);
+  $("#platform-team-switch-mobile")?.addEventListener("click",()=>{
+    closeMobileDrawer();
+    renderTeamChooser();
+  });
+
   $("#platform-create-team")?.addEventListener("click",openCreateTeam);
+  $("#platform-create-team-mobile")?.addEventListener("click",()=>{
+    closeMobileDrawer();
+    openCreateTeam();
+  });
+
   $("#platform-logout")?.addEventListener("click",logout);
   $("#platform-logout-top")?.addEventListener("click",logout);
+  $("#platform-logout-mobile")?.addEventListener("click",logout);
+
+  wireMobileDrawer();
 }
 
 async function platformRoute(page="dashboard",push=true){
@@ -1712,22 +1963,46 @@ const navItems=()=>[
   ["admin","Admin","⚙",can("users.manage")||can("permissions.manage")||can("seasons.manage")||can("team.settings.manage")||can("organization.settings.manage")||can("staff.manage")||can("contracts.manage")||can("audit.view")||can("player_link.approve")?null:"__no"]
 ].filter(x=>x[3]===null || can(x[3]));
 function renderShell(title, content, nav=true){
-  const navHtml=navItems().map(([id,label,icon])=>`<button data-nav="${id}" class="${state.currentPage===id?"active":""}"><span>${icon}</span>${esc(label)}</button>`).join("");
+  closeMobileDrawer();
+
+  const navHtml=navItems()
+    .map(([id,label,icon])=>`<button data-nav="${id}" class="${state.currentPage===id?"active":""}"><span>${icon}</span>${esc(label)}</button>`)
+    .join("");
+
   const switchTeams=visibleTeams();
+  const brandMark=teamMark(state.team,"TM",state.organization);
+  const teamLabel=state.team?.short_name||state.team?.name||CONFIG.APP_NAME;
+  const orgLabel=state.organization?.name||"";
 
   $("#root").innerHTML=`<div class="shell">
     <aside class="sidebar">
       <div class="brand">
-        <div class="brand-mark">${teamMark(state.team,"TM",state.organization)}</div>
+        <div class="brand-mark">${brandMark}</div>
         <div>
-          <strong>${esc(state.team?.short_name||state.team?.name||CONFIG.APP_NAME)}</strong>
-          <div class="muted" style="font-size:.72rem">${esc(state.organization?.name||"")}${state.season?.name?` · ${esc(state.season.name)}`:""}</div>
+          <strong>${esc(teamLabel)}</strong>
+          <div class="muted" style="font-size:.72rem">${esc(orgLabel)}${state.season?.name?` · ${esc(state.season.name)}`:""}</div>
         </div>
       </div>
-      <nav class="nav">${navHtml}<div class="section">Account</div>${state.isSuperAdmin?`<button id="platform-side">◆ Piattaforma</button>`:""}<button id="manage-teams-side">⇄ Squadre</button><button id="logout-side">↪ Esci</button></nav>
+
+      <nav class="nav">
+        ${navHtml}
+        <div class="section">Account</div>
+        ${state.isSuperAdmin?`<button id="platform-side">◆ Piattaforma</button>`:""}
+        <button id="manage-teams-side">⇄ Squadre</button>
+        <button id="logout-side">↪ Esci</button>
+      </nav>
     </aside>
 
     <main class="main">
+      <header class="mobile-appbar">
+        <div class="mobile-appbar-brand">${brandMark}</div>
+        <div class="mobile-appbar-copy">
+          <div class="mobile-appbar-title">${esc(title)}</div>
+          <div class="mobile-appbar-sub">${esc(teamLabel)}${state.season?.name?` · ${esc(state.season.name)}`:""}</div>
+        </div>
+        <button class="mobile-menu-btn" id="mobile-menu-open" aria-label="Apri menu">☰</button>
+      </header>
+
       <header class="topbar">
         <div class="topbar-left">
           <div class="topbar-title">${esc(title)}</div>
@@ -1744,7 +2019,9 @@ function renderShell(title, content, nav=true){
           }
 
           ${state.seasons.length>1
-            ? `<select id="season-switch" style="width:auto">${state.seasons.map(s=>`<option value="${s.id}" ${s.id===state.season?.id?"selected":""}>${esc(s.name)}</option>`).join("")}</select>`
+            ? `<select id="season-switch" style="width:auto">
+                ${state.seasons.map(s=>`<option value="${s.id}" ${s.id===state.season?.id?"selected":""}>${esc(s.name)}</option>`).join("")}
+              </select>`
             : ""
           }
 
@@ -1756,30 +2033,102 @@ function renderShell(title, content, nav=true){
       <div class="content">${content}</div>
     </main>
 
-    ${nav?`<nav class="bottom-nav">${navHtml}</nav>`:""}
+    ${nav?`
+      <div class="mobile-drawer-backdrop"></div>
+      <aside class="mobile-drawer" aria-label="Menu squadra">
+        <div class="mobile-drawer-head">
+          <div class="mobile-drawer-brand">
+            <div class="mobile-appbar-brand">${brandMark}</div>
+            <div style="min-width:0">
+              <strong>${esc(teamLabel)}</strong>
+              <div class="muted" style="font-size:.74rem">${esc(orgLabel||state.profile?.display_name||"")}</div>
+            </div>
+          </div>
+          <button class="mobile-menu-btn" id="mobile-menu-close" aria-label="Chiudi menu">×</button>
+        </div>
+
+        <nav class="nav">
+          ${navHtml}
+        </nav>
+
+        <div class="mobile-drawer-context">
+          ${switchTeams.length
+            ? `<div>
+                <label>Squadra</label>
+                <select id="team-switch-mobile">
+                  ${switchTeams.map(t=>`<option value="${t.id}" ${t.id===state.team?.id?"selected":""}>${esc(t.short_name||t.name)}</option>`).join("")}
+                  <option value="__manage">⚙ Gestisci squadre…</option>
+                </select>
+              </div>`
+            : ""
+          }
+
+          ${state.seasons.length>1
+            ? `<div>
+                <label>Stagione</label>
+                <select id="season-switch-mobile">
+                  ${state.seasons.map(s=>`<option value="${s.id}" ${s.id===state.season?.id?"selected":""}>${esc(s.name)}</option>`).join("")}
+                </select>
+              </div>`
+            : ""
+          }
+        </div>
+
+        <div class="mobile-drawer-account">
+          ${state.isSuperAdmin?`<button class="btn" id="platform-mobile">◆ Pannello piattaforma</button>`:""}
+          <button class="btn" id="manage-teams-mobile">⇄ Gestisci squadre</button>
+          <button class="btn btn-ghost" id="logout-mobile">↪ Esci</button>
+        </div>
+      </aside>
+    `:""}
   </div>`;
 
-  $$("[data-nav]").forEach(b=>b.onclick=()=>route(b.dataset.nav));
+  $$("[data-nav]").forEach(b=>b.onclick=()=>{
+    closeMobileDrawer();
+    route(b.dataset.nav);
+  });
+
   $("#logout-side")?.addEventListener("click",logout);
   $("#logout-top")?.addEventListener("click",logout);
+  $("#logout-mobile")?.addEventListener("click",logout);
+
   $("#manage-teams-side")?.addEventListener("click",openManageTeams);
+  $("#manage-teams-mobile")?.addEventListener("click",()=>{
+    closeMobileDrawer();
+    openManageTeams();
+  });
+
   $("#platform-side")?.addEventListener("click",()=>platformRoute("dashboard"));
   $("#platform-top")?.addEventListener("click",()=>platformRoute("dashboard"));
+  $("#platform-mobile")?.addEventListener("click",()=>{
+    closeMobileDrawer();
+    platformRoute("dashboard");
+  });
 
-  $("#team-switch")?.addEventListener("change",async e=>{
-    if(e.target.value==="__manage"){
-      e.target.value=state.team.id;
+  const switchTeam=async value=>{
+    if(value==="__manage"){
+      closeMobileDrawer();
       return openManageTeams();
     }
-    if(e.target.value!==state.team.id){
-      await enterTeam(e.target.value,{persist:true,targetPath:"dashboard"});
+    if(value!==state.team.id){
+      closeMobileDrawer();
+      await enterTeam(value,{persist:true,targetPath:"dashboard"});
     }
-  });
+  };
 
-  $("#season-switch")?.addEventListener("change",async e=>{
-    state.season=state.seasons.find(s=>s.id===e.target.value);
+  $("#team-switch")?.addEventListener("change",e=>switchTeam(e.target.value));
+  $("#team-switch-mobile")?.addEventListener("change",e=>switchTeam(e.target.value));
+
+  const switchSeason=async value=>{
+    state.season=state.seasons.find(s=>s.id===value);
+    closeMobileDrawer();
     await route(state.currentPage);
-  });
+  };
+
+  $("#season-switch")?.addEventListener("change",e=>switchSeason(e.target.value));
+  $("#season-switch-mobile")?.addEventListener("change",e=>switchSeason(e.target.value));
+
+  if(nav)wireMobileDrawer();
 }
 async function route(path,push=true){
   stopLive();
@@ -3017,17 +3366,17 @@ async function adminOrganizationSettings(){
 
       <div class="grid grid-3">
         <div class="field color-field">
-          <label>1 · Primario</label>
+          <label>1 · Primario — Testi</label>
           <input id="org-primary" type="color" value="${initialPalette[0]}">
           <div class="color-value" id="org-primary-value">${initialPalette[0]}</div>
         </div>
         <div class="field color-field">
-          <label>2 · Secondario</label>
+          <label>2 · Secondario — Sfondo</label>
           <input id="org-secondary" type="color" value="${initialPalette[1]}">
           <div class="color-value" id="org-secondary-value">${initialPalette[1]}</div>
         </div>
         <div class="field color-field">
-          <label>3 · Accento</label>
+          <label>3 · Terzo — Dettagli</label>
           <input id="org-accent" type="color" value="${initialPalette[2]}">
           <div class="color-value" id="org-accent-value">${initialPalette[2]}</div>
         </div>
@@ -3100,12 +3449,7 @@ async function adminOrganizationSettings(){
     $("#org-accent-value").textContent=a;
     $("#org-preview-code").textContent=codeInput.value||$("#org-name").value.slice(0,4).toUpperCase()||"SOC";
 
-    themePreview.style.setProperty("--preview-primary",p);
-    themePreview.style.setProperty("--preview-primary-contrast",contrastColor(p));
-    themePreview.style.setProperty("--preview-primary-soft",rgbaFromHex(p,.16));
-    themePreview.style.setProperty("--preview-primary-line",rgbaFromHex(p,.42));
-    themePreview.style.setProperty("--preview-secondary-soft",rgbaFromHex(s,.15));
-    themePreview.style.setProperty("--preview-accent",a);
+    applyPreviewPalette(themePreview,p,s,a);
   };
 
   const setPalette=palette=>{
@@ -3355,23 +3699,23 @@ async function adminSettings(){
       <div style="height:18px"></div>
       <h3>Colori squadra</h3>
       <div class="section-note">
-        I colori definiscono automaticamente la palette grafica della squadra. Errori, ammonizioni, espulsioni e altri stati funzionali mantengono invece i loro colori standard.
+        Il primario colora testi e scritte, il secondario definisce lo sfondo, il terzo governa dettagli, contorni, selezioni e CTA. Errori, ammonizioni, espulsioni e altri stati funzionali mantengono i loro colori standard.
       </div>
 
       <div style="height:12px"></div>
       <div class="grid grid-3">
         <div class="field color-field">
-          <label>1 · Primario</label>
+          <label>1 · Primario — Testi</label>
           <input id="ts-primary" type="color" value="${initialPalette[0]}">
           <div class="color-value" id="ts-primary-value">${initialPalette[0]}</div>
         </div>
         <div class="field color-field">
-          <label>2 · Secondario</label>
+          <label>2 · Secondario — Sfondo</label>
           <input id="ts-secondary" type="color" value="${initialPalette[1]}">
           <div class="color-value" id="ts-secondary-value">${initialPalette[1]}</div>
         </div>
         <div class="field color-field">
-          <label>3 · Accento</label>
+          <label>3 · Terzo — Dettagli</label>
           <input id="ts-accent" type="color" value="${initialPalette[2]}">
           <div class="color-value" id="ts-accent-value">${initialPalette[2]}</div>
         </div>
@@ -3420,12 +3764,7 @@ async function adminSettings(){
     $("#ts-secondary-value").textContent=s;
     $("#ts-accent-value").textContent=a;
 
-    themePreview.style.setProperty("--preview-primary",p);
-    themePreview.style.setProperty("--preview-primary-contrast",contrastColor(p));
-    themePreview.style.setProperty("--preview-primary-soft",rgbaFromHex(p,.16));
-    themePreview.style.setProperty("--preview-primary-line",rgbaFromHex(p,.42));
-    themePreview.style.setProperty("--preview-secondary-soft",rgbaFromHex(s,.15));
-    themePreview.style.setProperty("--preview-accent",a);
+    applyPreviewPalette(themePreview,p,s,a);
   };
 
   const setPalette=palette=>{
@@ -3445,12 +3784,7 @@ async function adminSettings(){
 
     if(inherited && state.organization){
       const inheritedPalette=organizationPalette(state.organization);
-      themePreview.style.setProperty("--preview-primary",inheritedPalette[0]);
-      themePreview.style.setProperty("--preview-primary-contrast",contrastColor(inheritedPalette[0]));
-      themePreview.style.setProperty("--preview-primary-soft",rgbaFromHex(inheritedPalette[0],.16));
-      themePreview.style.setProperty("--preview-primary-line",rgbaFromHex(inheritedPalette[0],.42));
-      themePreview.style.setProperty("--preview-secondary-soft",rgbaFromHex(inheritedPalette[1],.15));
-      themePreview.style.setProperty("--preview-accent",inheritedPalette[2]);
+      applyPreviewPalette(themePreview,inheritedPalette[0],inheritedPalette[1],inheritedPalette[2]);
 
       logoPreview.innerHTML=teamMark(state.team,"TM",state.organization);
     }else{
