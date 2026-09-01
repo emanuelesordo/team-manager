@@ -4875,6 +4875,86 @@
       .calendar-filter-popover .filter-label{display:none}
     }
 
+  
+
+    /* =====================================================
+       051 — Contrasto selettori / griglia mese / colonne partite
+    ===================================================== */
+
+    /* I button-card non ereditano sempre il colore del documento:
+       usiamo il terziario per evitare testo coincidente con lo sfondo. */
+    button.card:not(.btn),
+    .opponent-tile,
+    .stats-category-tile{
+      color:var(--team-tertiary);
+    }
+    button.card:not(.btn) strong,
+    button.card:not(.btn) h2,
+    button.card:not(.btn) h3,
+    .opponent-tile-name{
+      color:inherit;
+    }
+    button.card:not(.btn) .muted{
+      color:color-mix(in srgb,var(--team-tertiary) 68%,var(--team-secondary) 32%);
+    }
+
+    /* Calendario mensile desktop: niente denominazione della squadra.
+       Restano ora + tipo competizione + casa/trasferta + stemma avversario. */
+    .month-event.match-mini .month-event-text{
+      display:none!important;
+    }
+    .month-event.match-mini{
+      width:max-content;
+      max-width:100%;
+      justify-content:flex-start;
+    }
+
+    /* Partite desktop: colonne intrinseche e spazio residuo distribuito
+       tra le colonne, invece che accumulato dentro team/address. */
+    @media(min-width:1221px){
+      .match-record{
+        grid-template-columns:
+          52px
+          max-content
+          30px
+          minmax(280px,max-content)
+          minmax(105px,max-content)
+          minmax(80px,max-content)
+          minmax(120px,max-content)
+          36px!important;
+        column-gap:clamp(8px,1vw,18px)!important;
+        justify-content:space-between!important;
+      }
+      .match-versus-line{
+        width:max-content;
+        max-width:100%;
+      }
+      .match-versus-line strong{
+        max-width:230px!important;
+      }
+      .match-record-competition,
+      .match-record-city,
+      .match-record-address{
+        max-width:260px!important;
+      }
+      .match-record-address{max-width:310px!important}
+    }
+
+    @media(max-width:700px){
+      /* Smartphone, griglia mensile partita: solo H/A + stemma avversaria. */
+      .month-event.match-mini .time,
+      .month-event.match-mini .calendar-competition-icon,
+      .month-event.match-mini .month-event-text{
+        display:none!important;
+      }
+      .month-event.match-mini{
+        width:max-content!important;
+        max-width:100%!important;
+        padding:3px 4px!important;
+        gap:3px!important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -11377,7 +11457,7 @@ function openCalendarCreateChooser(){
   showModal("Nuovo evento",`
     <div class="grid grid-2">
       <button class="card" type="button" data-create-kind="training" style="text-align:left">
-        <strong>◫ Allenamento</strong>
+        <strong>🏋🏻‍♀️ Allenamento</strong>
         <div class="muted">Usa setup campo e orari allenamento.</div>
       </button>
       <button class="card" type="button" data-create-kind="match" style="text-align:left">
