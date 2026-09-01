@@ -4436,6 +4436,263 @@
         font-size:.53rem!important;
       }
     }
+
+    /* =========================================================
+       045 — RECORD / CONTROLLI / SCHEDE GLOBALI UNIFORMI
+    ========================================================= */
+    :root{
+      --ui-row-min:34px;
+      --ui-row-pad-y:5px;
+      --ui-row-pad-x:7px;
+      --ui-control-size:15px;
+      --ui-detail-radius:10px;
+      --ui-detail-pad:10px;
+    }
+
+    /* Record: sottili, coerenti e con densità da gestionale. */
+    .list{gap:3px!important}
+    .list-item,
+    .manager-record,
+    .calendar-event-row,
+    .callup-card,
+    .timeline-item,
+    .notification-item,
+    .onboarding-player-choice,
+    .dashboard-mini-record,
+    .dashboard-health-line,
+    .captain-candidate-card{
+      min-height:var(--ui-row-min)!important;
+      padding:var(--ui-row-pad-y) var(--ui-row-pad-x)!important;
+      border-radius:8px!important;
+      box-shadow:none!important;
+    }
+    .list-item,
+    .calendar-event-row,
+    .callup-card,
+    .timeline-item{
+      gap:7px!important;
+    }
+    .list-item strong,
+    .calendar-event-title,
+    .dashboard-mini-title{
+      line-height:1.12!important;
+    }
+    .muted,
+    .calendar-event-place,
+    .dashboard-mini-meta{
+      line-height:1.12!important;
+    }
+
+    /* Tabelle: il browser dimensiona le colonne in base al contenuto.
+       Le colonne tecniche restano strette, quelle descrittive assorbono il residuo. */
+    .table,
+    .table:not(.roster-table),
+    .roster-table{
+      table-layout:auto!important;
+      width:100%!important;
+      min-width:0!important;
+      border-spacing:0 2px!important;
+    }
+    .table thead th,
+    .table tbody td{
+      padding:4px 6px!important;
+      line-height:1.12!important;
+      vertical-align:middle!important;
+    }
+    .table thead th{
+      white-space:nowrap!important;
+      font-size:.63rem!important;
+    }
+    .table tbody td{
+      font-size:.72rem!important;
+    }
+    .table td:has(.badge),
+    .table td:has(.actions),
+    .table td:has(input[type="checkbox"]),
+    .table td:has(.player-list-identity){
+      width:1%!important;
+      white-space:nowrap!important;
+    }
+    .table .actions{
+      gap:3px!important;
+      flex-wrap:nowrap!important;
+    }
+
+    /* Rosa: niente larghezze rigide arbitrarie; il nome e i campi descrittivi
+       prendono lo spazio disponibile, gli altri restano content-sized. */
+    .roster-table .roster-col-role,
+    .roster-table .roster-col-age,
+    .roster-table .roster-col-shirt,
+    .roster-table .roster-col-birth,
+    .roster-table .roster-col-nation,
+    .roster-table .roster-col-medical,
+    .roster-table .roster-col-signals,
+    .roster-table .roster-col-next,
+    .roster-table .roster-col-actions{
+      width:1%!important;
+      white-space:nowrap!important;
+    }
+    .roster-table .roster-col-name{
+      width:auto!important;
+      min-width:150px!important;
+    }
+    .roster-table .roster-col-favorite,
+    .roster-table .roster-col-preferred,
+    .roster-table .roster-col-permanence{
+      width:auto!important;
+      min-width:0!important;
+    }
+    .roster-table tbody tr{
+      height:29px!important;
+    }
+
+    /* Griglie di record/card: numero colonne deciso dallo spazio e dal contenuto. */
+    .ui-adaptive-grid{
+      grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr))!important;
+      gap:6px!important;
+    }
+    .ui-adaptive-grid > *{
+      min-width:0!important;
+    }
+
+    /* Checkbox uniforme, discreta e allineata. */
+    input[type="checkbox"]{
+      width:var(--ui-control-size)!important;
+      height:var(--ui-control-size)!important;
+      min-width:var(--ui-control-size)!important;
+      min-height:var(--ui-control-size)!important;
+      margin:0!important;
+      padding:0!important;
+      flex:0 0 var(--ui-control-size)!important;
+      accent-color:var(--team-accent)!important;
+      cursor:pointer;
+      vertical-align:middle;
+    }
+    .check{
+      gap:5px!important;
+      min-height:24px;
+      align-items:center!important;
+      font-size:.7rem!important;
+    }
+    .callup-card input[type="checkbox"]{
+      width:var(--ui-control-size)!important;
+      height:var(--ui-control-size)!important;
+    }
+
+    /* Schede di dettaglio e configurazione: stessa grammatica visiva. */
+    .modal .card,
+    .modal form,
+    .player-detail-meta .card,
+    .competition-rule-box,
+    .opponent-field-box,
+    .fee-plan-column,
+    .roster-setup-option,
+    .match-team-slot,
+    .attendance-zone{
+      border:1px solid var(--ui-line-soft)!important;
+      border-radius:var(--ui-detail-radius)!important;
+      background:color-mix(in srgb,var(--panel) 97%,var(--panel2) 3%)!important;
+      box-shadow:none!important;
+    }
+    .modal .card,
+    .player-detail-meta .card,
+    .competition-rule-box,
+    .opponent-field-box,
+    .fee-plan-column,
+    .roster-setup-option,
+    .attendance-zone{
+      padding:var(--ui-detail-pad)!important;
+    }
+    .modal form{
+      padding:0!important;
+      border:0!important;
+      background:transparent!important;
+    }
+    .modal-head{
+      margin-bottom:9px!important;
+      padding-bottom:7px!important;
+    }
+    .modal-head h2,
+    .modal-head h3{
+      font-size:.94rem!important;
+      line-height:1.15!important;
+    }
+    .modal .field,
+    .configuration-panel .field,
+    .setup-panel .field{
+      margin-bottom:8px!important;
+    }
+    .modal .field label,
+    .configuration-panel label,
+    .setup-panel label{
+      margin-bottom:4px!important;
+      font-size:.65rem!important;
+      letter-spacing:.02em;
+    }
+    .modal input:not([type="checkbox"]),
+    .modal select,
+    .modal textarea{
+      min-height:32px!important;
+      padding:5px 7px!important;
+      border-radius:7px!important;
+      font-size:.72rem!important;
+    }
+    .modal textarea{
+      min-height:58px!important;
+    }
+    .modal .form-grid{
+      gap:7px!important;
+    }
+    .modal .section-note{
+      padding:6px 8px!important;
+      border-radius:8px!important;
+      font-size:.66rem!important;
+    }
+    .player-detail-meta{
+      gap:6px!important;
+    }
+    .player-detail-meta .card{
+      min-height:0!important;
+    }
+
+    /* Bottoni dentro record/config: meno ingombranti dei CTA di pagina. */
+    .list-item .btn,
+    .table td .btn,
+    .callup-card .btn,
+    .modal .btn-sm{
+      min-height:25px!important;
+      padding:3px 6px!important;
+      border-radius:7px!important;
+      font-size:.64rem!important;
+    }
+
+    @media(max-width:900px){
+      :root{
+        --ui-row-min:31px;
+        --ui-row-pad-y:4px;
+        --ui-row-pad-x:5px;
+        --ui-control-size:14px;
+        --ui-detail-pad:8px;
+      }
+      .table tbody td{font-size:.68rem!important}
+      .table thead th{font-size:.59rem!important}
+      .roster-table .roster-col-name{min-width:0!important}
+      .ui-adaptive-grid{
+        grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr))!important;
+      }
+      .modal .form-grid{
+        grid-template-columns:1fr!important;
+      }
+      .player-detail-meta{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      }
+      .mobile-appbar-sub,
+      .mobile-drawer-brand .muted{
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+    }
 </style>
 </head>
 <body>
@@ -4571,12 +4828,25 @@ function effectiveTeamLogoUrl(team=state.team,organization=state.organization){
   return team?.logo_url||null;
 }
 
-function ownTeamDisplayName(){
-  return state.team?.name||state.team?.short_name||"Squadra";
+function useShortMobileLabels(){
+  return typeof window!=="undefined" && window.matchMedia("(max-width: 900px)").matches;
 }
 
-function opponentDisplayName(opponent){
-  return opponent?.name||opponent?.short_name||"Avversaria";
+function teamResponsiveName(team,fallback="Squadra"){
+  if(!team)return fallback;
+  return useShortMobileLabels()
+    ? (team.short_name||team.name||fallback)
+    : (team.name||team.short_name||fallback);
+}
+
+function ownTeamDisplayName(forceFull=false){
+  if(forceFull)return state.team?.name||state.team?.short_name||"Squadra";
+  return teamResponsiveName(state.team,"Squadra");
+}
+
+function opponentDisplayName(opponent,forceFull=false){
+  if(forceFull)return opponent?.name||opponent?.short_name||"Avversaria";
+  return teamResponsiveName(opponent,"Avversaria");
 }
 
 function opponentLogoHtml(opponent,cls="match-team-logo"){
@@ -6792,7 +7062,8 @@ function renderShell(title, content, nav=true){
 
   const switchTeams=visibleTeams();
   const brandMark=teamMark(state.team,"TM",state.organization);
-  const teamLabel=state.team?.short_name||state.team?.name||CONFIG.APP_NAME;
+  const teamLabel=state.team?.name||state.team?.short_name||CONFIG.APP_NAME;
+  const mobileTeamLabel=state.team?.short_name||state.team?.name||CONFIG.APP_NAME;
   const orgLabel=state.organization?.name||"";
 
   $("#root").innerHTML=`<div class="shell">
@@ -6819,7 +7090,7 @@ function renderShell(title, content, nav=true){
         <div class="mobile-appbar-brand">${brandMark}</div>
         <div class="mobile-appbar-copy">
           <div class="mobile-appbar-title">${esc(title)}</div>
-          <div class="mobile-appbar-sub">${esc(teamLabel)}${state.season?.name?` · ${esc(state.season.name)}`:""}</div>
+          <div class="mobile-appbar-sub">${esc(mobileTeamLabel)}${state.season?.name?` · ${esc(state.season.name)}`:""}</div>
         </div>
         <button class="mobile-menu-btn" id="mobile-menu-open" aria-label="Apri menu">☰</button>
       </header>
@@ -6833,7 +7104,7 @@ function renderShell(title, content, nav=true){
         <div class="topbar-actions actions">
           ${switchTeams.length
             ? `<select id="team-switch" style="width:auto">
-                ${switchTeams.map(t=>`<option value="${t.id}" ${t.id===state.team?.id?"selected":""}>${esc(t.short_name||t.name)}</option>`).join("")}
+                ${switchTeams.map(t=>`<option value="${t.id}" ${t.id===state.team?.id?"selected":""}>${esc(t.name||t.short_name)}</option>`).join("")}
                 <option value="__manage">⚙ Gestisci squadre…</option>
               </select>`
             : ""
@@ -6862,7 +7133,7 @@ function renderShell(title, content, nav=true){
           <div class="mobile-drawer-brand">
             <div class="mobile-appbar-brand">${brandMark}</div>
             <div style="min-width:0">
-              <strong>${esc(teamLabel)}</strong>
+              <strong>${esc(mobileTeamLabel)}</strong>
               <div class="muted" style="font-size:.74rem">${esc(orgLabel||state.profile?.display_name||"")}</div>
             </div>
           </div>
@@ -12637,8 +12908,8 @@ function socialFooter(ctx,w,h,palette){
   socialText(ctx,socialUpper(season),w-65,h-48,{color:contrastColor(palette.accent),size:28,align:'right',kind:'condensed',weight:900,maxWidth:w*.25});
 }
 function socialDisplayedTeams(data){
-  const ownName=ownTeamDisplayName();
-  const oppName=opponentDisplayName(data.opponent);
+  const ownName=ownTeamDisplayName(true);
+  const oppName=opponentDisplayName(data.opponent,true);
   const leftIsUs=data.m.home_away!=='away';
   return {
     leftIsUs,
@@ -12996,7 +13267,7 @@ async function generateMatchGraphic(matchId,variant='story_match'){
   else if(variant==='result_post')drawSocialFullTime(ctx,data,palette,dims.w,dims.h);
   else drawSocialMatchDay(ctx,data,palette,dims.w,dims.h);
 
-  const base=[data.competition?.name,data.m.round_label,ownTeamDisplayName(),opponentDisplayName(data.opponent)]
+  const base=[data.competition?.name,data.m.round_label,ownTeamDisplayName(true),opponentDisplayName(data.opponent,true)]
     .filter(Boolean).join('-')
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .replace(/[^A-Za-z0-9]+/g,'-').replace(/^-|-$/g,'').toLowerCase();
@@ -13009,8 +13280,8 @@ async function generateMatchGraphic(matchId,variant='story_match'){
 }
 
 function buildCallupMessage(matchData){
-  const own=ownTeamDisplayName();
-  const opp=opponentDisplayName(matchData.opponent);
+  const own=ownTeamDisplayName(true);
+  const opp=opponentDisplayName(matchData.opponent,true);
   const title=matchData.m.home_away==='away'?`${opp}-${own}`:`${own}-${opp}`;
   const meeting=matchData.m.meeting_at?new Intl.DateTimeFormat('it-IT',{hour:'2-digit',minute:'2-digit'}).format(new Date(matchData.m.meeting_at)):'--:--';
   const lines=matchData.called.map(p=>`- ${playerShortName(p)}${p.shirt_number?` (#${p.shirt_number})`:''}`);
@@ -18084,6 +18355,28 @@ function decorateManagerialUI(root=document){
   if(!root?.querySelectorAll)return;
   enhanceResponsiveTables(root);
   enhanceViewportRecordContainers(root);
+
+  root.querySelectorAll(".grid").forEach(grid=>{
+    if(
+      grid.classList.contains("dashboard-ops-grid")
+      || grid.classList.contains("dashboard-kpis")
+      || grid.classList.contains("stats-data-grid")
+      || grid.closest(".month-calendar")
+      || grid.closest(".match-scoreboard")
+      || grid.dataset.uiAdaptiveGrid
+    )return;
+
+    const children=[...grid.children];
+    if(children.length && children.every(el=>
+      el.classList.contains("card")
+      || el.classList.contains("list-item")
+      || el.classList.contains("callup-card")
+      || el.classList.contains("roster-setup-option")
+    )){
+      grid.classList.add("ui-adaptive-grid");
+      grid.dataset.uiAdaptiveGrid="1";
+    }
+  });
 
   root.querySelectorAll(".page-title h1").forEach(h=>{
     if(h.dataset.uiDecorated)return;
