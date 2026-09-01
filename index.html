@@ -3083,6 +3083,184 @@
       }
     }
 
+
+    .registration-card{
+      width:min(760px,calc(100vw - 24px))!important;
+    }
+    .registration-role-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:8px;
+      margin:8px 0 12px;
+    }
+    .registration-role-option{
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      gap:5px;
+      min-height:112px;
+      padding:12px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:var(--panel2);
+      color:var(--text);
+      cursor:pointer;
+      text-align:left;
+      transition:.15s ease;
+    }
+    .registration-role-option:hover{
+      border-color:var(--team-accent);
+      transform:translateY(-1px);
+    }
+    .registration-role-option.active{
+      border-color:var(--team-accent);
+      background:var(--team-accent-soft);
+      box-shadow:inset 0 0 0 1px var(--team-accent);
+    }
+    .registration-role-option .role-emoji{
+      font-size:1.55rem!important;
+      line-height:1;
+    }
+    .registration-role-option strong{
+      font-size:.88rem!important;
+    }
+    .registration-role-option small{
+      color:var(--muted);
+      line-height:1.25;
+      font-size:.68rem!important;
+    }
+    .registration-team-preview{
+      display:flex;
+      gap:9px;
+      align-items:center;
+      padding:9px;
+      min-height:55px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:var(--panel2);
+    }
+    .registration-team-logo{
+      width:38px;
+      height:38px;
+      min-width:38px;
+      border-radius:9px;
+      overflow:hidden;
+      display:grid;
+      place-items:center;
+      background:var(--panel);
+      border:1px solid var(--line);
+      font-size:.68rem!important;
+      font-weight:900;
+    }
+    .registration-team-logo img{
+      width:100%;height:100%;object-fit:contain;
+    }
+    .registration-team-copy{min-width:0}
+    .registration-team-copy strong,
+    .registration-team-copy div{
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .registration-flow-note{
+      border-left:3px solid var(--team-accent);
+    }
+
+    .onboarding-player-list{
+      max-height:min(52vh,430px);
+      overflow-y:auto;
+      display:grid;
+      gap:5px;
+    }
+    .onboarding-player-choice{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      align-items:center;
+      padding:7px 8px;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:var(--panel2);
+    }
+
+    .dashboard-priority{
+      border-color:var(--team-primary-line)!important;
+      box-shadow:0 7px 24px color-mix(in srgb,var(--team-accent) 10%,rgba(0,0,0,.16))!important;
+    }
+    .dashboard-status-ok{
+      background:linear-gradient(145deg,rgba(22,101,52,.13),var(--panel))!important;
+      border-color:rgba(34,197,94,.25)!important;
+    }
+    .dashboard-status-alert{
+      background:linear-gradient(145deg,rgba(127,29,29,.14),var(--panel))!important;
+      border-color:rgba(239,68,68,.28)!important;
+    }
+    .dashboard-fan-score{
+      min-height:100px;
+    }
+
+    @media(max-width:700px){
+      .registration-role-grid{grid-template-columns:1fr}
+      .registration-role-option{
+        min-height:0;
+        padding:9px;
+        display:grid;
+        grid-template-columns:34px minmax(0,1fr);
+        grid-template-rows:auto auto;
+        column-gap:8px;
+      }
+      .registration-role-option .role-emoji{
+        grid-row:1/3;
+        align-self:center;
+      }
+    }
+
+
+    .dashboard-span-2{grid-column:span 2}
+    .dashboard-health-line{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding:6px 2px;
+      border-bottom:1px solid var(--ui-line-soft);
+    }
+    .dashboard-health-line:last-child{border-bottom:0}
+    .dashboard-health-main{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      min-width:0;
+    }
+    .dashboard-health-icon{
+      width:26px;height:26px;min-width:26px;
+      display:grid;place-items:center;
+      border-radius:7px;
+      background:var(--panel2);
+    }
+    .dashboard-own-alert{
+      padding:8px;
+      border-radius:9px;
+      border:1px solid var(--ui-line-soft);
+      background:var(--ui-record-bg);
+      margin-bottom:5px;
+    }
+    .dashboard-own-alert.ok{
+      border-color:rgba(34,197,94,.28);
+      background:rgba(34,197,94,.08);
+    }
+    .dashboard-own-alert.warn{
+      border-color:rgba(245,158,11,.30);
+      background:rgba(245,158,11,.08);
+    }
+    .dashboard-own-alert.danger{
+      border-color:rgba(239,68,68,.30);
+      background:rgba(239,68,68,.08);
+    }
+    @media(max-width:900px){
+      .dashboard-span-2{grid-column:auto}
+    }
+
   </style>
 </head>
 <body>
@@ -3264,6 +3442,28 @@ function matchLocationIcon(homeAway){
 }
 const can = key => state.isSuperAdmin || state.permissions.has(key) || !!state.membership?.is_owner;
 const hasRole = role => state.roles.includes(role);
+
+function teamAudienceMode(){
+  if(
+    state.isSuperAdmin
+    || state.membership?.is_owner
+    || ["admin","management","coach","assistant_coach"].some(hasRole)
+  ) return "staff";
+
+  if(hasRole("player")) return "player";
+  return "fan";
+}
+const isStaffAudience=()=>teamAudienceMode()==="staff";
+const isPlayerAudience=()=>teamAudienceMode()==="player";
+const isFanAudience=()=>teamAudienceMode()==="fan";
+
+function staffRoleLabel(code){
+  return ({
+    management:"Dirigente",
+    coach:"Allenatore",
+    assistant_coach:"Vice allenatore"
+  })[code]||code;
+}
 const initials = (a,b) => ((a?.[0]||"")+(b?.[0]||"")).toUpperCase() || "?";
 const minute = sec => `${Math.floor((Number(sec)||0)/60)}'`;
 const clockText = sec => {
@@ -3781,76 +3981,348 @@ function renderInitialPlatformSetup(){
   };
 }
 
-function renderRegistration(){
-  $("#root").innerHTML=`<div class="auth-wrap"><div class="auth-card">
-    <h1>Registrazione</h1>
-    <p class="muted">
-      L'account è globale. Dopo l'accesso potrai seguire squadre oppure richiedere la creazione di una squadra come dirigente.
-    </p>
+async function renderRegistration(){
+  stopLive();
+  resetTeamBranding();
 
-    <form id="register-form">
-      <div class="field"><label>Nome visualizzato</label><input id="reg-display" required></div>
-      <div class="form-grid">
-        <div class="field"><label>Nome</label><input id="reg-first"></div>
-        <div class="field"><label>Cognome</label><input id="reg-last"></div>
-      </div>
-      <div class="field"><label>Username</label><input id="reg-user" pattern="[A-Za-z0-9._-]{3,32}" required></div>
-      <div class="field"><label>Password (min. 8 caratteri)</label><input id="reg-pass" type="password" minlength="8" required></div>
+  let teams=[];
+  let directoryError=null;
 
-      <div class="field">
-        <label>Come vuoi iniziare?</label>
-        <select id="reg-intent">
-          <option value="fan">Voglio seguire una o più squadre</option>
-          <option value="manager">Sono un dirigente / voglio creare una squadra</option>
-        </select>
-        <div class="muted" style="font-size:.74rem;margin-top:5px">
-          La scelta “dirigente” non assegna privilegi automaticamente: invierà una richiesta al Super Admin.
+  try{
+    teams=await must(supabase.rpc("registration_team_directory"));
+  }catch(err){
+    directoryError=err;
+  }
+
+  let intent="fan";
+
+  $("#root").innerHTML=`<div class="auth-wrap">
+    <div class="auth-card registration-card">
+      <h1>Registrazione</h1>
+      <p class="muted">
+        Crea un unico account e scegli subito come vuoi entrare nella squadra.
+        Tutti possono seguire una squadra; i ruoli operativi richiedono associazione o approvazione.
+      </p>
+
+      ${directoryError
+        ? `<div class="section-note" style="margin-bottom:12px">Impossibile caricare l'elenco squadre: ${esc(directoryError.message)}</div>`
+        : ""
+      }
+
+      <form id="register-form">
+        <div class="field">
+          <label>Io sono…</label>
+
+          <div class="registration-role-grid">
+            <button type="button" class="registration-role-option" data-reg-role="staff">
+              <span class="role-emoji">🧑‍💼</span>
+              <strong>Sono un dirigente / allenatore</strong>
+              <small>Seguo la squadra e richiedo l'accesso alla gestione con i permessi del mio incarico.</small>
+            </button>
+
+            <button type="button" class="registration-role-option" data-reg-role="player">
+              <span class="role-emoji">⚽</span>
+              <strong>Sono un calciatore</strong>
+              <small>Seguo la squadra e posso chiedere di associare l'account alla mia scheda in Rosa.</small>
+            </button>
+
+            <button type="button" class="registration-role-option active" data-reg-role="fan">
+              <span class="role-emoji">🙋</span>
+              <strong>Sono un fan</strong>
+              <small>Seguo la squadra, le partite, i compleanni e le statistiche pubbliche.</small>
+            </button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Squadra da seguire</label>
+          <select id="reg-team" required ${teams.length?"":"disabled"}>
+            ${teams.length
+              ? teams.map(t=>`
+                  <option value="${t.team_id}">
+                    ${esc(t.team_name)}${t.organization_name?` · ${esc(t.organization_name)}`:""}
+                  </option>
+                `).join("")
+              : `<option value="">Nessuna squadra disponibile</option>`
+            }
+          </select>
+        </div>
+
+        <div id="reg-team-preview"></div>
+
+        <div id="reg-staff-options" class="hidden" style="margin-top:10px">
+          <div class="field">
+            <label>Incarico richiesto</label>
+            <select id="reg-staff-role">
+              <option value="management">Dirigente</option>
+              <option value="coach">Allenatore</option>
+              <option value="assistant_coach">Vice allenatore</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Messaggio alla squadra</label>
+            <textarea id="reg-staff-message" rows="2" placeholder="Facoltativo"></textarea>
+          </div>
+        </div>
+
+        <div id="reg-flow-note" class="section-note registration-flow-note"></div>
+
+        <div style="height:12px"></div>
+
+        <div class="field"><label>Nome visualizzato</label><input id="reg-display" required></div>
+
+        <div class="form-grid">
+          <div class="field"><label>Nome</label><input id="reg-first"></div>
+          <div class="field"><label>Cognome</label><input id="reg-last"></div>
+        </div>
+
+        <div class="field">
+          <label>Username</label>
+          <input id="reg-user" pattern="[A-Za-z0-9._-]{3,32}" autocomplete="username" required>
+        </div>
+
+        <div class="field">
+          <label>Password (min. 8 caratteri)</label>
+          <input id="reg-pass" type="password" minlength="8" autocomplete="new-password" required>
+        </div>
+
+        <button class="btn btn-primary btn-block" ${teams.length?"":"disabled"}>Crea account</button>
+      </form>
+
+      <div style="height:10px"></div>
+      <button class="btn btn-ghost btn-block" id="back-login">Torna al login</button>
+    </div>
+  </div>`;
+
+  const teamSelect=$("#reg-team");
+  const staffBox=$("#reg-staff-options");
+  const note=$("#reg-flow-note");
+  const preview=$("#reg-team-preview");
+
+  const selectedTeam=()=>teams.find(t=>t.team_id===teamSelect?.value)||teams[0]||null;
+
+  const renderTeamPreview=()=>{
+    const t=selectedTeam();
+
+    if(!t){
+      preview.innerHTML=`<div class="registration-team-preview"><div class="muted">Nessuna squadra disponibile per la registrazione.</div></div>`;
+      return;
+    }
+
+    const code=String(t.display_code||t.team_short_name||t.team_name||"TEAM")
+      .replace(/[^A-Za-z0-9]/g,"")
+      .slice(0,4)
+      .toUpperCase();
+
+    preview.innerHTML=`
+      <div class="registration-team-preview">
+        <div class="registration-team-logo">
+          ${t.logo_url?`<img src="${esc(t.logo_url)}" alt="">`:esc(code||"TEAM")}
+        </div>
+        <div class="registration-team-copy">
+          <strong>${esc(t.team_name)}</strong>
+          <div class="muted">${esc(t.organization_name||"")}</div>
         </div>
       </div>
+    `;
+  };
 
-      <button class="btn btn-primary btn-block">Crea account</button>
-    </form>
+  const refreshIntent=()=>{
+    $$("[data-reg-role]").forEach(b=>{
+      b.classList.toggle("active",b.dataset.regRole===intent);
+    });
 
-    <div style="height:10px"></div>
-    <button class="btn btn-ghost btn-block" id="back-login">Torna al login</button>
-  </div></div>`;
+    staffBox.classList.toggle("hidden",intent!=="staff");
+
+    note.innerHTML=intent==="staff"
+      ? `🧑‍💼 Seguirai subito la squadra come Fan. La richiesta <strong>${esc(staffRoleLabel($("#reg-staff-role")?.value||"management"))}</strong> dovrà essere approvata da chi gestisce lo staff. Dopo l'approvazione riceverai automaticamente i relativi permessi.`
+      : intent==="player"
+        ? `⚽ Seguirai subito la squadra. Dopo la registrazione potrai selezionare il tuo nome dalla Rosa e inviare la richiesta di associazione.`
+        : `🙋 Come Fan vedrai le partite, i compleanni e le informazioni/statistiche pubbliche della squadra. Allenamenti ed eventi interni non saranno visibili.`;
+  };
+
+  $$("[data-reg-role]").forEach(b=>b.onclick=()=>{
+    intent=b.dataset.regRole;
+    refreshIntent();
+  });
+
+  $("#reg-staff-role")?.addEventListener("change",refreshIntent);
+  teamSelect?.addEventListener("change",renderTeamPreview);
+
+  renderTeamPreview();
+  refreshIntent();
 
   $("#back-login").onclick=renderLogin;
 
   $("#register-form").onsubmit=async e=>{
     e.preventDefault();
 
-    try{
-      const username=$("#reg-user").value.trim().toLowerCase();
-      const password=$("#reg-pass").value;
-      const intent=$("#reg-intent").value;
+    const team=selectedTeam();
+    if(!team){
+      toast("Seleziona una squadra","error");
+      return;
+    }
 
+    const username=$("#reg-user").value.trim().toLowerCase();
+    const password=$("#reg-pass").value;
+    const staffRole=$("#reg-staff-role")?.value||"management";
+
+    try{
       await edge("fan-register",{
         username,
         password,
-        display_name:$("#reg-display").value,
-        first_name:$("#reg-first").value||null,
-        last_name:$("#reg-last").value||null
+        display_name:$("#reg-display").value.trim(),
+        first_name:$("#reg-first").value.trim()||null,
+        last_name:$("#reg-last").value.trim()||null
       },false);
 
       const login=await edge("auth-login",{username,password},false);
+
       const {error}=await supabase.auth.setSession({
         access_token:login.session.access_token,
         refresh_token:login.session.refresh_token
       });
       if(error)throw error;
 
+      await must(
+        supabase.rpc("follow_team",{
+          p_team_id:team.team_id
+        })
+      );
+
+      if(intent==="staff"){
+        await must(
+          supabase.rpc("request_team_staff_access",{
+            p_team_id:team.team_id,
+            p_requested_role_code:staffRole,
+            p_message:$("#reg-staff-message")?.value.trim()||null
+          })
+        );
+      }
+
       toast("Account creato","ok");
       await boot();
 
-      if(intent==="manager"){
-        setTimeout(()=>openTeamCreationRequest(),0);
+      if(state.team?.id!==team.team_id){
+        await enterTeam(team.team_id,{
+          persist:true,
+          targetPath:"dashboard"
+        });
+      }
+
+      if(intent==="player"){
+        setTimeout(()=>openRegistrationPlayerLink(),80);
+      }else if(intent==="staff"){
+        setTimeout(()=>{
+          toast(`Richiesta ${staffRoleLabel(staffRole)} inviata alla squadra`,"ok");
+        },80);
       }
 
     }catch(err){
       toast(err.message,"error");
     }
   };
+}
+
+async function openRegistrationPlayerLink(){
+  if(!state.team?.id||!state.season?.id||state.myPlayer)return;
+
+  try{
+    const [players,history,requests]=await Promise.all([
+      must(
+        supabase.from("players")
+          .select("id,first_name,last_name,photo_url,profile_id")
+          .eq("team_id",state.team.id)
+          .order("last_name")
+      ),
+      must(
+        supabase.rpc("get_season_roster_history",{
+          p_team_id:state.team.id,
+          p_season_id:state.season.id
+        })
+      ),
+      must(
+        supabase.from("player_link_requests")
+          .select("*")
+          .eq("team_id",state.team.id)
+          .eq("profile_id",state.profile.id)
+          .eq("status","pending")
+      )
+    ]);
+
+    if(requests.length){
+      toast("Hai già una richiesta di associazione in attesa","ok");
+      return;
+    }
+
+    const activeIds=new Set(
+      history
+        .filter(x=>
+          x.roster_status==="active"
+          && today()>=x.start_date
+          && today()<=(x.actual_end_date||x.planned_end_date)
+        )
+        .map(x=>x.player_id)
+    );
+
+    const candidates=players.filter(p=>
+      activeIds.has(p.id)
+      && !p.profile_id
+    );
+
+    showModal("Associa il tuo profilo",`
+      <div class="section-note">
+        ⚽ Seleziona il tuo nome. L'associazione non è immediata: dovrà essere approvata dalla squadra.
+      </div>
+
+      <div style="height:10px"></div>
+
+      <div class="onboarding-player-list">
+        ${candidates.map(p=>`
+          <div class="onboarding-player-choice">
+            <div class="player-list-identity">
+              <span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}">`:initials(p.first_name,p.last_name)}</span>
+              <span>
+                <span class="player-list-surname">${esc(p.last_name)}</span>
+                <span class="player-list-firstname"> ${esc(p.first_name)}</span>
+              </span>
+            </div>
+            <button class="btn btn-sm btn-primary" type="button" data-register-link-player="${p.id}">Sono io</button>
+          </div>
+        `).join("")||`<div class="empty">Nessun calciatore libero da associare nella Rosa attuale.</div>`}
+      </div>
+
+      <div style="height:10px"></div>
+
+      <div class="actions">
+        <button class="btn btn-ghost" type="button" id="registration-link-later">Lo farò più tardi</button>
+      </div>
+    `,root=>{
+      root.closest(".modal").style.width="min(620px,100%)";
+
+      $("#registration-link-later",root).onclick=closeModal;
+
+      $$("[data-register-link-player]",root).forEach(b=>b.onclick=async()=>{
+        try{
+          await must(
+            supabase.rpc("request_player_link",{
+              p_team_id:state.team.id,
+              p_player_id:b.dataset.registerLinkPlayer
+            })
+          );
+
+          closeModal();
+          toast("Richiesta di associazione inviata","ok");
+        }catch(err){
+          toast(err.message,"error");
+        }
+      });
+    });
+
+  }catch(err){
+    toast(err.message,"error");
+  }
 }
 
 async function logout(){
@@ -4960,22 +5432,30 @@ async function platformRequests(){
 /* =========================================================
    SHELL / ROUTING
 ========================================================= */
-const navItems=()=>[
-  ["dashboard","Home","🏠","dashboard.view"],
-  ["calendar","Calendario","📅","calendar.view"],
-  ["trainings","Allenamenti","🏃","trainings.view"],
-  ["matches","Partite","⚽","matches.view"],
-  ["competitions","Competizioni","🏆","competitions.view"],
-  ["roster","Rosa","👥","roster.view"],
-  ["absences","Assenze","🚑",can("absences.view_own")||can("absences.view_all")?null:"__no"],
-  ["opponents","Avversarie","🆚","opponents.view"],
-  ["venues","Campi","🏟️","venues.view"],
-  ["medical","Visite mediche","🩺",can("medical.view_own")||can("medical.view_all")?null:"__no"],
-  ["cash","Cassa","💰",can("fees.view_own")||can("fees.view_all")||can("fines.view_own")||can("fines.view_all")?null:"__no"],
-  ["stats","Statistiche","📊","stats.view"],
-  ["profile","Profilo","👤",null],
-  ["admin","Admin","⚙️",can("users.manage")||can("permissions.manage")||can("seasons.manage")||can("team.settings.manage")||can("organization.settings.manage")||can("staff.manage")||can("contracts.manage")||can("audit.view")||can("player_link.approve")?null:"__no"]
-].filter(x=>x[3]===null || can(x[3]));
+const navItems=()=>{
+  const audience=teamAudienceMode();
+
+  const items=[
+    ["dashboard","Home","🏠",true],
+    ["calendar","Calendario","📅",audience==="fan"?can("matches.view"):can("calendar.view")],
+    ["trainings","Allenamenti","🏃",audience!=="fan"&&can("trainings.view")],
+    ["matches","Partite","⚽",can("matches.view")],
+    ["competitions","Competizioni","🏆",can("competitions.view")],
+    ["roster","Rosa","👥",can("roster.view")],
+    ["absences","Assenze","🚑",audience!=="fan"&&(can("absences.view_own")||can("absences.view_all"))],
+    ["opponents","Avversarie","🆚",audience!=="fan"&&can("opponents.view")],
+    ["venues","Campi","🏟️",audience!=="fan"&&can("venues.view")],
+    ["medical","Visite mediche","🩺",audience!=="fan"&&(can("medical.view_own")||can("medical.view_all"))],
+    ["cash","Cassa","💰",audience!=="fan"&&(can("fees.view_own")||can("fees.view_all")||can("fines.view_own")||can("fines.view_all"))],
+    ["stats","Statistiche","📊",can("stats.view")],
+    ["profile","Profilo","👤",true],
+    ["admin","Admin","⚙️",audience!=="fan"&&(can("users.manage")||can("permissions.manage")||can("seasons.manage")||can("team.settings.manage")||can("organization.settings.manage")||can("staff.manage")||can("contracts.manage")||can("audit.view")||can("player_link.approve"))]
+  ];
+
+  return items
+    .filter(x=>x[3])
+    .map(([id,label,icon])=>[id,label,icon]);
+};
 function renderShell(title, content, nav=true){
   closeMobileDrawer();
 
@@ -5160,7 +5640,20 @@ async function route(path,push=true){
   }
 
   state.currentContext="team";
-  state.currentPage=page||"dashboard";
+
+  const requestedPage=page||"dashboard";
+  const fanBlockedPages=new Set([
+    "trainings","absences","opponents","venues","medical","cash","admin",
+    "discipline","fines","injuries"
+  ]);
+
+  if(isFanAudience()&&fanBlockedPages.has(requestedPage)){
+    state.currentPage="dashboard";
+    if(push)location.hash="#/dashboard";
+    return pageDashboard();
+  }
+
+  state.currentPage=requestedPage;
 
   if(push)location.hash=`#/${path}`;
 
@@ -5213,46 +5706,15 @@ window.addEventListener("hashchange",()=>{
    DASHBOARD
 ========================================================= */
 async function pageDashboard(){
-  const nowDate=new Date();
-  const nowIso=nowDate.toISOString();
-  const todayKey=today();
-  const in7=new Date(nowDate.getTime()+7*86400000);
-  const in30=new Date(nowDate.getTime()+30*86400000);
-  const in7Key=localDateKey(in7);
+  const audience=teamAudienceMode();
 
-  const canMedicalAll=can("medical.view_all");
-  const canMedicalOwn=can("medical.view_own");
-  const canMedical=canMedicalAll||canMedicalOwn;
-  const canFees=can("fees.view_all")||can("fees.view_own")||can("fees.manage");
-  const canAbsences=can("absences.view_all")||can("absences.view_own");
-  const canInjuries=can("injuries.view_all")||can("injuries.view_own");
+  if(audience==="fan")return pageDashboardFan();
+  if(audience==="player")return pageDashboardPlayer();
+  return pageDashboardStaff();
+}
 
-  const [
-    teamStatsRows,
-    events,
-    players,
-    rosterHistory,
-    genericRows,
-    medicalRows,
-    feeRows,
-    absenceRows,
-    injuryRows
-  ]=await Promise.all([
-    must(
-      supabase.from("v_team_season_stats")
-        .select("*")
-        .eq("team_id",state.team.id)
-        .eq("season_id",state.season.id)
-    ),
-    must(
-      supabase.from("events")
-        .select("*")
-        .eq("team_id",state.team.id)
-        .eq("season_id",state.season.id)
-        .gte("start_at",nowIso)
-        .order("start_at")
-        .limit(30)
-    ),
+async function dashboardRosterContext(){
+  const [players,history,genericRows]=await Promise.all([
     must(
       supabase.from("players")
         .select("id,first_name,last_name,photo_url,birth_date,profile_id")
@@ -5269,8 +5731,87 @@ async function pageDashboard(){
         p_team_id:state.team.id,
         p_season_id:state.season.id
       })
+    )
+  ]);
+
+  const activeIds=new Set(
+    history
+      .filter(x=>
+        x.roster_status==="active"
+        && today()>=x.start_date
+        && today()<=(x.actual_end_date||x.planned_end_date)
+      )
+      .map(x=>x.player_id)
+  );
+
+  return {
+    players,
+    roster:players.filter(p=>activeIds.has(p.id)),
+    playerMap:new Map(players.map(p=>[p.id,p])),
+    genericMap:new Map(genericRows.map(x=>[x.player_id,x.generic_role_code||null]))
+  };
+}
+
+function dashboardBirthdayRows(roster){
+  return roster
+    .map(p=>({...p,days:birthdayDistanceDays(p.birth_date)}))
+    .filter(p=>Number.isFinite(p.days)&&p.days<=30)
+    .sort((a,b)=>a.days-b.days);
+}
+
+function dashboardEventRecord(e,icon="📌"){
+  return `
+    <div class="dashboard-mini-record" data-dashboard-event="${e.id}" role="button" tabindex="0">
+      <div>
+        <div class="dashboard-mini-title">${icon} ${esc(e.title||eventTypeLabel(e.event_type))}</div>
+        <div class="muted dashboard-mini-meta">
+          ${fmtDateTime(e.start_at)}${e.location?` · ${esc(e.location)}`:""}
+        </div>
+      </div>
+      <div class="dashboard-mini-side">›</div>
+    </div>
+  `;
+}
+
+function wireDashboardLinks(){
+  $$("[data-go]").forEach(b=>b.onclick=()=>route(b.dataset.go));
+
+  $$("[data-dashboard-event]").forEach(el=>{
+    el.onclick=()=>openEventDetail(el.dataset.dashboardEvent);
+    el.onkeydown=e=>{
+      if(e.key==="Enter"||e.key===" "){
+        e.preventDefault();
+        openEventDetail(el.dataset.dashboardEvent);
+      }
+    };
+  });
+}
+
+async function pageDashboardStaff(){
+  const now=new Date();
+  const nowIso=now.toISOString();
+  const todayKey=today();
+  const in7Key=localDateKey(new Date(now.getTime()+7*86400000));
+
+  const ctx=await dashboardRosterContext();
+
+  const [teamRows,events,medicalRows,feeRows,absenceRows,injuryRows]=await Promise.all([
+    must(
+      supabase.from("v_team_season_stats")
+        .select("*")
+        .eq("team_id",state.team.id)
+        .eq("season_id",state.season.id)
     ),
-    canMedical
+    must(
+      supabase.from("events")
+        .select("*")
+        .eq("team_id",state.team.id)
+        .eq("season_id",state.season.id)
+        .gte("start_at",nowIso)
+        .order("start_at")
+        .limit(60)
+    ),
+    can("medical.view_all")
       ? must(
           supabase.from("medical_examinations")
             .select("*")
@@ -5278,7 +5819,7 @@ async function pageDashboard(){
             .order("issued_date",{ascending:false})
         )
       : Promise.resolve([]),
-    canFees
+    can("fees.view_all")||can("fees.manage")
       ? must(
           supabase.from("membership_fees")
             .select("*")
@@ -5289,7 +5830,7 @@ async function pageDashboard(){
             .order("due_date")
         )
       : Promise.resolve([]),
-    canAbsences
+    can("absences.view_all")
       ? must(
           supabase.from("player_unavailabilities")
             .select("*")
@@ -5300,7 +5841,7 @@ async function pageDashboard(){
             .order("start_date")
         )
       : Promise.resolve([]),
-    canInjuries
+    can("injuries.view_all")
       ? must(
           supabase.from("injuries")
             .select("*")
@@ -5312,73 +5853,46 @@ async function pageDashboard(){
       : Promise.resolve([])
   ]);
 
-  const teamStats=teamStatsRows[0]||{};
-  const playerMap=new Map(players.map(p=>[p.id,p]));
-  const genericMap=new Map(genericRows.map(x=>[x.player_id,x.generic_role_code||null]));
-
-  const currentRosterIds=new Set(
-    rosterHistory
-      .filter(c=>
-        c.roster_status==="active"
-        && todayKey>=c.start_date
-        && todayKey<=(c.actual_end_date||c.planned_end_date)
-      )
-      .map(c=>c.player_id)
-  );
-
-  const roster=players.filter(p=>currentRosterIds.has(p.id));
-
-  const birthdayRows=roster
-    .map(p=>({...p,days:birthdayDistanceDays(p.birth_date)}))
-    .filter(p=>Number.isFinite(p.days)&&p.days<=30)
-    .sort((a,b)=>a.days-b.days);
-
+  const team=teamRows[0]||{};
   const latestMedical=new Map();
+
   medicalRows.forEach(x=>{
     if(!latestMedical.has(x.player_id))latestMedical.set(x.player_id,x);
   });
 
-  const medicalTargets=canMedicalAll
-    ? roster
-    : roster.filter(p=>p.profile_id===state.profile.id);
+  const medicalAlerts=can("medical.view_all")
+    ? ctx.roster.map(p=>{
+        const exam=latestMedical.get(p.id);
 
-  const medicalAlerts=medicalTargets
-    .map(p=>{
-      const exam=latestMedical.get(p.id);
-      if(!exam)return {...p,medicalKind:"missing",medicalDays:-999,expires_on:null};
+        if(!exam)return {...p,kind:"missing",days:-999,expires_on:null};
 
-      const days=medicalDaysToExpiry(exam.expires_on);
-      if(days===null||days>45)return null;
+        const days=medicalDaysToExpiry(exam.expires_on);
+        if(days===null||days>45)return null;
 
-      return {
-        ...p,
-        medicalKind:days<0?"expired":"expiring",
-        medicalDays:days,
-        expires_on:exam.expires_on
-      };
-    })
-    .filter(Boolean)
-    .sort((a,b)=>a.medicalDays-b.medicalDays);
+        return {
+          ...p,
+          kind:days<0?"expired":"expiring",
+          days,
+          expires_on:exam.expires_on
+        };
+      }).filter(Boolean).sort((a,b)=>a.days-b.days)
+    : [];
 
-  const feeAlerts=feeRows
-    .map(x=>({
-      ...x,
-      player:playerMap.get(x.player_id),
-      overdue:x.due_date<todayKey
-    }))
-    .sort((a,b)=>a.due_date.localeCompare(b.due_date));
+  const feeAlerts=feeRows.map(x=>({
+    ...x,
+    player:ctx.playerMap.get(x.player_id),
+    overdue:x.due_date<todayKey
+  }));
 
   const absences=[
     ...absenceRows.map(x=>({
-      kind:"absence",
       player_id:x.player_id,
       start_date:x.start_date,
       end_date:x.end_date,
       label:absenceTypeLabel(x.absence_type),
-      reason:x.reason
+      reason:x.reason||""
     })),
     ...injuryRows.map(x=>({
-      kind:"injury",
       player_id:x.player_id,
       start_date:x.injury_date,
       end_date:x.expected_return||x.actual_return||null,
@@ -5389,56 +5903,381 @@ async function pageDashboard(){
     .filter(x=>!x.end_date||x.end_date>=todayKey)
     .sort((a,b)=>a.start_date.localeCompare(b.start_date));
 
-  const upcomingMatches=events.filter(e=>e.event_type==="match").slice(0,8);
-  const upcomingTrainings=events.filter(e=>e.event_type==="training").slice(0,8);
-  const upcomingOther=events.filter(e=>!["match","training"].includes(e.event_type)).slice(0,8);
-
-  const unavailableToday=new Set(
+  const currentUnavailable=new Set(
     absences
       .filter(x=>x.start_date<=todayKey&&(!x.end_date||x.end_date>=todayKey))
       .map(x=>x.player_id)
-  ).size;
+  );
 
-  const totalFinancialAlerts=feeAlerts.length;
-  const totalMedicalAlerts=medicalAlerts.length;
+  const eventsByType={
+    match:events.filter(e=>e.event_type==="match"),
+    training:events.filter(e=>e.event_type==="training"),
+    other:events.filter(e=>!["match","training"].includes(e.event_type))
+  };
 
-  const personRecord=(p,meta,side="")=>`
+  const birthdays=dashboardBirthdayRows(ctx.roster);
+
+  const criticalCount=
+    medicalAlerts.filter(x=>x.kind!=="expiring").length
+    +feeAlerts.filter(x=>x.overdue).length
+    +currentUnavailable.size;
+
+  const healthRows=[
+    {
+      icon:"🩺",
+      label:"Visite mediche",
+      ok:!medicalAlerts.length,
+      detail:medicalAlerts.length?`${medicalAlerts.length} da controllare`:"Tutte regolari"
+    },
+    {
+      icon:"💳",
+      label:"Quote",
+      ok:!feeAlerts.some(x=>x.overdue),
+      detail:feeAlerts.some(x=>x.overdue)
+        ?`${feeAlerts.filter(x=>x.overdue).length} scadute`
+        : feeAlerts.length?`${feeAlerts.length} in scadenza`:"Nessuna scadenza vicina"
+    },
+    {
+      icon:"👥",
+      label:"Disponibilità",
+      ok:currentUnavailable.size===0,
+      detail:currentUnavailable.size
+        ?`${currentUnavailable.size} indisponibili oggi`
+        :`${ctx.roster.length} disponibili`
+    }
+  ];
+
+  const person=(p,meta,side="")=>`
     <div class="dashboard-mini-record">
       <div>
-        <div class="dashboard-mini-title">${playerListIdentity(p,genericMap.get(p?.id),{avatar:false})}</div>
+        <div class="dashboard-mini-title">${playerListIdentity(p,ctx.genericMap.get(p?.id),{avatar:false})}</div>
         <div class="muted dashboard-mini-meta">${esc(meta||"")}</div>
       </div>
       ${side?`<div class="dashboard-mini-side">${side}</div>`:""}
     </div>
   `;
 
-  const eventRecord=(e,icon)=>`
-    <div class="dashboard-mini-record" data-dashboard-event="${e.id}" role="button" tabindex="0">
+  renderShell("Dashboard",`
+    <div class="page-title">
       <div>
-        <div class="dashboard-mini-title">${icon} ${esc(e.title||eventTypeLabel(e.event_type))}</div>
-        <div class="muted dashboard-mini-meta">${fmtDateTime(e.start_at)}${e.location?` · ${esc(e.location)}`:""}</div>
+        <h1>Centro operativo</h1>
+        <p>${esc(state.team.name)} · ${esc(state.season.name)} · vista staff</p>
       </div>
-      <div class="dashboard-mini-side">›</div>
+    </div>
+
+    <div class="dashboard-kpis">
+      <div class="card ${criticalCount?"dashboard-status-alert":"dashboard-status-ok"}">
+        <div class="stat">${criticalCount?`⚠️ ${criticalCount}`:"✅ OK"}</div>
+        <div class="stat-label">${criticalCount?"Criticità attuali":"Nessuna criticità urgente"}</div>
+      </div>
+      <div class="card"><div class="stat">${events.length}</div><div class="stat-label">Prossimi eventi</div></div>
+      <div class="card"><div class="stat">${ctx.roster.length-currentUnavailable.size}/${ctx.roster.length}</div><div class="stat-label">Disponibili oggi</div></div>
+      <div class="card"><div class="stat">${team.wins||0}-${team.draws||0}-${team.losses||0}</div><div class="stat-label">V-N-P</div></div>
+    </div>
+
+    <div class="dashboard-ops-grid">
+      <div class="card dashboard-panel dashboard-priority dashboard-span-2 ${criticalCount?"dashboard-status-alert":"dashboard-status-ok"}">
+        <div class="card-head">
+          <h3>${criticalCount?"⚠️ Stato squadra":"✅ Stato squadra"}</h3>
+          <span class="badge ${criticalCount?"red":"green"}">${criticalCount?"attenzione":"regolare"}</span>
+        </div>
+        <div class="dashboard-panel-list">
+          ${healthRows.map(x=>`
+            <div class="dashboard-health-line">
+              <div class="dashboard-health-main">
+                <span class="dashboard-health-icon">${x.icon}</span>
+                <div>
+                  <strong>${esc(x.label)}</strong>
+                  <div class="muted">${esc(x.detail)}</div>
+                </div>
+              </div>
+              <span class="badge ${x.ok?"green":"red"}">${x.ok?"OK":"!"}</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel dashboard-priority dashboard-span-2">
+        <div class="card-head">
+          <h3>📅 Agenda squadra</h3>
+          <button class="btn btn-sm btn-ghost" data-go="calendar">Calendario</button>
+        </div>
+        <div class="dashboard-panel-list">
+          ${events.slice(0,14).map(e=>dashboardEventRecord(
+            e,
+            e.event_type==="match"?"⚽":
+            e.event_type==="training"?"🏃":
+            e.event_type==="meeting"?"🧑‍💼":
+            e.event_type==="social"?"🎉":"📌"
+          )).join("")||`<div class="empty">Nessun evento programmato</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🩺 Visite</h3><span class="badge ${medicalAlerts.some(x=>x.kind!=="expiring")?"red":""}">${medicalAlerts.length}</span></div>
+        <div class="dashboard-panel-list">
+          ${medicalAlerts.map(p=>person(
+            p,
+            p.kind==="missing"?"Visita mancante":
+            p.kind==="expired"?`Scaduta ${fmtDate(p.expires_on)}`:
+            `Scade ${fmtDate(p.expires_on)}`,
+            p.kind==="expiring"?`<span class="badge yellow">${p.days} gg</span>`:`<span class="badge red">critica</span>`
+          )).join("")||`<div class="empty">✅ Nessuna criticità medica</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>💳 Quote</h3><span class="badge ${feeAlerts.some(x=>x.overdue)?"red":""}">${feeAlerts.length}</span></div>
+        <div class="dashboard-panel-list">
+          ${feeAlerts.map(x=>person(
+            x.player,
+            `${x.title} · € ${Number(x.amount||0).toFixed(2)}`,
+            x.overdue?`<span class="badge red">scaduta</span>`:`<span class="badge yellow">${fmtDate(x.due_date)}</span>`
+          )).join("")||`<div class="empty">✅ Nessuna quota da attenzionare</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🚑 Assenze</h3><span class="badge">${absences.length}</span></div>
+        <div class="dashboard-panel-list">
+          ${absences.map(x=>person(
+            ctx.playerMap.get(x.player_id),
+            `${x.label}${x.reason?` · ${x.reason}`:""}`,
+            x.start_date<=todayKey?`<span class="badge red">in corso</span>`:`<span class="badge">${fmtDate(x.start_date)}</span>`
+          )).join("")||`<div class="empty">✅ Nessuna assenza nei prossimi 7 giorni</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>⚽ Prossime partite</h3><button class="btn btn-sm btn-ghost" data-go="matches">Apri</button></div>
+        <div class="dashboard-panel-list">
+          ${eventsByType.match.slice(0,8).map(e=>dashboardEventRecord(e,"⚽")).join("")||`<div class="empty">Nessuna partita programmata</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🏃 Allenamenti</h3><button class="btn btn-sm btn-ghost" data-go="trainings">Apri</button></div>
+        <div class="dashboard-panel-list">
+          ${eventsByType.training.slice(0,8).map(e=>dashboardEventRecord(e,"🏃")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🎂 Compleanni</h3><span class="badge">${birthdays.length}</span></div>
+        <div class="dashboard-panel-list">
+          ${birthdays.slice(0,8).map(p=>person(
+            p,
+            p.birth_date?fmtDate(p.birth_date):"",
+            p.days===0?"oggi":p.days===1?"domani":`+${p.days} gg`
+          )).join("")||`<div class="empty">Nessun compleanno nei prossimi 30 giorni</div>`}
+        </div>
+      </div>
+    </div>
+  `);
+
+  $(".shell")?.classList.add("dashboard-page");
+  wireDashboardLinks();
+}
+
+async function pageDashboardPlayer(){
+  const now=new Date();
+  const nowIso=now.toISOString();
+  const todayKey=today();
+  const in7Key=localDateKey(new Date(now.getTime()+7*86400000));
+
+  if(!state.myPlayer){
+    return pageDashboardFan();
+  }
+
+  const ctx=await dashboardRosterContext();
+  const me=ctx.players.find(p=>p.id===state.myPlayer.id)||state.myPlayer;
+
+  const [events,exams,fees,absences,injuries,statsRows]=await Promise.all([
+    must(
+      supabase.from("events")
+        .select("*")
+        .eq("team_id",state.team.id)
+        .eq("season_id",state.season.id)
+        .gte("start_at",nowIso)
+        .order("start_at")
+        .limit(30)
+    ),
+    can("medical.view_own")
+      ? must(
+          supabase.from("medical_examinations")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .eq("player_id",state.myPlayer.id)
+            .order("issued_date",{ascending:false})
+            .limit(1)
+        )
+      : Promise.resolve([]),
+    can("fees.view_own")
+      ? must(
+          supabase.from("membership_fees")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .eq("season_id",state.season.id)
+            .eq("player_id",state.myPlayer.id)
+            .eq("status","pending")
+            .order("due_date")
+        )
+      : Promise.resolve([]),
+    can("absences.view_own")
+      ? must(
+          supabase.from("player_unavailabilities")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .eq("season_id",state.season.id)
+            .eq("player_id",state.myPlayer.id)
+            .eq("status","active")
+            .lte("start_date",in7Key)
+            .order("start_date")
+        )
+      : Promise.resolve([]),
+    can("injuries.view_own")
+      ? must(
+          supabase.from("injuries")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .eq("season_id",state.season.id)
+            .eq("player_id",state.myPlayer.id)
+            .in("status",["active","recovering"])
+        )
+      : Promise.resolve([]),
+    can("stats.view")
+      ? must(
+          supabase.from("v_player_season_stats")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .eq("season_id",state.season.id)
+            .eq("player_id",state.myPlayer.id)
+        )
+      : Promise.resolve([])
+  ]);
+
+  const exam=exams[0]||null;
+  const medicalDays=exam?medicalDaysToExpiry(exam.expires_on):null;
+  const medicalCritical=!exam||medicalDays<0;
+  const medicalWarning=!medicalCritical&&medicalDays!==null&&medicalDays<=45;
+
+  const overdueFees=fees.filter(x=>x.due_date&&x.due_date<todayKey);
+  const currentAbsence=absences.find(x=>x.start_date<=todayKey&&(!x.end_date||x.end_date>=todayKey))||null;
+  const injury=injuries[0]||null;
+  const stat=statsRows[0]||{};
+
+  const ownCriticalCount=
+    (medicalCritical?1:0)
+    +(overdueFees.length?1:0)
+    +(currentAbsence||injury?1:0);
+
+  const birthdays=dashboardBirthdayRows(ctx.roster);
+
+  const person=(p,meta,side="")=>`
+    <div class="dashboard-mini-record">
+      <div>
+        <div class="dashboard-mini-title">${playerListIdentity(p,ctx.genericMap.get(p?.id),{avatar:false})}</div>
+        <div class="muted dashboard-mini-meta">${esc(meta||"")}</div>
+      </div>
+      ${side?`<div class="dashboard-mini-side">${side}</div>`:""}
     </div>
   `;
 
   renderShell("Dashboard",`
     <div class="page-title">
-      <div><h1>${esc(state.team.name)}</h1><p>Centro operativo · ${esc(state.season.name)}</p></div>
+      <div>
+        <h1>Ciao ${esc(state.profile.first_name||state.profile.display_name||"")}</h1>
+        <p>La tua situazione e i prossimi appuntamenti con la squadra.</p>
+      </div>
     </div>
 
     <div class="dashboard-kpis">
-      <div class="card"><div class="stat">${teamStats.matches_played||0}</div><div class="stat-label">Partite</div></div>
-      <div class="card"><div class="stat">${teamStats.wins||0}</div><div class="stat-label">Vittorie</div></div>
-      <div class="card"><div class="stat">${unavailableToday}</div><div class="stat-label">Indisponibili oggi</div></div>
-      <div class="card"><div class="stat">${totalMedicalAlerts+totalFinancialAlerts}</div><div class="stat-label">Alert operativi</div></div>
+      <div class="card ${ownCriticalCount?"dashboard-status-alert":"dashboard-status-ok"}">
+        <div class="stat">${ownCriticalCount?`⚠️ ${ownCriticalCount}`:"✅ OK"}</div>
+        <div class="stat-label">${ownCriticalCount?"Le tue criticità":"Sei regolarmente disponibile"}</div>
+      </div>
+      <div class="card"><div class="stat">${stat.appearances||0}</div><div class="stat-label">Presenze</div></div>
+      <div class="card"><div class="stat">${stat.goals||0}</div><div class="stat-label">Gol</div></div>
+      <div class="card"><div class="stat">${stat.assists||0}</div><div class="stat-label">Assist</div></div>
     </div>
 
     <div class="dashboard-ops-grid">
-      <div class="card dashboard-panel">
-        <div class="card-head"><h3>🎂 Compleanni</h3><span class="badge">${birthdayRows.length}</span></div>
+      <div class="card dashboard-panel dashboard-priority dashboard-span-2 ${ownCriticalCount?"dashboard-status-alert":"dashboard-status-ok"}">
+        <div class="card-head">
+          <h3>🧍 La mia situazione</h3>
+          <span class="badge ${ownCriticalCount?"red":"green"}">${ownCriticalCount?"da controllare":"regolare"}</span>
+        </div>
+
         <div class="dashboard-panel-list">
-          ${birthdayRows.map(p=>personRecord(
+          <div class="dashboard-own-alert ${medicalCritical?"danger":medicalWarning?"warn":"ok"}">
+            <strong>🩺 Visita medica</strong>
+            <div class="muted">
+              ${!exam
+                ?"Visita valida non presente"
+                : medicalDays<0
+                  ?`Scaduta il ${fmtDate(exam.expires_on)}`
+                  :`Valida fino al ${fmtDate(exam.expires_on)}`
+              }
+            </div>
+          </div>
+
+          <div class="dashboard-own-alert ${overdueFees.length?"danger":fees.length?"warn":"ok"}">
+            <strong>💳 Quote</strong>
+            <div class="muted">
+              ${overdueFees.length
+                ?`${overdueFees.length} pagamento/i scaduto/i`
+                : fees.length
+                  ?`Prossima scadenza ${fmtDate(fees[0].due_date)}`
+                  :"Nessun pagamento aperto"
+              }
+            </div>
+          </div>
+
+          <div class="dashboard-own-alert ${currentAbsence||injury?"danger":"ok"}">
+            <strong>🚑 Disponibilità</strong>
+            <div class="muted">
+              ${injury
+                ?`Infortunio · ${injury.public_summary||""}`
+                : currentAbsence
+                  ?`${absenceTypeLabel(currentAbsence.absence_type)}${currentAbsence.reason?` · ${currentAbsence.reason}`:""}`
+                  :"Nessuna indisponibilità attuale"
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card dashboard-panel dashboard-priority dashboard-span-2">
+        <div class="card-head"><h3>📅 I prossimi appuntamenti</h3><button class="btn btn-sm btn-ghost" data-go="calendar">Calendario</button></div>
+        <div class="dashboard-panel-list">
+          ${events.slice(0,14).map(e=>dashboardEventRecord(
+            e,
+            e.event_type==="match"?"⚽":
+            e.event_type==="training"?"🏃":
+            e.event_type==="meeting"?"🧑‍💼":
+            e.event_type==="social"?"🎉":"📌"
+          )).join("")||`<div class="empty">Nessun appuntamento programmato</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>⚽ Prossime partite</h3><button class="btn btn-sm btn-ghost" data-go="matches">Apri</button></div>
+        <div class="dashboard-panel-list">
+          ${events.filter(e=>e.event_type==="match").slice(0,8).map(e=>dashboardEventRecord(e,"⚽")).join("")||`<div class="empty">Nessuna partita programmata</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🏃 Allenamenti</h3><button class="btn btn-sm btn-ghost" data-go="trainings">Apri</button></div>
+        <div class="dashboard-panel-list">
+          ${events.filter(e=>e.event_type==="training").slice(0,8).map(e=>dashboardEventRecord(e,"🏃")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🎂 Compleanni</h3><span class="badge">${birthdays.length}</span></div>
+        <div class="dashboard-panel-list">
+          ${birthdays.slice(0,8).map(p=>person(
             p,
             p.birth_date?fmtDate(p.birth_date):"",
             p.days===0?"oggi":p.days===1?"domani":`+${p.days} gg`
@@ -5447,107 +6286,154 @@ async function pageDashboard(){
       </div>
 
       <div class="card dashboard-panel">
-        <div class="card-head"><h3>🩺 Visite mediche</h3><span class="badge ${medicalAlerts.some(x=>x.medicalDays<0)?"red":""}">${medicalAlerts.length}</span></div>
+        <div class="card-head"><h3>📊 La mia stagione</h3><button class="btn btn-sm btn-ghost" data-go="stats">Statistiche</button></div>
         <div class="dashboard-panel-list">
-          ${canMedical
-            ? medicalAlerts.map(p=>personRecord(
-                p,
-                p.medicalKind==="missing"
-                  ?"Visita mancante"
-                  : p.medicalKind==="expired"
-                    ?`Scaduta ${fmtDate(p.expires_on)}`
-                    :`Scade ${fmtDate(p.expires_on)}`,
-                p.medicalKind==="expired"||p.medicalKind==="missing"
-                  ?`<span class="badge red">critica</span>`
-                  :`<span class="badge yellow">${p.medicalDays} gg</span>`
-              )).join("")||`<div class="empty">Nessuna visita in scadenza o scaduta</div>`
-            : `<div class="empty">Dati non disponibili per il tuo ruolo</div>`
-          }
-        </div>
-      </div>
-
-      <div class="card dashboard-panel">
-        <div class="card-head"><h3>💳 Quote</h3><span class="badge ${feeAlerts.some(x=>x.overdue)?"red":""}">${feeAlerts.length}</span></div>
-        <div class="dashboard-panel-list">
-          ${canFees
-            ? feeAlerts.map(x=>personRecord(
-                x.player,
-                `${x.title} · € ${Number(x.amount||0).toFixed(2)}`,
-                x.overdue
-                  ?`<span class="badge red">scaduta</span>`
-                  :`<span class="badge yellow">${fmtDate(x.due_date)}</span>`
-              )).join("")||`<div class="empty">Nessuna quota scaduta o in scadenza nei prossimi 7 giorni</div>`
-            : `<div class="empty">Dati non disponibili per il tuo ruolo</div>`
-          }
-        </div>
-      </div>
-
-      <div class="card dashboard-panel">
-        <div class="card-head"><h3>🚑 Assenze</h3><span class="badge">${absences.length}</span></div>
-        <div class="dashboard-panel-list">
-          ${canAbsences||canInjuries
-            ? absences.map(x=>{
-                const p=playerMap.get(x.player_id);
-                const current=x.start_date<=todayKey;
-                return personRecord(
-                  p,
-                  `${x.label}${x.reason?` · ${x.reason}`:""}`,
-                  current
-                    ?`<span class="badge red">in corso</span>`
-                    :`<span class="badge">${fmtDate(x.start_date)}</span>`
-                );
-              }).join("")||`<div class="empty">Nessuna assenza in corso o prevista nei prossimi 7 giorni</div>`
-            : `<div class="empty">Dati non disponibili per il tuo ruolo</div>`
-          }
-        </div>
-      </div>
-
-      <div class="card dashboard-panel">
-        <div class="card-head"><h3>⚽ Prossime partite</h3><button class="btn btn-sm btn-ghost" data-go="matches">Apri</button></div>
-        <div class="dashboard-panel-list">
-          ${upcomingMatches.map(e=>eventRecord(e,"⚽")).join("")||`<div class="empty">Nessuna partita programmata</div>`}
-        </div>
-      </div>
-
-      <div class="card dashboard-panel">
-        <div class="card-head"><h3>🏃 Prossimi allenamenti</h3><button class="btn btn-sm btn-ghost" data-go="trainings">Apri</button></div>
-        <div class="dashboard-panel-list">
-          ${upcomingTrainings.map(e=>eventRecord(e,"🏃")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}
-        </div>
-      </div>
-
-      <div class="card dashboard-panel">
-        <div class="card-head"><h3>📅 Prossimi eventi</h3><button class="btn btn-sm btn-ghost" data-go="calendar">Calendario</button></div>
-        <div class="dashboard-panel-list">
-          ${upcomingOther.map(e=>eventRecord(e,"📌")).join("")||`<div class="empty">Nessun altro evento programmato</div>`}
-        </div>
-      </div>
-
-      <div class="card dashboard-panel">
-        <div class="card-head"><h3>📊 Stagione</h3><button class="btn btn-sm btn-ghost" data-go="stats">Statistiche</button></div>
-        <div class="dashboard-panel-list">
-          <div class="stats-kv"><span>Gol fatti</span><strong>${teamStats.goals_for||0}</strong></div>
-          <div class="stats-kv"><span>Gol subiti</span><strong>${teamStats.goals_against||0}</strong></div>
-          <div class="stats-kv"><span>Pareggi</span><strong>${teamStats.draws||0}</strong></div>
-          <div class="stats-kv"><span>Sconfitte</span><strong>${teamStats.losses||0}</strong></div>
-          <div class="stats-kv"><span>Rosa attuale</span><strong>${roster.length}</strong></div>
+          <div class="stats-kv"><span>Presenze</span><strong>${stat.appearances||0}</strong></div>
+          <div class="stats-kv"><span>Titolare</span><strong>${stat.starts||0}</strong></div>
+          <div class="stats-kv"><span>Minuti</span><strong>${stat.minutes||0}</strong></div>
+          <div class="stats-kv"><span>Gol</span><strong>${stat.goals||0}</strong></div>
+          <div class="stats-kv"><span>Assist</span><strong>${stat.assists||0}</strong></div>
         </div>
       </div>
     </div>
   `);
 
   $(".shell")?.classList.add("dashboard-page");
+  wireDashboardLinks();
+}
 
-  $$("[data-go]").forEach(b=>b.onclick=()=>route(b.dataset.go));
-  $$("[data-dashboard-event]").forEach(el=>{
-    el.onclick=()=>openEventDetail(el.dataset.dashboardEvent);
-    el.onkeydown=e=>{
-      if(e.key==="Enter"||e.key===" "){
-        e.preventDefault();
-        openEventDetail(el.dataset.dashboardEvent);
-      }
-    };
-  });
+async function pageDashboardFan(){
+  const nowIso=new Date().toISOString();
+  const ctx=await dashboardRosterContext();
+
+  const [teamRows,matches,playerStats]=await Promise.all([
+    can("stats.view")
+      ? must(
+          supabase.from("v_team_season_stats")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .eq("season_id",state.season.id)
+        )
+      : Promise.resolve([]),
+    must(
+      supabase.from("events")
+        .select("*")
+        .eq("team_id",state.team.id)
+        .eq("season_id",state.season.id)
+        .eq("event_type","match")
+        .gte("start_at",nowIso)
+        .order("start_at")
+        .limit(16)
+    ),
+    can("stats.view")
+      ? must(
+          supabase.from("v_player_season_stats")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .eq("season_id",state.season.id)
+            .order("goals",{ascending:false})
+            .limit(5)
+        )
+      : Promise.resolve([])
+  ]);
+
+  const team=teamRows[0]||{};
+  const birthdays=dashboardBirthdayRows(ctx.roster);
+  const topScorer=playerStats[0]||null;
+  const topPlayer=topScorer?ctx.playerMap.get(topScorer.player_id):null;
+
+  const person=(p,meta,side="")=>`
+    <div class="dashboard-mini-record">
+      <div>
+        <div class="dashboard-mini-title">${playerListIdentity(p,ctx.genericMap.get(p?.id),{avatar:false})}</div>
+        <div class="muted dashboard-mini-meta">${esc(meta||"")}</div>
+      </div>
+      ${side?`<div class="dashboard-mini-side">${side}</div>`:""}
+    </div>
+  `;
+
+  renderShell("Dashboard",`
+    <div class="page-title">
+      <div>
+        <h1>${esc(state.team.name)}</h1>
+        <p>Partite, compleanni e numeri della squadra.</p>
+      </div>
+    </div>
+
+    <div class="dashboard-kpis">
+      <div class="card dashboard-fan-score"><div class="stat">${team.matches_played||0}</div><div class="stat-label">Partite giocate</div></div>
+      <div class="card dashboard-fan-score"><div class="stat">${team.wins||0}</div><div class="stat-label">Vittorie</div></div>
+      <div class="card dashboard-fan-score"><div class="stat">${team.goals_for||0}</div><div class="stat-label">Gol fatti</div></div>
+      <div class="card dashboard-fan-score"><div class="stat">${ctx.roster.length}</div><div class="stat-label">Calciatori in Rosa</div></div>
+    </div>
+
+    <div class="dashboard-ops-grid">
+      <div class="card dashboard-panel dashboard-priority dashboard-span-2">
+        <div class="card-head">
+          <h3>⚽ Prossime partite</h3>
+          <button class="btn btn-sm btn-ghost" data-go="matches">Tutte le partite</button>
+        </div>
+        <div class="dashboard-panel-list">
+          ${matches.map(e=>dashboardEventRecord(e,"⚽")).join("")||`<div class="empty">Nessuna partita programmata</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel dashboard-priority">
+        <div class="card-head"><h3>🎂 Compleanni</h3><span class="badge">${birthdays.length}</span></div>
+        <div class="dashboard-panel-list">
+          ${birthdays.slice(0,10).map(p=>person(
+            p,
+            p.birth_date?fmtDate(p.birth_date):"",
+            p.days===0?"oggi":p.days===1?"domani":`+${p.days} gg`
+          )).join("")||`<div class="empty">Nessun compleanno nei prossimi 30 giorni</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>📊 Numeri della stagione</h3><button class="btn btn-sm btn-ghost" data-go="stats">Statistiche</button></div>
+        <div class="dashboard-panel-list">
+          <div class="stats-kv"><span>Vittorie</span><strong>${team.wins||0}</strong></div>
+          <div class="stats-kv"><span>Pareggi</span><strong>${team.draws||0}</strong></div>
+          <div class="stats-kv"><span>Sconfitte</span><strong>${team.losses||0}</strong></div>
+          <div class="stats-kv"><span>Gol fatti</span><strong>${team.goals_for||0}</strong></div>
+          <div class="stats-kv"><span>Gol subiti</span><strong>${team.goals_against||0}</strong></div>
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🥅 Marcatori</h3></div>
+        <div class="dashboard-panel-list">
+          ${playerStats.map(st=>person(
+            ctx.playerMap.get(st.player_id),
+            `${st.appearances||0} presenze`,
+            `<strong>${st.goals||0} ⚽</strong>`
+          )).join("")||`<div class="empty">Statistiche marcatori non disponibili</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🏆 Bilancio</h3></div>
+        <div class="dashboard-panel-list">
+          <div class="stats-kv"><span>V-N-P</span><strong>${team.wins||0}-${team.draws||0}-${team.losses||0}</strong></div>
+          <div class="stats-kv"><span>Differenza reti</span><strong>${Number(team.goals_for||0)-Number(team.goals_against||0)}</strong></div>
+          <div class="stats-kv"><span>Media gol fatti</span><strong>${team.matches_played?((team.goals_for||0)/team.matches_played).toFixed(2):"—"}</strong></div>
+          <div class="stats-kv"><span>Media gol subiti</span><strong>${team.matches_played?((team.goals_against||0)/team.matches_played).toFixed(2):"—"}</strong></div>
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>📅 Calendario partite</h3><button class="btn btn-sm btn-ghost" data-go="calendar">Apri</button></div>
+        <div class="dashboard-panel-list">
+          <div class="section-note">
+            Come Fan il calendario mostra esclusivamente le partite. Allenamenti, riunioni ed eventi interni della società non sono visibili.
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
+
+  $(".shell")?.classList.add("dashboard-page");
+  wireDashboardLinks();
 }
 
 /* =========================================================
@@ -7296,6 +8182,8 @@ function calendarEventRow(event,extra=""){
 }
 
 async function pageCalendar(){
+  const fanView=isFanAudience();
+
   const [events,matches,opponents]=await Promise.all([
     must(
       supabase.from("events")
@@ -7317,19 +8205,25 @@ async function pageCalendar(){
     )
   ]);
 
+  const visibleEvents=fanView
+    ? events.filter(e=>e.event_type==="match")
+    : events;
+
   const matchByEvent=new Map(matches.map(m=>[m.event_id,m]));
   const opponentMap=new Map(opponents.map(o=>[o.id,o]));
 
   let view=state.preferences?.calendar_view||"list";
   let showAllPast=false;
 
-  const typeOptions=[
-    ["training","Allenamenti"],
-    ["match","Partite"],
-    ["meeting","Riunioni"],
-    ["social","Sociali"],
-    ["other","Altro"]
-  ];
+  const typeOptions=fanView
+    ? [["match","Partite"]]
+    : [
+        ["training","Allenamenti"],
+        ["match","Partite"],
+        ["meeting","Riunioni"],
+        ["social","Sociali"],
+        ["other","Altro"]
+      ];
 
   if(!state.calendarMonth){
     const nowKey=monthKey();
@@ -7342,9 +8236,9 @@ async function pageCalendar(){
     <div class="page-title">
       <div>
         <h1>Calendario</h1>
-        <p>Allenamenti, partite e altri eventi della squadra.</p>
+        <p>${fanView?"Calendario delle partite della squadra.":"Allenamenti, partite e altri eventi della squadra."}</p>
       </div>
-      ${can("calendar.manage")?`<button class="btn btn-primary" id="new-event">Nuovo evento</button>`:""}
+      ${!fanView&&can("calendar.manage")?`<button class="btn btn-primary" id="new-event">Nuovo evento</button>`:""}
     </div>
 
     <div class="calendar-controls-row">
@@ -7357,14 +8251,16 @@ async function pageCalendar(){
         <input id="calendar-search" type="search" placeholder="Cerca titolo, luogo o note…" value="${esc(state.calendarFilters?.query||"")}">
       </div>
 
-      <div class="calendar-type-filters">
-        ${typeOptions.map(([value,label])=>`
-          <label class="filter-chip">
-            <input type="checkbox" data-cal-type="${value}" ${(state.calendarFilters?.types||[]).includes(value)?"checked":""}>
-            ${label}
-          </label>
-        `).join("")}
-      </div>
+      ${fanView?"":`
+        <div class="calendar-type-filters">
+          ${typeOptions.map(([value,label])=>`
+            <label class="filter-chip">
+              <input type="checkbox" data-cal-type="${value}" ${(state.calendarFilters?.types||[]).includes(value)?"checked":""}>
+              ${label}
+            </label>
+          `).join("")}
+        </div>
+      `}
     </div>
 
     <div id="calendar-content"></div>
@@ -7377,8 +8273,8 @@ async function pageCalendar(){
     const q=(state.calendarFilters?.query||"").trim().toLowerCase();
     const types=state.calendarFilters?.types||[];
 
-    return events.filter(e=>{
-      if(types.length&&!types.includes(e.event_type))return false;
+    return visibleEvents.filter(e=>{
+      if(!fanView&&types.length&&!types.includes(e.event_type))return false;
       if(!q)return true;
 
       return `${e.title||""} ${e.location||""} ${e.notes||""} ${eventTypeLabel(e.event_type)}`
@@ -9218,6 +10114,12 @@ async function openTrainingDetail(id){
 
 async function openEventDetail(id){
   const ev=await must(supabase.from("events").select("*").eq("id",id).single());
+
+  if(isFanAudience()&&ev.event_type!=="match"){
+    toast("Questo evento è riservato alla squadra","error");
+    return;
+  }
+
   if(ev.event_type==="training")return openTrainingDetail(id);
 
   if(ev.event_type==="match"){
@@ -13028,12 +13930,232 @@ async function adminSeasons(){
   $("#new-season").onclick=()=>showModal("Nuova stagione",`<form id="season-form"><div class="field"><label>Nome</label><input id="s-name" placeholder="2027/28" required></div><div class="form-grid"><div class="field"><label>Inizio</label><input id="s-start" type="date" required></div><div class="field"><label>Fine</label><input id="s-end" type="date" required></div></div><div class="field"><label>Stato</label><select id="s-status"><option value="future">Futura</option><option value="active">Attiva</option><option value="archived">Archiviata</option></select></div><button class="btn btn-primary">Crea</button></form>`,root=>{$("#season-form",root).onsubmit=async e=>{e.preventDefault();try{await must(supabase.from("seasons").insert({team_id:state.team.id,name:$("#s-name",root).value,start_date:$("#s-start",root).value,end_date:$("#s-end",root).value,status:$("#s-status",root).value}));closeModal();await boot()}catch(err){toast(err.message,"error")}}});
 }
 async function adminStaff(){
-  const assignments=await must(supabase.from("staff_assignments").select("*").eq("team_id",state.team.id).order("start_date",{ascending:false}));
-  const members=await must(supabase.from("team_members").select("*").eq("team_id",state.team.id));const profiles=await must(supabase.from("profiles").select("*").in("id",members.map(x=>x.profile_id)));const pmap=new Map(profiles.map(p=>[p.id,p])),mmap=new Map(members.map(m=>[m.id,m]));
-  $("#admin-content").innerHTML=`<div class="page-title"><h2>Staff e storico</h2>${can("staff.manage")?`<button class="btn btn-primary" id="new-staff">Nuovo incarico</button>`:""}</div><div class="table-wrap"><table class="table"><thead><tr><th>Persona</th><th>Ruolo</th><th>Dal</th><th>Al</th><th>Stato</th><th></th></tr></thead><tbody>${assignments.map(a=>`<tr><td>${esc(pmap.get(mmap.get(a.team_member_id)?.profile_id)?.display_name||"")}</td><td>${esc(a.role_code)}</td><td>${fmtDate(a.start_date)}</td><td>${fmtDate(a.actual_end_date||a.planned_end_date)}</td><td>${esc(a.status)}</td><td>${can("staff.manage")&&a.status==="active"?`<button class="btn btn-sm btn-danger" data-end-staff="${a.id}">Termina</button>`:""}</td></tr>`).join("")}</tbody></table></div>`;
-  $("#new-staff")?.addEventListener("click",()=>showModal("Nuovo incarico",`<form id="staff-form"><div class="field"><label>Utente</label><select id="st-member">${members.map(m=>`<option value="${m.id}">${esc(pmap.get(m.profile_id)?.display_name||"")}</option>`).join("")}</select></div><div class="field"><label>Ruolo</label><select id="st-role"><option value="coach">Allenatore</option><option value="assistant_coach">Vice</option><option value="management">Dirigenza</option></select></div><div class="form-grid"><div class="field"><label>Inizio</label><input id="st-start" type="date" value="${state.season.start_date}"></div><div class="field"><label>Scadenza</label><input id="st-end" type="date" value="${state.season.end_date}"></div></div><button class="btn btn-primary">Salva</button></form>`,root=>{const role=$("#st-role",root),end=$("#st-end",root);role.onchange=()=>{end.value=role.value==="management"?"":state.season.end_date};$("#staff-form",root).onsubmit=async e=>{e.preventDefault();try{await must(supabase.from("staff_assignments").insert({team_id:state.team.id,season_id:state.season.id,team_member_id:$("#st-member",root).value,role_code:role.value,start_date:$("#st-start",root).value,planned_end_date:end.value||null,status:"active",created_by:state.profile.id}));closeModal();adminStaff()}catch(err){toast(err.message,"error")}}}));
-  $$("[data-end-staff]").forEach(b=>b.onclick=async()=>{const d=prompt("Data fine incarico",today());if(!d)return;try{await must(supabase.from("staff_assignments").update({actual_end_date:d,status:"terminated"}).eq("id",b.dataset.endStaff));adminStaff()}catch(err){toast(err.message,"error")}});
+  const [assignments,members,requests]=await Promise.all([
+    must(
+      supabase.from("staff_assignments")
+        .select("*")
+        .eq("team_id",state.team.id)
+        .order("start_date",{ascending:false})
+    ),
+    must(
+      supabase.from("team_members")
+        .select("*")
+        .eq("team_id",state.team.id)
+    ),
+    can("staff.manage")
+      ? must(
+          supabase.from("team_staff_access_requests")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .order("requested_at",{ascending:false})
+        )
+      : Promise.resolve([])
+  ]);
+
+  const profileIds=[...new Set([
+    ...members.map(x=>x.profile_id),
+    ...requests.map(x=>x.profile_id)
+  ].filter(Boolean))];
+
+  const profiles=profileIds.length
+    ? await must(
+        supabase.from("profiles")
+          .select("id,display_name,username")
+          .in("id",profileIds)
+      )
+    : [];
+
+  const pmap=new Map(profiles.map(p=>[p.id,p]));
+  const mmap=new Map(members.map(m=>[m.id,m]));
+  const pending=requests.filter(r=>r.status==="pending");
+
+  $("#admin-content").innerHTML=`
+    <div class="page-title">
+      <div>
+        <h2>Staff e storico</h2>
+        <p>Incarichi attivi, storico e richieste di accesso alla gestione.</p>
+      </div>
+      ${can("staff.manage")?`<button class="btn btn-primary" id="new-staff">➕ Nuovo incarico</button>`:""}
+    </div>
+
+    ${pending.length?`
+      <div class="card">
+        <div class="card-head">
+          <h3>📥 Richieste accesso staff</h3>
+          <span class="badge yellow">${pending.length}</span>
+        </div>
+
+        <div class="list">
+          ${pending.map(r=>{
+            const profile=pmap.get(r.profile_id);
+            return `<div class="list-item">
+              <div>
+                <strong>${esc(profile?.display_name||profile?.username||"Utente")}</strong>
+                <div class="muted">
+                  Richiede: ${esc(staffRoleLabel(r.requested_role_code))}
+                  · ${fmtDateTime(r.requested_at)}
+                </div>
+                ${r.message?`<div class="muted">${esc(r.message)}</div>`:""}
+              </div>
+
+              <div class="actions">
+                <button class="btn btn-sm btn-primary" data-staff-request-approve="${r.id}">Approva</button>
+                <button class="btn btn-sm btn-danger" data-staff-request-reject="${r.id}">Rifiuta</button>
+              </div>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>
+
+      <div style="height:10px"></div>
+    `:""}
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Persona</th>
+            <th>Ruolo</th>
+            <th>Dal</th>
+            <th>Al</th>
+            <th>Stato</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${assignments.map(a=>{
+            const profile=pmap.get(mmap.get(a.team_member_id)?.profile_id);
+            return `<tr>
+              <td>${esc(profile?.display_name||"")}</td>
+              <td>${esc(staffRoleLabel(a.role_code))}</td>
+              <td>${fmtDate(a.start_date)}</td>
+              <td>${fmtDate(a.actual_end_date||a.planned_end_date)}</td>
+              <td><span class="badge ${a.status==="active"?"green":""}">${esc(a.status)}</span></td>
+              <td>
+                ${can("staff.manage")&&a.status==="active"
+                  ? `<button class="btn btn-sm btn-danger" data-end-staff="${a.id}">Termina</button>`
+                  : ""
+                }
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  $("#new-staff")?.addEventListener("click",()=>showModal("Nuovo incarico",`
+    <form id="staff-form">
+      <div class="field">
+        <label>Utente</label>
+        <select id="st-member">
+          ${members.map(m=>`
+            <option value="${m.id}">${esc(pmap.get(m.profile_id)?.display_name||"")}</option>
+          `).join("")}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Ruolo</label>
+        <select id="st-role">
+          <option value="coach">Allenatore</option>
+          <option value="assistant_coach">Vice allenatore</option>
+          <option value="management">Dirigente</option>
+        </select>
+      </div>
+
+      <div class="form-grid">
+        <div class="field"><label>Inizio</label><input id="st-start" type="date" value="${state.season.start_date}"></div>
+        <div class="field"><label>Scadenza</label><input id="st-end" type="date" value="${state.season.end_date}"></div>
+      </div>
+
+      <button class="btn btn-primary">Salva</button>
+    </form>
+  `,root=>{
+    const role=$("#st-role",root);
+    const end=$("#st-end",root);
+
+    role.onchange=()=>{
+      end.value=role.value==="management"?"":state.season.end_date;
+    };
+
+    $("#staff-form",root).onsubmit=async e=>{
+      e.preventDefault();
+      try{
+        await must(
+          supabase.from("staff_assignments").insert({
+            team_id:state.team.id,
+            season_id:state.season.id,
+            team_member_id:$("#st-member",root).value,
+            role_code:role.value,
+            start_date:$("#st-start",root).value,
+            planned_end_date:end.value||null,
+            status:"active",
+            created_by:state.profile.id
+          })
+        );
+
+        closeModal();
+        adminStaff();
+      }catch(err){
+        toast(err.message,"error");
+      }
+    };
+  }));
+
+  $$("[data-staff-request-approve]").forEach(b=>b.onclick=async()=>{
+    try{
+      await must(
+        supabase.rpc("review_team_staff_access_request",{
+          p_request_id:b.dataset.staffRequestApprove,
+          p_action:"approve",
+          p_reason:null
+        })
+      );
+
+      toast("Accesso staff approvato","ok");
+      adminStaff();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
+
+  $$("[data-staff-request-reject]").forEach(b=>b.onclick=async()=>{
+    const reason=prompt("Motivo del rifiuto (facoltativo)","");
+
+    try{
+      await must(
+        supabase.rpc("review_team_staff_access_request",{
+          p_request_id:b.dataset.staffRequestReject,
+          p_action:"reject",
+          p_reason:reason||null
+        })
+      );
+
+      toast("Richiesta rifiutata","ok");
+      adminStaff();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
+
+  $$("[data-end-staff]").forEach(b=>b.onclick=async()=>{
+    const d=prompt("Data fine incarico",today());
+    if(!d)return;
+
+    try{
+      await must(
+        supabase.from("staff_assignments")
+          .update({actual_end_date:d,status:"terminated"})
+          .eq("id",b.dataset.endStaff)
+      );
+      adminStaff();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
 }
+
 async function adminContracts(){
   const contracts=await must(supabase.from("player_contracts").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("planned_end_date"));
   const requests=await must(supabase.from("player_contract_requests").select("*").eq("team_id",state.team.id).eq("status","pending"));
