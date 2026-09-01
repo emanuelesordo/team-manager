@@ -5313,6 +5313,130 @@
     }
     @media(min-width:901px){.mobile-bottom-dock{display:none!important}}
 
+  
+    /* 054 — GLASS MINIMAL SYSTEM */
+    @media(max-width:900px){
+      :root{
+        --glass-bg:color-mix(in srgb,var(--panel) 72%,transparent);
+        --glass-bg-strong:color-mix(in srgb,var(--panel) 88%,transparent);
+        --glass-bg-soft:color-mix(in srgb,var(--panel2) 54%,transparent);
+        --glass-line:color-mix(in srgb,var(--team-tertiary) 13%,transparent);
+        --glass-highlight:color-mix(in srgb,var(--team-primary) 22%,transparent);
+        --glass-shadow:0 12px 32px rgba(0,0,0,.18);
+        --glass-blur:blur(18px) saturate(1.22);
+      }
+      body{
+        background:
+          radial-gradient(ellipse 90% 38% at 8% 2%,color-mix(in srgb,var(--team-primary) 18%,transparent),transparent 72%),
+          radial-gradient(ellipse 75% 40% at 98% 35%,color-mix(in srgb,var(--team-accent) 10%,transparent),transparent 72%),
+          linear-gradient(165deg,color-mix(in srgb,var(--team-secondary) 93%,#020617 7%),var(--bg)) fixed!important
+      }
+      body:after{
+        content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.16;
+        background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+        background-size:28px 28px;mask-image:linear-gradient(to bottom,black,transparent 72%)
+      }
+      .mobile-appbar,.mobile-bottom-dock,.mobile-drawer,.modal,.auth-card,
+      .calendar-filter-menu{
+        background:var(--glass-bg-strong)!important;border-color:var(--glass-line)!important;
+        -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)
+      }
+      .mobile-appbar{border-bottom:1px solid var(--glass-line)!important}
+      .mobile-bottom-dock{box-shadow:0 18px 48px rgba(0,0,0,.35),inset 0 1px rgba(255,255,255,.06)!important}
+      .mobile-bottom-dock button.active{background:linear-gradient(145deg,var(--glass-highlight),color-mix(in srgb,var(--team-primary) 7%,transparent))!important}
+      .content>.card,.card,.dashboard-panel,.dashboard-state-kpi,
+      .competition-card,.competition-rule-box,.competition-discipline-box,
+      .stats-category-tile,.stats-player-panel,.stats-detail-view,
+      .captain-election-hero,.captain-method-card,.captain-vote-card,
+      .captain-assignment-box,.captain-ballot-column,.captain-excluded-card,
+      .absence-column,.cash-table-card,.cash-fees-panel,.cash-fines-panel,
+      .fee-plan-column,.attendance-player-card,.match-scoreboard,.match-team-slot,
+      .live-bench-card,.live-pitch-card,.opponent-tile,.attendance-zone,
+      .setup-panel,.configuration-panel,.roster-setup-option{
+        background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 74%,transparent),color-mix(in srgb,var(--panel2) 48%,transparent))!important;
+        border:1px solid var(--glass-line)!important;box-shadow:var(--glass-shadow),inset 0 1px rgba(255,255,255,.035)!important;
+        -webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur)
+      }
+      .card,.dashboard-panel,.competition-card,.stats-player-panel,.stats-detail-view,
+      .captain-election-hero,.captain-method-card,.captain-vote-card,
+      .captain-assignment-box,.absence-column,.cash-table-card,.fee-plan-column{
+        border-radius:16px!important
+      }
+      .card-head,.absence-column-head,.captain-ballot-head,.calendar-list-section-head{
+        border-color:var(--glass-line)!important
+      }
+      .page-title{padding:10px 3px 6px!important}.page-title h1{font-weight:850!important;letter-spacing:-.045em!important}.page-title p{color:color-mix(in srgb,var(--muted) 88%,white 12%)!important}
+      .ui-title-icon,.ui-heading-icon{filter:saturate(.75);opacity:.9}
+      .manager-kpi-card,.dashboard-state-kpi,.stats-category-kpi{
+        background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 78%,var(--team-primary) 10%),color-mix(in srgb,var(--panel2) 65%,transparent))!important
+      }
+      .manager-kpi-card:before,.dashboard-state-kpi:before{
+        content:"";position:absolute;inset:0;pointer-events:none;
+        background:linear-gradient(115deg,rgba(255,255,255,.055),transparent 42%)
+      }
+      .table-wrap,.roster-table-wrap,.cash-record-scroll,.absence-scroll{
+        background:color-mix(in srgb,var(--panel) 28%,transparent)!important;border:1px solid var(--glass-line)!important;
+        border-radius:15px!important
+      }
+      .responsive-stack-table tbody tr,.roster-table tbody tr,
+      .cash-record-table tbody tr,.captain-results-table tbody tr{
+        background:linear-gradient(145deg,color-mix(in srgb,var(--panel2) 62%,transparent),color-mix(in srgb,var(--panel) 70%,transparent))!important;
+        border:1px solid var(--glass-line)!important;box-shadow:0 7px 20px rgba(0,0,0,.11),inset 0 1px rgba(255,255,255,.025)!important
+      }
+      .table th,.table td{border-color:var(--glass-line)!important}.table th{background:color-mix(in srgb,var(--panel2) 84%,transparent)!important}
+      .list-item,.manager-record,.calendar-event-row,.dashboard-mini-record,
+      .dashboard-health-line,.dashboard-approval-row,.match-record,.training-record,
+      .absence-record,.fee-installment-row,.fine-rule-row,.stats-type-row,
+      .competition-discipline-link,.competition-opponent-check,.captain-candidate-pick{
+        background:color-mix(in srgb,var(--panel2) 36%,transparent)!important;
+        border:1px solid transparent!important;border-bottom-color:var(--glass-line)!important
+      }
+      .list-item:active,.manager-record:active,.calendar-event-row:active,
+      .match-record:active,.training-record:active,.stats-type-row:active{
+        background:var(--glass-highlight)!important;border-color:color-mix(in srgb,var(--team-primary) 30%,transparent)!important
+      }
+      .calendar-date-tile,.match-date-block,.dashboard-event-date{
+        background:linear-gradient(145deg,var(--glass-highlight),color-mix(in srgb,var(--team-primary) 6%,transparent))!important;
+        border:1px solid color-mix(in srgb,var(--team-primary) 23%,transparent)!important
+      }
+      .month-calendar-wrap{background:var(--glass-bg)!important;border-color:var(--glass-line)!important;box-shadow:var(--glass-shadow)!important;backdrop-filter:var(--glass-blur)}
+      .month-calendar-head,.month-day{border-color:var(--glass-line)!important}.month-day.outside{background:rgba(255,255,255,.015)!important}
+      .month-event{background:var(--glass-highlight)!important;border-color:color-mix(in srgb,var(--team-primary) 20%,transparent)!important}
+      .tabs,.calendar-view-toggle,.cash-tabs,.match-filter-bar,.calendar-controls-row{
+        background:color-mix(in srgb,var(--panel) 46%,transparent)!important;border:1px solid var(--glass-line)!important;
+        box-shadow:inset 0 1px rgba(255,255,255,.03)!important;backdrop-filter:blur(12px)
+      }
+      .tab,.calendar-view-toggle button{color:var(--muted)!important}.tab.active,.calendar-view-toggle button.active{
+        color:var(--text)!important;background:var(--glass-highlight)!important;border-color:transparent!important;box-shadow:none!important
+      }
+      input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{
+        background:color-mix(in srgb,#020617 42%,transparent)!important;border:1px solid var(--glass-line)!important;
+        box-shadow:inset 0 1px 3px rgba(0,0,0,.12)!important
+      }
+      input:focus,select:focus,textarea:focus{border-color:color-mix(in srgb,var(--team-primary) 55%,transparent)!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--team-primary) 10%,transparent)!important}
+      .btn{box-shadow:none!important}.btn:not(.btn-primary):not(.btn-danger):not(.btn-warn){
+        background:color-mix(in srgb,var(--panel2) 58%,transparent)!important;border:1px solid var(--glass-line)!important
+      }
+      .btn-primary{background:linear-gradient(135deg,var(--team-primary),color-mix(in srgb,var(--team-primary) 74%,white 26%))!important;box-shadow:0 8px 22px color-mix(in srgb,var(--team-primary) 18%,transparent)!important}
+      .badge,.captain-mini-badge,.roster-generic-role,.cash-auto-tag{
+        background:color-mix(in srgb,var(--panel2) 48%,transparent)!important;border-color:var(--glass-line)!important;backdrop-filter:blur(8px)
+      }
+      .section-note,.competition-rule-box,.cash-auto-tag{
+        background:color-mix(in srgb,var(--team-primary) 7%,transparent)!important;border-color:color-mix(in srgb,var(--team-primary) 20%,transparent)!important
+      }
+      .modal-backdrop{background:rgba(2,6,23,.68)!important;backdrop-filter:blur(7px)}.modal{box-shadow:0 -24px 60px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.06)!important}
+      .modal-head{background:transparent!important;border-color:var(--glass-line)!important}
+      .auth-card{background:linear-gradient(160deg,color-mix(in srgb,var(--panel) 86%,transparent),color-mix(in srgb,var(--panel2) 70%,transparent))!important}
+      .auth-wrap{background:
+        radial-gradient(circle at 16% 15%,color-mix(in srgb,var(--team-primary) 30%,transparent),transparent 30%),
+        radial-gradient(circle at 92% 45%,color-mix(in srgb,var(--info) 13%,transparent),transparent 36%),
+        linear-gradient(155deg,#050b16,#0a1525 55%,#07101d)!important}
+      .pitch{box-shadow:inset 0 0 0 1px rgba(255,255,255,.22),0 14px 34px rgba(0,0,0,.2)!important}.pitch-player{background:rgba(3,7,18,.58)!important;backdrop-filter:blur(10px)}
+      .stats-mini-bar-track{background:rgba(255,255,255,.06)!important}.stats-mini-bar-fill{background:linear-gradient(90deg,var(--team-primary),color-mix(in srgb,var(--team-primary) 55%,white 45%))!important}
+      .captain-podium,.match-scoreboard{background:linear-gradient(135deg,color-mix(in srgb,var(--team-primary) 10%,transparent),var(--glass-bg))!important}
+      .empty,.manager-empty{background:color-mix(in srgb,var(--panel) 32%,transparent)!important;border-color:var(--glass-line)!important}
+    }
+
   </style>
 </head>
 <body>
