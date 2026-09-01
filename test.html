@@ -5224,6 +5224,95 @@
       .responsive-stack-table tbody td,.responsive-stack-table tbody td:has(.actions){grid-template-columns:54px minmax(0,1fr)!important}.calendar-event-time{font-size:.59rem!important}.match-versus-line strong{max-width:31vw!important}
     }
 
+  
+    /* 053 — SPORT APP MOBILE */
+    @media(max-width:900px){
+      :root{--sport-surface:#111a2a;--sport-surface-2:#172235;--sport-line:rgba(148,163,184,.14)}
+      body{background:linear-gradient(180deg,color-mix(in srgb,var(--team-secondary) 90%,#020617 10%),var(--bg) 240px)!important}
+      .content{padding-bottom:calc(82px + env(safe-area-inset-bottom))!important}
+      .mobile-appbar{
+        min-height:64px!important;padding:calc(10px + env(safe-area-inset-top)) 14px 9px!important;
+        border:0!important;background:linear-gradient(135deg,color-mix(in srgb,var(--team-secondary) 82%,#020617 18%),color-mix(in srgb,var(--team-primary) 12%,var(--team-secondary) 88%))!important;
+        box-shadow:none!important
+      }
+      .mobile-appbar-brand{width:40px!important;height:40px!important;border-radius:12px!important;box-shadow:0 5px 16px rgba(0,0,0,.25)}
+      .mobile-appbar-title{font-size:1.02rem!important;letter-spacing:-.02em}.mobile-appbar-sub{font-size:.64rem!important;opacity:.8}
+      .mobile-menu-btn{border:0!important;background:rgba(255,255,255,.07)!important}
+      .mobile-bottom-dock{
+        display:grid!important;grid-template-columns:repeat(5,1fr);position:fixed;z-index:70;
+        left:8px;right:8px;bottom:calc(7px + env(safe-area-inset-bottom));min-height:62px;
+        padding:5px;border:1px solid rgba(255,255,255,.09);border-radius:19px;
+        background:rgba(10,17,29,.92);box-shadow:0 15px 40px rgba(0,0,0,.42);
+        backdrop-filter:blur(22px) saturate(1.35)
+      }
+      .mobile-bottom-dock button{
+        position:relative;display:grid;place-items:center;align-content:center;gap:2px;min-width:0;
+        border:0;border-radius:14px;background:transparent;color:var(--muted);padding:4px 2px
+      }
+      .mobile-bottom-dock button span{font-size:1.12rem;line-height:1}.mobile-bottom-dock button small{font-size:.52rem;font-weight:800;white-space:nowrap}
+      .mobile-bottom-dock button.active{color:var(--team-primary);background:var(--team-accent-soft)}
+      .mobile-bottom-dock button.active:after{content:"";position:absolute;bottom:2px;width:15px;height:2px;border-radius:9px;background:var(--team-primary)}
+      .auth-wrap{
+        display:flex!important;align-items:flex-end!important;padding:0!important;min-height:100dvh!important;
+        background:
+          radial-gradient(circle at 75% 13%,color-mix(in srgb,var(--team-primary) 40%,transparent),transparent 28%),
+          linear-gradient(160deg,#07111f 0%,#0b1728 48%,#07101d 100%)!important
+      }
+      .auth-wrap:before{
+        content:"TEAM MANAGER";position:absolute;top:10vh;left:18px;right:18px;
+        font-size:clamp(2.6rem,13vw,4.4rem);font-weight:1000;line-height:.84;letter-spacing:-.075em;
+        color:rgba(255,255,255,.055);word-break:break-word
+      }
+      .auth-card{
+        position:relative;width:100%!important;max-width:none!important;padding:22px 18px calc(22px + env(safe-area-inset-bottom))!important;
+        border:1px solid rgba(255,255,255,.09)!important;border-width:1px 0 0!important;border-radius:28px 28px 0 0!important;
+        background:rgba(15,24,39,.88)!important;box-shadow:0 -20px 50px rgba(0,0,0,.25)!important;backdrop-filter:blur(24px)
+      }
+      .auth-card .brand{margin-bottom:20px!important}.auth-card .brand-mark{width:52px;height:52px;border-radius:16px;font-size:.85rem}
+      .auth-card h1{font-size:1.38rem!important;letter-spacing:-.035em;margin-bottom:3px}.auth-card .brand .muted{font-size:.72rem}
+      .auth-card input{min-height:48px!important;padding:12px 13px!important;background:rgba(2,6,23,.45)!important;border-color:rgba(148,163,184,.17)!important}
+      .auth-card .btn{min-height:48px!important;border-radius:13px!important;font-size:.78rem!important}
+      .page-title{padding:7px 2px 3px!important;margin-bottom:8px!important}.page-title h1{font-size:1.2rem!important;letter-spacing:-.035em}.page-title p{font-size:.65rem!important}
+      .card,.dashboard-panel,.competition-card,.stats-category-tile,.opponent-tile{
+        border-color:var(--sport-line)!important;border-radius:14px!important;
+        background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 95%,white 5%),var(--panel))!important;
+        box-shadow:0 7px 20px rgba(0,0,0,.12)!important
+      }
+      .manager-kpi-card,.dashboard-state-kpi{
+        position:relative;overflow:hidden;min-height:74px!important;padding:10px!important;
+        background:linear-gradient(145deg,color-mix(in srgb,var(--panel) 90%,var(--team-primary) 10%),var(--panel))!important
+      }
+      .manager-kpi-card:after,.dashboard-state-kpi:after{
+        content:"";position:absolute;width:48px;height:48px;border-radius:50%;right:-18px;bottom:-20px;
+        background:var(--team-accent-soft)
+      }
+      .manager-kpi-card .stat,.dashboard-state-kpi .stat{font-size:1.3rem!important;letter-spacing:-.04em}.manager-kpi-card .stat-label,.dashboard-state-kpi .stat-label{font-size:.58rem!important;text-transform:uppercase;letter-spacing:.055em}
+      .dashboard-kpis,.stats-data-grid,.kpi-grid,.stats-kpis,.admin-kpis{gap:7px!important}
+      .calendar-event-row,.list-item,.manager-record,.match-record,.training-record,.absence-record,.dashboard-mini-record{
+        border:0!important;border-bottom:1px solid var(--sport-line)!important;border-radius:0!important;
+        background:transparent!important;box-shadow:none!important;padding:9px 5px!important
+      }
+      .calendar-event-row:last-child,.list-item:last-child,.manager-record:last-child{border-bottom:0!important}
+      .calendar-date-tile{border:0!important;background:var(--team-accent-soft)!important;border-radius:11px!important}
+      .calendar-date-day{color:var(--team-primary)}
+      .responsive-stack-table tbody{padding:0!important;gap:7px!important}
+      .responsive-stack-table tbody tr{
+        border-color:var(--sport-line)!important;border-radius:14px!important;padding:10px!important;
+        background:linear-gradient(145deg,var(--sport-surface),var(--panel))!important;box-shadow:0 6px 18px rgba(0,0,0,.1)
+      }
+      .responsive-stack-table tbody td:before{opacity:.68}
+      .tabs{padding:3px!important;border-radius:12px;background:rgba(255,255,255,.035)}
+      .tab{border:0!important;border-radius:9px!important}.tab.active{box-shadow:none!important}
+      .badge{border-radius:999px!important;padding:2px 6px!important}
+      .btn-primary{box-shadow:0 6px 18px color-mix(in srgb,var(--team-primary) 25%,transparent)}
+      .modal{border-radius:26px 26px 0 0!important;background:linear-gradient(180deg,var(--sport-surface),var(--panel))!important}
+      .mobile-drawer{left:0!important;right:auto!important;width:min(88vw,340px)!important;transform:translateX(-102%)!important;border:0!important;border-right:1px solid var(--sport-line)!important}
+      .mobile-drawer.open{transform:translateX(0)!important}
+      .mobile-drawer .nav button{min-height:42px!important;border-radius:11px!important;font-size:.78rem!important}
+      .month-calendar-wrap{background:var(--sport-surface)!important}.month-day{border-color:var(--sport-line)!important}
+    }
+    @media(min-width:901px){.mobile-bottom-dock{display:none!important}}
+
   </style>
 </head>
 <body>
@@ -5797,6 +5886,7 @@ function closeMobileDrawer(){
 
 function wireMobileDrawer(){
   $("#mobile-menu-open")?.addEventListener("click",openMobileDrawer);
+  $("#bottom-menu-open")?.addEventListener("click",openMobileDrawer);
   $("#mobile-menu-close")?.addEventListener("click",closeMobileDrawer);
   $(".mobile-drawer-backdrop")?.addEventListener("click",closeMobileDrawer);
 
@@ -7607,6 +7697,11 @@ function renderShell(title, content, nav=true){
   const navHtml=navItems()
     .map(([id,label,icon])=>`<button data-nav="${id}" class="${state.currentPage===id?"active":""}"><span>${icon}</span>${esc(label)}</button>`)
     .join("");
+  const mobileDockIds=["dashboard","calendar","matches","roster"];
+  const mobileDockHtml=navItems()
+    .filter(([id])=>mobileDockIds.includes(id))
+    .map(([id,label,icon])=>`<button data-nav="${id}" class="${state.currentPage===id?"active":""}" aria-label="${esc(label)}"><span>${icon}</span><small>${esc(label==="dashboard"?"Home":label)}</small></button>`)
+    .join("");
 
   const switchTeams=visibleTeams();
   const brandMark=teamMark(state.team,"TM",state.organization);
@@ -7675,6 +7770,10 @@ function renderShell(title, content, nav=true){
     </main>
 
     ${nav?`
+      <nav class="mobile-bottom-dock" aria-label="Navigazione principale">
+        ${mobileDockHtml}
+        <button type="button" id="bottom-menu-open" aria-label="Altre sezioni"><span>☰</span><small>Altro</small></button>
+      </nav>
       <div class="mobile-drawer-backdrop"></div>
       <aside class="mobile-drawer" aria-label="Menu squadra">
         <div class="mobile-drawer-head">
