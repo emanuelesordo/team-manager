@@ -236,6 +236,8 @@
     .competition-opponent-check{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:10px;padding:8px}
     .competition-opponent-check input{width:auto}
     @media(max-width:700px){
+      .captain-candidate-pick{grid-template-columns:auto minmax(0,1fr);align-items:start}
+      .captain-candidate-pick .check{grid-column:2;justify-self:start}
       .calendar-filterbar{grid-template-columns:1fr}
       .calendar-event-row{grid-template-columns:58px minmax(0,1fr) auto;gap:9px;padding:9px}
       .calendar-date-tile{width:54px;min-height:54px}
@@ -4460,7 +4462,13 @@
     .onboarding-player-choice,
     .dashboard-mini-record,
     .dashboard-health-line,
-    .captain-candidate-card{
+        .captain-candidate-picker{display:grid;grid-template-columns:1fr;gap:6px;width:100%}
+    .captain-candidate-pick{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+    .captain-candidate-pick > input[type="checkbox"]{margin:0;justify-self:start}
+    .captain-candidate-pick > div{min-width:0}
+    .captain-candidate-pick .check{justify-self:end;white-space:nowrap;margin:0}
+    .captain-candidate-pick .check input{margin:0}
+.captain-candidate-card{
       min-height:var(--ui-row-min)!important;
       padding:var(--ui-row-pad-y) var(--ui-row-pad-x)!important;
       border-radius:8px!important;
