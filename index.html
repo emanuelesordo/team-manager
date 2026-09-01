@@ -3637,6 +3637,210 @@
       .live-board{grid-template-columns:1fr}
     }
 
+
+    /* =====================================================
+       039 — layout compatto + social minimal
+    ====================================================== */
+    /* I record datati tornano con calendario a SINISTRA. */
+    .calendar-event-row{
+      grid-template-columns:58px minmax(0,1fr)!important;
+      gap:10px!important;
+      align-items:center!important;
+      padding:7px 9px!important;
+    }
+    .calendar-event-row .calendar-date-tile{
+      order:0!important;
+      width:48px!important;
+      min-width:48px!important;
+      min-height:46px!important;
+      justify-self:start!important;
+      align-self:center!important;
+      text-align:center!important;
+      border:1px solid var(--ui-line-soft)!important;
+      border-radius:9px!important;
+      background:var(--panel2)!important;
+      box-shadow:none!important;
+      display:grid!important;
+      place-items:center!important;
+      align-content:center!important;
+      padding:4px!important;
+    }
+    .calendar-event-row .calendar-event-main{order:1!important;min-width:0}
+    .calendar-event-row .calendar-date-day{font-size:1rem!important;font-weight:950!important;line-height:1!important}
+    .calendar-event-row .calendar-date-month{font-size:.57rem!important;font-weight:900!important;margin-top:2px!important;letter-spacing:.06em}
+
+    .dashboard-mini-record[data-dashboard-event]{
+      display:grid!important;
+      grid-template-columns:42px minmax(0,1fr)!important;
+      gap:8px!important;
+      align-items:center!important;
+    }
+    .dashboard-mini-record[data-dashboard-event] > div:first-child{order:2!important}
+    .dashboard-mini-record[data-dashboard-event] .dashboard-event-date{
+      order:1!important;
+      min-width:40px!important;
+      width:40px!important;
+      text-align:center!important;
+      border:1px solid var(--ui-line-soft);
+      border-radius:8px;
+      padding:4px 2px;
+      background:var(--panel2);
+    }
+
+    /* Record partita distribuito orizzontalmente. */
+    .match-record{
+      display:grid;
+      grid-template-columns:52px 32px minmax(235px,1.6fr) minmax(120px,.75fr) minmax(90px,.55fr) minmax(150px,1fr) 56px 38px;
+      gap:9px;
+      align-items:center;
+      padding:6px 8px;
+      border:1px solid var(--ui-line-soft);
+      border-radius:10px;
+      background:var(--ui-record-bg);
+      min-height:58px;
+      cursor:pointer;
+      transition:.12s ease;
+    }
+    .match-record:hover{background:var(--ui-record-hover);border-color:var(--team-primary-line)}
+    .match-date-block{
+      width:48px;height:46px;display:grid;place-items:center;align-content:center;
+      border:1px solid var(--ui-line-soft);border-radius:9px;background:var(--panel2);line-height:1;
+    }
+    .match-date-block strong{font-size:.94rem!important;font-weight:950!important}
+    .match-date-block span{margin-top:3px;font-size:.56rem!important;font-weight:900!important;letter-spacing:.06em;color:var(--muted)}
+    .match-ha-icon{text-align:center;font-size:1rem!important}
+    .match-versus-line{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;white-space:nowrap}
+    .match-versus-line strong{overflow:hidden;text-overflow:ellipsis;font-weight:850}
+    .match-versus-sep{color:var(--muted);font-size:.68rem!important;font-weight:900;flex:none}
+    .match-mini-logo{width:23px;height:23px;min-width:23px;object-fit:contain;display:block}
+    .match-mini-fallback{width:23px;height:23px;min-width:23px;border-radius:6px;display:grid;place-items:center;background:var(--team-accent-soft);font-size:.48rem!important;font-weight:900}
+    .match-record-meta{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+    .match-record-meta strong{color:var(--text);font-weight:800}
+    .match-record-time{text-align:right;font-weight:950;font-size:.82rem!important;white-space:nowrap}
+    .match-print-button{width:34px!important;height:34px!important;padding:0!important;display:grid!important;place-items:center!important;font-size:.95rem!important}
+
+    .match-filter-bar{
+      display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:4px 0 8px;
+    }
+    .match-filter-bar .compact-filter{
+      display:inline-flex;align-items:center;gap:5px;padding:3px 5px 3px 8px;
+      border:1px solid var(--ui-line-soft);border-radius:999px;background:var(--panel2);color:var(--muted);
+    }
+    .match-filter-bar select{
+      width:auto!important;min-width:105px;max-width:190px;border:0!important;background:transparent!important;padding:3px 20px 3px 2px!important;color:var(--text);
+      font-size:.69rem!important;
+    }
+    .match-filter-bar .filter-reset{margin-left:auto}
+
+    /* Ruoli Rosa ancora più piccoli; percentuali solo nel dettaglio. */
+    .roster-generic-role{
+      min-width:22px!important;height:22px!important;padding:0 5px!important;border-radius:6px!important;
+      font-size:.58rem!important;line-height:22px!important;
+    }
+    .roster-preferred-cell .badge{
+      padding:2px 5px!important;border-radius:5px!important;font-size:.55rem!important;line-height:1!important;font-weight:850!important;
+    }
+    .roster-preferred-cell{white-space:nowrap!important}
+    .medical-cell-stack{display:flex;align-items:center;gap:5px;flex-wrap:wrap;white-space:nowrap}
+    .medical-self-reported{
+      opacity:.58;cursor:help;border-bottom:1px dotted currentColor;color:var(--team-accent);font-size:.64rem!important;position:relative;
+    }
+    .medical-self-reported::after{
+      content:'da validare';position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);
+      background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:4px 6px;white-space:nowrap;
+      font-size:.58rem!important;opacity:0;pointer-events:none;z-index:20;box-shadow:var(--shadow);
+    }
+    .medical-self-reported:hover::after,.medical-self-reported.active::after{opacity:1}
+
+    /* Quote: riepilogo + dettaglio in un solo container. */
+    .fees-unified-wrap{
+      max-height:calc(100dvh - 335px);overflow:auto;border:1px solid var(--ui-line-soft);border-radius:10px;
+    }
+    .fees-unified-wrap .table{border:0!important}
+    .fees-unified-wrap thead th{position:sticky!important;top:0!important;z-index:4;background:var(--panel2)!important}
+    .fee-player-cell{min-width:210px;background:color-mix(in srgb,var(--panel2) 88%,var(--team-accent) 12%)}
+    .fee-player-summary{display:grid;gap:5px}
+    .fee-player-summary .cash-mode-select{max-width:145px!important;min-width:112px!important;padding:4px 7px!important}
+    .fee-player-mini{font-size:.62rem!important;color:var(--muted)}
+
+    /* Assenze: tre contenitori coerenti, ognuno con scroll interno. */
+    .absence-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;min-height:0}
+    .absence-column{display:flex;flex-direction:column;min-height:0;padding:0!important;overflow:hidden}
+    .absence-column-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;border-bottom:1px solid var(--ui-line-soft);background:var(--panel2)}
+    .absence-column-head h2{font-size:.82rem!important;margin:0!important}
+    .absence-scroll{overflow-y:auto;min-height:130px;max-height:calc(100dvh - 300px);padding:5px}
+    .absence-record{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:center;padding:7px;border-bottom:1px solid var(--ui-line-soft)}
+    .absence-record:last-child{border-bottom:0}
+    .absence-record-main{min-width:0}
+    .absence-record-title{display:flex;align-items:center;gap:5px;min-width:0}
+    .absence-record-title strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .absence-record-meta{margin-top:3px;font-size:.61rem!important;color:var(--muted);line-height:1.18}
+    .absence-record-actions{display:flex;align-items:center;justify-content:flex-end;gap:3px;flex-wrap:wrap}
+
+    @media(max-width:1180px){
+      .match-record{grid-template-columns:50px 28px minmax(210px,1.6fr) minmax(110px,.7fr) minmax(80px,.5fr) minmax(120px,.85fr) 52px 36px;gap:6px}
+      .match-record-meta{font-size:.62rem!important}
+    }
+    @media(max-width:900px){
+      .match-record{
+        grid-template-columns:48px 26px minmax(0,1fr) 50px 34px;
+        grid-template-areas:'date icon teams time print' 'date icon competition city print';
+        gap:4px 7px;padding:6px;
+      }
+      .match-date-block{grid-area:date}
+      .match-ha-icon{grid-area:icon}
+      .match-versus-line{grid-area:teams;justify-content:flex-start}
+      .match-record-competition{grid-area:competition}
+      .match-record-city{grid-area:city}
+      .match-record-address{display:none}
+      .match-record-time{grid-area:time}
+      .match-print-button{grid-area:print}
+      .match-versus-line strong{font-size:.67rem!important}
+      .match-mini-logo{width:20px;height:20px;min-width:20px}
+      .match-mini-fallback{width:20px;height:20px;min-width:20px}
+      .match-filter-bar{gap:4px}
+      .match-filter-bar .compact-filter{padding-left:6px}
+      .match-filter-bar select{min-width:88px;max-width:135px;font-size:.62rem!important}
+      .absence-board{grid-template-columns:1fr}
+      .absence-scroll{max-height:32dvh}
+      .fees-unified-wrap{max-height:calc(100dvh - 310px)}
+    }
+    @media(max-width:560px){
+      .match-record{grid-template-columns:44px 22px minmax(0,1fr) 44px 32px}
+      .match-record-city{display:none}
+      .match-record-competition{font-size:.58rem!important}
+      .match-record-time{font-size:.68rem!important}
+      .match-date-block{width:42px;height:43px}
+      .match-versus-line{gap:4px}
+      .roster-preferred-cell .badge{font-size:.52rem!important}
+    }
+
+
+    .fee-unified-list{display:grid;gap:5px;padding:5px}
+    .fee-player-group{border:1px solid var(--ui-line-soft);border-radius:9px;overflow:hidden;background:var(--ui-record-bg)}
+    .fee-player-head{display:grid;grid-template-columns:minmax(190px,1.2fr) minmax(115px,.55fr) minmax(100px,.45fr);gap:8px;align-items:center;padding:6px 8px;background:var(--panel2);border-bottom:1px solid var(--ui-line-soft)}
+    .fee-player-state{text-align:right;font-size:.62rem!important;color:var(--muted)}
+    .fee-line{display:grid;grid-template-columns:78px minmax(150px,1fr) 82px minmax(105px,.65fr) minmax(150px,1.05fr);gap:7px;align-items:center;padding:5px 8px;border-bottom:1px solid var(--ui-line-soft)}
+    .fee-line:last-child{border-bottom:0}
+    .fee-line-date{font-weight:800;font-size:.65rem!important;white-space:nowrap}
+    .fee-line-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .fee-line-amount{text-align:right;font-weight:900;white-space:nowrap}
+    .fee-line-status{min-width:0}
+    .fee-line-actions{display:flex;justify-content:flex-end;gap:3px;flex-wrap:wrap}
+    .fee-empty-line{padding:8px;color:var(--muted)}
+    .fines-scroll-wrap{max-height:32dvh;overflow:auto}
+    .fines-scroll-wrap thead th{position:sticky!important;top:0!important;z-index:3;background:var(--panel2)!important}
+    @media(max-width:900px){
+      .fee-player-head{grid-template-columns:minmax(0,1fr) minmax(105px,.7fr);grid-template-areas:'player mode' 'state state'}
+      .fee-player-head > :first-child{grid-area:player}.fee-player-head > :nth-child(2){grid-area:mode}.fee-player-state{grid-area:state;text-align:left}
+      .fee-line{grid-template-columns:65px minmax(0,1fr) 72px;grid-template-areas:'date title amount' 'status status actions'}
+      .fee-line-date{grid-area:date}.fee-line-title{grid-area:title}.fee-line-amount{grid-area:amount}.fee-line-status{grid-area:status}.fee-line-actions{grid-area:actions}
+    }
+
+
+    .dashboard-mini-record[data-dashboard-event] > .dashboard-event-date{order:0!important}
+    .dashboard-mini-record[data-dashboard-event] > div:not(.dashboard-event-date){order:1!important}
+
 </style>
 </head>
 <body>
@@ -6380,15 +6584,15 @@ function dashboardEventRecord(e,icon="📌"){
   const d=calendarDateParts(e.start_at);
   return `
     <div class="dashboard-mini-record" data-dashboard-event="${e.id}" role="button" tabindex="0">
+      <div class="dashboard-event-date">
+        <strong>${d.day}</strong>
+        <span>${d.month}</span>
+      </div>
       <div>
         <div class="dashboard-mini-title">${icon} ${esc(e.title||eventTypeLabel(e.event_type))}</div>
         <div class="muted dashboard-mini-meta">
           <strong>${d.time}</strong>${e.location?` · ${esc(e.location)}`:""}
         </div>
-      </div>
-      <div class="dashboard-event-date">
-        <strong>${d.day}</strong>
-        <span>${d.month}</span>
       </div>
     </div>
   `;
@@ -8000,6 +8204,24 @@ async function pageRoster(){
     && state.roles.length>0
     && state.roles.every(r=>r==="fan");
 
+  let rosterContactRows=[];
+  if(!fanOnly&&(can("roster.manage")||can("medical.view_all"))){
+    try{
+      rosterContactRows=await must(
+        supabase.from("player_contacts")
+          .select("player_id,self_reported_medical_expires_on")
+          .eq("team_id",state.team.id)
+      );
+    }catch(_err){}
+  }else if(!fanOnly&&linkedSelf&&can("medical.view_own")){
+    try{
+      const ownRows=await must(supabase.rpc("get_my_player_profile_data",{p_team_id:state.team.id}));
+      const own=Array.isArray(ownRows)?ownRows[0]:ownRows;
+      if(own)rosterContactRows=[{player_id:linkedSelf.id,self_reported_medical_expires_on:own.medical_expires_on!==own.official_medical_expires_on?own.medical_expires_on:null}];
+    }catch(_err){}
+  }
+  const rosterContactMap=new Map(rosterContactRows.map(x=>[x.player_id,x]));
+
   const pendingLink=myLinkRequests.find(r=>r.status==="pending")||null;
   const pendingPlayer=pendingLink?players.find(p=>p.id===pendingLink.player_id):null;
 
@@ -8083,6 +8305,7 @@ async function pageRoster(){
     const next=nextMap.get(p.id)||{};
     const signals=makeSignals(p,indicator,next);
     const medicalExpiry=canSeeMedicalFor(p)?indicator.medical_expires_on:null;
+    const selfReportedMedicalExpiry=canSeeMedicalFor(p)?(rosterContactMap.get(p.id)?.self_reported_medical_expires_on||null):null;
     const age=playerAge(p.birth_date);
 
     let associationAction="";
@@ -8097,7 +8320,7 @@ async function pageRoster(){
     }
 
     return {
-      p,last,active,roles,generic,indicator,next,signals,associationAction,medicalExpiry,age,
+      p,last,active,roles,generic,indicator,next,signals,associationAction,medicalExpiry,selfReportedMedicalExpiry,age,
       sort:{
         generic:generic.generic_role_code||"Z",
         name:`${p.last_name} ${p.first_name}`,
@@ -8107,7 +8330,7 @@ async function pageRoster(){
         nationality:countryName(p.nationality_code)||"ZZZ",
         favorite:p.favorite_team||"ZZZ",
         roles:roles[0]?.position_code||"ZZZ",
-        medical:medicalExpiry||"9999-12-31",
+        medical:medicalExpiry||selfReportedMedicalExpiry||"9999-12-31",
         signals:signals.severity,
         permanence:last.start_date||"9999-12-31",
         next:next.next_season_confirmed?1:0
@@ -8126,7 +8349,7 @@ async function pageRoster(){
   const showPreferred=!fanOnly;
 
   const rows=data.map(row=>{
-    const {p,last,active,roles,generic,next,signals,associationAction,medicalExpiry,age}=row;
+    const {p,last,active,roles,generic,next,signals,associationAction,medicalExpiry,selfReportedMedicalExpiry,age}=row;
     const genericCode=generic.generic_role_code||"—";
     const genericTitle=generic.generic_role_code
       ? `${genericRoleLabel(generic.generic_role_code)}${generic.source==="manual"?" · generico manuale":" · predominante"}`
@@ -8164,13 +8387,22 @@ async function pageRoster(){
       ${showPreferred?`
         <td class="roster-mobile-hide roster-preferred-cell roster-col-preferred">
           ${roles.length
-            ? roles.map(r=>`<span class="badge ${r.role_rank===1?"green":""}">${esc(r.position_code)} ${r.affinity_percent}%</span>`).join(" ")
+            ? roles.map(r=>`<span class="badge ${r.role_rank===1?"green":""}" title="${esc(r.position_code)} · dettaglio nella scheda calciatore">${esc(r.position_code)}</span>`).join(" ")
             : `<span class="roster-role-empty">—</span>`
           }
         </td>
       `:""}
 
-      <td class="roster-mobile-hide roster-col-medical">${medicalExpiry?shortDate(medicalExpiry):"—"}</td>
+      <td class="roster-mobile-hide roster-col-medical">
+        <div class="medical-cell-stack">
+          ${medicalExpiry?`<span>${shortDate(medicalExpiry)}</span>`:""}
+          ${selfReportedMedicalExpiry&&selfReportedMedicalExpiry!==medicalExpiry
+            ? `<span class="medical-self-reported" data-pending-medical="${p.id}" title="Scadenza dichiarata dal calciatore · da validare">${shortDate(selfReportedMedicalExpiry)}</span>`
+            : ""
+          }
+          ${!medicalExpiry&&!selfReportedMedicalExpiry?"—":""}
+        </div>
+      </td>
       <td class="roster-col-signals"><div class="roster-signals">${signals.html}</div></td>
 
       ${settings.show_contract_period
@@ -8260,6 +8492,11 @@ async function pageRoster(){
 
   $(".shell")?.classList.add("roster-page");
   wireSignalPopovers($(".roster-table-wrap"));
+  $$('[data-pending-medical]').forEach(el=>el.addEventListener('click',e=>{
+    e.stopPropagation();
+    el.classList.toggle('active');
+    setTimeout(()=>el.classList.remove('active'),1800);
+  }));
 
   $$("[data-roster-sort]").forEach(th=>th.onclick=()=>{
     const key=th.dataset.rosterSort;
@@ -8686,6 +8923,16 @@ async function pagePlayer(id){
   const roles=affinity.filter(a=>a.player_id===id);
   const generic=genericRows.find(x=>x.player_id===id)||{};
   const exam=exams[0]||null;
+  let selfReportedMedicalExpiry=contacts?.self_reported_medical_expires_on||null;
+  if(!selfReportedMedicalExpiry&&p.profile_id===state.profile.id&&!fanOnly){
+    try{
+      const mineRows=await must(supabase.rpc("get_my_player_profile_data",{p_team_id:state.team.id}));
+      const mine=Array.isArray(mineRows)?mineRows[0]:mineRows;
+      if(mine?.medical_expires_on&&mine.medical_expires_on!==mine.official_medical_expires_on){
+        selfReportedMedicalExpiry=mine.medical_expires_on;
+      }
+    }catch(_err){}
+  }
 
   const metaCards=[
     `<div class="card"><div class="stat-label">Nascita</div><strong>${p.birth_date?fmtDate(p.birth_date):"—"}</strong></div>`,
@@ -8697,7 +8944,7 @@ async function pagePlayer(id){
       ? `<div class="card"><div class="stat-label">Telefono</div><strong>${esc(contacts?.phone||"—")}</strong></div>`
       : "",
     !fanOnly
-      ? `<div class="card"><div class="stat-label">Visita medica</div><strong>${exam?`${fmtDate(exam.issued_date)} → ${fmtDate(exam.expires_on)}`:"—"}</strong></div>`
+      ? `<div class="card"><div class="stat-label">Visita medica</div><strong>${exam?`${fmtDate(exam.issued_date)} → ${fmtDate(exam.expires_on)}`:"—"}</strong>${selfReportedMedicalExpiry&&selfReportedMedicalExpiry!==exam?.expires_on?`<div class="medical-self-reported" style="margin-top:5px" title="Da validare">Dichiarata: ${fmtDate(selfReportedMedicalExpiry)} · da validare</div>`:""}</div>`
       : ""
   ].filter(Boolean).join("");
 
@@ -8798,6 +9045,10 @@ async function saveCalendarView(view){
 function calendarEventRow(event,extra=""){
   const d=calendarDateParts(event.start_at);
   return `<div class="calendar-event-row" data-event="${event.id}">
+    <div class="calendar-date-tile">
+      <div class="calendar-date-day">${d.day}</div>
+      <div class="calendar-date-month">${d.month}</div>
+    </div>
     <div class="calendar-event-main">
       <div class="calendar-event-title">${esc(event.title)}</div>
       <div class="calendar-event-place">
@@ -8807,10 +9058,6 @@ function calendarEventRow(event,extra=""){
       </div>
       ${extra}
       ${eventSupportsSelfAttendance(event)?`<div class="actions" style="margin-top:5px">${selfAttendanceButton(event)}</div>`:""}
-    </div>
-    <div class="calendar-date-tile">
-      <div class="calendar-date-day">${d.day}</div>
-      <div class="calendar-date-month">${d.month}</div>
     </div>
   </div>`;
 }
@@ -11478,37 +11725,76 @@ function socialHeadline(ctx,line1,line2,w,y,palette,{line1Accent=true,line2Accen
   draw(line1,y,size1,line1Accent?palette.accent:palette.white);
   if(line2)draw(line2,y+size1*.84,size2,line2Accent?palette.accent:palette.white);
 }
+function socialMinimalBase(ctx,w,h,palette,logoImg,{light=false}={}){
+  const bg=light?mixHex(palette.white,palette.accent,.04):palette.bg;
+  const fg=light?palette.dark:palette.white;
+  ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+  ctx.fillStyle=palette.accent;ctx.fillRect(0,0,w,22);
+  ctx.fillStyle=rgbaFromHex(palette.accent,.10);ctx.fillRect(0,h*.63,w,h*.37);
+  if(logoImg)socialDrawImageContain(ctx,logoImg,w*.17,h*.16,w*.66,h*.66,.045);
+  ctx.strokeStyle=rgbaFromHex(light?palette.dark:palette.white,.09);ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(70,105);ctx.lineTo(w-70,105);ctx.stroke();
+  return {bg,fg};
+}
+function socialMinimalLogo(ctx,img,code,x,y,w,h,palette){
+  ctx.save();
+  canvasRoundedRect(ctx,x,y,w,h,28,'rgba(255,255,255,.035)',rgbaFromHex(palette.white,.12));
+  if(img){
+    socialDrawImageContain(ctx,img,x+18,y+18,w-36,h-36,1);
+  }else{
+    socialText(ctx,code,x+w/2,y+h/2,{color:palette.white,size:56,align:'center',baseline:'middle',kind:'heavy',weight:900,maxWidth:w*.72});
+  }
+  ctx.restore();
+}
+function socialMinimalLabel(ctx,text,x,y,palette,{align='left',size=27,color=null,maxWidth=null}={}){
+  socialText(ctx,socialUpper(text),x,y,{color:color||palette.accent,size,align,kind:'condensed',weight:900,maxWidth});
+}
+function socialMinimalRule(ctx,x1,y,x2,palette,alpha=.28){
+  ctx.save();ctx.strokeStyle=rgbaFromHex(palette.white,alpha);ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x2,y);ctx.stroke();ctx.restore();
+}
+function socialMinimalInfoRow(ctx,data,palette,w,y){
+  const date=socialMatchDateParts(data.ev.start_at);
+  const venue=socialVenueParts(data);
+  const items=[['DATA',date.dateShort],['ORA',date.time],['CAMPO',venue.name],['CITTÀ',venue.city||'—']];
+  const x=70,inner=w-140,cw=inner/items.length;
+  items.forEach(([label,value],i)=>{
+    const cx=x+cw*i;
+    if(i){ctx.fillStyle=rgbaFromHex(palette.white,.12);ctx.fillRect(cx,y,2,90);}
+    socialMinimalLabel(ctx,label,cx+cw/2,y+27,palette,{align:'center',size:20,maxWidth:cw-24});
+    socialText(ctx,socialUpper(value),cx+cw/2,y+68,{color:palette.white,size:25,align:'center',kind:'condensed',weight:900,maxWidth:cw-24});
+  });
+}
 function drawSocialMatchDay(ctx,data,palette,w,h){
-  const seed=socialSeed(data.m.id+'matchday');
-  socialBackground(ctx,w,h,palette,data.ownImg,seed);
-  socialHeadline(ctx,'MATCH','DAY',w,210,palette,{line1Accent:true,line2Accent:false,size1:170,size2:160});
-  socialCompetitionStrip(ctx,w,490,data,palette,seed+10);
-
+  socialMinimalBase(ctx,w,h,palette,data.ownImg);
   const teams=socialDisplayedTeams(data);
-  const logoY=625,logoW=300,logoH=330;
-  socialTeamLogo(ctx,teams.leftLogo,teams.leftCode,105,logoY,logoW,logoH,palette,seed+20);
-  socialTeamLogo(ctx,teams.rightLogo,teams.rightCode,w-405,logoY,logoW,logoH,palette,seed+30);
-  socialBrush(ctx,w/2-55,760,110,190,palette.accent,seed+33,.95);
-  socialText(ctx,'VS',w/2,855,{color:palette.accent,size:100,align:'center',kind:'heavy',weight:900,stroke:palette.dark,strokeWidth:12,shadow:true});
-  socialText(ctx,socialUpper(teams.leftName),255,1015,{color:palette.white,size:54,align:'center',kind:'condensed',weight:900,maxWidth:390,stroke:palette.dark,strokeWidth:7});
-  socialText(ctx,socialUpper(teams.rightName),w-255,1015,{color:palette.white,size:54,align:'center',kind:'condensed',weight:900,maxWidth:390,stroke:palette.dark,strokeWidth:7});
-  socialBrush(ctx,95,1045,315,25,palette.accent,seed+40,.9);
-  socialBrush(ctx,w-410,1045,315,25,palette.accent,seed+41,.9);
+  const date=socialMatchDateParts(data.ev.start_at);
+  const comp=[data.competition?.name,data.m.round_label].filter(Boolean).join(' · ')||'PARTITA';
 
-  socialInfoBand(ctx,w,1145,data,palette);
+  socialMinimalLabel(ctx,comp,70,78,palette,{size:25,maxWidth:w-140});
+  socialText(ctx,'MATCH DAY',70,265,{color:palette.white,size:150,kind:'heavy',weight:900,maxWidth:w-140});
+  socialText(ctx,`${date.dateLong} · ${date.time}`,72,325,{color:palette.muted,size:28,kind:'condensed',weight:800,maxWidth:w-144});
+
+  const logoY=500,logoW=275,logoH=300;
+  socialMinimalLogo(ctx,teams.leftLogo,teams.leftCode,110,logoY,logoW,logoH,palette);
+  socialMinimalLogo(ctx,teams.rightLogo,teams.rightCode,w-385,logoY,logoW,logoH,palette);
+  socialText(ctx,'VS',w/2,650,{color:palette.accent,size:82,align:'center',baseline:'middle',kind:'heavy',weight:900});
+  socialText(ctx,socialUpper(teams.leftName),245,875,{color:palette.white,size:47,align:'center',kind:'condensed',weight:900,maxWidth:390});
+  socialText(ctx,socialUpper(teams.rightName),w-245,875,{color:palette.white,size:47,align:'center',kind:'condensed',weight:900,maxWidth:390});
+
+  socialMinimalRule(ctx,70,955,w-70,palette);
+  socialMinimalInfoRow(ctx,data,palette,w,1000);
+  socialMinimalRule(ctx,70,1115,w-70,palette);
 
   const venue=socialVenueParts(data);
-  socialText(ctx,'PROSSIMA PARTITA',w/2,1450,{color:palette.accent,size:40,align:'center',kind:'condensed',weight:900,maxWidth:w-180});
-  socialText(ctx,socialUpper(data.m.home_away==='home'?'IN CASA':data.m.home_away==='away'?'IN TRASFERTA':'CAMPO NEUTRO'),w/2,1510,{color:palette.white,size:70,align:'center',kind:'heavy',weight:900,maxWidth:w-170,stroke:palette.dark,strokeWidth:10});
-  if(data.ev.notes){
-    socialText(ctx,socialUpper(data.ev.notes),w/2,1590,{color:palette.muted,size:27,align:'center',kind:'condensed',weight:800,maxWidth:w-190});
-  }else if(venue.city){
-    socialText(ctx,socialUpper(venue.city),w/2,1590,{color:palette.muted,size:29,align:'center',kind:'condensed',weight:800,maxWidth:w-190});
-  }
-  socialCrosses(ctx,55,1685,palette.accent,6,38,13);
-  socialCrosses(ctx,w-150,1685,palette.accent,6,38,13);
-  socialText(ctx,socialUpper(state.organization?.display_code||state.team?.short_name||state.team?.name||'TEAM'),w/2,1750,{color:palette.white,size:74,align:'center',kind:'heavy',weight:900,maxWidth:w*.55});
-  socialFooter(ctx,w,h,palette);
+  socialMinimalLabel(ctx,data.m.home_away==='home'?'HOME':data.m.home_away==='away'?'AWAY':'NEUTRAL',70,1240,palette,{size:24});
+  socialText(ctx,socialUpper(venue.name),70,1320,{color:palette.white,size:58,kind:'heavy',weight:900,maxWidth:w-140});
+  if(venue.city)socialText(ctx,socialUpper(venue.city),72,1380,{color:palette.muted,size:28,kind:'condensed',weight:800,maxWidth:w-144});
+
+  ctx.fillStyle=palette.accent;ctx.fillRect(70,h-255,150,8);
+  socialText(ctx,socialUpper(state.organization?.name||state.team?.name||'TEAM'),70,h-175,{color:palette.white,size:43,kind:'condensed',weight:900,maxWidth:w*.62});
+  socialText(ctx,socialUpper(state.season?.name||''),w-70,h-175,{color:palette.muted,size:29,align:'right',kind:'condensed',weight:900,maxWidth:w*.26});
+  socialMinimalRule(ctx,70,h-120,w-70,palette,.16);
+  socialText(ctx,'MATCHDAY · SOCIAL',70,h-70,{color:palette.muted,size:20,kind:'condensed',weight:800});
 }
 function socialRosterGroups(data){
   const groups={P:[],D:[],C:[],A:[]};
@@ -11541,42 +11827,52 @@ function socialDrawRosterColumn(ctx,x,y,w,h,title,players,palette,seed=1){
   ctx.textAlign='left';ctx.textBaseline='alphabetic';
 }
 function drawSocialSquadList(ctx,data,palette,w,h){
-  const seed=socialSeed(data.m.id+'squad');
-  socialBackground(ctx,w,h,palette,data.ownImg,seed);
-  socialText(ctx,'SQUAD LIST',w/2,250,{color:palette.accent,size:170,align:'center',kind:'heavy',weight:900,maxWidth:w-100,stroke:palette.dark,strokeWidth:18,shadow:true});
-  socialCompetitionStrip(ctx,w,315,data,palette,seed+10);
-
+  socialMinimalBase(ctx,w,h,palette,data.ownImg);
   const teams=socialDisplayedTeams(data);
-  socialTeamLogo(ctx,teams.leftLogo,teams.leftCode,150,440,220,235,palette,seed+20);
-  socialTeamLogo(ctx,teams.rightLogo,teams.rightCode,w-370,440,220,235,palette,seed+21);
-  socialText(ctx,'VS',w/2,565,{color:palette.accent,size:75,align:'center',kind:'heavy',weight:900,stroke:palette.dark,strokeWidth:9});
-  socialText(ctx,socialUpper(teams.leftName),260,705,{color:palette.white,size:38,align:'center',kind:'condensed',weight:900,maxWidth:360});
-  socialText(ctx,socialUpper(teams.rightName),w-260,705,{color:palette.white,size:38,align:'center',kind:'condensed',weight:900,maxWidth:360});
-
-  socialInfoBand(ctx,w,760,data,palette,{includeMeeting:true});
-
+  const date=socialMatchDateParts(data.ev.start_at);
   const groups=socialRosterGroups(data);
-  const top=1035,bottom=1550,gap=8,margin=34,colW=(w-margin*2-gap*3)/4;
-  [
-    ['PORTIERI',groups.P],
-    ['DIFENSORI',groups.D],
-    ['CENTROCAMPISTI',groups.C],
-    ['ATTACCANTI',groups.A]
-  ].forEach(([title,players],i)=>socialDrawRosterColumn(ctx,margin+i*(colW+gap),top,colW,bottom-top,title,players,palette,seed+50+i));
+  const comp=[data.competition?.name,data.m.round_label].filter(Boolean).join(' · ')||'PARTITA';
 
-  const staffY=1580;
-  ctx.fillStyle='rgba(0,0,0,.60)';ctx.fillRect(55,staffY,w-110,190);
-  ctx.fillStyle=rgbaFromHex(palette.accent,.55);ctx.fillRect(w/2,staffY+26,2,135);
-  socialText(ctx,'ALLENATORE',w*.27,staffY+55,{color:palette.accent,size:32,align:'center',kind:'condensed',weight:900,maxWidth:w*.40});
-  socialText(ctx,'STAFF',w*.73,staffY+55,{color:palette.accent,size:32,align:'center',kind:'condensed',weight:900,maxWidth:w*.40});
-  const coaches=data.coaches.length?data.coaches.map(socialUpper):['—'];
-  const staff=data.staff.length?data.staff.map(socialUpper):['—'];
-  socialFitLines(ctx,coaches,w*.38,29,19,'condensed',900);
-  coaches.slice(0,4).forEach((name,i)=>socialText(ctx,name,w*.27,staffY+102+i*31,{color:palette.white,size:29,align:'center',kind:'condensed',weight:900,maxWidth:w*.38}));
-  socialFitLines(ctx,staff,w*.38,29,19,'condensed',900);
-  staff.slice(0,4).forEach((name,i)=>socialText(ctx,name,w*.73,staffY+102+i*31,{color:palette.white,size:29,align:'center',kind:'condensed',weight:900,maxWidth:w*.38}));
+  socialMinimalLabel(ctx,comp,70,78,palette,{size:24,maxWidth:w-140});
+  socialText(ctx,'SQUAD LIST',70,250,{color:palette.white,size:142,kind:'heavy',weight:900,maxWidth:w-140});
+  socialText(ctx,`${date.dateLong} · ${date.time}`,72,310,{color:palette.muted,size:27,kind:'condensed',weight:800,maxWidth:w-144});
 
-  socialFooter(ctx,w,h,palette);
+  socialMinimalLogo(ctx,teams.leftLogo,teams.leftCode,80,390,128,140,palette);
+  socialMinimalLogo(ctx,teams.rightLogo,teams.rightCode,w-208,390,128,140,palette);
+  socialText(ctx,socialUpper(teams.leftName),230,455,{color:palette.white,size:31,kind:'condensed',weight:900,maxWidth:250});
+  socialText(ctx,'VS',w/2,455,{color:palette.accent,size:44,align:'center',kind:'heavy',weight:900});
+  socialText(ctx,socialUpper(teams.rightName),w-230,455,{color:palette.white,size:31,align:'right',kind:'condensed',weight:900,maxWidth:250});
+  socialMinimalRule(ctx,70,570,w-70,palette);
+
+  const cols=[['PORTIERI',groups.P],['DIFENSORI',groups.D],['CENTROCAMPISTI',groups.C],['ATTACCANTI',groups.A]];
+  const left=70,right=w-70,gap=42,colW=(right-left-gap)/2;
+  const top=640,rowH=385;
+  cols.forEach(([title,list],idx)=>{
+    const col=idx%2,row=Math.floor(idx/2);const x=left+col*(colW+gap),y=top+row*rowH;
+    socialMinimalLabel(ctx,title,x,y,palette,{size:28,maxWidth:colW});
+    ctx.fillStyle=palette.accent;ctx.fillRect(x,y+18,colW,3);
+    const names=list.length?list.map(p=>`${p.shirt_number?`${p.shirt_number}  `:''}${socialUpper(p.last_name||p.first_name||'—')}`):['—'];
+    const size=socialFitLines(ctx,names,colW,34,21,'condensed',900);
+    names.slice(0,9).forEach((name,i)=>socialText(ctx,name,x,y+68+i*42,{color:palette.white,size,kind:'condensed',weight:900,maxWidth:colW}));
+  });
+
+  const staffY=1435;
+  socialMinimalRule(ctx,70,staffY-45,w-70,palette);
+  socialMinimalLabel(ctx,'ALLENATORE',70,staffY,palette,{size:23});
+  socialText(ctx,socialUpper(data.coaches.join(' · ')||'—'),70,staffY+48,{color:palette.white,size:28,kind:'condensed',weight:900,maxWidth:w*.42});
+  socialMinimalLabel(ctx,'STAFF',w*.56,staffY,palette,{size:23});
+  socialText(ctx,socialUpper(data.staff.join(' · ')||'—'),w*.56,staffY+48,{color:palette.white,size:28,kind:'condensed',weight:900,maxWidth:w*.37});
+
+  const meet=data.m.meeting_at?socialMatchDateParts(data.m.meeting_at).time:'—';
+  socialMinimalRule(ctx,70,1555,w-70,palette);
+  socialMinimalLabel(ctx,'RITROVO',70,1610,palette,{size:23});
+  socialText(ctx,meet,70,1670,{color:palette.white,size:54,kind:'heavy',weight:900});
+  const venue=socialVenueParts(data);
+  socialText(ctx,socialUpper([venue.name,venue.city].filter(Boolean).join(' · ')),220,1660,{color:palette.muted,size:27,kind:'condensed',weight:800,maxWidth:w-290});
+
+  socialText(ctx,socialUpper(state.organization?.name||state.team?.name||'TEAM'),70,h-120,{color:palette.white,size:34,kind:'condensed',weight:900,maxWidth:w*.58});
+  socialText(ctx,socialUpper(state.season?.name||''),w-70,h-120,{color:palette.muted,size:25,align:'right',kind:'condensed',weight:900,maxWidth:w*.25});
+  ctx.fillStyle=palette.accent;ctx.fillRect(70,h-82,w-140,5);
 }
 function socialExtraResultText(data){
   const notes=String(data.ev.notes||'').trim();
@@ -11594,37 +11890,45 @@ function socialDrawScorerBox(ctx,x,y,w,h,title,lines,palette){
   display.slice(0,7).forEach((line,i)=>socialText(ctx,line,x+24,y+84+i*lineH,{color:palette.white,size,kind:'condensed',weight:900,maxWidth:w-48}));
 }
 function drawSocialFullTime(ctx,data,palette,w,h){
-  const seed=socialSeed(data.m.id+'fulltime');
-  socialBackground(ctx,w,h,palette,data.ownImg,seed);
-  socialHeadline(ctx,'FULL','TIME',w,205,palette,{line1Accent:false,line2Accent:true,size1:145,size2:145});
-  socialCompetitionStrip(ctx,w,345,data,palette,seed+10);
-
+  socialMinimalBase(ctx,w,h,palette,data.ownImg);
   const teams=socialDisplayedTeams(data);
   const score=socialDisplayedScore(data);
-  socialTeamLogo(ctx,teams.leftLogo,teams.leftCode,95,455,270,290,palette,seed+20);
-  socialTeamLogo(ctx,teams.rightLogo,teams.rightCode,w-365,455,270,290,palette,seed+21);
-  socialText(ctx,score.text,w/2,625,{color:palette.accent,size:112,align:'center',kind:'heavy',weight:900,maxWidth:300,stroke:palette.dark,strokeWidth:13,shadow:true});
-  const extra=socialExtraResultText(data);
-  if(extra){
-    socialBrush(ctx,w/2-145,665,290,45,palette.accent,seed+30,.95);
-    socialText(ctx,extra,w/2,698,{color:contrastColor(palette.accent),size:25,align:'center',kind:'condensed',weight:900,maxWidth:250});
-  }
-  socialText(ctx,socialUpper(teams.leftName),230,790,{color:palette.white,size:43,align:'center',kind:'condensed',weight:900,maxWidth:390});
-  socialText(ctx,socialUpper(teams.rightName),w-230,790,{color:palette.white,size:43,align:'center',kind:'condensed',weight:900,maxWidth:390});
-
   const goals=socialGoalGroups(data);
-  const leftLines=teams.leftIsUs?goals.us:goals.opponent;
-  const rightLines=teams.leftIsUs?goals.opponent:goals.us;
-  socialDrawScorerBox(ctx,60,845,450,260,'⚽ MARCATORI',leftLines,palette);
-  socialDrawScorerBox(ctx,w-510,845,450,260,'⚽ MARCATORI',rightLines,palette);
-
+  const leftGoals=teams.leftIsUs?goals.us:goals.opponent;
+  const rightGoals=teams.leftIsUs?goals.opponent:goals.us;
   const date=socialMatchDateParts(data.ev.start_at);
+  const comp=[data.competition?.name,data.m.round_label].filter(Boolean).join(' · ')||'PARTITA';
+
+  socialMinimalLabel(ctx,comp,65,76,palette,{size:22,maxWidth:w-130});
+  socialText(ctx,'FULL TIME',65,230,{color:palette.white,size:125,kind:'heavy',weight:900,maxWidth:w-130});
+  socialText(ctx,date.dateLong,67,285,{color:palette.muted,size:24,kind:'condensed',weight:800,maxWidth:w-134});
+
+  const logoY=385,logoW=200,logoH=220;
+  socialMinimalLogo(ctx,teams.leftLogo,teams.leftCode,100,logoY,logoW,logoH,palette);
+  socialMinimalLogo(ctx,teams.rightLogo,teams.rightCode,w-300,logoY,logoW,logoH,palette);
+  socialText(ctx,score.text,w/2,515,{color:palette.accent,size:122,align:'center',baseline:'middle',kind:'heavy',weight:900});
+  socialText(ctx,socialUpper(teams.leftName),200,660,{color:palette.white,size:37,align:'center',kind:'condensed',weight:900,maxWidth:315});
+  socialText(ctx,socialUpper(teams.rightName),w-200,660,{color:palette.white,size:37,align:'center',kind:'condensed',weight:900,maxWidth:315});
+  const extra=socialExtraResultText(data);
+  if(extra)socialText(ctx,extra,w/2,720,{color:palette.muted,size:25,align:'center',kind:'condensed',weight:900,maxWidth:w-140});
+
+  socialMinimalRule(ctx,65,760,w-65,palette);
+  socialMinimalLabel(ctx,'MARCATORI',65,815,palette,{size:24});
+  const boxY=855,boxW=(w-150)/2,boxH=245;
+  ctx.fillStyle='rgba(255,255,255,.025)';ctx.fillRect(65,boxY,boxW,boxH);ctx.fillRect(85+boxW,boxY,boxW,boxH);
+  const drawGoalList=(lines,x)=>{
+    const arr=lines.length?lines:['—'];
+    const sz=socialFitLines(ctx,arr,boxW-38,28,18,'condensed',900);
+    arr.slice(0,6).forEach((line,i)=>socialText(ctx,line,x+18,boxY+48+i*34,{color:palette.white,size:sz,kind:'condensed',weight:900,maxWidth:boxW-36}));
+  };
+  drawGoalList(leftGoals,65);drawGoalList(rightGoals,85+boxW);
+
   const venue=socialVenueParts(data);
-  ctx.fillStyle='rgba(0,0,0,.64)';ctx.fillRect(55,1140,w-110,105);
-  socialText(ctx,date.dateLong,95,1205,{color:palette.white,size:25,kind:'condensed',weight:900,maxWidth:330});
-  socialText(ctx,socialUpper(venue.city||venue.name),w/2,1205,{color:palette.white,size:25,align:'center',kind:'condensed',weight:900,maxWidth:330});
-  socialText(ctx,date.time,w-95,1205,{color:palette.white,size:25,align:'right',kind:'condensed',weight:900,maxWidth:180});
-  socialFooter(ctx,w,h,palette);
+  socialMinimalRule(ctx,65,1145,w-65,palette);
+  socialText(ctx,socialUpper([venue.name,venue.city].filter(Boolean).join(' · ')),65,1205,{color:palette.white,size:25,kind:'condensed',weight:900,maxWidth:w*.67});
+  socialText(ctx,date.time,w-65,1205,{color:palette.accent,size:31,align:'right',kind:'heavy',weight:900,maxWidth:160});
+  socialText(ctx,socialUpper(state.organization?.name||state.team?.name||'TEAM'),65,h-62,{color:palette.muted,size:22,kind:'condensed',weight:900,maxWidth:w*.58});
+  ctx.fillStyle=palette.accent;ctx.fillRect(65,h-38,w-130,5);
 }
 async function generateMatchGraphic(matchId,variant='story_match'){
   const data=await gatherMatchMediaData(matchId);
@@ -11826,8 +12130,38 @@ function renderLiveBoard(matchId,d){
   return `<div class="live-board"><div class="card live-pitch-card"><div class="card-head"><h2>Campo</h2><span class="badge">Titolari a sinistra</span></div><div class="live-pitch-layout">${zoneOrder.map(([key,label])=>`<div class="live-pitch-zone ${key}"><div class="live-pitch-zone-label">${label}</div>${buckets.byCat[key].map(p=>`<div class="live-pitch-slot" data-live-drop="position" data-live-drop-value="${p.pos?.id||p.starting_position_id||''}" data-live-drop-player="${p.player_id}">${livePlayerChip(p,p.pos,false)}</div>`).join('')||`<div class="live-pitch-slot empty" data-live-drop="position" data-live-drop-value="">Trascina qui</div>`}</div>`).join('')}</div><div class="live-board-note">Clicca un giocatore per registrare un evento rapido. Trascina per cambiare posizione o fare una sostituzione con la panchina.</div></div><div class="card live-bench-card"><div class="card-head"><h2>Panchina</h2><span class="badge">a destra</span></div><div class="live-bench-list" data-live-drop="bench">${buckets.bench.map(p=>`<div class="live-pitch-slot" data-live-drop="bench" data-live-drop-player="${p.player_id}">${livePlayerChip(p,null,true)}</div>`).join('')||`<div class="empty">Nessun convocato in panchina</div>`}</div></div></div>`;
 }
 
+function miniTeamLogoHtml(url,name,code){
+  if(url)return `<img class="match-mini-logo" src="${esc(url)}" alt="${esc(name||'Squadra')}">`;
+  return `<span class="match-mini-fallback">${esc(codeFromName(code||name||'TEAM'))}</span>`;
+}
+function matchRecordVenue(m,ev,venueMap,opponent){
+  const venue=venueMap.get(m.venue_id||ev?.venue_id)||null;
+  const city=venue?.city||(m.home_away==='away'?opponent?.home_city:'')||'';
+  const address=venue?.address_line||(m.home_away==='away'?opponent?.home_address_line:'')||'';
+  return {
+    city:city||'—',
+    address:address||'—',
+    venueName:venue?.name||ev?.location||opponent?.home_venue_name||'Campo da definire'
+  };
+}
+function openMatchUtilities(matchId,status){
+  const finished=['finished','finalized'].includes(status);
+  const internal=!isFanAudience();
+  showModal('Utilità partita',`
+    <div class="social-action-grid">
+      <button class="btn" id="utility-story-match">🖼️ Story partita 9:16</button>
+      ${internal?`<button class="btn" id="utility-story-callups">👥 Story convocazioni 9:16</button><button class="btn" id="utility-copy-callups">📋 Copia convocazioni</button>`:''}
+      ${finished?`<button class="btn" id="utility-result-post">🏁 Risultato 4:5</button>`:''}
+    </div>
+  `,root=>{
+    $('#utility-story-match',root).onclick=()=>generateMatchGraphic(matchId,'story_match').catch(err=>toast(err.message,'error'));
+    $('#utility-story-callups',root)?.addEventListener('click',()=>generateMatchGraphic(matchId,'story_callups').catch(err=>toast(err.message,'error')));
+    $('#utility-copy-callups',root)?.addEventListener('click',()=>copyCallupsToClipboard(matchId).catch(err=>toast(err.message,'error')));
+    $('#utility-result-post',root)?.addEventListener('click',()=>generateMatchGraphic(matchId,'result_post').catch(err=>toast(err.message,'error')));
+  });
+}
 async function pageMatches(){
-  const [matches,competitions]=await Promise.all([
+  const [matches,competitions,opponents,venues]=await Promise.all([
     must(
       supabase.from("matches")
         .select("*")
@@ -11841,6 +12175,16 @@ async function pageMatches(){
         .eq("team_id",state.team.id)
         .eq("season_id",state.season.id)
         .order("name")
+    ),
+    must(
+      supabase.from("opponent_teams")
+        .select("*")
+        .eq("team_id",state.team.id)
+    ),
+    must(
+      supabase.from("venues")
+        .select("*")
+        .eq("team_id",state.team.id)
     )
   ]);
 
@@ -11849,6 +12193,9 @@ async function pageMatches(){
     ? await must(supabase.from("events").select("*").in("id",eventIds))
     : [];
   const em=new Map(events.map(e=>[e.id,e]));
+  const om=new Map(opponents.map(o=>[o.id,o]));
+  const vm=new Map(venues.map(v=>[v.id,v]));
+  const cm=new Map(competitions.map(c=>[c.id,c]));
 
   const scores=await must(
     supabase.from("v_match_score")
@@ -11860,88 +12207,94 @@ async function pageMatches(){
 
   const filters=matchFilterState();
   const filtered=matches.filter(m=>{
-    if(filters.competition!=='all' && m.competition_id!==filters.competition)return false;
-    if(filters.location!=='all' && matchLocationFilterValue(m)!==filters.location)return false;
+    if(filters.competition!=='all'&&m.competition_id!==filters.competition)return false;
+    if(filters.location!=='all'&&matchLocationFilterValue(m)!==filters.location)return false;
     return true;
+  }).sort((a,b)=>{
+    const ea=em.get(a.event_id),eb=em.get(b.event_id);
+    return new Date(ea?.start_at||0)-new Date(eb?.start_at||0);
   });
 
   const scheduled=matches.filter(m=>!matchHasStarted(m.status)).length;
   const live=matches.filter(m=>["live","paused"].includes(m.status)).length;
   const finished=matches.filter(m=>["finished","finalized"].includes(m.status)).length;
 
+  const ownName=ownTeamDisplayName();
+  const ownLogo=effectiveTeamLogoUrl();
+
   renderShell("Partite",`
     <div class="page-title">
       <div>
         <h1>Partite</h1>
-        <p>Competizione, convocazioni, formazione, LIVE, filtri e contenuti social.</p>
+        <p>Calendario gare, LIVE, convocazioni e contenuti social.</p>
       </div>
       <div class="actions">
-        ${can("matches.setup")?`<button class="btn btn-sm setup-button" id="match-setup">⚙ Setup partite</button>`:""}
+        ${can("matches.setup")?`<button class="btn btn-sm setup-button" id="match-setup">⚙ Setup</button>`:""}
         ${can("matches.manage")?`<button class="btn btn-primary" id="new-match">Nuova partita</button>`:""}
       </div>
     </div>
 
     ${sectionKpis([
-      {icon:"⚽",value:matches.length,label:"Partite totali"},
+      {icon:"⚽",value:matches.length,label:"Partite"},
       {icon:"📅",value:scheduled,label:"Da giocare"},
       {icon:"🔴",value:live,label:"In corso"},
       {icon:"🏁",value:finished,label:"Terminate"}
     ])}
 
-    <div class="match-list-filters card">
-      <div class="field">
-        <label>Competizione</label>
-        <select id="match-filter-competition">
-          <option value="all">Tutte</option>
+    <div class="match-filter-bar">
+      <div class="compact-filter">🏆
+        <select id="match-filter-competition" aria-label="Filtra per competizione">
+          <option value="all">Tutte le competizioni</option>
           ${competitions.map(c=>`<option value="${c.id}" ${filters.competition===c.id?'selected':''}>${esc(c.name)}</option>`).join('')}
         </select>
       </div>
-      <div class="field">
-        <label>Casa / trasferta</label>
-        <select id="match-filter-location">
-          <option value="all" ${filters.location==='all'?'selected':''}>Tutte</option>
+      <div class="compact-filter">📍
+        <select id="match-filter-location" aria-label="Filtra casa o trasferta">
+          <option value="all" ${filters.location==='all'?'selected':''}>Casa + trasferta</option>
           <option value="home" ${filters.location==='home'?'selected':''}>Casa</option>
           <option value="away" ${filters.location==='away'?'selected':''}>Trasferta / neutro</option>
         </select>
       </div>
+      ${(filters.competition!=='all'||filters.location!=='all')?`<button class="btn btn-sm btn-ghost filter-reset" id="match-filter-reset">× filtri</button>`:''}
     </div>
 
-    <div class="calendar-event-list">
+    <div class="list" style="gap:5px">
       ${filtered.map(m=>{
         const e=em.get(m.event_id);
-        const score=sm.get(m.id);
-        const fallbackTitle=m.home_away==="away"
-          ? `${m.opponent_name} - ${state.team.short_name||state.team.name}`
-          : `${state.team.short_name||state.team.name} - ${m.opponent_name}`;
-        const title=e?.title||fallbackTitle;
-        const d=e?calendarDateParts(e.start_at):{day:"--",month:"---",time:"--:--"};
+        const opponent=om.get(m.opponent_id)||null;
+        const competition=cm.get(m.competition_id)||null;
+        const venue=matchRecordVenue(m,e,vm,opponent);
+        const d=e?calendarDateParts(e.start_at):{day:'--',month:'---',time:'--:--'};
         const started=matchHasStarted(m.status);
-        const scoreText=started
-          ? (m.home_away==='away'?`${score?.goals_against||0}-${score?.goals_for||0}`:`${score?.goals_for||0}-${score?.goals_against||0}`)
+        const score=sm.get(m.id)||{goals_for:0,goals_against:0};
+        const ownHome=m.home_away!=='away';
+        const homeName=ownHome?ownName:opponentDisplayName(opponent);
+        const awayName=ownHome?opponentDisplayName(opponent):ownName;
+        const homeLogo=ownHome?ownLogo:opponent?.logo_url;
+        const awayLogo=ownHome?opponent?.logo_url:ownLogo;
+        const homeCode=ownHome?(state.team.short_name||ownName):(opponent?.short_name||opponent?.name);
+        const awayCode=ownHome?(opponent?.short_name||opponent?.name):(state.team.short_name||ownName);
+        const separator=started
+          ? (m.home_away==='away'?`${score.goals_against||0}-${score.goals_for||0}`:`${score.goals_for||0}-${score.goals_against||0}`)
           : 'VS';
-        return `<div class="calendar-event-row" data-match="${m.id}">
-          <div class="calendar-event-main">
-            <div class="calendar-event-title">${esc(title)}</div>
-            <div class="calendar-event-place">
-              <span class="calendar-event-time-inline">${d.time}</span>
-              · ${esc(e?.location||"Luogo non indicato")}
-              · ${esc(m.home_away==='home'?'Casa':m.home_away==='away'?'Trasferta':'Neutro')}
-            </div>
-            <div class="calendar-event-place">${esc(m.status)}${m.round_label?` · ${esc(m.round_label)}`:''}</div>
-            <div class="match-row-actions">
-              <button class="btn btn-sm btn-primary" data-open-match="${m.id}">Apri</button>
-              <button class="btn btn-sm" data-social-match="${m.id}">Story match</button>
-              <button class="btn btn-sm" data-social-callups="${m.id}">Story convocati</button>
-              <button class="btn btn-sm" data-copy-callups="${m.id}">Copia convocazioni</button>
-              ${["finished","finalized"].includes(m.status)?`<button class="btn btn-sm" data-social-result="${m.id}">Post risultato</button>`:''}
-            </div>
+
+        return `<div class="match-record" data-open-match-record="${m.id}" tabindex="0" role="button">
+          <div class="match-date-block"><strong>${d.day}</strong><span>${d.month}</span></div>
+          <div class="match-ha-icon" title="${esc(m.home_away==='home'?'Casa':m.home_away==='away'?'Trasferta':'Neutro')}">${matchLocationIcon(m.home_away)}</div>
+          <div class="match-versus-line" title="${esc(homeName)} ${separator} ${esc(awayName)}">
+            ${miniTeamLogoHtml(homeLogo,homeName,homeCode)}
+            <strong>${esc(homeName)}</strong>
+            <span class="match-versus-sep">${separator}</span>
+            <strong>${esc(awayName)}</strong>
+            ${miniTeamLogoHtml(awayLogo,awayName,awayCode)}
           </div>
-          <div class="calendar-event-date score-tile">
-            <div class="calendar-event-score">${scoreText}</div>
-            <div class="calendar-event-date-label">${d.day} ${d.month}</div>
-          </div>
+          <div class="match-record-meta match-record-competition"><strong>${esc(competition?.name||'Partita')}</strong>${m.round_label?` · ${esc(m.round_label)}`:''}</div>
+          <div class="match-record-meta match-record-city">${esc(venue.city)}</div>
+          <div class="match-record-meta match-record-address" title="${esc(venue.address)}">${esc(venue.address)}</div>
+          <div class="match-record-time">${d.time}</div>
+          <button class="btn btn-sm match-print-button" type="button" data-match-print="${m.id}" title="Stampa / condividi">🖨️</button>
         </div>`;
-      }).join('')||`<div class="empty">Nessuna partita trovata con i filtri selezionati</div>`}
+      }).join('')||`<div class="empty">Nessuna partita con questi filtri</div>`}
     </div>
   `);
 
@@ -11949,11 +12302,17 @@ async function pageMatches(){
   $("#new-match")?.addEventListener("click",()=>openMatchConfigurator(()=>pageMatches()));
   $("#match-filter-competition")?.addEventListener('change',e=>{matchFilterState().competition=e.target.value;pageMatches();});
   $("#match-filter-location")?.addEventListener('change',e=>{matchFilterState().location=e.target.value;pageMatches();});
-  $$('[data-open-match]').forEach(b=>b.onclick=()=>pageMatch(b.dataset.openMatch));
-  $$('[data-social-match]').forEach(b=>b.onclick=()=>generateMatchGraphic(b.dataset.socialMatch,'story_match').catch(err=>toast(err.message,'error')));
-  $$('[data-social-callups]').forEach(b=>b.onclick=()=>generateMatchGraphic(b.dataset.socialCallups,'story_callups').catch(err=>toast(err.message,'error')));
-  $$('[data-social-result]').forEach(b=>b.onclick=()=>generateMatchGraphic(b.dataset.socialResult,'result_post').catch(err=>toast(err.message,'error')));
-  $$('[data-copy-callups]').forEach(b=>b.onclick=()=>copyCallupsToClipboard(b.dataset.copyCallups).catch(err=>toast(err.message,'error')));
+  $("#match-filter-reset")?.addEventListener('click',()=>{state.matchFilters={competition:'all',location:'all'};pageMatches();});
+
+  $$('[data-open-match-record]').forEach(row=>{
+    row.onclick=e=>{if(e.target.closest('[data-match-print]'))return;pageMatch(row.dataset.openMatchRecord)};
+    row.onkeydown=e=>{if(e.key==='Enter')pageMatch(row.dataset.openMatchRecord)};
+  });
+  $$('[data-match-print]').forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const m=matches.find(x=>x.id===b.dataset.matchPrint);
+    openMatchUtilities(b.dataset.matchPrint,m?.status||'scheduled');
+  });
 }
 
 async function pageMatch(id){
@@ -12002,8 +12361,7 @@ async function pageMatch(id){
         ${selfAttendanceButton(ev)}
         ${can("matches.manage")?`<button class="btn" id="edit-match">✎ Modifica partita</button>`:""}
         ${can("live.view")?`<button class="btn btn-primary" id="open-live">Apri LIVE</button>`:""}
-        ${can("matches.manage")?`<button class="btn" id="share-match-story">Story match</button><button class="btn" id="share-callups-story">Story convocati</button><button class="btn" id="copy-callups">Copia convocazioni</button>`:""}
-        ${(m.status==="finished"||m.status==="finalized")?`<button class="btn" id="share-result-post">Post risultato</button>`:""}
+        <button class="btn" id="match-print-utilities" title="Stampa / copia">🖨️</button>
         ${m.status==="finished"&&can("matches.finalize")?`<button class="btn" id="finalize">Finalizza</button>`:""}
         ${(can('live.control')||can('matches.manage'))?`<button class="btn btn-danger" id="reset-match-live">Reset LIVE</button>`:''}
       </div>
@@ -12020,16 +12378,6 @@ async function pageMatch(id){
       </div>
     </div>
 
-    <div style="height:12px"></div>
-    <div class="card">
-      <div class="card-head"><h2>Social e condivisione</h2><span class="badge">PNG + testo</span></div>
-      <div class="social-action-grid">
-        <button class="btn" id="social-story-match-card">Genera immagine 9:16 match</button>
-        <button class="btn" id="social-story-callups-card">Genera immagine 9:16 convocazioni</button>
-        <button class="btn" id="social-copy-callups-card">Copia testo convocazioni</button>
-        ${(m.status==='finished'||m.status==='finalized')?`<button class="btn" id="social-result-post-card">Genera risultato 4:5</button>`:`<div class="muted">La grafica risultato si abilita a fine partita.</div>`}
-      </div>
-    </div>
 
     ${isStaffAudience()&&selfReports.length?`
       <div style="height:10px"></div>
@@ -12081,10 +12429,7 @@ async function pageMatch(id){
   $('#edit-match')?.addEventListener('click',()=>openMatchEditModal(id,()=>pageMatch(id)));
   $('#open-live')?.addEventListener('click',()=>route(`live/${id}`));
   $('#rate-match')?.addEventListener('click',()=>openRatings(id));
-  ['share-match-story','social-story-match-card'].forEach(idBtn=>$("#"+idBtn)?.addEventListener('click',()=>generateMatchGraphic(id,'story_match').catch(err=>toast(err.message,'error'))));
-  ['share-callups-story','social-story-callups-card'].forEach(idBtn=>$("#"+idBtn)?.addEventListener('click',()=>generateMatchGraphic(id,'story_callups').catch(err=>toast(err.message,'error'))));
-  ['copy-callups','social-copy-callups-card'].forEach(idBtn=>$("#"+idBtn)?.addEventListener('click',()=>copyCallupsToClipboard(id).catch(err=>toast(err.message,'error'))));
-  ['share-result-post','social-result-post-card'].forEach(idBtn=>$("#"+idBtn)?.addEventListener('click',()=>generateMatchGraphic(id,'result_post').catch(err=>toast(err.message,'error'))));
+  $('#match-print-utilities')?.addEventListener('click',()=>openMatchUtilities(id,m.status));
   $('#reset-match-live')?.addEventListener('click',()=>resetMatchLive(id));
 
   $('#finalize')?.addEventListener('click',async()=>{ try{ await edge('match-finalize',{match_id:id}); toast('Partita finalizzata','ok'); pageMatch(id);}catch(err){ toast(err.message,'error'); } });
@@ -13279,125 +13624,104 @@ async function pageAbsences(){
 
   const injuryActive=injuries.filter(x=>["active","recovering"].includes(x.status)).length;
   const suspActive=suspensions.filter(x=>x.status==="active").length;
-  const otherActive=others.filter(x=>x.status==="active" && (!x.end_date||x.end_date>=today())).length;
+  const otherActive=others.filter(x=>x.status==="active"&&(!x.end_date||x.end_date>=today())).length;
+  const futureOther=others.filter(x=>x.status==="active"&&x.start_date>today()).length;
+
+  const playerName=(pid)=>{
+    const p=pm.get(pid);if(!p)return 'Calciatore';
+    return `${p.last_name||''} ${p.first_name||''}`.trim();
+  };
+  const roleBadge=(pid)=>genericMap.get(pid)?`<span class="roster-generic-role role-${esc(genericMap.get(pid))}">${esc(genericMap.get(pid))}</span>`:'';
 
   const injuryRows=injuries.map(x=>{
-    const p=pm.get(x.player_id);
-    return `<div class="list-item">
-      <div>
-        <div>${playerListIdentity(p,genericMap.get(x.player_id))}</div>
-        <strong>${esc(x.public_summary||"Infortunio")}</strong>
-        <div class="muted">${fmtDate(x.injury_date)} → ${fmtDate(x.actual_return||x.expected_return)} · ${esc(x.status)}</div>
+    const active=["active","recovering"].includes(x.status);
+    return `<div class="absence-record">
+      <div class="absence-record-main">
+        <div class="absence-record-title">${roleBadge(x.player_id)}<strong>${esc(playerName(x.player_id))}</strong></div>
+        <div class="absence-record-meta">🤕 ${esc(x.public_summary||'Infortunio')}<br>${fmtDate(x.injury_date)} → ${fmtDate(x.actual_return||x.expected_return)||'—'}</div>
       </div>
-      <span class="badge ${["active","recovering"].includes(x.status)?"red":"green"}">Infortunio</span>
+      <div class="absence-record-actions"><span class="badge ${active?'red':'green'}">${active?'attivo':esc(x.status)}</span></div>
     </div>`;
-  }).join("");
+  }).join('');
 
   const suspRows=suspensions.map(x=>{
-    const p=pm.get(x.player_id);
-    return `<div class="list-item">
-      <div>
-        <div>${playerListIdentity(p,genericMap.get(x.player_id))}</div>
-        <strong>${esc(x.reason||x.suspension_type)}</strong>
-        <div class="muted">${x.matches_served}/${x.matches_count} giornate · ${esc(x.status)}</div>
+    const active=x.status==='active';
+    return `<div class="absence-record">
+      <div class="absence-record-main">
+        <div class="absence-record-title">${roleBadge(x.player_id)}<strong>${esc(playerName(x.player_id))}</strong></div>
+        <div class="absence-record-meta">🟥 ${esc(x.reason||x.suspension_type||'Squalifica')}<br>${x.matches_served||0}/${x.matches_count||0} giornate · ${fmtDate(x.issued_date)}</div>
       </div>
-      <span class="badge ${x.status==="active"?"red":"green"}">Squalifica</span>
+      <div class="absence-record-actions"><span class="badge ${active?'red':'green'}">${active?'attiva':esc(x.status)}</span></div>
     </div>`;
-  }).join("");
+  }).join('');
 
   const otherRows=others.map(x=>{
+    const active=x.status==='active'&&(!x.end_date||x.end_date>=today());
+    const future=x.status==='active'&&x.start_date>today();
     const p=pm.get(x.player_id);
-    const active=x.status==="active"&&(!x.end_date||x.end_date>=today());
-    return `<div class="list-item">
-      <div>
-        <div>${playerListIdentity(p,genericMap.get(x.player_id))}</div>
-        <strong>${esc(absenceTypeLabel(x.absence_type))}</strong>
-        <div class="muted">${fmtDate(x.start_date)}${x.end_date?` → ${fmtDate(x.end_date)}`:" → senza data fine"}${x.reason?` · ${esc(x.reason)}`:""}</div>
+    return `<div class="absence-record">
+      <div class="absence-record-main">
+        <div class="absence-record-title">${roleBadge(x.player_id)}<strong>${esc(playerName(x.player_id))}</strong></div>
+        <div class="absence-record-meta">${esc(absenceTypeLabel(x.absence_type))}${x.reason?` · ${esc(x.reason)}`:''}<br>${fmtDate(x.start_date)}${x.end_date?` → ${fmtDate(x.end_date)}`:' → senza data fine'}</div>
       </div>
-      <div class="actions">
-        <span class="badge ${active?"red":"green"}">${active?"Indisponibile":esc(x.status)}</span>
-        ${state.myPlayer?.id===x.player_id&&x.created_by===state.profile.id&&x.status==="active"&&x.start_date>=today()
-          ? `<button class="btn btn-sm btn-ghost" data-cancel-own-unavailability="${x.id}">Annulla</button>`
-          : ""
-        }
-        ${can("absences.manage")&&x.status==="active"?`<button class="btn btn-sm" data-close-unavailability="${x.id}">Chiudi</button>`:""}
+      <div class="absence-record-actions">
+        <span class="badge ${active?'red':future?'yellow':'green'}">${future?'prevista':active?'in corso':esc(x.status)}</span>
+        ${state.myPlayer?.id===x.player_id&&x.created_by===state.profile.id&&x.status==='active'&&x.start_date>=today()?`<button class="btn btn-sm btn-ghost" data-cancel-own-unavailability="${x.id}">Annulla</button>`:''}
+        ${can("absences.manage")&&x.status==='active'?`<button class="btn btn-sm" data-close-unavailability="${x.id}">Chiudi</button>`:''}
       </div>
     </div>`;
-  }).join("");
+  }).join('');
 
   renderShell("Assenze",`
     <div class="page-title">
-      <div>
-        <h1>Assenze</h1>
-        <p>Infortuni, squalifiche e altre indisponibilità della rosa.</p>
-      </div>
+      <div><h1>Assenze</h1><p>Situazione corrente, prevista e disciplinare della rosa.</p></div>
       <div class="actions">
-        ${state.myPlayer&&can("absences.view_own")?`<button class="btn btn-primary" id="absence-new-own">➕ Segnala mia assenza</button>`:""}
-        ${can("injuries.manage")?`<button class="btn" id="absence-new-injury">+ Infortunio</button>`:""}
-        ${can("suspensions.manage")?`<button class="btn" id="absence-new-susp">+ Squalifica</button>`:""}
-        ${can("absences.manage")?`<button class="btn" id="absence-new-other">+ Indisponibilità staff</button>`:""}
+        ${state.myPlayer&&can("absences.view_own")?`<button class="btn btn-primary" id="absence-new-own">➕ Mia assenza</button>`:''}
+        ${can("injuries.manage")?`<button class="btn" id="absence-new-injury">+ Infortunio</button>`:''}
+        ${can("suspensions.manage")?`<button class="btn" id="absence-new-susp">+ Squalifica</button>`:''}
+        ${can("absences.manage")?`<button class="btn" id="absence-new-other">+ Indisponibilità</button>`:''}
       </div>
     </div>
 
     ${sectionKpis([
-      {icon:"🤕",value:injuryActive,label:"Infortuni attivi"},
-      {icon:"🟥",value:suspActive,label:"Squalifiche attive"},
-      {icon:"❌",value:otherActive,label:"Indisponibilità attive"},
-      {icon:"📅",value:others.filter(x=>x.status==="active"&&x.start_date>today()).length,label:"Assenze future"}
+      {icon:'🤕',value:injuryActive,label:'Infortuni attivi'},
+      {icon:'🟥',value:suspActive,label:'Squalifiche attive'},
+      {icon:'❌',value:otherActive,label:'Indisponibili'},
+      {icon:'📅',value:futureOther,label:'Previste'}
     ])}
-    <div class="grid grid-2">
-      <div class="card"><h2>Infortuni</h2><div class="list">${injuryRows||`<div class="empty">Nessun infortunio</div>`}</div></div>
-      <div class="card"><h2>Squalifiche</h2><div class="list">${suspRows||`<div class="empty">Nessuna squalifica</div>`}</div></div>
+
+    <div class="absence-board">
+      <section class="card absence-column">
+        <div class="absence-column-head"><h2>🤕 Infortuni</h2><span class="badge ${injuryActive?'red':''}">${injuries.length}</span></div>
+        <div class="absence-scroll">${injuryRows||`<div class="empty">Nessun infortunio</div>`}</div>
+      </section>
+      <section class="card absence-column">
+        <div class="absence-column-head"><h2>🟥 Squalifiche</h2><span class="badge ${suspActive?'red':''}">${suspensions.length}</span></div>
+        <div class="absence-scroll">${suspRows||`<div class="empty">Nessuna squalifica</div>`}</div>
+      </section>
+      <section class="card absence-column">
+        <div class="absence-column-head"><h2>❌ Indisponibilità</h2><span class="badge ${otherActive?'red':''}">${others.length}</span></div>
+        <div class="absence-scroll">${otherRows||`<div class="empty">Nessuna indisponibilità</div>`}</div>
+      </section>
     </div>
-    <div style="height:14px"></div>
-    <div class="card"><h2>Altre indisponibilità</h2><div class="list">${otherRows||`<div class="empty">Nessuna indisponibilità</div>`}</div></div>
   `);
 
   $("#absence-new-own")?.addEventListener("click",openMyPlannedAbsenceModal);
-
   $("#absence-new-injury")?.addEventListener("click",()=>simpleEntityModal("Nuovo infortunio",players,async(root,pid)=>{
-    await must(supabase.from("injuries").insert({
-      team_id:state.team.id,season_id:state.season.id,player_id:pid,status:"active",
-      injury_date:$("#entity-date",root).value,
-      expected_return:$("#entity-end",root).value||null,
-      public_summary:$("#entity-reason",root).value,
-      created_by:state.profile.id
-    }));
+    await must(supabase.from("injuries").insert({team_id:state.team.id,season_id:state.season.id,player_id:pid,status:"active",injury_date:$("#entity-date",root).value,expected_return:$("#entity-end",root).value||null,public_summary:$("#entity-reason",root).value,created_by:state.profile.id}));
     pageAbsences();
   }));
-
   $("#absence-new-susp")?.addEventListener("click",()=>simpleEntityModal("Nuova squalifica",players,async(root,pid)=>{
-    await must(supabase.from("suspensions").insert({
-      team_id:state.team.id,season_id:state.season.id,player_id:pid,
-      suspension_type:"disciplinary",reason:$("#entity-reason",root).value,
-      issued_date:$("#entity-date",root).value,
-      matches_count:Number($("#entity-count",root).value)||1,
-      status:"active",created_by:state.profile.id
-    }));
+    await must(supabase.from("suspensions").insert({team_id:state.team.id,season_id:state.season.id,player_id:pid,suspension_type:"disciplinary",reason:$("#entity-reason",root).value,issued_date:$("#entity-date",root).value,matches_count:Number($("#entity-count",root).value)||1,status:"active",created_by:state.profile.id}));
     pageAbsences();
   },true));
-
   $("#absence-new-other")?.addEventListener("click",()=>openUnavailabilityModal(players));
 
-  $$("[data-cancel-own-unavailability]").forEach(b=>b.onclick=async()=>{
-    try{
-      await must(
-        supabase.rpc("cancel_my_planned_absence",{
-          p_absence_id:b.dataset.cancelOwnUnavailability
-        })
-      );
-      toast("Assenza prevista annullata","ok");
-      pageAbsences();
-    }catch(e){toast(e.message,"error")}
+  $$('[data-cancel-own-unavailability]').forEach(b=>b.onclick=async()=>{
+    try{await must(supabase.rpc('cancel_my_planned_absence',{p_absence_id:b.dataset.cancelOwnUnavailability}));toast('Assenza prevista annullata','ok');pageAbsences();}catch(e){toast(e.message,'error')}
   });
-
-  $$("[data-close-unavailability]").forEach(b=>b.onclick=async()=>{
-    try{
-      await must(supabase.from("player_unavailabilities")
-        .update({status:"closed",end_date:today()})
-        .eq("id",b.dataset.closeUnavailability));
-      pageAbsences();
-    }catch(e){toast(e.message,"error")}
+  $$('[data-close-unavailability]').forEach(b=>b.onclick=async()=>{
+    try{await must(supabase.from('player_unavailabilities').update({status:'closed',end_date:today()}).eq('id',b.dataset.closeUnavailability));pageAbsences();}catch(e){toast(e.message,'error')}
   });
 }
 
@@ -14132,418 +14456,122 @@ function openMedicalApprovalModal(appointment,players){
 
 async function pageCash(){
   await syncMedicalAbsencesSafe();
-
-  await must(
-    supabase.rpc("ensure_cash_setup",{
-      p_team_id:state.team.id,
-      p_season_id:state.season.id
-    })
-  );
+  await must(supabase.rpc("ensure_cash_setup",{p_team_id:state.team.id,p_season_id:state.season.id}));
 
   const [fines,fees,players,genericRows,assignments,plans,history]=await Promise.all([
-    must(
-      supabase.from("fines")
-        .select("*")
-        .eq("team_id",state.team.id)
-        .eq("season_id",state.season.id)
-        .order("fine_date",{ascending:false})
-    ),
-    must(
-      supabase.from("membership_fees")
-        .select("*")
-        .eq("team_id",state.team.id)
-        .eq("season_id",state.season.id)
-        .order("due_date",{ascending:true})
-    ),
-    must(
-      supabase.from("players")
-        .select("id,first_name,last_name,profile_id,photo_url")
-        .eq("team_id",state.team.id)
-        .order("last_name")
-    ),
-    must(
-      supabase.rpc("get_roster_generic_roles",{
-        p_team_id:state.team.id,
-        p_season_id:state.season.id
-      })
-    ),
-    must(
-      supabase.from("player_fee_plan_assignments")
-        .select("*")
-        .eq("team_id",state.team.id)
-        .eq("season_id",state.season.id)
-    ),
-    must(
-      supabase.from("season_fee_plans")
-        .select("*")
-        .eq("team_id",state.team.id)
-        .eq("season_id",state.season.id)
-    ),
-    must(
-      supabase.rpc("get_season_roster_history",{
-        p_team_id:state.team.id,
-        p_season_id:state.season.id
-      })
-    )
+    must(supabase.from("fines").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("fine_date",{ascending:false})),
+    must(supabase.from("membership_fees").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).order("due_date",{ascending:true})),
+    must(supabase.from("players").select("id,first_name,last_name,profile_id,photo_url").eq("team_id",state.team.id).order("last_name")),
+    must(supabase.rpc("get_roster_generic_roles",{p_team_id:state.team.id,p_season_id:state.season.id})),
+    must(supabase.from("player_fee_plan_assignments").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id)),
+    must(supabase.from("season_fee_plans").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id)),
+    must(supabase.rpc("get_season_roster_history",{p_team_id:state.team.id,p_season_id:state.season.id}))
   ]);
 
   const pm=new Map(players.map(p=>[p.id,p]));
   const gm=new Map(genericRows.map(x=>[x.player_id,x.generic_role_code||null]));
   const assignmentMap=new Map(assignments.map(x=>[x.player_id,x.payment_mode]));
   const now=today();
+  const singleAvailable=plans.some(x=>x.payment_mode==='single'&&x.active);
+  const installmentsAvailable=plans.some(x=>x.payment_mode==='installments'&&x.active);
+  const activeIds=new Set(history.filter(x=>x.roster_status==='active'&&now>=x.start_date&&now<=(x.actual_end_date||x.planned_end_date)).map(x=>x.player_id));
+  const visiblePlayers=(isStaffAudience()?players.filter(p=>activeIds.has(p.id)):players.filter(p=>p.profile_id===state.profile.id)).sort((a,b)=>String(a.last_name).localeCompare(String(b.last_name),'it'));
+  const visibleIds=new Set(visiblePlayers.map(p=>p.id));
+  const activeFees=fees.filter(x=>x.status!=='cancelled'&&visibleIds.has(x.player_id));
+  const activeFines=fines.filter(x=>x.status!=='cancelled'&&visibleIds.has(x.player_id));
 
-  const singleAvailable=plans.some(x=>x.payment_mode==="single"&&x.active);
-  const installmentsAvailable=plans.some(x=>x.payment_mode==="installments"&&x.active);
+  const pendingFines=activeFines.filter(x=>x.status==='pending').reduce((a,x)=>a+Number(x.amount||0),0);
+  const pendingFees=activeFees.filter(x=>x.status==='pending').reduce((a,x)=>a+Number(x.amount||0),0);
+  const overdueFees=activeFees.filter(x=>x.status==='pending'&&x.due_date&&x.due_date<now).reduce((a,x)=>a+Number(x.amount||0),0);
+  const paid=activeFines.filter(x=>x.status==='paid').reduce((a,x)=>a+Number(x.amount||0),0)+activeFees.filter(x=>x.status==='paid').reduce((a,x)=>a+Number(x.amount||0),0);
 
-  const activeIds=new Set(
-    history
-      .filter(x=>
-        x.roster_status==="active"
-        && now>=x.start_date
-        && now<=(x.actual_end_date||x.planned_end_date)
-      )
-      .map(x=>x.player_id)
-  );
+  const modeOptions=selected=>`<option value="single" ${selected==='single'?'selected':''} ${singleAvailable?'':'disabled'}>Una tantum</option><option value="installments" ${selected==='installments'?'selected':''} ${installmentsAvailable?'':'disabled'}>Dilazionato</option>`;
 
-  const visiblePlayers=isStaffAudience()
-    ? players.filter(p=>activeIds.has(p.id))
-    : players.filter(p=>p.profile_id===state.profile.id);
+  const feeStatus=x=>{
+    const overdue=x.status==='pending'&&x.due_date&&x.due_date<now;
+    const reported=x.payment_report_status==='reported';
+    const rejected=x.payment_report_status==='rejected';
+    let html=x.status==='paid'?`<span class="badge green">✅ pagata</span>`:x.status==='waived'?`<span class="badge green">abbuonata</span>`:reported?`<span class="badge yellow">⏳ in verifica</span>`:overdue?`<span class="badge red">scaduta</span>`:`<span class="badge">da pagare</span>`;
+    if(rejected&&x.status==='pending')html+=`<div class="payment-report-note">Respinta${x.payment_review_note?`: ${esc(x.payment_review_note)}`:''}</div>`;
+    return html;
+  };
 
-  const activeFines=fines.filter(x=>x.status!=="cancelled");
-  const activeFees=fees.filter(x=>x.status!=="cancelled");
-
-  const pendingFines=activeFines
-    .filter(x=>x.status==="pending")
-    .reduce((a,x)=>a+Number(x.amount||0),0);
-
-  const pendingFees=activeFees
-    .filter(x=>x.status==="pending")
-    .reduce((a,x)=>a+Number(x.amount||0),0);
-
-  const overdueFees=activeFees
-    .filter(x=>x.status==="pending"&&x.due_date&&x.due_date<now)
-    .reduce((a,x)=>a+Number(x.amount||0),0);
-
-  const paid=
-    activeFines.filter(x=>x.status==="paid").reduce((a,x)=>a+Number(x.amount||0),0)
-    +activeFees.filter(x=>x.status==="paid").reduce((a,x)=>a+Number(x.amount||0),0);
-
-  const modeOptions=(selected)=>`
-    <option value="single" ${selected==="single"?"selected":""} ${singleAvailable?"":"disabled"}>Una tantum</option>
-    <option value="installments" ${selected==="installments"?"selected":""} ${installmentsAvailable?"":"disabled"}>Dilazionato</option>
-  `;
-
-  const summaryRows=visiblePlayers.map(p=>{
-    const pf=activeFees.filter(x=>x.player_id===p.id);
-    const pending=pf.filter(x=>x.status==="pending");
+  const feeGroups=visiblePlayers.map(p=>{
+    const rows=activeFees.filter(x=>x.player_id===p.id).sort((a,b)=>String(a.due_date||'9999').localeCompare(String(b.due_date||'9999')));
+    const pending=rows.filter(x=>x.status==='pending');
     const overdue=pending.filter(x=>x.due_date&&x.due_date<now);
-    const reported=pending.filter(x=>x.payment_report_status==="reported");
-    const next=pending
-      .filter(x=>x.due_date)
-      .sort((a,b)=>a.due_date.localeCompare(b.due_date))[0]||null;
-    const mode=assignmentMap.get(p.id)||(singleAvailable?"single":installmentsAvailable?"installments":"single");
-    const canChoose=
-      (state.myPlayer?.id===p.id)
-      || can("fees.manage")
-      || can("cash.setup");
+    const reported=pending.filter(x=>x.payment_report_status==='reported');
+    const mode=assignmentMap.get(p.id)||(singleAvailable?'single':installmentsAvailable?'installments':'single');
+    const canChoose=state.myPlayer?.id===p.id||can('fees.manage')||can('cash.setup');
+    const totalPending=pending.reduce((a,x)=>a+Number(x.amount||0),0);
+    const groupState=overdue.length?`<span class="badge red">${overdue.length} scadut${overdue.length===1?'a':'e'}</span>`:reported.length?`<span class="badge yellow">pagamento in verifica</span>`:pending.length?`<span class="badge">€ ${totalPending.toFixed(2)} aperti</span>`:`<span class="badge green">regolare</span>`;
 
-    return `<tr>
-      <td>${playerListIdentity(p,gm.get(p.id))}</td>
-      <td>
-        <select class="cash-mode-select" data-fee-mode="${p.id}" ${canChoose?"":"disabled"}>
-          ${modeOptions(mode)}
-        </select>
-      </td>
-      <td>€ ${pending.reduce((a,x)=>a+Number(x.amount||0),0).toFixed(2)}</td>
-      <td>${next?fmtDate(next.due_date):"—"}</td>
-      <td>
-        ${overdue.length
-          ? `<span class="badge red">💰 ${overdue.length} scadut${overdue.length===1?"a":"e"}</span>`
-          : reported.length
-            ? `<span class="badge yellow">⏳ pagamento in verifica</span>`
-            : pending.length
-              ? `<span class="badge">aperta</span>`
-              : `<span class="badge green">regolare</span>`
-        }
-      </td>
-    </tr>`;
-  }).join("");
-
-  const feeRows=activeFees.map(x=>{
-    const overdue=x.status==="pending"&&x.due_date&&x.due_date<now;
-    const p=pm.get(x.player_id);
-    const own=state.myPlayer?.id===x.player_id;
-    const reported=x.payment_report_status==="reported";
-    const rejected=x.payment_report_status==="rejected";
-
-    let statusHtml=x.status==="paid"
-      ? `<span class="badge green">✅ pagata</span>`
-      : x.status==="waived"
-        ? `<span class="badge green">abbuonata</span>`
-        : reported
-          ? `<span class="badge yellow">⏳ segnalata pagata</span>`
-          : overdue
-            ? `<span class="badge red">scaduta</span>`
-            : `<span class="badge">da pagare</span>`;
-
-    if(rejected&&x.status==="pending"){
-      statusHtml+=`<div class="muted payment-report-note">Segnalazione respinta${x.payment_review_note?`: ${esc(x.payment_review_note)}`:""}</div>`;
-    }
-
-    return `<tr>
-      <td>${x.due_date?fmtDate(x.due_date):"—"}</td>
-      <td>${playerListIdentity(p,gm.get(x.player_id))}</td>
-      <td>${esc(x.title)}</td>
-      <td>€ ${Number(x.amount||0).toFixed(2)}</td>
-      <td>${statusHtml}</td>
-      <td>
-        <div class="payment-review-actions">
-          ${own&&x.status==="pending"&&!reported
-            ? `<button class="btn btn-sm btn-primary" data-report-fee-paid="${x.id}">✓ Ho pagato</button>`
-            : ""
-          }
-          ${can("fees.manage")&&reported
-            ? `<button class="btn btn-sm btn-primary" data-review-fee="${x.id}" data-action="approve">Approva</button>
-               <button class="btn btn-sm btn-danger" data-review-fee="${x.id}" data-action="reject">Rifiuta</button>`
-            : ""
-          }
-          ${can("fees.manage")&&x.status==="pending"&&!reported
-            ? `<button class="btn btn-sm" data-fee-paid="${x.id}">Pagata</button>
-               <button class="btn btn-sm btn-ghost" data-fee-waive="${x.id}">Abbuona</button>`
-            : ""
-          }
+    const lines=rows.length?rows.map(x=>{
+      const own=state.myPlayer?.id===x.player_id;
+      const reported=x.payment_report_status==='reported';
+      return `<div class="fee-line">
+        <div class="fee-line-date">${x.due_date?fmtDate(x.due_date):'—'}</div>
+        <div class="fee-line-title" title="${esc(x.title)}">${esc(x.title)}</div>
+        <div class="fee-line-amount">€ ${Number(x.amount||0).toFixed(2)}</div>
+        <div class="fee-line-status">${feeStatus(x)}</div>
+        <div class="fee-line-actions">
+          ${own&&x.status==='pending'&&!reported?`<button class="btn btn-sm btn-primary" data-report-fee-paid="${x.id}">✓ Ho pagato</button>`:''}
+          ${can('fees.manage')&&reported?`<button class="btn btn-sm btn-primary" data-review-fee="${x.id}" data-action="approve">Approva</button><button class="btn btn-sm btn-danger" data-review-fee="${x.id}" data-action="reject">Rifiuta</button>`:''}
+          ${can('fees.manage')&&x.status==='pending'&&!reported?`<button class="btn btn-sm" data-fee-paid="${x.id}">Pagata</button><button class="btn btn-sm btn-ghost" data-fee-waive="${x.id}">Abbuona</button>`:''}
         </div>
-      </td>
-    </tr>`;
-  }).join("");
+      </div>`;
+    }).join(''):`<div class="fee-empty-line">Nessuna quota generata per questo calciatore.</div>`;
+
+    return `<section class="fee-player-group">
+      <div class="fee-player-head">
+        <div>${playerListIdentity(p,gm.get(p.id))}</div>
+        <div><select class="cash-mode-select" data-fee-mode="${p.id}" ${canChoose?'':'disabled'}>${modeOptions(mode)}</select></div>
+        <div class="fee-player-state">${groupState}</div>
+      </div>
+      ${lines}
+    </section>`;
+  }).join('');
 
   const fineRows=activeFines.map(x=>{
-    const p=pm.get(x.player_id);
-    const own=state.myPlayer?.id===x.player_id;
-    const auto=x.source_kind==="match_event";
-    const reported=x.payment_report_status==="reported";
-    const rejected=x.payment_report_status==="rejected";
-
-    const statusHtml=x.status==="paid"
-      ? `<span class="badge green">✅ pagata</span>`
-      : reported
-        ? `<span class="badge yellow">⏳ segnalata pagata</span>`
-        : `<span class="badge">da pagare</span>`;
-
-    return `<tr>
-      <td>${fmtDate(x.fine_date)}</td>
-      <td>${playerListIdentity(p,gm.get(x.player_id))}</td>
-      <td>
-        ${esc(x.reason)}
-        ${auto?`<span class="badge cash-auto-tag">auto</span>`:""}
-        ${x.adjustment_note?`<div class="muted">${esc(x.adjustment_note)}</div>`:""}
-        ${rejected&&x.status==="pending"
-          ? `<div class="muted payment-report-note">Segnalazione respinta${x.payment_review_note?`: ${esc(x.payment_review_note)}`:""}</div>`
-          : ""
-        }
-      </td>
-      <td>€ ${Number(x.amount||0).toFixed(2)}</td>
-      <td>${statusHtml}</td>
-      <td>
-        <div class="payment-review-actions">
-          ${own&&x.status==="pending"&&!reported
-            ? `<button class="btn btn-sm btn-primary" data-report-fine-paid="${x.id}">✓ Ho pagato</button>`
-            : ""
-          }
-          ${can("fines.manage")&&reported
-            ? `<button class="btn btn-sm btn-primary" data-review-fine="${x.id}" data-action="approve">Approva</button>
-               <button class="btn btn-sm btn-danger" data-review-fine="${x.id}" data-action="reject">Rifiuta</button>`
-            : ""
-          }
-          ${can("fines.manage")
-            ? `<button class="btn btn-sm" data-edit-fine="${x.id}">Modifica</button>
-               ${x.status==="pending"&&!reported?`<button class="btn btn-sm" data-fine-paid="${x.id}">Pagata</button>`:""}`
-            : ""
-          }
-        </div>
-      </td>
-    </tr>`;
-  }).join("");
+    const p=pm.get(x.player_id);const own=state.myPlayer?.id===x.player_id;const auto=x.source_kind==='match_event';const reported=x.payment_report_status==='reported';const rejected=x.payment_report_status==='rejected';
+    const status=x.status==='paid'?`<span class="badge green">✅ pagata</span>`:reported?`<span class="badge yellow">⏳ in verifica</span>`:`<span class="badge">da pagare</span>`;
+    return `<tr><td>${fmtDate(x.fine_date)}</td><td>${playerListIdentity(p,gm.get(x.player_id))}</td><td>${esc(x.reason)}${auto?` <span class="badge cash-auto-tag">auto</span>`:''}${x.adjustment_note?`<div class="muted">${esc(x.adjustment_note)}</div>`:''}${rejected&&x.status==='pending'?`<div class="payment-report-note">Respinta${x.payment_review_note?`: ${esc(x.payment_review_note)}`:''}</div>`:''}</td><td>€ ${Number(x.amount||0).toFixed(2)}</td><td>${status}</td><td><div class="payment-review-actions">${own&&x.status==='pending'&&!reported?`<button class="btn btn-sm btn-primary" data-report-fine-paid="${x.id}">✓ Ho pagato</button>`:''}${can('fines.manage')&&reported?`<button class="btn btn-sm btn-primary" data-review-fine="${x.id}" data-action="approve">Approva</button><button class="btn btn-sm btn-danger" data-review-fine="${x.id}" data-action="reject">Rifiuta</button>`:''}${can('fines.manage')?`<button class="btn btn-sm" data-edit-fine="${x.id}">Modifica</button>${x.status==='pending'&&!reported?`<button class="btn btn-sm" data-fine-paid="${x.id}">Pagata</button>`:''}`:''}</div></td></tr>`;
+  }).join('');
 
   renderShell("Cassa",`
-    <div class="page-title">
-      <div>
-        <h1>Cassa</h1>
-        <p>Quote, modalità di pagamento e sanzioni della stagione ${esc(state.season.name)}.</p>
-      </div>
-      <div class="actions">
-        ${can("cash.setup")||can("fees.manage")||can("fines.categories_manage")
-          ? `<button class="btn" id="cash-setup">⚙ Setup Cassa</button>`
-          : ""
-        }
-        ${can("fines.manage")?`<button class="btn btn-primary" id="cash-new-fine">+ Multa</button>`:""}
-      </div>
-    </div>
-
-    ${sectionKpis([
-      {icon:"💳",value:`€ ${pendingFees.toFixed(2)}`,label:"Quote aperte"},
-      {icon:"⚠️",value:`€ ${overdueFees.toFixed(2)}`,label:"Quote scadute"},
-      {icon:"💸",value:`€ ${pendingFines.toFixed(2)}`,label:"Multe aperte"},
-      {icon:"💰",value:`€ ${paid.toFixed(2)}`,label:"Incassato"}
-    ])}
-
-    <div class="card cash-summary-card">
-      <div class="card-head">
-        <div>
-          <h2>💳 Riepilogo quote</h2>
-          <div class="muted">La modalità si sceglie direttamente qui. Il calciatore può selezionare autonomamente la propria formula.</div>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table class="table cash-table">
-          <thead><tr><th>Calciatore</th><th>Modalità</th><th>Da pagare</th><th>Prossima scadenza</th><th>Situazione</th></tr></thead>
-          <tbody>${summaryRows||`<tr><td colspan="5">Nessuna quota configurata</td></tr>`}</tbody>
-        </table>
-      </div>
-    </div>
+    <div class="page-title"><div><h1>Cassa</h1><p>Quote e multe della stagione ${esc(state.season.name)}.</p></div><div class="actions">${can('cash.setup')||can('fees.manage')||can('fines.categories_manage')?`<button class="btn" id="cash-setup">⚙ Setup Cassa</button>`:''}${can('fines.manage')?`<button class="btn btn-primary" id="cash-new-fine">+ Multa</button>`:''}</div></div>
+    ${sectionKpis([{icon:'💳',value:`€ ${pendingFees.toFixed(2)}`,label:'Quote aperte'},{icon:'⚠️',value:`€ ${overdueFees.toFixed(2)}`,label:'Quote scadute'},{icon:'💸',value:`€ ${pendingFines.toFixed(2)}`,label:'Multe aperte'},{icon:'💰',value:`€ ${paid.toFixed(2)}`,label:'Incassato'}])}
 
     <div class="card">
-      <h2>Dettaglio quote</h2>
-      <div class="table-wrap">
-        <table class="table cash-table">
-          <thead><tr><th>Scadenza</th><th>Calciatore</th><th>Rata</th><th>Importo</th><th>Stato</th><th>Azioni</th></tr></thead>
-          <tbody>${feeRows||`<tr><td colspan="6">Nessuna quota generata.</td></tr>`}</tbody>
-        </table>
-      </div>
+      <div class="card-head"><div><h2>💳 Quote</h2><div class="muted">Modalità, rate, scadenze e conferme nello stesso elenco.</div></div></div>
+      <div class="fees-unified-wrap"><div class="fee-unified-list">${feeGroups||`<div class="empty">Nessuna quota configurata</div>`}</div></div>
     </div>
 
-    <div style="height:10px"></div>
-
+    <div style="height:9px"></div>
     <div class="card">
-      <h2>Multe</h2>
-      <div class="table-wrap">
-        <table class="table cash-table">
-          <thead><tr><th>Data</th><th>Calciatore</th><th>Sanzione</th><th>Importo</th><th>Stato</th><th>Azioni</th></tr></thead>
-          <tbody>${fineRows||`<tr><td colspan="6">Nessuna multa</td></tr>`}</tbody>
-        </table>
-      </div>
+      <div class="card-head"><h2>💸 Multe</h2><span class="badge">${activeFines.length}</span></div>
+      <div class="table-wrap fines-scroll-wrap"><table class="table cash-table"><thead><tr><th>Data</th><th>Calciatore</th><th>Sanzione</th><th>Importo</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>${fineRows||`<tr><td colspan="6">Nessuna multa</td></tr>`}</tbody></table></div>
     </div>
   `);
 
   $("#cash-setup")?.addEventListener("click",openCashSetup);
   $("#cash-new-fine")?.addEventListener("click",()=>openFineModal(players,gm));
-
-  $$("[data-fee-mode]").forEach(sel=>sel.onchange=async()=>{
+  $$('[data-fee-mode]').forEach(sel=>sel.onchange=async()=>{
     const playerId=sel.dataset.feeMode;
     try{
-      if(state.myPlayer?.id===playerId&&!can("fees.manage")){
-        await must(
-          supabase.rpc("set_my_fee_payment_mode",{
-            p_team_id:state.team.id,
-            p_season_id:state.season.id,
-            p_payment_mode:sel.value
-          })
-        );
-      }else{
-        await must(
-          supabase.rpc("set_player_fee_payment_mode",{
-            p_team_id:state.team.id,
-            p_season_id:state.season.id,
-            p_player_id:playerId,
-            p_payment_mode:sel.value
-          })
-        );
-      }
-      toast("Modalità quota aggiornata","ok");
-      pageCash();
-    }catch(err){
-      toast(err.message,"error");
-      pageCash();
-    }
+      if(state.myPlayer?.id===playerId&&!can('fees.manage'))await must(supabase.rpc('set_my_fee_payment_mode',{p_team_id:state.team.id,p_season_id:state.season.id,p_payment_mode:sel.value}));
+      else await must(supabase.rpc('set_player_fee_payment_mode',{p_team_id:state.team.id,p_season_id:state.season.id,p_player_id:playerId,p_payment_mode:sel.value}));
+      toast('Modalità quota aggiornata','ok');pageCash();
+    }catch(err){toast(err.message,'error');pageCash()}
   });
-
-  $$("[data-report-fee-paid]").forEach(b=>b.onclick=async()=>{
-    try{
-      await must(supabase.rpc("report_my_fee_paid",{p_fee_id:b.dataset.reportFeePaid}));
-      toast("Pagamento segnalato alla dirigenza","ok");
-      pageCash();
-    }catch(err){toast(err.message,"error")}
-  });
-
-  $$("[data-report-fine-paid]").forEach(b=>b.onclick=async()=>{
-    try{
-      await must(supabase.rpc("report_my_fine_paid",{p_fine_id:b.dataset.reportFinePaid}));
-      toast("Pagamento multa segnalato alla dirigenza","ok");
-      pageCash();
-    }catch(err){toast(err.message,"error")}
-  });
-
-  $$("[data-review-fee]").forEach(b=>b.onclick=async()=>{
-    const action=b.dataset.action;
-    const note=action==="reject"?prompt("Motivo del rifiuto (facoltativo)",""):null;
-    try{
-      await must(
-        supabase.rpc("review_fee_payment_report",{
-          p_fee_id:b.dataset.reviewFee,
-          p_action:action,
-          p_note:note||null
-        })
-      );
-      toast(action==="approve"?"Pagamento approvato":"Segnalazione rifiutata","ok");
-      pageCash();
-    }catch(err){toast(err.message,"error")}
-  });
-
-  $$("[data-review-fine]").forEach(b=>b.onclick=async()=>{
-    const action=b.dataset.action;
-    const note=action==="reject"?prompt("Motivo del rifiuto (facoltativo)",""):null;
-    try{
-      await must(
-        supabase.rpc("review_fine_payment_report",{
-          p_fine_id:b.dataset.reviewFine,
-          p_action:action,
-          p_note:note||null
-        })
-      );
-      toast(action==="approve"?"Pagamento approvato":"Segnalazione rifiutata","ok");
-      pageCash();
-    }catch(err){toast(err.message,"error")}
-  });
-
-  $$("[data-fine-paid]").forEach(b=>b.onclick=async()=>{
-    try{
-      await must(
-        supabase.from("fines")
-          .update({status:"paid",paid_at:new Date().toISOString()})
-          .eq("id",b.dataset.finePaid)
-      );
-      pageCash();
-    }catch(e){toast(e.message,"error")}
-  });
-
-  $$("[data-edit-fine]").forEach(b=>{
-    b.onclick=()=>{
-      const fine=fines.find(x=>x.id===b.dataset.editFine);
-      if(fine)openFineEditModal(fine,players,gm);
-    };
-  });
-
-  $$("[data-fee-paid]").forEach(b=>b.onclick=async()=>{
-    try{
-      await must(
-        supabase.from("membership_fees")
-          .update({status:"paid",paid_at:new Date().toISOString()})
-          .eq("id",b.dataset.feePaid)
-      );
-      pageCash();
-    }catch(e){toast(e.message,"error")}
-  });
-
-  $$("[data-fee-waive]").forEach(b=>b.onclick=async()=>{
-    try{
-      await must(
-        supabase.from("membership_fees")
-          .update({status:"waived"})
-          .eq("id",b.dataset.feeWaive)
-      );
-      pageCash();
-    }catch(e){toast(e.message,"error")}
-  });
+  $$('[data-report-fee-paid]').forEach(b=>b.onclick=async()=>{try{await must(supabase.rpc('report_my_fee_paid',{p_fee_id:b.dataset.reportFeePaid}));toast('Pagamento segnalato alla dirigenza','ok');pageCash()}catch(err){toast(err.message,'error')}});
+  $$('[data-report-fine-paid]').forEach(b=>b.onclick=async()=>{try{await must(supabase.rpc('report_my_fine_paid',{p_fine_id:b.dataset.reportFinePaid}));toast('Pagamento multa segnalato alla dirigenza','ok');pageCash()}catch(err){toast(err.message,'error')}});
+  $$('[data-review-fee]').forEach(b=>b.onclick=async()=>{const action=b.dataset.action,note=action==='reject'?prompt('Motivo del rifiuto (facoltativo)',''):null;try{await must(supabase.rpc('review_fee_payment_report',{p_fee_id:b.dataset.reviewFee,p_action:action,p_note:note||null}));toast(action==='approve'?'Pagamento approvato':'Segnalazione rifiutata','ok');pageCash()}catch(err){toast(err.message,'error')}});
+  $$('[data-review-fine]').forEach(b=>b.onclick=async()=>{const action=b.dataset.action,note=action==='reject'?prompt('Motivo del rifiuto (facoltativo)',''):null;try{await must(supabase.rpc('review_fine_payment_report',{p_fine_id:b.dataset.reviewFine,p_action:action,p_note:note||null}));toast(action==='approve'?'Pagamento approvato':'Segnalazione rifiutata','ok');pageCash()}catch(err){toast(err.message,'error')}});
+  $$('[data-fine-paid]').forEach(b=>b.onclick=async()=>{try{await must(supabase.from('fines').update({status:'paid',paid_at:new Date().toISOString()}).eq('id',b.dataset.finePaid));pageCash()}catch(e){toast(e.message,'error')}});
+  $$('[data-edit-fine]').forEach(b=>b.onclick=()=>{const fine=fines.find(x=>x.id===b.dataset.editFine);if(fine)openFineEditModal(fine,players,gm)});
+  $$('[data-fee-paid]').forEach(b=>b.onclick=async()=>{try{await must(supabase.from('membership_fees').update({status:'paid',paid_at:new Date().toISOString()}).eq('id',b.dataset.feePaid));pageCash()}catch(e){toast(e.message,'error')}});
+  $$('[data-fee-waive]').forEach(b=>b.onclick=async()=>{try{await must(supabase.from('membership_fees').update({status:'waived'}).eq('id',b.dataset.feeWaive));pageCash()}catch(e){toast(e.message,'error')}});
 }
 
 async function openCashSetup(){
