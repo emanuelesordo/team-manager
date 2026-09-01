@@ -4229,6 +4229,129 @@
       .dashboard-direct-summary{grid-template-columns:1fr}
     }
 
+
+    /* =====================================================
+       043 — Home staff: KPI stato + colonne leggibili
+    ===================================================== */
+    @media(min-width:901px){
+      .dashboard-staff-layout{
+        grid-template-columns:minmax(260px,1fr) minmax(235px,.82fr) minmax(470px,1.62fr)!important;
+        gap:9px!important;
+      }
+      .dashboard-staff-column.left{
+        grid-template-rows:minmax(110px,.78fr) minmax(0,1.18fr) minmax(0,.94fr)!important;
+      }
+      .dashboard-staff-column.middle{
+        grid-template-rows:minmax(0,1.12fr) minmax(0,.88fr)!important;
+      }
+      .dashboard-staff-column.events{
+        grid-template-rows:minmax(0,1.18fr) minmax(0,.91fr) minmax(0,.91fr)!important;
+      }
+    }
+
+    .dashboard-state-kpi.alert{
+      border-color:rgba(239,68,68,.34)!important;
+      background:linear-gradient(145deg,rgba(127,29,29,.13),var(--panel))!important;
+    }
+    .dashboard-state-kpi.ok{
+      border-color:rgba(34,197,94,.22)!important;
+    }
+    .dashboard-state-kpi .stat{
+      display:flex;
+      align-items:center;
+      gap:5px;
+    }
+
+    .dashboard-approval-card,
+    .dashboard-staff-column.left > .dashboard-panel{
+      min-height:0!important;
+    }
+    .dashboard-approval-card .dashboard-panel-list,
+    .dashboard-staff-column.left > .dashboard-panel .dashboard-panel-list{
+      min-height:0!important;
+      overflow-y:auto!important;
+    }
+
+    /* Sovrascrive una vecchia regola ad alta specificità che riduceva
+       gli eventi Home a sole due colonne. */
+    .dashboard-mini-record.dashboard-event-compact[data-dashboard-event]{
+      display:grid!important;
+      grid-template-columns:44px minmax(0,1fr) 48px!important;
+      gap:8px!important;
+      align-items:center!important;
+      min-height:46px!important;
+      padding:5px 3px!important;
+    }
+    .dashboard-mini-record.dashboard-event-compact[data-dashboard-event] > .dashboard-event-date{
+      order:0!important;
+      grid-column:1!important;
+      min-width:42px!important;
+      width:42px!important;
+      padding:4px 2px!important;
+    }
+    .dashboard-mini-record.dashboard-event-compact[data-dashboard-event] > .dashboard-event-body{
+      order:1!important;
+      grid-column:2!important;
+      min-width:0!important;
+      width:auto!important;
+    }
+    .dashboard-mini-record.dashboard-event-compact[data-dashboard-event] > .dashboard-event-time{
+      order:2!important;
+      grid-column:3!important;
+      min-width:0!important;
+      width:auto!important;
+      text-align:right!important;
+      align-self:center!important;
+    }
+    .dashboard-event-compact .dashboard-mini-title{
+      white-space:normal!important;
+      overflow:visible!important;
+      text-overflow:clip!important;
+      display:-webkit-box!important;
+      -webkit-box-orient:vertical!important;
+      -webkit-line-clamp:2!important;
+      line-clamp:2!important;
+      line-height:1.12!important;
+      font-size:clamp(.63rem,.68vw,.72rem)!important;
+    }
+    .dashboard-event-compact .dashboard-mini-meta{
+      white-space:nowrap!important;
+      overflow:hidden!important;
+      text-overflow:ellipsis!important;
+      font-size:clamp(.50rem,.54vw,.58rem)!important;
+      line-height:1.08!important;
+    }
+    .dashboard-event-compact .dashboard-event-time{
+      font-size:clamp(.61rem,.65vw,.69rem)!important;
+      font-weight:900!important;
+    }
+    .dashboard-events-card .dashboard-panel-list{
+      padding-right:3px!important;
+    }
+    .dashboard-events-card .empty{
+      min-height:80px;
+      display:grid;
+      place-items:center;
+    }
+
+    @media(max-width:1180px) and (min-width:901px){
+      .dashboard-staff-layout{
+        grid-template-columns:minmax(275px,.95fr) minmax(430px,1.45fr)!important;
+      }
+      .dashboard-staff-column.middle{display:none!important}
+    }
+    @media(max-width:900px){
+      .dashboard-mini-record.dashboard-event-compact[data-dashboard-event]{
+        grid-template-columns:42px minmax(0,1fr) 44px!important;
+      }
+      .dashboard-event-compact .dashboard-mini-title{
+        font-size:.67rem!important;
+      }
+      .dashboard-event-compact .dashboard-mini-meta{
+        font-size:.54rem!important;
+      }
+    }
+
 </style>
 </head>
 <body>
@@ -6988,7 +7111,7 @@ function dashboardEventRecord(e,icon="📌"){
         <strong>${d.day}</strong>
         <span>${d.month}</span>
       </div>
-      <div>
+      <div class="dashboard-event-body">
         <div class="dashboard-mini-title">${icon} ${esc(e.title||eventTypeLabel(e.event_type))}</div>
         <div class="muted dashboard-mini-meta">${place?esc(place):esc(eventTypeLabel(e.event_type))}</div>
       </div>
@@ -7334,55 +7457,44 @@ async function pageDashboardStaff(){
     </div>
 
     <div class="dashboard-kpis">
-      <div class="card ${criticalCount?"dashboard-status-alert":"dashboard-status-ok"}">
-        <div class="stat">${criticalCount?`⚠️ ${criticalCount}`:"✅ OK"}</div>
-        <div class="stat-label">${criticalCount?"Criticità attuali":"Nessuna criticità urgente"}</div>
+      <div class="card dashboard-state-kpi ${medicalAlerts.length?"alert":"ok"}">
+        <div class="stat">🩺 ${medicalAlerts.length}</div>
+        <div class="stat-label">Visite da gestire</div>
       </div>
-      <div class="card"><div class="stat">${events.length}</div><div class="stat-label">Prossimi eventi</div></div>
-      <div class="card"><div class="stat">${ctx.roster.length-currentUnavailable.size}/${ctx.roster.length}</div><div class="stat-label">Disponibili oggi</div></div>
-      <div class="card"><div class="stat">${team.wins||0}-${team.draws||0}-${team.losses||0}</div><div class="stat-label">V-N-P</div></div>
+      <div class="card dashboard-state-kpi ${feeAlerts.some(x=>x.overdue)?"alert":"ok"}">
+        <div class="stat">💳 ${feeAlerts.filter(x=>x.overdue).length}</div>
+        <div class="stat-label">Quote scadute</div>
+      </div>
+      <div class="card dashboard-state-kpi ${currentUnavailable.size?"alert":"ok"}">
+        <div class="stat">👥 ${ctx.roster.length-currentUnavailable.size}/${ctx.roster.length}</div>
+        <div class="stat-label">Disponibili oggi</div>
+      </div>
+      <div class="card dashboard-state-kpi">
+        <div class="stat">🏆 ${team.wins||0}-${team.draws||0}-${team.losses||0}</div>
+        <div class="stat-label">V-N-P</div>
+      </div>
     </div>
 
     <div class="dashboard-staff-layout">
       <div class="dashboard-staff-column left">
-        <div class="card dashboard-panel dashboard-priority dashboard-health-static ${criticalCount?"dashboard-status-alert":"dashboard-status-ok"}">
-          <div class="card-head">
-            <h3>${criticalCount?"⚠️ Stato squadra":"✅ Stato squadra"}</h3>
-            <span class="badge ${criticalCount?"red":"green"}">${criticalCount?"attenzione":"regolare"}</span>
-          </div>
+        <div class="card dashboard-panel dashboard-approval-card">
+          <div class="card-head"><h3>⏳ Da approvare</h3><span class="badge ${approvalItems.length?"yellow":"green"}">${approvalItems.length}</span></div>
           <div class="dashboard-panel-list">
-            ${healthRows.map(x=>`
-              <div class="dashboard-health-line clickable-criticality" data-go="${x.route}">
-                <div class="dashboard-health-main">
-                  <span class="dashboard-health-icon">${x.icon}</span>
-                  <div><strong>${esc(x.label)}</strong><div class="muted">${esc(x.detail)}</div></div>
-                </div>
-                <span class="badge ${x.ok?"green":"red"}">${x.ok?"OK":"!"}</span>
-              </div>
-            `).join("")}
+            ${approvalItems.map(item=>{
+              const p=ctx.playerMap.get(item.player_id);
+              const meta=item.type==="medical"
+                ? `Visita dichiarata · scad. ${fmtDate(item.declared_expires_on)}`
+                : item.type==="fee"
+                  ? `${item.title} · € ${Number(item.amount||0).toFixed(2)}`
+                  : `${item.title||"Multa"} · € ${Number(item.amount||0).toFixed(2)}`;
+              return `<div class="dashboard-approval-row" data-dashboard-approval-type="${item.type}" data-dashboard-approval-id="${item.entity_id}">
+                <span class="dashboard-approval-icon">${item.type==="medical"?"🩺":item.type==="fee"?"💳":"💸"}</span>
+                <div><strong>${esc(p?.last_name||"")} <span style="font-weight:400">${esc(p?.first_name||"")}</span></strong><div class="muted">${esc(meta)}</div></div>
+                <span class="badge yellow">verifica</span>
+              </div>`;
+            }).join("")||`<div class="empty">✅ Nessuna segnalazione da approvare</div>`}
           </div>
         </div>
-
-        ${approvalItems.length?`
-          <div class="card dashboard-panel dashboard-approval-card">
-            <div class="card-head"><h3>⏳ Da approvare</h3><span class="badge yellow">${approvalItems.length}</span></div>
-            <div class="dashboard-panel-list">
-              ${approvalItems.map(item=>{
-                const p=ctx.playerMap.get(item.player_id);
-                const meta=item.type==="medical"
-                  ? `Visita dichiarata · scad. ${fmtDate(item.declared_expires_on)}`
-                  : item.type==="fee"
-                    ? `${item.title} · € ${Number(item.amount||0).toFixed(2)}`
-                    : `${item.title||"Multa"} · € ${Number(item.amount||0).toFixed(2)}`;
-                return `<div class="dashboard-approval-row" data-dashboard-approval-type="${item.type}" data-dashboard-approval-id="${item.entity_id}">
-                  <span class="dashboard-approval-icon">${item.type==="medical"?"🩺":item.type==="fee"?"💳":"💸"}</span>
-                  <div><strong>${esc(p?.last_name||"")} <span style="font-weight:400">${esc(p?.first_name||"")}</span></strong><div class="muted">${esc(meta)}</div></div>
-                  <span class="badge yellow">verifica</span>
-                </div>`;
-              }).join("")}
-            </div>
-          </div>
-        `:""}
 
         <div class="card dashboard-panel">
           <div class="card-head"><h3>🩺 Visite</h3><span class="badge ${medicalAlerts.some(x=>x.kind!=="expiring")?"red":""}">${medicalAlerts.length}</span></div>
