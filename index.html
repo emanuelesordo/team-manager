@@ -4352,6 +4352,90 @@
       }
     }
 
+
+
+    /* =====================================================
+       044 — BADGE GLOBALI: compatti, discreti e uniformi
+       ===================================================== */
+    .badge{
+      display:inline-flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      gap:3px!important;
+      min-height:16px!important;
+      padding:1px 5px!important;
+      border-radius:5px!important;
+      border-width:1px!important;
+      border-style:solid!important;
+      border-color:color-mix(in srgb,var(--ui-line-soft) 78%,transparent)!important;
+      background:color-mix(in srgb,var(--panel2) 92%,var(--team-accent) 8%)!important;
+      color:var(--text)!important;
+      font-size:.59rem!important;
+      font-weight:780!important;
+      line-height:1.05!important;
+      letter-spacing:.005em!important;
+      white-space:nowrap!important;
+      box-shadow:none!important;
+      vertical-align:middle!important;
+    }
+    .badge.green{
+      background:rgba(34,197,94,.075)!important;
+      border-color:rgba(34,197,94,.22)!important;
+      color:#86efac!important;
+    }
+    .badge.red{
+      background:rgba(239,68,68,.075)!important;
+      border-color:rgba(239,68,68,.22)!important;
+      color:#fca5a5!important;
+    }
+    .badge.yellow{
+      background:rgba(245,158,11,.075)!important;
+      border-color:rgba(245,158,11,.22)!important;
+      color:#fcd34d!important;
+    }
+    .badge.blue{
+      background:rgba(59,130,246,.075)!important;
+      border-color:rgba(59,130,246,.22)!important;
+      color:#93c5fd!important;
+    }
+
+    /* Badge speciali allineati alla stessa scala visiva. */
+    .captain-mini-badge{
+      min-height:16px!important;
+      min-width:16px!important;
+      padding:1px 4px!important;
+      border-radius:5px!important;
+      font-size:.56rem!important;
+      line-height:1!important;
+      box-shadow:none!important;
+    }
+    .roster-generic-role{
+      min-width:19px!important;
+      height:19px!important;
+      padding:0 4px!important;
+      border-radius:5px!important;
+      font-size:.53rem!important;
+      line-height:19px!important;
+    }
+    .roster-preferred-cell .badge{
+      min-height:14px!important;
+      padding:1px 4px!important;
+      border-radius:4px!important;
+      font-size:.51rem!important;
+    }
+
+    @media(max-width:700px){
+      .badge{
+        min-height:15px!important;
+        padding:1px 4px!important;
+        font-size:.56rem!important;
+      }
+      .captain-mini-badge{
+        min-height:15px!important;
+        min-width:15px!important;
+        font-size:.53rem!important;
+      }
+    }
 </style>
 </head>
 <body>
