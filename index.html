@@ -2773,6 +2773,316 @@
       }
     }
 
+
+    /* =====================================================
+       033 — VIEWPORT / TABLE / RECORD CONTAINER REFINEMENT
+       ===================================================== */
+    @media(min-width:901px){
+      /* Sidebar: niente tagli. Se l'altezza è davvero insufficiente,
+         scorre solo il blocco nav, non tutta la pagina. */
+      .sidebar,
+      .shell:not(.calendar-page) .sidebar{
+        display:flex!important;
+        flex-direction:column!important;
+        min-height:0!important;
+        padding:9px 11px 7px!important;
+      }
+      .sidebar .brand{
+        flex:none;
+        margin-bottom:5px!important;
+        padding-bottom:7px!important;
+      }
+      .sidebar .nav{
+        flex:1;
+        min-height:0!important;
+        overflow-y:auto!important;
+        overflow-x:hidden!important;
+        gap:0!important;
+        padding-bottom:3px;
+      }
+      .sidebar .nav button{
+        min-height:29px!important;
+        padding:4px 7px!important;
+        border-radius:7px!important;
+        font-size:clamp(.69rem,.73vw,.77rem)!important;
+      }
+      .sidebar .nav button>span:first-child{
+        width:22px!important;
+        height:22px!important;
+        min-width:22px!important;
+        border-radius:6px!important;
+        font-size:11px!important;
+      }
+      .sidebar .nav .section{
+        margin:4px 7px 2px!important;
+        padding:5px 0 1px!important;
+      }
+
+      /* Le pagine che contengono soprattutto record usano l'intero
+         spazio verticale; il body non deve diventare una pagina lunga. */
+      .roster-page .content,
+      .table-focus-page .content{
+        overflow:hidden!important;
+        display:flex!important;
+        flex-direction:column!important;
+        min-height:0!important;
+      }
+      .roster-page .page-title,
+      .table-focus-page .page-title{
+        flex:none;
+      }
+      .roster-page .roster-table-wrap,
+      .table-focus-page > .main > .content > .table-wrap,
+      .table-focus-page > .main > .content > .card:last-child,
+      .table-focus-page > .main > .content > .card:last-child > .table-wrap{
+        flex:1;
+        min-height:0!important;
+      }
+      .roster-page .roster-table-wrap{
+        height:auto!important;
+        max-height:none!important;
+        overflow-y:auto!important;
+        overflow-x:hidden!important;
+      }
+
+      /* Tabelle desktop: fit reale alla larghezza.
+         Auto layout lascia ai dati utili lo spazio che serve; i campi
+         descrittivi possono andare su due righe anziché essere troncati. */
+      .table:not(.roster-table){
+        table-layout:auto!important;
+        width:100%!important;
+        min-width:0!important;
+      }
+      .table:not(.roster-table) th,
+      .table:not(.roster-table) td{
+        width:auto!important;
+        min-width:0!important;
+        max-width:none!important;
+        white-space:normal!important;
+        overflow:visible!important;
+        text-overflow:clip!important;
+        overflow-wrap:anywhere;
+        line-height:1.15;
+      }
+      .table:not(.roster-table) th{
+        white-space:nowrap!important;
+      }
+      .table:not(.roster-table) td:has(.player-list-identity),
+      .table:not(.roster-table) td:has(.actions),
+      .table:not(.roster-table) td:has(.badge){
+        white-space:nowrap!important;
+      }
+      .table:not(.roster-table) .player-list-identity{
+        max-width:100%;
+      }
+      .table:not(.roster-table) .player-list-text{
+        max-width:clamp(115px,13vw,220px);
+      }
+
+      /* ROSA — larghezze legate al contenuto, non percentuali arbitrarie. */
+      .roster-table{
+        table-layout:fixed!important;
+        width:100%!important;
+        min-width:0!important;
+      }
+      .roster-table th,.roster-table td{
+        width:auto!important;
+        min-width:0!important;
+        max-width:none!important;
+        overflow:hidden!important;
+        text-overflow:ellipsis!important;
+        white-space:nowrap!important;
+      }
+      .roster-table .roster-col-role{width:44px!important;text-align:center}
+      .roster-table .roster-col-name{width:clamp(180px,18vw,285px)!important}
+      .roster-table .roster-col-age{width:42px!important;text-align:center}
+      .roster-table .roster-col-shirt{width:36px!important;text-align:center}
+      .roster-table .roster-col-birth{width:76px!important}
+      .roster-table .roster-col-nation{width:45px!important;text-align:center}
+      .roster-table .roster-col-favorite{width:clamp(78px,8vw,125px)!important}
+      .roster-table .roster-col-preferred{width:clamp(105px,11vw,175px)!important}
+      .roster-table .roster-col-medical{width:76px!important}
+      .roster-table .roster-col-signals{width:68px!important}
+      .roster-table .roster-col-permanence{width:135px!important}
+      .roster-table .roster-col-next{width:82px!important}
+      .roster-table .roster-col-actions{width:112px!important;text-align:right}
+      .roster-table .roster-name-cell,
+      .roster-table .roster-preferred-cell{
+        min-width:0!important;
+      }
+      .roster-table .roster-player-link{
+        width:100%;
+        min-width:0;
+      }
+      .roster-table .roster-player-link>span:last-child,
+      .roster-table .roster-player-link strong{
+        min-width:0;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+      .roster-table .roster-row-actions{
+        justify-content:flex-end;
+        flex-wrap:nowrap!important;
+      }
+
+      /* Container record: sfruttano lo spazio residuo prima di scorrere. */
+      .record-scroll-container{
+        flex:1;
+        min-height:0!important;
+        max-height:none!important;
+        overflow-y:auto!important;
+        overflow-x:hidden!important;
+      }
+    }
+
+    /* 13" / laptop compatti: prima riduciamo padding e testo,
+       poi eventualmente la colonna meno importante, senza tagliare i nomi. */
+    @media(min-width:901px) and (max-width:1450px){
+      .roster-table th,.roster-table td{
+        font-size:clamp(.59rem,.67vw,.71rem)!important;
+        padding-left:2px!important;
+        padding-right:2px!important;
+      }
+      .roster-table .roster-col-name{width:clamp(155px,16vw,220px)!important}
+      .roster-table .roster-col-favorite{width:80px!important}
+      .roster-table .roster-col-preferred{width:100px!important}
+      .roster-table .roster-col-actions{width:92px!important}
+      .roster-action-btn{
+        width:25px!important;
+        min-width:25px!important;
+        height:25px!important;
+      }
+    }
+
+    /* Mobile: la Rosa rimane a colonne essenziali e riempie il viewport.
+       Le altre tabelle diventano record verticali, evitando lo scroll X. */
+    @media(max-width:900px){
+      .roster-page .content{
+        height:calc(100dvh - 52px)!important;
+        min-height:0!important;
+        overflow:hidden!important;
+        display:flex!important;
+        flex-direction:column!important;
+      }
+      .roster-page .page-title{flex:none}
+      .roster-page .roster-table-wrap{
+        flex:1!important;
+        min-height:0!important;
+        height:auto!important;
+        max-height:none!important;
+        overflow-y:auto!important;
+        overflow-x:hidden!important;
+      }
+
+      .table-wrap:has(.responsive-stack-table){
+        overflow-x:hidden!important;
+        overflow-y:auto!important;
+        border:0!important;
+        background:transparent!important;
+      }
+      .responsive-stack-table{
+        display:block!important;
+        width:100%!important;
+        min-width:0!important;
+        border-spacing:0!important;
+      }
+      .responsive-stack-table thead{display:none!important}
+      .responsive-stack-table tbody{
+        display:grid!important;
+        gap:6px!important;
+      }
+      .responsive-stack-table tbody tr{
+        display:block!important;
+        width:100%!important;
+        min-width:0!important;
+        padding:5px 8px!important;
+        border:1px solid var(--ui-line-soft)!important;
+        border-radius:9px!important;
+        background:var(--ui-record-bg)!important;
+      }
+      .responsive-stack-table tbody td{
+        display:grid!important;
+        grid-template-columns:minmax(82px,34%) minmax(0,1fr)!important;
+        align-items:center!important;
+        gap:7px!important;
+        width:100%!important;
+        min-width:0!important;
+        max-width:100%!important;
+        padding:4px 0!important;
+        border:0!important;
+        border-bottom:1px solid var(--ui-line-soft)!important;
+        border-radius:0!important;
+        background:transparent!important;
+        white-space:normal!important;
+        overflow:visible!important;
+        text-overflow:clip!important;
+        overflow-wrap:anywhere;
+        font-size:11px!important;
+      }
+      .responsive-stack-table tbody td:last-child{border-bottom:0!important}
+      .responsive-stack-table tbody td::before{
+        content:attr(data-mobile-label);
+        color:var(--muted);
+        font-size:9.5px!important;
+        font-weight:850;
+        letter-spacing:.04em;
+        text-transform:uppercase;
+      }
+      .responsive-stack-table tbody td:empty{display:none!important}
+      .responsive-stack-table .actions{
+        justify-content:flex-start!important;
+        flex-wrap:wrap!important;
+      }
+      .responsive-stack-table .player-list-text{
+        white-space:normal!important;
+      }
+    }
+
+
+    @media(min-width:901px){
+      .admin-page .content{
+        overflow:hidden!important;
+        display:flex!important;
+        flex-direction:column!important;
+        min-height:0!important;
+      }
+      .admin-page .content > .tabs{
+        flex:none;
+        margin-bottom:7px;
+      }
+      .admin-page #admin-content{
+        flex:1;
+        min-height:0;
+        overflow:auto;
+        overscroll-behavior:contain;
+      }
+      .admin-page #admin-content > .table-wrap{
+        max-height:100%!important;
+        overflow-y:auto!important;
+      }
+    }
+
+
+    .roster-table .sort-head{
+      gap:2px!important;
+      max-width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .roster-table .sort-arrow{
+      min-width:7px!important;
+      flex:none;
+    }
+
+    @media(max-width:900px){
+      .responsive-stack-table tbody tr:hover td{
+        background:transparent!important;
+      }
+      .responsive-stack-table td .btn{
+        max-width:100%;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -6398,11 +6708,11 @@ async function pageRoster(){
     rosterSortHeader("Nascita","birth","roster-mobile-hide roster-col-birth"),
     rosterSortHeader("Naz.","nationality","roster-col-nation"),
     rosterSortHeader("Tifata","favorite","roster-mobile-hide roster-col-favorite"),
-    showPreferred?rosterSortHeader("Ruoli preferenziali","roles","roster-mobile-hide roster-col-preferred"):"",
+    showPreferred?rosterSortHeader("Ruoli","roles","roster-mobile-hide roster-col-preferred"):"",
     rosterSortHeader("Visita","medical","roster-mobile-hide roster-col-medical"),
     rosterSortHeader("Segn.","signals","roster-col-signals"),
     settings.show_contract_period?rosterSortHeader("Permanenza","permanence","roster-mobile-hide roster-col-permanence"):"",
-    showNextColumn?rosterSortHeader("Prossima","next","roster-mobile-hide roster-col-next"):"",
+    showNextColumn?rosterSortHeader("Pross.","next","roster-mobile-hide roster-col-next"):"",
     `<th class="roster-col-actions">Azioni</th>`
   ].join("");
 
@@ -6413,7 +6723,7 @@ async function pageRoster(){
       <div><h1>Rosa ${esc(state.season.name)}</h1></div>
       <div class="actions">
         ${can("roster.setup")?`<button class="btn" id="roster-setup">⚙ Setup Rosa</button>`:""}
-        ${can("roster.manage")&&can("contracts.manage")?`<button class="btn" id="import-roster">⇧ Importa Excel/CSV</button>`:""}
+        ${can("roster.manage")&&can("contracts.manage")?`<button class="btn" id="import-roster">⇧ Import</button>`:""}
         ${can("roster.manage")?`<button class="btn btn-primary" id="new-player">Nuovo calciatore</button>`:""}
         ${state.myPlayer&&can("affinity.evaluate_self")&&!fanOnly?`<button class="btn" id="my-affinity">I miei ruoli</button>`:""}
       </div>
@@ -12176,6 +12486,8 @@ async function pageAdmin(tab="users"){
     <div id="admin-content"><div class="empty">Caricamento…</div></div>
   `);
 
+  $(".shell")?.classList.add("admin-page");
+
   $$("[data-admin-tab]").forEach(b=>b.onclick=()=>pageAdmin(b.dataset.adminTab));
 
   if(tab==="users")return adminUsers();
@@ -13566,8 +13878,53 @@ function uiEmptyEmoji(text=""){
   return "⚽";
 }
 
+function enhanceResponsiveTables(root=document){
+  if(!root?.querySelectorAll)return;
+
+  root.querySelectorAll(".table").forEach(table=>{
+    if(
+      table.classList.contains("roster-table")
+      || table.closest(".import-preview-wrap")
+      || table.classList.contains("month-calendar")
+      || table.dataset.responsivePrepared
+    )return;
+
+    const headers=[...table.querySelectorAll("thead th")].map(th=>
+      th.textContent.replace(/[▲▼]/g,"").trim()
+    );
+
+    if(headers.length<3)return;
+
+    table.classList.add("responsive-stack-table");
+    table.querySelectorAll("tbody tr").forEach(tr=>{
+      [...tr.children].forEach((cell,index)=>{
+        if(cell.tagName!=="TD")return;
+        cell.dataset.mobileLabel=headers[index]||"";
+      });
+    });
+
+    table.dataset.responsivePrepared="1";
+  });
+}
+
+function enhanceViewportRecordContainers(root=document){
+  const shell=document.querySelector(".shell");
+  if(!shell)return;
+
+  const content=shell.querySelector(":scope > .main > .content");
+  if(!content)return;
+
+  const directTable=[...content.children].find(el=>el.classList?.contains("table-wrap"));
+  if(directTable && !shell.classList.contains("roster-page") && !shell.classList.contains("calendar-page")){
+    shell.classList.add("table-focus-page");
+    directTable.classList.add("record-scroll-container");
+  }
+}
+
 function decorateManagerialUI(root=document){
   if(!root?.querySelectorAll)return;
+  enhanceResponsiveTables(root);
+  enhanceViewportRecordContainers(root);
 
   root.querySelectorAll(".page-title h1").forEach(h=>{
     if(h.dataset.uiDecorated)return;
