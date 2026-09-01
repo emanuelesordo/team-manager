@@ -3400,6 +3400,213 @@
       }
     }
 
+
+    /* =====================================================
+       036 — KPI di sezione / statistiche a tile / calendario
+    ===================================================== */
+    .section-kpi-strip{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:6px;
+      margin:0 0 9px;
+    }
+    .section-kpi{
+      min-width:0;
+      min-height:48px;
+      padding:7px 9px;
+      border:1px solid var(--ui-line-soft);
+      border-radius:9px;
+      background:linear-gradient(145deg,var(--panel),color-mix(in srgb,var(--panel2) 88%,var(--team-accent) 12%));
+      display:flex;
+      align-items:center;
+      gap:7px;
+      overflow:hidden;
+    }
+    .section-kpi-icon{
+      width:26px;
+      height:26px;
+      min-width:26px;
+      display:grid;
+      place-items:center;
+      border-radius:7px;
+      background:var(--team-accent-soft);
+      font-size:13px!important;
+    }
+    .section-kpi-copy{min-width:0}
+    .section-kpi-value{
+      font-weight:950;
+      font-size:clamp(.82rem,.96vw,1rem)!important;
+      line-height:1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .section-kpi-label{
+      margin-top:3px;
+      color:var(--muted);
+      font-size:clamp(.57rem,.64vw,.68rem)!important;
+      line-height:1;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .stats-category-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:8px;
+    }
+    .stats-category-tile{
+      min-height:126px;
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      text-align:left;
+      overflow:hidden;
+    }
+    .stats-category-tile:hover{
+      border-color:var(--team-primary-line)!important;
+      transform:translateY(-1px);
+    }
+    .stats-category-icon{
+      font-size:1.65rem!important;
+      line-height:1;
+      margin-bottom:8px;
+    }
+    .stats-category-title{
+      font-weight:900;
+      font-size:.92rem!important;
+    }
+    .stats-category-copy{
+      margin-top:4px;
+      color:var(--muted);
+      line-height:1.22;
+      font-size:.68rem!important;
+    }
+    .stats-category-kpi{
+      margin-top:10px;
+      display:flex;
+      align-items:end;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .stats-category-kpi strong{
+      font-size:1.15rem!important;
+    }
+    .stats-detail-view{display:none}
+    .stats-detail-view.active{display:block}
+    .stats-detail-toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:8px;
+    }
+
+    /* Data/mese sempre a destra nei record calendario. */
+    .calendar-event-row{
+      grid-template-columns:minmax(0,1fr) auto!important;
+      gap:8px!important;
+      align-items:center!important;
+    }
+    .calendar-event-row .calendar-date-tile{
+      order:2;
+      width:54px!important;
+      min-width:54px!important;
+      min-height:48px!important;
+      margin:0!important;
+      justify-self:end;
+      border:0!important;
+      background:transparent!important;
+      box-shadow:none!important;
+      text-align:right;
+    }
+    .calendar-event-row .calendar-date-day{
+      font-size:1.2rem!important;
+      font-weight:950!important;
+      line-height:1!important;
+    }
+    .calendar-event-row .calendar-date-month{
+      margin-top:2px;
+      font-size:.65rem!important;
+      font-weight:950!important;
+      letter-spacing:.06em;
+    }
+    .calendar-event-time-inline{
+      font-weight:800;
+      color:var(--text);
+    }
+    .calendar-event-type-inline{
+      color:var(--muted);
+    }
+
+    .dashboard-event-date{
+      min-width:44px;
+      text-align:right;
+      line-height:1;
+    }
+    .dashboard-event-date strong{
+      display:block;
+      font-size:.92rem!important;
+      font-weight:950;
+    }
+    .dashboard-event-date span{
+      display:block;
+      margin-top:2px;
+      font-size:.59rem!important;
+      font-weight:900;
+      letter-spacing:.055em;
+      color:var(--muted);
+    }
+
+    /* Home staff: griglia più bilanciata */
+    @media(min-width:901px){
+      .dashboard-ops-grid{
+        grid-template-columns:repeat(12,minmax(0,1fr))!important;
+        grid-template-rows:repeat(3,minmax(0,1fr))!important;
+        gap:7px!important;
+      }
+      .dashboard-staff-health{grid-column:span 5!important}
+      .dashboard-staff-agenda{grid-column:span 7!important}
+      .dashboard-staff-quarter{grid-column:span 3!important}
+      .dashboard-staff-half{grid-column:span 6!important}
+    }
+
+    .my-event-attendance-status{
+      display:flex;
+      align-items:center;
+      gap:5px;
+      flex-wrap:wrap;
+    }
+    .event-self-report-btn{
+      flex:none;
+    }
+
+    @media(max-width:900px){
+      .section-kpi-strip{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:5px;
+      }
+      .section-kpi{
+        min-height:43px;
+        padding:6px 7px;
+      }
+      .stats-category-grid{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+      .stats-category-tile{min-height:112px}
+      .calendar-event-row .calendar-date-tile{
+        width:46px!important;
+        min-width:46px!important;
+      }
+    }
+    @media(max-width:520px){
+      .stats-category-grid{grid-template-columns:1fr}
+      .section-kpi-value{font-size:.82rem!important}
+      .section-kpi-label{font-size:.58rem!important}
+    }
+
   </style>
 </head>
 <body>
@@ -4330,15 +4537,7 @@ async function renderRegistration(){
         })
       );
 
-      if(intent==="staff"){
-        await must(
-          supabase.rpc("request_team_staff_access",{
-            p_team_id:team.team_id,
-            p_requested_role_code:staffRole,
-            p_message:$("#reg-staff-message")?.value.trim()||null
-          })
-        );
-      }
+      const staffMessage=$("#reg-staff-message")?.value.trim()||null;
 
       toast("Account creato","ok");
       await boot();
@@ -4353,15 +4552,109 @@ async function renderRegistration(){
       if(intent==="player"){
         setTimeout(()=>openRegistrationPlayerLink(),80);
       }else if(intent==="staff"){
-        setTimeout(()=>{
-          toast(`Richiesta ${staffRoleLabel(staffRole)} inviata alla squadra`,"ok");
-        },80);
+        setTimeout(()=>openRegistrationStaffAssociation(staffRole,staffMessage),80);
       }
 
     }catch(err){
       toast(err.message,"error");
     }
   };
+}
+
+async function openRegistrationStaffAssociation(preferredRole=null,message=null){
+  try{
+    const candidates=await must(
+      supabase.rpc("get_unlinked_staff_assignments",{
+        p_team_id:state.team.id,
+        p_role_code:preferredRole||null
+      })
+    );
+
+    const pending=await must(
+      supabase.from("team_staff_access_requests")
+        .select("*")
+        .eq("team_id",state.team.id)
+        .eq("profile_id",state.profile.id)
+        .eq("status","pending")
+    );
+
+    if(pending.length){
+      toast("Hai già una richiesta staff in attesa","ok");
+      return;
+    }
+
+    showModal("Associa incarico staff",`
+      <div class="section-note">
+        🧑‍💼 Se la dirigenza ha già creato il tuo incarico senza account, selezionalo qui. L'associazione dovrà comunque essere approvata.
+      </div>
+
+      <div style="height:10px"></div>
+
+      <div class="onboarding-player-list">
+        ${candidates.map(x=>`
+          <div class="onboarding-player-choice">
+            <div>
+              <strong>${esc(x.display_name)}</strong>
+              <div class="muted">${esc(staffRoleLabel(x.role_code))} · dal ${fmtDate(x.start_date)}${x.planned_end_date?` al ${fmtDate(x.planned_end_date)}`:""}</div>
+            </div>
+            <button class="btn btn-sm btn-primary" type="button" data-link-staff-assignment="${x.assignment_id}">Sono io</button>
+          </div>
+        `).join("")||`<div class="empty">Nessun incarico ${preferredRole?esc(staffRoleLabel(preferredRole).toLowerCase()):"staff"} non associato.</div>`}
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="card">
+        <h3>Nuova richiesta</h3>
+        <div class="field">
+          <label>Ruolo</label>
+          <select id="staff-generic-role">
+            <option value="management" ${preferredRole==="management"?"selected":""}>Dirigente</option>
+            <option value="coach" ${preferredRole==="coach"?"selected":""}>Allenatore</option>
+            <option value="assistant_coach" ${preferredRole==="assistant_coach"?"selected":""}>Vice allenatore</option>
+          </select>
+        </div>
+        <button class="btn" type="button" id="staff-generic-request">Non sono tra questi: invia richiesta</button>
+      </div>
+    `,root=>{
+      root.closest(".modal").style.width="min(650px,100%)";
+
+      $$("[data-link-staff-assignment]",root).forEach(b=>b.onclick=async()=>{
+        try{
+          await must(
+            supabase.rpc("request_team_staff_assignment_link",{
+              p_team_id:state.team.id,
+              p_staff_assignment_id:b.dataset.linkStaffAssignment,
+              p_message:message
+            })
+          );
+          closeModal();
+          toast("Richiesta di associazione staff inviata","ok");
+        }catch(err){
+          toast(err.message,"error");
+        }
+      });
+
+      $("#staff-generic-request",root).onclick=async()=>{
+        try{
+          const role=$("#staff-generic-role",root).value;
+          await must(
+            supabase.rpc("request_team_staff_access",{
+              p_team_id:state.team.id,
+              p_requested_role_code:role,
+              p_message:message
+            })
+          );
+          closeModal();
+          toast(`Richiesta ${staffRoleLabel(role)} inviata`,"ok");
+        }catch(err){
+          toast(err.message,"error");
+        }
+      };
+    });
+  }catch(err){
+    toast(err.message,"error");
+  }
 }
 
 async function openRegistrationPlayerLink(){
@@ -5768,6 +6061,7 @@ function renderShell(title, content, nav=true){
   $("#notification-top")?.addEventListener("click",openNotifications);
   $("#notification-mobile")?.addEventListener("click",openNotifications);
   setTimeout(refreshNotificationBell,0);
+  setTimeout(()=>wireSelfAttendanceButtons(document),0);
 
   if(nav)wireMobileDrawer();
 }
@@ -5838,6 +6132,9 @@ async function openNotifications(){
 
         if(type==="player_unavailability")return route("absences");
         if(type==="membership_fee"||type==="fine")return route("cash");
+        if(type==="event"&&el.dataset.notificationEntityId){
+          return openEventDetail(el.dataset.notificationEntityId);
+        }
       });
 
       const unread=rows.filter(x=>!x.read_at).map(x=>x.id);
@@ -5987,15 +6284,19 @@ function dashboardBirthdayRows(roster){
 }
 
 function dashboardEventRecord(e,icon="📌"){
+  const d=calendarDateParts(e.start_at);
   return `
     <div class="dashboard-mini-record" data-dashboard-event="${e.id}" role="button" tabindex="0">
       <div>
         <div class="dashboard-mini-title">${icon} ${esc(e.title||eventTypeLabel(e.event_type))}</div>
         <div class="muted dashboard-mini-meta">
-          ${fmtDateTime(e.start_at)}${e.location?` · ${esc(e.location)}`:""}
+          <strong>${d.time}</strong>${e.location?` · ${esc(e.location)}`:""}
         </div>
       </div>
-      <div class="dashboard-mini-side">›</div>
+      <div class="dashboard-event-date">
+        <strong>${d.day}</strong>
+        <span>${d.month}</span>
+      </div>
     </div>
   `;
 }
@@ -6144,10 +6445,12 @@ async function pageDashboardStaff(){
 
   const birthdays=dashboardBirthdayRows(ctx.roster);
 
-  const criticalCount=
-    medicalAlerts.filter(x=>x.kind!=="expiring").length
-    +feeAlerts.filter(x=>x.overdue).length
-    +currentUnavailable.size;
+  const criticalPlayerIds=new Set([
+    ...medicalAlerts.map(x=>x.id),
+    ...feeAlerts.filter(x=>x.overdue).map(x=>x.player_id),
+    ...currentUnavailable
+  ]);
+  const criticalCount=criticalPlayerIds.size;
 
   const healthRows=[
     {
@@ -6206,7 +6509,7 @@ async function pageDashboardStaff(){
     </div>
 
     <div class="dashboard-ops-grid">
-      <div class="card dashboard-panel dashboard-priority dashboard-span-2 ${criticalCount?"dashboard-status-alert":"dashboard-status-ok"}">
+      <div class="card dashboard-panel dashboard-priority dashboard-staff-health ${criticalCount?"dashboard-status-alert":"dashboard-status-ok"}">
         <div class="card-head">
           <h3>${criticalCount?"⚠️ Stato squadra":"✅ Stato squadra"}</h3>
           <span class="badge ${criticalCount?"red":"green"}">${criticalCount?"attenzione":"regolare"}</span>
@@ -6227,7 +6530,7 @@ async function pageDashboardStaff(){
         </div>
       </div>
 
-      <div class="card dashboard-panel dashboard-priority dashboard-span-2">
+      <div class="card dashboard-panel dashboard-priority dashboard-staff-agenda">
         <div class="card-head">
           <h3>📅 Agenda squadra</h3>
           <button class="btn btn-sm btn-ghost" data-go="calendar">Calendario</button>
@@ -6243,7 +6546,7 @@ async function pageDashboardStaff(){
         </div>
       </div>
 
-      <div class="card dashboard-panel clickable-criticality" data-go="medical">
+      <div class="card dashboard-panel dashboard-staff-quarter clickable-criticality" data-go="medical">
         <div class="card-head"><h3>🩺 Visite</h3><span class="badge ${medicalAlerts.some(x=>x.kind!=="expiring")?"red":""}">${medicalAlerts.length}</span></div>
         <div class="dashboard-panel-list">
           ${medicalAlerts.map(p=>person(
@@ -6256,7 +6559,7 @@ async function pageDashboardStaff(){
         </div>
       </div>
 
-      <div class="card dashboard-panel clickable-criticality" data-go="cash">
+      <div class="card dashboard-panel dashboard-staff-quarter clickable-criticality" data-go="cash">
         <div class="card-head"><h3>💳 Quote</h3><span class="badge ${feeAlerts.some(x=>x.overdue)?"red":""}">${feeAlerts.length}</span></div>
         <div class="dashboard-panel-list">
           ${feeAlerts.map(x=>person(
@@ -6267,7 +6570,7 @@ async function pageDashboardStaff(){
         </div>
       </div>
 
-      <div class="card dashboard-panel clickable-criticality" data-go="absences">
+      <div class="card dashboard-panel dashboard-staff-quarter clickable-criticality" data-go="absences">
         <div class="card-head"><h3>🚑 Assenze</h3><span class="badge">${absences.length}</span></div>
         <div class="dashboard-panel-list">
           ${absences.map(x=>person(
@@ -6278,21 +6581,21 @@ async function pageDashboardStaff(){
         </div>
       </div>
 
-      <div class="card dashboard-panel">
+      <div class="card dashboard-panel dashboard-staff-quarter">
         <div class="card-head"><h3>⚽ Prossime partite</h3><button class="btn btn-sm btn-ghost" data-go="matches">Apri</button></div>
         <div class="dashboard-panel-list">
           ${eventsByType.match.slice(0,8).map(e=>dashboardEventRecord(e,"⚽")).join("")||`<div class="empty">Nessuna partita programmata</div>`}
         </div>
       </div>
 
-      <div class="card dashboard-panel">
+      <div class="card dashboard-panel dashboard-staff-half">
         <div class="card-head"><h3>🏃 Allenamenti</h3><button class="btn btn-sm btn-ghost" data-go="trainings">Apri</button></div>
         <div class="dashboard-panel-list">
           ${eventsByType.training.slice(0,8).map(e=>dashboardEventRecord(e,"🏃")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}
         </div>
       </div>
 
-      <div class="card dashboard-panel">
+      <div class="card dashboard-panel dashboard-staff-half">
         <div class="card-head"><h3>🎂 Compleanni</h3><span class="badge">${birthdays.length}</span></div>
         <div class="dashboard-panel-list">
           ${birthdays.slice(0,8).map(p=>person(
@@ -7845,6 +8148,13 @@ async function pageRoster(){
       </div>
     </div>
 
+    ${sectionKpis([
+      {icon:"👥",value:data.filter(x=>x.active).length,label:"In rosa oggi"},
+      {icon:"🔗",value:data.filter(x=>x.active&&x.p.profile_id).length,label:"Account associati"},
+      {icon:"🎂",value:(()=>{const a=data.filter(x=>x.active&&Number.isFinite(x.age)).map(x=>x.age);return a.length?average(a).toFixed(1):"—"})(),label:"Età media"},
+      {icon:"⚠️",value:data.filter(x=>x.active&&x.signals.severity>0).length,label:"Segnalazioni"}
+    ])}
+
     ${pendingNotice}
 
     <div class="roster-table-wrap">
@@ -8395,18 +8705,19 @@ async function saveCalendarView(view){
 function calendarEventRow(event,extra=""){
   const d=calendarDateParts(event.start_at);
   return `<div class="calendar-event-row" data-event="${event.id}">
+    <div class="calendar-event-main">
+      <div class="calendar-event-title">${esc(event.title)}</div>
+      <div class="calendar-event-place">
+        <span class="calendar-event-time-inline">${d.time}</span>
+        · ${esc(event.location||"Luogo non indicato")}
+        · <span class="calendar-event-type-inline">${esc(eventTypeLabel(event.event_type))}</span>
+      </div>
+      ${extra}
+      ${eventSupportsSelfAttendance(event)?`<div class="actions" style="margin-top:5px">${selfAttendanceButton(event)}</div>`:""}
+    </div>
     <div class="calendar-date-tile">
       <div class="calendar-date-day">${d.day}</div>
       <div class="calendar-date-month">${d.month}</div>
-    </div>
-    <div class="calendar-event-main">
-      <div class="calendar-event-title">${esc(event.title)}</div>
-      <div class="calendar-event-place">${esc(event.location||"Luogo non indicato")}</div>
-      ${extra}
-    </div>
-    <div>
-      <div class="calendar-event-time">${d.time}</div>
-      <div class="calendar-event-type">${esc(eventTypeLabel(event.event_type))}</div>
     </div>
   </div>`;
 }
@@ -8471,6 +8782,13 @@ async function pageCalendar(){
       ${!fanView&&can("calendar.manage")?`<button class="btn btn-primary" id="new-event">Nuovo evento</button>`:""}
     </div>
 
+    ${sectionKpis([
+      {icon:"📅",value:visibleEvents.filter(e=>new Date(e.start_at).getTime()>=Date.now()).length,label:"Prossimi eventi"},
+      {icon:"☀️",value:visibleEvents.filter(e=>localDateKey(e.start_at)===today()).length,label:"Oggi"},
+      {icon:"⚽",value:visibleEvents.filter(e=>e.event_type==="match"&&new Date(e.start_at).getTime()>=Date.now()).length,label:"Prossime partite"},
+      {icon:"🏃",value:fanView?"—":visibleEvents.filter(e=>e.event_type==="training"&&new Date(e.start_at).getTime()>=Date.now()).length,label:fanView?"Solo partite":"Allenamenti futuri"}
+    ])}
+
     <div class="calendar-controls-row">
       <div class="calendar-view-toggle">
         <button type="button" id="cal-view-list" class="${view==="list"?"active":""}">☷ Lista</button>
@@ -8515,8 +8833,12 @@ async function pageCalendar(){
 
   const wireEventButtons=()=>{
     $$("[data-event]",content).forEach(el=>{
-      el.onclick=()=>openEventDetail(el.dataset.event);
+      el.onclick=e=>{
+        if(e.target.closest("[data-my-event-attendance]"))return;
+        openEventDetail(el.dataset.event);
+      };
     });
+    wireSelfAttendanceButtons(content);
   };
 
   const renderList=()=>{
@@ -8751,6 +9073,13 @@ async function pageTrainings(){
       </div>
     </div>
 
+    ${sectionKpis([
+      {icon:"🏃",value:events.length,label:"Allenamenti totali"},
+      {icon:"📅",value:events.filter(e=>new Date(e.start_at).getTime()>=Date.now()).length,label:"Da svolgere"},
+      {icon:"✅",value:attendance.filter(a=>a.status==="present").length,label:"Presenze registrate"},
+      {icon:"⏱️",value:attendance.filter(a=>a.status==="late").length,label:"Ritardi registrati"}
+    ])}
+
     <div class="calendar-event-list">
       ${events.map(e=>{
         const a=summaryFor(e.id);
@@ -8767,7 +9096,11 @@ async function pageTrainings(){
     </div>
   `);
 
-  $$("[data-event]").forEach(el=>el.onclick=()=>openTrainingDetail(el.dataset.event));
+  $$("[data-event]").forEach(el=>el.onclick=e=>{
+    if(e.target.closest("[data-my-event-attendance]"))return;
+    openTrainingDetail(el.dataset.event);
+  });
+  wireSelfAttendanceButtons(document);
   $("#new-training")?.addEventListener("click",()=>openNewEvent("training",pageTrainings));
   $("#training-setup")?.addEventListener("click",openTrainingSetup);
 }
@@ -8872,6 +9205,13 @@ async function pageCompetitions(){
       </div>
       ${can("competitions.manage")?`<button class="btn btn-primary" id="new-competition">Nuova competizione</button>`:""}
     </div>
+
+    ${sectionKpis([
+      {icon:"🏆",value:competitions.filter(c=>c.active).length,label:"Attive"},
+      {icon:"🔄",value:competitions.filter(c=>c.competition_type==="league").length,label:"Campionati"},
+      {icon:"🏆",value:competitions.filter(c=>c.competition_type==="cup").length,label:"Coppe"},
+      {icon:"🤝",value:competitions.filter(c=>c.competition_type==="friendly").length,label:"Amichevoli"}
+    ])}
 
     <div class="grid grid-2">
       ${competitions.map(c=>{
@@ -10131,6 +10471,123 @@ async function openEventEditModal(eventId,afterSave=null){
   }
 }
 
+async function openMyEventAttendanceModal(eventId){
+  try{
+    const [ev,rows]=await Promise.all([
+      must(
+        supabase.from("events")
+          .select("*")
+          .eq("id",eventId)
+          .eq("team_id",state.team.id)
+          .single()
+      ),
+      must(
+        supabase.rpc("get_my_event_attendance",{
+          p_event_id:eventId
+        })
+      )
+    ]);
+
+    if(!eventSupportsSelfAttendance(ev)){
+      toast("Non puoi più modificare la tua presenza per questo evento","error");
+      return;
+    }
+
+    const current=Array.isArray(rows)?rows[0]:rows;
+    const status=current?.attendance_status||"";
+    const currentNote=current?.attendance_note||"";
+
+    showModal("La mia presenza",`
+      <div class="section-note">
+        ${esc(ev.title)} · ${fmtDateTime(ev.start_at)}
+        <br>Se segnali <strong>Assente</strong> viene generata automaticamente un'indisponibilità per il giorno dell'evento. Il <strong>ritardo</strong> non genera assenza.
+      </div>
+
+      <div style="height:10px"></div>
+
+      <form id="my-event-attendance-form">
+        <div class="field">
+          <label>Stato</label>
+          <select id="mea-status">
+            <option value="late" ${status==="late"?"selected":""}>⏱️ Ritardo</option>
+            <option value="absent" ${status==="absent"?"selected":""}>❌ Assente</option>
+          </select>
+        </div>
+
+        <div id="mea-absence-fields">
+          <div class="field">
+            <label>Motivo assenza</label>
+            <select id="mea-absence-type">
+              <option value="travel">✈️ Viaggio</option>
+              <option value="work">💼 Lavoro</option>
+              <option value="family">👨‍👩‍👧 Famiglia</option>
+              <option value="other">❓ Altro</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Nota</label>
+          <textarea id="mea-note" placeholder="${status==="late"?"es. arrivo previsto 15 minuti dopo":"Facoltativa"}">${esc(currentNote)}</textarea>
+        </div>
+
+        <div class="actions">
+          <button class="btn btn-primary">Salva segnalazione</button>
+          ${status?`<button class="btn btn-ghost" type="button" id="mea-clear">Rimuovi segnalazione</button>`:""}
+        </div>
+      </form>
+    `,root=>{
+      const statusSel=$("#mea-status",root);
+      const absenceFields=$("#mea-absence-fields",root);
+
+      const refresh=()=>{
+        absenceFields.classList.toggle("hidden",statusSel.value!=="absent");
+      };
+      statusSel.onchange=refresh;
+      refresh();
+
+      $("#my-event-attendance-form",root).onsubmit=async e=>{
+        e.preventDefault();
+        try{
+          await must(
+            supabase.rpc("set_my_event_attendance",{
+              p_event_id:eventId,
+              p_status:statusSel.value,
+              p_absence_type:statusSel.value==="absent"?$("#mea-absence-type",root).value:null,
+              p_note:$("#mea-note",root).value.trim()||null
+            })
+          );
+
+          closeModal();
+          toast(statusSel.value==="absent"?"Assenza segnalata":"Ritardo segnalato","ok");
+
+          if(state.currentPage==="trainings")pageTrainings();
+          else if(state.currentPage==="match")pageMatch(state.currentMatchId||"");
+          else if(state.currentPage==="calendar")pageCalendar();
+        }catch(err){
+          toast(err.message,"error");
+        }
+      };
+
+      $("#mea-clear",root)?.addEventListener("click",async()=>{
+        try{
+          await must(
+            supabase.rpc("clear_my_event_attendance",{
+              p_event_id:eventId
+            })
+          );
+          closeModal();
+          toast("Segnalazione rimossa","ok");
+        }catch(err){
+          toast(err.message,"error");
+        }
+      });
+    });
+  }catch(err){
+    toast(err.message,"error");
+  }
+}
+
 async function openTrainingDetail(id){
   try{
     const [ev,roster,genericRows]=await Promise.all([
@@ -10197,10 +10654,13 @@ async function openTrainingDetail(id){
             <strong>${fmtDateTime(ev.start_at)}</strong> · ${esc(ev.location||"Luogo non indicato")}
             <div class="muted">Gli indisponibili previsti sono già collocati tra gli Assenti.</div>
           </div>
-          ${can("trainings.manage")||can("calendar.manage")
-            ? `<button class="btn btn-sm" id="edit-training-event">✎ Modifica allenamento</button>`
-            : ""
-          }
+          <div class="actions">
+            ${selfAttendanceButton(ev)}
+            ${can("trainings.manage")||can("calendar.manage")
+              ? `<button class="btn btn-sm" id="edit-training-event">✎ Modifica allenamento</button>`
+              : ""
+            }
+          </div>
         </div>
       </div>
 
@@ -10374,7 +10834,10 @@ async function openEventDetail(id){
     <div class="section-note">
       <div class="card-head">
         <div>${fmtDateTime(ev.start_at)} · ${esc(ev.location||"Luogo non indicato")}</div>
-        ${can("calendar.manage")?`<button class="btn btn-sm" id="edit-generic-event">✎ Modifica</button>`:""}
+        <div class="actions">
+          ${selfAttendanceButton(ev)}
+          ${can("calendar.manage")?`<button class="btn btn-sm" id="edit-generic-event">✎ Modifica</button>`:""}
+        </div>
       </div>
     </div>
 
@@ -10440,7 +10903,7 @@ async function pageMatches(){
   const events=eventIds.length
     ? await must(
         supabase.from("events")
-          .select("id,start_at,title,location")
+          .select("*")
           .in("id",eventIds)
       )
     : [];
@@ -10455,6 +10918,10 @@ async function pageMatches(){
   );
   const sm=new Map(scores.map(x=>[x.match_id,x]));
 
+  const scheduled=matches.filter(m=>!matchHasStarted(m.status)).length;
+  const live=matches.filter(m=>["live","paused"].includes(m.status)).length;
+  const finished=matches.filter(m=>["finished","finalized"].includes(m.status)).length;
+
   renderShell("Partite",`
     <div class="page-title">
       <div>
@@ -10462,16 +10929,17 @@ async function pageMatches(){
         <p>Competizione, convocazioni, formazione, LIVE e post partita.</p>
       </div>
       <div class="actions">
-        ${can("matches.setup")
-          ? `<button class="btn btn-sm setup-button" id="match-setup">⚙ Setup partite</button>`
-          : ""
-        }
-        ${can("matches.manage")
-          ? `<button class="btn btn-primary" id="new-match">Nuova partita</button>`
-          : ""
-        }
+        ${can("matches.setup")?`<button class="btn btn-sm setup-button" id="match-setup">⚙ Setup partite</button>`:""}
+        ${can("matches.manage")?`<button class="btn btn-primary" id="new-match">Nuova partita</button>`:""}
       </div>
     </div>
+
+    ${sectionKpis([
+      {icon:"⚽",value:matches.length,label:"Partite totali"},
+      {icon:"📅",value:scheduled,label:"Da giocare"},
+      {icon:"🔴",value:live,label:"In corso"},
+      {icon:"🏁",value:finished,label:"Terminate"}
+    ])}
 
     <div class="calendar-event-list">
       ${matches.map(m=>{
@@ -10483,28 +10951,35 @@ async function pageMatches(){
 
         const title=e?.title||fallbackTitle;
         const d=e?calendarDateParts(e.start_at):{day:"--",month:"---",time:"--:--"};
+        const started=matchHasStarted(m.status);
 
         return `<div class="calendar-event-row" data-match="${m.id}">
+          <div class="calendar-event-main">
+            <div class="calendar-event-title">${esc(title)}</div>
+            <div class="calendar-event-place">
+              <span class="calendar-event-time-inline">${d.time}</span>
+              · ${esc(e?.location||"Luogo non indicato")}
+            </div>
+            <div class="attendance-summary">
+              <span class="badge">${esc(m.status)}</span>
+              ${started&&score?`<span class="badge green">${score.goals_for}-${score.goals_against}</span>`:""}
+              ${!started?`<span class="badge">VS</span>`:""}
+            </div>
+            ${(e&&eventSupportsSelfAttendance(e))||m.status==="live"||m.status==="paused"
+              ? `<div class="actions" style="margin-top:5px">
+                  ${e&&eventSupportsSelfAttendance(e)?selfAttendanceButton(e):""}
+                  ${m.status==="live"||m.status==="paused"
+                    ? `<button class="btn btn-danger btn-sm" data-live="${m.id}">LIVE</button>`
+                    : ""
+                  }
+                </div>`
+              : ""
+            }
+          </div>
+
           <div class="calendar-date-tile">
             <div class="calendar-date-day">${d.day}</div>
             <div class="calendar-date-month">${d.month}</div>
-          </div>
-          <div class="calendar-event-main">
-            <div class="calendar-event-title">${esc(title)}</div>
-            <div class="calendar-event-place">${esc(e?.location||"Luogo non indicato")}</div>
-            <div class="attendance-summary">
-              <span class="badge">${esc(m.status)}</span>
-              ${score?`<span class="badge green">${score.goals_for}-${score.goals_against}</span>`:""}
-            </div>
-          </div>
-          <div>
-            <div class="calendar-event-time">${d.time}</div>
-            <div class="actions" style="margin-top:6px">
-              ${m.status==="live"||m.status==="paused"
-                ? `<button class="btn btn-danger btn-sm" data-live="${m.id}">LIVE</button>`
-                : ""
-              }
-            </div>
           </div>
         </div>`;
       }).join("")||`<div class="empty">Nessuna partita</div>`}
@@ -10515,7 +10990,7 @@ async function pageMatches(){
   $("#new-match")?.addEventListener("click",()=>openMatchConfigurator(pageMatches));
 
   $$("[data-match]").forEach(el=>el.onclick=e=>{
-    if(e.target.closest("[data-live]"))return;
+    if(e.target.closest("[data-live],[data-my-event-attendance]"))return;
     route(`match/${el.dataset.match}`);
   });
 
@@ -10523,6 +10998,8 @@ async function pageMatches(){
     e.stopPropagation();
     route(`live/${b.dataset.live}`);
   });
+
+  wireSelfAttendanceButtons(document);
 }
 async function openMatchEditModal(matchId,afterSave=null){
   try{
@@ -10766,16 +11243,25 @@ async function openMatchEditModal(matchId,afterSave=null){
 }
 
 async function pageMatch(id){
+  state.currentMatchId=id;
   const m=await must(supabase.from("matches").select("*").eq("id",id).single());
   const ev=await must(supabase.from("events").select("*").eq("id",m.event_id).single());
 
-  const [callupRoster,positions,scoreRows,opponents,competitions,genericRows]=await Promise.all([
+  const [callupRoster,positions,scoreRows,opponents,competitions,genericRows,selfReports]=await Promise.all([
     must(supabase.rpc("get_match_callup_roster",{p_match_id:id})),
     must(supabase.from("football_positions").select("*").eq("active",true).order("sort_order")),
     must(supabase.from("v_match_score").select("*").eq("match_id",id)),
     must(supabase.from("opponent_teams").select("*").eq("team_id",state.team.id)),
     must(supabase.from("competitions").select("*").eq("team_id",state.team.id)),
-    must(supabase.rpc("get_roster_generic_roles",{p_team_id:state.team.id,p_season_id:state.season.id}))
+    must(supabase.rpc("get_roster_generic_roles",{p_team_id:state.team.id,p_season_id:state.season.id})),
+    isStaffAudience()
+      ? must(
+          supabase.from("event_attendance")
+            .select("*")
+            .eq("event_id",m.event_id)
+            .in("status",["absent","late"])
+        )
+      : Promise.resolve([])
   ]);
   const genericMap=new Map(genericRows.map(x=>[x.player_id,x.generic_role_code||null]));
 
@@ -10804,6 +11290,7 @@ async function pageMatch(id){
         <p>${fmtDateTime(ev.start_at)} · ${esc(ev.location||"Luogo non indicato")} · ${esc(m.status)}</p>
       </div>
       <div class="actions">
+        ${selfAttendanceButton(ev)}
         ${can("matches.manage")?`<button class="btn" id="edit-match">✎ Modifica partita</button>`:""}
         ${can("live.view")?`<button class="btn btn-primary" id="open-live">Apri LIVE</button>`:""}
         ${m.status==="finished"&&can("matches.finalize")?`<button class="btn" id="finalize">Finalizza</button>`:""}
@@ -10817,7 +11304,10 @@ async function pageMatch(id){
           <strong>${esc(leftName)}</strong>
         </div>
         <div>
-          <div class="match-score-number">${m.home_away==="away"?`${score.goals_against}-${score.goals_for}`:`${score.goals_for}-${score.goals_against}`}</div>
+          <div class="match-score-number">${matchHasStarted(m.status)
+            ? (m.home_away==="away"?`${score.goals_against}-${score.goals_for}`:`${score.goals_for}-${score.goals_against}`)
+            : "VS"
+          }</div>
           <div class="muted">
             ${esc(competition?.name||"Partita")} · ${matchLocationIcon(m.home_away)}
             · ${m.regulation_period_count||2}×${m.regulation_period_minutes||45}'
@@ -10830,6 +11320,25 @@ async function pageMatch(id){
         </div>
       </div>
     </div>
+
+    ${isStaffAudience()&&selfReports.length?`
+      <div style="height:10px"></div>
+      <div class="card">
+        <div class="card-head"><h3>🙋 Segnalazioni calciatori</h3></div>
+        <div class="list">
+          ${selfReports.map(r=>{
+            const p=pmMap.get(r.player_id);
+            return `<div class="list-item">
+              <div>
+                ${playerListIdentity(p,genericMap.get(r.player_id))}
+                ${r.note?`<div class="muted">${esc(r.note)}</div>`:""}
+              </div>
+              <span class="badge ${r.status==="absent"?"red":"yellow"}">${r.status==="absent"?"❌ Assente":"⏱️ Ritardo"}</span>
+            </div>`;
+          }).join("")}
+        </div>
+      </div>
+    `:""}
 
     <div style="height:14px"></div>
 
@@ -11071,8 +11580,13 @@ async function renderLiveView(id){
   const pendingFor=d.pending.filter(x=>["goal","penalty_goal"].includes(x.event_type)&&x.team_side==="us").length + d.pending.filter(x=>x.event_type==="own_goal"&&x.team_side==="opponent").length;
   const pendingAgainst=d.pending.filter(x=>["goal","penalty_goal"].includes(x.event_type)&&x.team_side==="opponent").length + d.pending.filter(x=>x.event_type==="own_goal"&&x.team_side==="us").length;
   const timeline=[...d.official.map(x=>({...x,pending:false})),...d.pending.map(x=>({...x,match_second:x.approx_match_second,pending:true}))].sort((a,b)=>b.match_second-a.match_second);
-  renderShell("LIVE",`<div class="live-score card"><div class="muted">${esc(d.m.period.replaceAll("_"," "))}</div><div class="score">${d.score.goals_for+(pendingFor?`*`:"")} - ${d.score.goals_against+(pendingAgainst?`*`:"")}</div><div>${esc(state.team.short_name||state.team.name)} · ${esc(d.m.opponent_name)}</div><div class="live-clock" id="live-clock" data-base="${d.clock.elapsed_seconds}" data-running="${d.clock.clock_running}">${clockText(d.clock.elapsed_seconds)}</div>${d.pending.length?`<div class="badge yellow">${d.pending.length} eventi da validare</div>`:""}</div>
-    <div style="height:12px"></div><div class="actions">${can("live.submit")?`<button class="btn btn-primary" id="report-mode">＋ Segnala evento</button>`:""}${can("live.control")?`<button class="btn" data-control="${d.m.status==="live"?"pause":d.m.status==="paused"?"resume":"start"}">${d.m.status==="live"?"Pausa":d.m.status==="paused"?"Riprendi":"Avvia"}</button><select id="live-period" style="width:auto"><option value="first_half" ${d.m.period==="first_half"?"selected":""}>1° tempo</option><option value="halftime" ${d.m.period==="halftime"?"selected":""}>Intervallo</option><option value="second_half" ${d.m.period==="second_half"?"selected":""}>2° tempo</option><option value="extra_time_1" ${d.m.period==="extra_time_1"?"selected":""}>1° supplementare</option><option value="extra_time_break" ${d.m.period==="extra_time_break"?"selected":""}>Intervallo suppl.</option><option value="extra_time_2" ${d.m.period==="extra_time_2"?"selected":""}>2° supplementare</option><option value="penalties" ${d.m.period==="penalties"?"selected":""}>Rigori</option></select>${!["finished","finalized"].includes(d.m.status)?`<button class="btn btn-danger" data-control="finish">Termina</button>`:""}`:""}</div>
+  const reportAllowed=matchCanReportEvents(d.m.status);
+  const scoreText=matchHasStarted(d.m.status)
+    ? `${d.score.goals_for+(pendingFor?`*`:"")} - ${d.score.goals_against+(pendingAgainst?`*`:"")}`
+    : "VS";
+
+  renderShell("LIVE",`<div class="live-score card"><div class="muted">${esc(d.m.period.replaceAll("_"," "))}</div><div class="score">${scoreText}</div><div>${esc(state.team.short_name||state.team.name)} · ${esc(d.m.opponent_name)}</div><div class="live-clock" id="live-clock" data-base="${d.clock.elapsed_seconds}" data-running="${d.clock.clock_running}">${clockText(d.clock.elapsed_seconds)}</div>${d.pending.length?`<div class="badge yellow">${d.pending.length} eventi da validare</div>`:""}</div>
+    <div style="height:12px"></div><div class="actions">${can("live.submit")&&reportAllowed?`<button class="btn btn-primary" id="report-mode">＋ Segnala evento</button>`:""}${can("live.submit")&&!reportAllowed?`<span class="badge">Le segnalazioni si attivano all'inizio della partita</span>`:""}${can("live.control")?`<button class="btn" data-control="${d.m.status==="live"?"pause":d.m.status==="paused"?"resume":"start"}">${d.m.status==="live"?"Pausa":d.m.status==="paused"?"Riprendi":"Avvia"}</button><select id="live-period" style="width:auto"><option value="first_half" ${d.m.period==="first_half"?"selected":""}>1° tempo</option><option value="halftime" ${d.m.period==="halftime"?"selected":""}>Intervallo</option><option value="second_half" ${d.m.period==="second_half"?"selected":""}>2° tempo</option><option value="extra_time_1" ${d.m.period==="extra_time_1"?"selected":""}>1° supplementare</option><option value="extra_time_break" ${d.m.period==="extra_time_break"?"selected":""}>Intervallo suppl.</option><option value="extra_time_2" ${d.m.period==="extra_time_2"?"selected":""}>2° supplementare</option><option value="penalties" ${d.m.period==="penalties"?"selected":""}>Rigori</option></select>${!["finished","finalized"].includes(d.m.status)?`<button class="btn btn-danger" data-control="finish">Termina</button>`:""}`:""}</div>
     <div style="height:12px"></div>${can("live.validate")&&d.pending.length?`<div class="card"><h2>Da validare</h2><div class="list">${d.pending.map(g=>`<div class="list-item"><div><strong>${minute(g.approx_match_second)} ${esc(g.event_type)}</strong><div class="muted">${g.report_count} segnalazioni · ${g.suggested_player_id?esc(d.pm.get(g.suggested_player_id)?.last_name||""):""}</div></div><div class="actions"><button class="btn btn-sm btn-primary" data-confirm="${g.group_id}">Conferma</button><button class="btn btn-sm" data-modify-pending="${g.group_id}">Modifica</button><button class="btn btn-sm btn-danger" data-reject="${g.group_id}">Rifiuta</button></div></div>`).join("")}</div></div><div style="height:12px"></div>`:""}
     <div class="card"><h2>Timeline</h2><div class="timeline">${timeline.map(e=>e.pending?`<div class="timeline-item pending"><strong>${minute(e.match_second)} ⚠️ ${esc(e.event_type)}</strong><div class="muted">Da confermare · ${e.report_count||1} segnalazioni</div></div>`:`<div class="timeline-item"><div class="card-head"><div><strong>${minute(e.match_second)} ${eventLabel(e,d.pm,d.posm)}</strong><div class="muted">${esc(e.team_side==="us"?"Noi":"Avversario")}</div></div>${can("live.edit")?`<div class="actions"><button class="btn btn-sm" data-edit-event="${e.id}">Modifica</button>${can("live.delete")?`<button class="btn btn-sm btn-danger" data-delete-event="${e.id}">×</button>`:""}</div>`:""}</div></div>`).join("")||`<div class="empty">Nessun evento</div>`}</div></div>`);
   startClockTicker();
@@ -11097,6 +11611,10 @@ function subscribeLive(id){
   ch.subscribe();state.liveChannel=ch;
 }
 function renderLiveReporter(id,d){
+  if(!matchCanReportEvents(d.m.status)){
+    toast("La partita non è ancora iniziata: non puoi segnalare eventi","error");
+    return renderLiveView(id);
+  }
   renderShell("Segnala evento",`<div class="page-title"><div><h1>Invia segnalazione</h1><p>${can("live.submit_trusted")?"Il tuo evento entra direttamente nella cronaca ufficiale.":"Il dato sarà mostrato subito come da confermare."}</p></div><button class="btn" id="back-live">← Torna alla LIVE</button></div><div class="live-actions">
     <button class="btn btn-primary" data-report="goal">⚽ Gol nostro</button><button class="btn" data-report="opp_goal">⚽ Gol avversario</button>
     <button class="btn" data-report="substitution">🔄 Cambio</button><button class="btn" data-report="position_change">↔ Cambio ruolo</button>
@@ -11163,7 +11681,14 @@ async function openRatings(matchId){
 async function pageStats(){
   const internalStats=!isFanAudience();
 
-  const [stats,ratings,teamRows,players,rosterHistory,genericRows,extended]=await Promise.all([
+  const [
+    stats,
+    ratings,
+    teamRows,
+    players,
+    rosterHistory,
+    genericRows
+  ]=await Promise.all([
     must(
       supabase.from("v_player_season_stats")
         .select("*")
@@ -11202,16 +11727,25 @@ async function pageStats(){
         p_team_id:state.team.id,
         p_season_id:state.season.id
       })
-    ),
-    internalStats
-      ? must(
-          supabase.rpc("get_extended_team_statistics",{
-            p_team_id:state.team.id,
-            p_season_id:state.season.id
-          })
-        )
-      : Promise.resolve(null)
+    )
   ]);
+
+  let extended=null;
+  let extendedError=null;
+
+  if(internalStats){
+    try{
+      extended=await must(
+        supabase.rpc("get_extended_team_statistics",{
+          p_team_id:state.team.id,
+          p_season_id:state.season.id
+        })
+      );
+    }catch(err){
+      extendedError=err;
+      console.error("Statistiche operative:",err);
+    }
+  }
 
   const team=teamRows[0]||{};
   const rm=new Map(ratings.map(x=>[x.player_id,x]));
@@ -11258,6 +11792,16 @@ async function pageStats(){
     both:"Ambidestri"
   })[code]||code;
 
+  const matchTeam=extended?.match_team||{
+    total:team.matches_played||0,
+    played:team.matches_played||0,
+    wins:team.wins||0,
+    draws:team.draws||0,
+    losses:team.losses||0,
+    goals_for:team.goals_for||0,
+    goals_against:team.goals_against||0
+  };
+  const matchCompetitions=extended?.match_competitions||[];
   const training=extended?.training_team||{};
   const trainingPlayers=extended?.training_players||[];
   const absenceTeam=extended?.absence_team||{};
@@ -11275,139 +11819,208 @@ async function pageStats(){
 
   const maxType=(rows,key="count")=>Math.max(1,...rows.map(x=>Number(x[key]||0)));
 
+  const categoryTile=(id,icon,title,copy,value,label)=>`
+    <button type="button" class="card stats-category-tile" data-stats-open="${id}">
+      <div>
+        <div class="stats-category-icon">${icon}</div>
+        <div class="stats-category-title">${esc(title)}</div>
+        <div class="stats-category-copy">${esc(copy)}</div>
+      </div>
+      <div class="stats-category-kpi">
+        <span class="muted">${esc(label)}</span>
+        <strong>${value}</strong>
+      </div>
+    </button>
+  `;
+
+  const detailHeader=(id,title)=>`
+    <div class="stats-detail-toolbar">
+      <button class="btn btn-sm" type="button" data-stats-back>← Tutte le statistiche</button>
+      <strong>${title}</strong>
+    </div>
+  `;
+
   renderShell("Statistiche",`
     <div class="page-title">
       <div>
         <h1>Statistiche</h1>
-        <p>Analisi sportive, presenze, disponibilità, disciplina e composizione della Rosa.</p>
+        <p>Ogni area statistica ha un pannello dedicato.</p>
       </div>
     </div>
 
-    <div class="stats-tabs">
-      <button class="btn active" data-stats-tab="overview">📊 Panoramica</button>
-      ${internalStats?`<button class="btn" data-stats-tab="training">🏃 Allenamenti</button>`:""}
-      ${internalStats?`<button class="btn" data-stats-tab="discipline">🚑 Assenze e disciplina</button>`:""}
-      <button class="btn" data-stats-tab="players">👥 Giocatori</button>
+    ${sectionKpis([
+      {icon:"⚽",value:matchTeam.played??team.matches_played??0,label:"Partite giocate"},
+      {icon:"🏆",value:`${matchTeam.wins??team.wins??0}-${matchTeam.draws??team.draws??0}-${matchTeam.losses??team.losses??0}`,label:"V-N-P"},
+      {icon:"🥅",value:matchTeam.goals_for??team.goals_for??0,label:"Gol fatti"},
+      {icon:"👥",value:roster.length,label:"Calciatori"}
+    ])}
+
+    ${extendedError?`
+      <div class="section-note" style="margin-bottom:9px">
+        ⚠️ Le statistiche operative interne non sono state caricate. Le statistiche base restano disponibili.
+        Dopo la migration 031 il pannello operativo viene ripristinato.
+      </div>
+    `:""}
+
+    <div id="stats-category-home">
+      <div class="stats-category-grid">
+        ${categoryTile(
+          "matches","⚽","Partite",
+          "Risultati, casa/trasferta, competizioni e andamento stagionale.",
+          matchTeam.played??0,"giocate"
+        )}
+
+        ${internalStats?categoryTile(
+          "training","🏃","Allenamenti",
+          "Presenze, assenze, ritardi e percentuali per squadra e giocatore.",
+          `${training.attendance_rate??0}%`,"presenza squadra"
+        ):""}
+
+        ${categoryTile(
+          "players","👥","Giocatori",
+          "Pannello separato con statistiche individuali e rendimento.",
+          roster.length,"in rosa"
+        )}
+
+        ${internalStats?categoryTile(
+          "absences","🚑","Assenze",
+          "Periodi, giorni indisponibili, tipologie e incidenza per giocatore.",
+          absenceTeam.periods??0,"periodi"
+        ):""}
+
+        ${internalStats?categoryTile(
+          "discipline","🟥","Disciplina e multe",
+          "Squalifiche, giornate, sanzioni economiche e relative tipologie.",
+          (Number(suspensionTeam.total||0)+Number(fineTeam.total||0)),"eventi"
+        ):""}
+
+        ${categoryTile(
+          "demographics","🎂","Anagrafiche",
+          "Età, altezza, estremi e composizione demografica della rosa.",
+          avgAge!==null?avgAge.toFixed(1):"—","età media"
+        )}
+
+        ${categoryTile(
+          "identity","🌍","Nazionalità e tifo",
+          "Nazionalità rappresentate, piede preferito e squadre del cuore.",
+          nationalityCounts.length,"nazionalità"
+        )}
+      </div>
     </div>
 
-    <div class="stats-panel active" data-stats-panel="overview">
+    <div class="stats-detail-view" data-stats-detail="matches">
+      ${detailHeader("matches","⚽ Partite")}
       <div class="stats-data-grid">
-        <div class="card"><div class="stat">${team.matches_played||0}</div><div class="stat-label">Partite</div></div>
-        <div class="card"><div class="stat">${team.wins||0}-${team.draws||0}-${team.losses||0}</div><div class="stat-label">V-N-P</div></div>
-        <div class="card"><div class="stat">${team.goals_for||0}</div><div class="stat-label">Gol fatti</div></div>
-        <div class="card"><div class="stat">${team.goals_against||0}</div><div class="stat-label">Gol subiti</div></div>
-        <div class="card"><div class="stat">${avgAge!==null?avgAge.toFixed(1):"—"}</div><div class="stat-label">Età media</div></div>
-        <div class="card"><div class="stat">${medAge!==null?medAge.toFixed(1):"—"}</div><div class="stat-label">Età mediana</div></div>
-        <div class="card"><div class="stat">${avgHeight!==null?avgHeight.toFixed(1):"—"}</div><div class="stat-label">Altezza media cm</div></div>
-        <div class="card"><div class="stat">${medHeight!==null?medHeight.toFixed(1):"—"}</div><div class="stat-label">Altezza mediana cm</div></div>
+        <div class="card"><div class="stat">${matchTeam.total||0}</div><div class="stat-label">Totali</div></div>
+        <div class="card"><div class="stat">${matchTeam.played||0}</div><div class="stat-label">Giocate</div></div>
+        <div class="card"><div class="stat">${matchTeam.home||0}</div><div class="stat-label">Casa</div></div>
+        <div class="card"><div class="stat">${matchTeam.away||0}</div><div class="stat-label">Trasferta</div></div>
+        <div class="card"><div class="stat">${matchTeam.wins||0}</div><div class="stat-label">Vittorie</div></div>
+        <div class="card"><div class="stat">${matchTeam.draws||0}</div><div class="stat-label">Pareggi</div></div>
+        <div class="card"><div class="stat">${matchTeam.losses||0}</div><div class="stat-label">Sconfitte</div></div>
+        <div class="card"><div class="stat">${Number(matchTeam.goals_for||0)-Number(matchTeam.goals_against||0)}</div><div class="stat-label">Differenza reti</div></div>
       </div>
 
       <div style="height:10px"></div>
-
-      <div class="grid grid-2">
-        <div class="card">
-          <h3>🎂 Identikit</h3>
-          <div class="stats-kv"><span>Più giovane</span><strong>${youngest?`${esc(youngest.last_name)} ${youngest.age} anni`:"—"}</strong></div>
-          <div class="stats-kv"><span>Più esperto</span><strong>${oldest?`${esc(oldest.last_name)} ${oldest.age} anni`:"—"}</strong></div>
-          <div class="stats-kv"><span>Più alto</span><strong>${tallest?`${esc(tallest.last_name)} ${tallest.height} cm`:"—"}</strong></div>
-          <div class="stats-kv"><span>Più basso</span><strong>${shortest?`${esc(shortest.last_name)} ${shortest.height} cm`:"—"}</strong></div>
-          <div class="stats-kv"><span>Nazionalità</span><strong>${nationalityCounts.length}</strong></div>
-          <div class="stats-kv"><span>Squadre del cuore</span><strong>${favoriteCounts.length}</strong></div>
-        </div>
-
-        <div class="card">
-          <h3>🦶 Piede preferito</h3>
-          <div class="stats-mini-bars">
-            ${footCounts.map(([code,count])=>`
-              <div class="stats-mini-bar">
-                <span>${esc(footLabel(code))}</span>
-                <div class="stats-mini-bar-track"><div class="stats-mini-bar-fill" style="width:${knownFeet?Math.round(count/knownFeet*100):0}%"></div></div>
-                <strong>${count}</strong>
-              </div>
-            `).join("")||`<div class="empty">Dati non disponibili</div>`}
-          </div>
-
-          <div style="height:10px"></div>
-          <h3>❤️ Squadre tifate</h3>
-          <div class="stats-mini-bars">
-            ${favoriteCounts.slice(0,8).map(([club,count])=>`
-              <div class="stats-mini-bar">
-                <span>${esc(club)}</span>
-                <div class="stats-mini-bar-track"><div class="stats-mini-bar-fill" style="width:${roster.length?Math.round(count/roster.length*100):0}%"></div></div>
-                <strong>${count}</strong>
-              </div>
-            `).join("")||`<div class="empty">Nessuna squadra indicata</div>`}
-          </div>
-        </div>
-      </div>
-
-      <div style="height:10px"></div>
-
       <div class="card">
-        <h3>🌍 Provenienza</h3>
-        <div class="stats-mini-bars">
-          ${nationalityCounts.slice(0,12).map(([code,count])=>`
-            <div class="stats-mini-bar">
-              <span>${countryFlag(code)} ${esc(countryName(code))}</span>
-              <div class="stats-mini-bar-track"><div class="stats-mini-bar-fill" style="width:${roster.length?Math.round(count/roster.length*100):0}%"></div></div>
-              <strong>${count}</strong>
-            </div>
-          `).join("")||`<div class="empty">Nazionalità non disponibili</div>`}
+        <h3>🏆 Per competizione</h3>
+        <div class="table-wrap">
+          <table class="table">
+            <thead><tr><th>Competizione</th><th>Partite</th><th>Giocate</th><th>Vittorie</th><th>GF</th><th>GS</th></tr></thead>
+            <tbody>
+              ${matchCompetitions.map(x=>`
+                <tr>
+                  <td>${esc(x.competition_name)}</td>
+                  <td>${x.matches}</td>
+                  <td>${x.played}</td>
+                  <td>${x.wins}</td>
+                  <td>${x.goals_for}</td>
+                  <td>${x.goals_against}</td>
+                </tr>
+              `).join("")||`<tr><td colspan="6">Dati per competizione non ancora disponibili</td></tr>`}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
 
     ${internalStats?`
-      <div class="stats-panel" data-stats-panel="training">
+      <div class="stats-detail-view" data-stats-detail="training">
+        ${detailHeader("training","🏃 Allenamenti")}
         <div class="stats-data-grid">
-          <div class="card"><div class="stat">${training.trainings_total||0}</div><div class="stat-label">Allenamenti svolti</div></div>
+          <div class="card"><div class="stat">${training.trainings_total||0}</div><div class="stat-label">Allenamenti</div></div>
           <div class="card"><div class="stat">${training.present||0}</div><div class="stat-label">Presenze</div></div>
           <div class="card"><div class="stat">${training.late||0}</div><div class="stat-label">Ritardi</div></div>
           <div class="card"><div class="stat">${training.attendance_rate||0}%</div><div class="stat-label">Presenza squadra</div></div>
         </div>
 
         <div style="height:10px"></div>
-
         <div class="card">
-          <div class="card-head">
-            <div>
-              <h2>🏃 Presenze allenamenti per giocatore</h2>
-              <div class="muted">La percentuale considera presenti + ritardatari sugli allenamenti con presenza registrata.</div>
-            </div>
-          </div>
+          <h3>👥 Presenza per giocatore</h3>
           <div class="table-wrap stats-player-panel">
             <table class="table stats-table">
-              <thead><tr><th>Calciatore</th><th>Registrati</th><th>Presenti</th><th>Ritardi</th><th>Assenti</th><th>% presenza</th></tr></thead>
+              <thead><tr><th>Calciatore</th><th>Registrati</th><th>Presenti</th><th>Ritardi</th><th>Assenti</th><th>%</th></tr></thead>
               <tbody>
                 ${trainingPlayers.map(x=>`
                   <tr>
                     <td>${playerListIdentity(playerById.get(x.player_id)||x,genericMap.get(x.player_id))}</td>
-                    <td>${x.marked}</td>
-                    <td>${x.present}</td>
-                    <td>${x.late}</td>
-                    <td>${x.absent}</td>
+                    <td>${x.marked}</td><td>${x.present}</td><td>${x.late}</td><td>${x.absent}</td>
                     <td><strong>${x.attendance_rate}%</strong></td>
                   </tr>
-                `).join("")}
+                `).join("")||`<tr><td colspan="6">Nessun dato presenze</td></tr>`}
               </tbody>
             </table>
           </div>
         </div>
       </div>
+    `:""}
 
-      <div class="stats-panel" data-stats-panel="discipline">
+    <div class="stats-detail-view" data-stats-detail="players">
+      ${detailHeader("players","👥 Giocatori")}
+      <div class="card">
+        <div class="table-wrap stats-player-panel">
+          <table class="table stats-table">
+            <thead>
+              <tr>
+                <th>Calciatore</th><th>PG</th><th>Tit.</th><th>Min</th>
+                <th>Gol</th><th>Assist</th><th>G/90</th><th>A/90</th>
+                <th>Media</th><th>MVP</th>${internalStats?`<th>All. %</th>`:""}
+              </tr>
+            </thead>
+            <tbody>
+              ${stats.map(st=>{
+                const p=playerById.get(st.player_id)||st;
+                const tr=trainingPlayerMap.get(st.player_id);
+                return `<tr>
+                  <td>${playerListIdentity(p,genericMap.get(st.player_id))}</td>
+                  <td>${st.appearances}</td><td>${st.starts}</td><td>${st.minutes}</td>
+                  <td>${st.goals}</td><td>${st.assists}</td>
+                  <td>${st.goals_per_90}</td><td>${st.assists_per_90}</td>
+                  <td>${rm.get(st.player_id)?.average_rating||"—"}</td>
+                  <td>${rm.get(st.player_id)?.mvp_votes||0}</td>
+                  ${internalStats?`<td>${tr?.attendance_rate??0}%</td>`:""}
+                </tr>`;
+              }).join("")}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    ${internalStats?`
+      <div class="stats-detail-view" data-stats-detail="absences">
+        ${detailHeader("absences","🚑 Assenze")}
         <div class="stats-data-grid">
-          <div class="card"><div class="stat">${absenceTeam.periods||0}</div><div class="stat-label">Periodi di assenza</div></div>
-          <div class="card"><div class="stat">${absenceTeam.days||0}</div><div class="stat-label">Giorni indisponibilità</div></div>
-          <div class="card"><div class="stat">${suspensionTeam.total||0}</div><div class="stat-label">Squalifiche</div></div>
-          <div class="card"><div class="stat">€ ${Number(fineTeam.amount_total||0).toFixed(2)}</div><div class="stat-label">Multe complessive</div></div>
+          <div class="card"><div class="stat">${absenceTeam.periods||0}</div><div class="stat-label">Periodi</div></div>
+          <div class="card"><div class="stat">${absenceTeam.active||0}</div><div class="stat-label">In corso</div></div>
+          <div class="card"><div class="stat">${absenceTeam.days||0}</div><div class="stat-label">Giorni indisponibili</div></div>
+          <div class="card"><div class="stat">${absenceTypes.length}</div><div class="stat-label">Tipologie</div></div>
         </div>
 
         <div style="height:10px"></div>
-
-        <div class="grid grid-3">
+        <div class="grid grid-2">
           <div class="card">
-            <h3>🚑 Tipologie assenze</h3>
+            <h3>📊 Tipologie</h3>
             <div class="stats-type-list">
               ${absenceTypes.map(x=>`
                 <div class="stats-type-row">
@@ -11420,44 +12033,59 @@ async function pageStats(){
           </div>
 
           <div class="card">
-            <h3>🟥 Squalifiche</h3>
-            <div class="stats-kv"><span>Totali</span><strong>${suspensionTeam.total||0}</strong></div>
-            <div class="stats-kv"><span>Attive</span><strong>${suspensionTeam.active||0}</strong></div>
-            <div class="stats-kv"><span>Giornate comminate</span><strong>${suspensionTeam.matches||0}</strong></div>
-            <div class="stats-kv"><span>Giornate scontate</span><strong>${suspensionTeam.served||0}</strong></div>
-            ${suspensionTypes.map(x=>`<div class="stats-kv"><span>${esc(x.type)}</span><strong>${x.count}</strong></div>`).join("")}
+            <h3>👥 Per giocatore</h3>
+            <div class="table-wrap">
+              <table class="table">
+                <thead><tr><th>Calciatore</th><th>Periodi</th><th>Giorni</th></tr></thead>
+                <tbody>
+                  ${absencePlayers.map(x=>`
+                    <tr>
+                      <td>${playerListIdentity(playerById.get(x.player_id)||x,genericMap.get(x.player_id))}</td>
+                      <td>${x.periods}</td><td>${x.days}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
           </div>
+        </div>
+      </div>
 
+      <div class="stats-detail-view" data-stats-detail="discipline">
+        ${detailHeader("discipline","🟥 Disciplina e multe")}
+        <div class="stats-data-grid">
+          <div class="card"><div class="stat">${suspensionTeam.total||0}</div><div class="stat-label">Squalifiche</div></div>
+          <div class="card"><div class="stat">${suspensionTeam.matches||0}</div><div class="stat-label">Giornate comminate</div></div>
+          <div class="card"><div class="stat">${fineTeam.total||0}</div><div class="stat-label">Multe</div></div>
+          <div class="card"><div class="stat">€ ${Number(fineTeam.amount_total||0).toFixed(2)}</div><div class="stat-label">Importo multe</div></div>
+        </div>
+
+        <div style="height:10px"></div>
+        <div class="grid grid-2">
+          <div class="card">
+            <h3>🟥 Squalifiche per tipologia</h3>
+            ${suspensionTypes.map(x=>`<div class="stats-kv"><span>${esc(x.type)}</span><strong>${x.count} · ${x.matches} giorn.</strong></div>`).join("")||`<div class="empty">Nessuna squalifica</div>`}
+          </div>
           <div class="card">
             <h3>💸 Multe per tipologia</h3>
-            <div class="stats-kv"><span>Totali</span><strong>${fineTeam.total||0}</strong></div>
-            <div class="stats-kv"><span>Da pagare</span><strong>${fineTeam.pending||0} · € ${Number(fineTeam.amount_pending||0).toFixed(2)}</strong></div>
-            <div class="stats-kv"><span>Pagate</span><strong>${fineTeam.paid||0} · € ${Number(fineTeam.amount_paid||0).toFixed(2)}</strong></div>
-            ${fineTypes.map(x=>`<div class="stats-kv"><span>${esc(x.type)}</span><strong>${x.count} · € ${Number(x.amount||0).toFixed(2)}</strong></div>`).join("")}
+            ${fineTypes.map(x=>`<div class="stats-kv"><span>${esc(x.type)}</span><strong>${x.count} · € ${Number(x.amount||0).toFixed(2)}</strong></div>`).join("")||`<div class="empty">Nessuna multa</div>`}
           </div>
         </div>
 
         <div style="height:10px"></div>
-
         <div class="card">
-          <h2>👥 Assenze e disciplina per giocatore</h2>
-          <div class="table-wrap stats-player-panel">
-            <table class="table stats-table">
-              <thead><tr><th>Calciatore</th><th>Assenze</th><th>Giorni</th><th>Squalifiche</th><th>Giornate</th><th>Multe</th><th>€ Multe</th></tr></thead>
+          <h3>👥 Disciplina per giocatore</h3>
+          <div class="table-wrap">
+            <table class="table">
+              <thead><tr><th>Calciatore</th><th>Squalifiche</th><th>Giornate</th><th>Multe</th><th>€</th></tr></thead>
               <tbody>
-                ${roster.map(p=>{
-                  const a=absencePlayerMap.get(p.id)||{};
-                  const d=disciplinePlayerMap.get(p.id)||{};
-                  return `<tr>
-                    <td>${playerListIdentity(p,genericMap.get(p.id))}</td>
-                    <td>${a.periods||0}</td>
-                    <td>${a.days||0}</td>
-                    <td>${d.suspensions||0}</td>
-                    <td>${d.suspension_matches||0}</td>
-                    <td>${d.fines||0}</td>
-                    <td>€ ${Number(d.fine_amount||0).toFixed(2)}</td>
-                  </tr>`;
-                }).join("")}
+                ${disciplinePlayers.map(x=>`
+                  <tr>
+                    <td>${playerListIdentity(playerById.get(x.player_id)||x,genericMap.get(x.player_id))}</td>
+                    <td>${x.suspensions}</td><td>${x.suspension_matches}</td>
+                    <td>${x.fines}</td><td>€ ${Number(x.fine_amount||0).toFixed(2)}</td>
+                  </tr>
+                `).join("")}
               </tbody>
             </table>
           </div>
@@ -11465,56 +12093,57 @@ async function pageStats(){
       </div>
     `:""}
 
-    <div class="stats-panel" data-stats-panel="players">
+    <div class="stats-detail-view" data-stats-detail="demographics">
+      ${detailHeader("demographics","🎂 Anagrafiche")}
+      <div class="stats-data-grid">
+        <div class="card"><div class="stat">${avgAge!==null?avgAge.toFixed(1):"—"}</div><div class="stat-label">Età media</div></div>
+        <div class="card"><div class="stat">${medAge!==null?medAge.toFixed(1):"—"}</div><div class="stat-label">Età mediana</div></div>
+        <div class="card"><div class="stat">${avgHeight!==null?avgHeight.toFixed(1):"—"}</div><div class="stat-label">Altezza media cm</div></div>
+        <div class="card"><div class="stat">${medHeight!==null?medHeight.toFixed(1):"—"}</div><div class="stat-label">Altezza mediana cm</div></div>
+      </div>
+      <div style="height:10px"></div>
       <div class="card">
-        <div class="card-head">
-          <div>
-            <h2>👥 Statistiche giocatori</h2>
-            <div class="muted">Pannello dedicato alle prestazioni individuali in partita${internalStats?" e alla frequenza agli allenamenti":""}.</div>
-          </div>
-        </div>
+        <div class="stats-kv"><span>Più giovane</span><strong>${youngest?`${esc(youngest.last_name)} ${youngest.age} anni`:"—"}</strong></div>
+        <div class="stats-kv"><span>Più esperto</span><strong>${oldest?`${esc(oldest.last_name)} ${oldest.age} anni`:"—"}</strong></div>
+        <div class="stats-kv"><span>Più alto</span><strong>${tallest?`${esc(tallest.last_name)} ${tallest.height} cm`:"—"}</strong></div>
+        <div class="stats-kv"><span>Più basso</span><strong>${shortest?`${esc(shortest.last_name)} ${shortest.height} cm`:"—"}</strong></div>
+      </div>
+    </div>
 
-        <div class="table-wrap stats-player-panel">
-          <table class="table stats-table">
-            <thead>
-              <tr>
-                <th>Calciatore</th><th>PG</th><th>Tit.</th><th>Min</th>
-                <th>Gol</th><th>Assist</th><th>G/90</th><th>A/90</th>
-                <th>Media</th><th>MVP</th>
-                ${internalStats?`<th>All. %</th>`:""}
-              </tr>
-            </thead>
-            <tbody>
-              ${stats.map(st=>{
-                const p=playerById.get(st.player_id)||st;
-                const tr=trainingPlayerMap.get(st.player_id);
-                return `<tr>
-                  <td>${playerListIdentity(p,genericMap.get(st.player_id))}</td>
-                  <td>${st.appearances}</td>
-                  <td>${st.starts}</td>
-                  <td>${st.minutes}</td>
-                  <td>${st.goals}</td>
-                  <td>${st.assists}</td>
-                  <td>${st.goals_per_90}</td>
-                  <td>${st.assists_per_90}</td>
-                  <td>${rm.get(st.player_id)?.average_rating||"—"}</td>
-                  <td>${rm.get(st.player_id)?.mvp_votes||0}</td>
-                  ${internalStats?`<td>${tr?.attendance_rate??0}%</td>`:""}
-                </tr>`;
-              }).join("")}
-            </tbody>
-          </table>
+    <div class="stats-detail-view" data-stats-detail="identity">
+      ${detailHeader("identity","🌍 Nazionalità e tifo")}
+      <div class="grid grid-3">
+        <div class="card">
+          <h3>🌍 Nazionalità</h3>
+          ${nationalityCounts.map(([code,count])=>`<div class="stats-kv"><span>${countryFlag(code)} ${esc(countryName(code))}</span><strong>${count}</strong></div>`).join("")}
+        </div>
+        <div class="card">
+          <h3>🦶 Piede</h3>
+          ${footCounts.map(([code,count])=>`<div class="stats-kv"><span>${esc(footLabel(code))}</span><strong>${count}</strong></div>`).join("")}
+        </div>
+        <div class="card">
+          <h3>❤️ Squadre del cuore</h3>
+          ${favoriteCounts.map(([club,count])=>`<div class="stats-kv"><span>${esc(club)}</span><strong>${count}</strong></div>`).join("")||`<div class="empty">Nessuna squadra indicata</div>`}
         </div>
       </div>
     </div>
   `);
 
-  $$("[data-stats-tab]").forEach(b=>b.onclick=()=>{
-    $$("[data-stats-tab]").forEach(x=>x.classList.toggle("active",x===b));
-    $$("[data-stats-panel]").forEach(x=>{
-      x.classList.toggle("active",x.dataset.statsPanel===b.dataset.statsTab);
-    });
-  });
+  const home=$("#stats-category-home");
+  const details=$$("[data-stats-detail]");
+
+  const openCategory=id=>{
+    home.classList.add("hidden");
+    details.forEach(x=>x.classList.toggle("active",x.dataset.statsDetail===id));
+  };
+
+  const closeCategory=()=>{
+    home.classList.remove("hidden");
+    details.forEach(x=>x.classList.remove("active"));
+  };
+
+  $$("[data-stats-open]").forEach(b=>b.onclick=()=>openCategory(b.dataset.statsOpen));
+  $$("[data-stats-back]").forEach(b=>b.onclick=closeCategory);
 }
 
 /* =========================================================
@@ -11724,6 +12353,53 @@ function favoriteClubsDatalist(clubs,id="favorite-clubs-list"){
   return `<datalist id="${id}">
     ${clubs.map(c=>`<option value="${esc(c.display_name)}"></option>`).join("")}
   </datalist>`;
+}
+
+function sectionKpis(items=[]){
+  return `<div class="section-kpi-strip">
+    ${items.map(x=>`
+      <div class="section-kpi">
+        <span class="section-kpi-icon">${x.icon||"⚽"}</span>
+        <div class="section-kpi-copy">
+          <div class="section-kpi-value">${x.value??"—"}</div>
+          <div class="section-kpi-label">${esc(x.label||"")}</div>
+        </div>
+      </div>
+    `).join("")}
+  </div>`;
+}
+
+function matchHasStarted(status){
+  return ["live","paused","finished","finalized"].includes(status);
+}
+function matchCanReportEvents(status){
+  return ["live","paused","finished","finalized"].includes(status);
+}
+
+function eventSupportsSelfAttendance(event){
+  if(!state.myPlayer||!event)return false;
+  if(!["training","meeting","match"].includes(event.event_type))return false;
+  const end=event.end_at
+    ? new Date(event.end_at).getTime()
+    : new Date(event.start_at).getTime()+12*3600000;
+  return Date.now()<=end;
+}
+
+function selfAttendanceButton(event,label="Mia presenza"){
+  if(!eventSupportsSelfAttendance(event))return "";
+  return `<button class="btn btn-sm event-self-report-btn" type="button" data-my-event-attendance="${event.id}" title="${esc(label)}">🙋 ${esc(label)}</button>`;
+}
+
+function wireSelfAttendanceButtons(root=document){
+  $$("[data-my-event-attendance]",root).forEach(b=>{
+    if(b.dataset.wiredSelfAttendance)return;
+    b.dataset.wiredSelfAttendance="1";
+    b.addEventListener("click",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      openMyEventAttendanceModal(b.dataset.myEventAttendance);
+    });
+  });
 }
 
 function median(values){
@@ -12068,13 +12744,12 @@ async function pageAbsences(){
       </div>
     </div>
 
-    <div class="grid grid-3">
-      <div class="card"><div class="stat">${injuryActive}</div><div class="stat-label">Infortuni attivi</div></div>
-      <div class="card"><div class="stat">${suspActive}</div><div class="stat-label">Squalifiche attive</div></div>
-      <div class="card"><div class="stat">${otherActive}</div><div class="stat-label">Altre indisponibilità</div></div>
-    </div>
-
-    <div style="height:14px"></div>
+    ${sectionKpis([
+      {icon:"🤕",value:injuryActive,label:"Infortuni attivi"},
+      {icon:"🟥",value:suspActive,label:"Squalifiche attive"},
+      {icon:"❌",value:otherActive,label:"Indisponibilità attive"},
+      {icon:"📅",value:others.filter(x=>x.status==="active"&&x.start_date>today()).length,label:"Assenze future"}
+    ])}
     <div class="grid grid-2">
       <div class="card"><h2>Infortuni</h2><div class="list">${injuryRows||`<div class="empty">Nessun infortunio</div>`}</div></div>
       <div class="card"><h2>Squalifiche</h2><div class="list">${suspRows||`<div class="empty">Nessuna squalifica</div>`}</div></div>
@@ -12244,6 +12919,12 @@ async function pageVenues(){
       <div><h1>Campi</h1><p>Campi utilizzati dalla tua squadra per allenamenti e partite in casa. I campi delle avversarie si gestiscono nella loro scheda.</p></div>
       ${can("venues.manage")?`<button class="btn btn-primary" id="new-venue">Nuovo campo</button>`:""}
     </div>
+    ${sectionKpis([
+      {icon:"🏟️",value:venues.length,label:"Campi censiti"},
+      {icon:"✅",value:venues.filter(v=>venueIsValid(v)).length,label:"Attivi"},
+      {icon:"⛔",value:venues.filter(v=>!venueIsValid(v)).length,label:"Non proposti"},
+      {icon:"⭐",value:venues.filter(v=>v.id===state.team.default_venue_id).length,label:"Predefinito"}
+    ])}
     <div class="list">
       ${venues.map(v=>{
         const active=venueIsValid(v);
@@ -12318,6 +12999,13 @@ async function pageOpponents(){
       </div>
       ${can("opponents.manage")?`<button class="btn btn-primary" id="new-opponent">➕ Nuova avversaria</button>`:""}
     </div>
+
+    ${sectionKpis([
+      {icon:"🆚",value:opponents.length,label:"Avversarie censite"},
+      {icon:"✅",value:opponents.filter(o=>o.active).length,label:"Attive"},
+      {icon:"📦",value:opponents.filter(o=>!o.active).length,label:"Archiviate"},
+      {icon:"🏟️",value:opponents.filter(o=>o.home_venue_name||opponentVenueAddress(o)).length,label:"Campo configurato"}
+    ])}
 
     <div class="opponent-tiles">
       ${opponents.map(o=>`
@@ -12613,13 +13301,12 @@ async function pageMedical(){
       ${can("medical.manage")?`<button class="btn btn-primary" id="new-medical">Programma visita</button>`:""}
     </div>
 
-    <div class="grid grid-3">
-      <div class="card"><div class="stat">${validCount}</div><div class="stat-label">Abilitati oggi</div></div>
-      <div class="card"><div class="stat">${expiring}</div><div class="stat-label">Scadenza ≤45 gg</div></div>
-      <div class="card"><div class="stat">${invalid}</div><div class="stat-label">Non abilitati</div></div>
-    </div>
-
-    <div style="height:14px"></div>
+    ${sectionKpis([
+      {icon:"✅",value:validCount,label:"Abilitati oggi"},
+      {icon:"🚨",value:expiring,label:"Scadenza ≤45 gg"},
+      {icon:"☠️",value:invalid,label:"Non abilitati"},
+      {icon:"📅",value:[...scheduled.values()].length,label:"Visite programmate"}
+    ])}
 
     <div class="table-wrap">
       <table class="table">
@@ -13098,14 +13785,12 @@ async function pageCash(){
       </div>
     </div>
 
-    <div class="grid grid-4">
-      <div class="card"><div class="stat">€ ${pendingFees.toFixed(2)}</div><div class="stat-label">Quote aperte</div></div>
-      <div class="card"><div class="stat ${overdueFees?"cash-overdue":""}">€ ${overdueFees.toFixed(2)}</div><div class="stat-label">Quote scadute</div></div>
-      <div class="card"><div class="stat">€ ${pendingFines.toFixed(2)}</div><div class="stat-label">Multe aperte</div></div>
-      <div class="card"><div class="stat">€ ${paid.toFixed(2)}</div><div class="stat-label">Incassato</div></div>
-    </div>
-
-    <div style="height:10px"></div>
+    ${sectionKpis([
+      {icon:"💳",value:`€ ${pendingFees.toFixed(2)}`,label:"Quote aperte"},
+      {icon:"⚠️",value:`€ ${overdueFees.toFixed(2)}`,label:"Quote scadute"},
+      {icon:"💸",value:`€ ${pendingFines.toFixed(2)}`,label:"Multe aperte"},
+      {icon:"💰",value:`€ ${paid.toFixed(2)}`,label:"Incassato"}
+    ])}
 
     <div class="card cash-summary-card">
       <div class="card-head">
@@ -13734,14 +14419,26 @@ async function pageProfile(){
   const contract=state.myPlayer?(await must(supabase.from("player_contracts").select("*").eq("player_id",state.myPlayer.id).eq("status","active").order("planned_end_date",{ascending:false}).limit(1)))[0]:null;
   const future=contract?[...state.seasons].filter(s=>s.start_date>contract.planned_end_date).sort((a,b)=>a.start_date.localeCompare(b.start_date))[0]:null;
   renderShell("Profilo",`
+    <div class="page-title">
+      <div><h1>Profilo</h1><p>Account, ruolo attuale e collegamenti personali.</p></div>
+    </div>
+
+    ${sectionKpis([
+      {icon:"👤",value:esc(state.profile.display_name),label:"Profilo"},
+      {icon:"🎭",value:state.roles.filter(r=>r!=="fan").map(staffRoleLabel).join(", ")|| (state.myPlayer?"Calciatore":"Fan"),label:"Ruolo attuale"},
+      {icon:"⚽",value:state.teamMemberships.length,label:"Squadre seguite"},
+      {icon:"🔗",value:state.myPlayer?"Sì":"No",label:"Scheda calciatore"}
+    ])}
+
     <div class="card" style="max-width:680px">
       <h1>${esc(state.profile.display_name)}</h1>
       <div class="muted">@${esc(state.profile.username)}</div>
 
-      ${state.myPlayer?`
-        <div style="height:14px"></div>
-        <button class="btn" id="edit-my-player-data">⚙ I miei dati calciatore</button>
-      `:""}
+      <div style="height:14px"></div>
+      <div class="actions">
+        ${state.myPlayer?`<button class="btn" id="edit-my-player-data">⚙ I miei dati calciatore</button>`:""}
+        ${!isStaffAudience()?`<button class="btn" id="associate-staff-profile">🧑‍💼 Associa incarico staff</button>`:""}
+      </div>
 
       <div style="height:14px"></div>
 
@@ -13758,6 +14455,7 @@ async function pageProfile(){
   `);
 
   $("#edit-my-player-data")?.addEventListener("click",()=>openMyPlayerDataConfirmation(false));
+  $("#associate-staff-profile")?.addEventListener("click",()=>openRegistrationStaffAssociation(null,null));
   $("#request-renew")?.addEventListener("click",async()=>{
     try{
       await must(
@@ -13792,6 +14490,17 @@ async function pageAdmin(tab="users"){
   if(!tabs.some(x=>x[0]===tab))tab=tabs[0]?.[0];
 
   renderShell("Amministrazione",`
+    <div class="page-title">
+      <div><h1>Amministrazione</h1><p>Utenti, staff, permessi, stagioni e configurazioni.</p></div>
+    </div>
+
+    ${sectionKpis([
+      {icon:"🎭",value:state.roles.filter(r=>r!=="fan").length,label:"Ruoli attivi"},
+      {icon:"🔐",value:state.permissions.size,label:"Permessi effettivi"},
+      {icon:"🗓️",value:state.seasons.length,label:"Stagioni"},
+      {icon:"⚙️",value:tabs.length,label:"Pannelli disponibili"}
+    ])}
+
     <div class="tabs">
       ${tabs.map(x=>`<button class="tab ${x[0]===tab?"active":""}" data-admin-tab="${x[0]}">${x[1]}</button>`).join("")}
     </div>
@@ -14370,23 +15079,42 @@ async function adminStaff(){
   const profiles=profileIds.length
     ? await must(
         supabase.from("profiles")
-          .select("id,display_name,username")
+          .select("id,display_name,username,first_name,last_name")
           .in("id",profileIds)
       )
     : [];
 
   const pmap=new Map(profiles.map(p=>[p.id,p]));
   const mmap=new Map(members.map(m=>[m.id,m]));
+  const amap=new Map(assignments.map(a=>[a.id,a]));
   const pending=requests.filter(r=>r.status==="pending");
+
+  const assignmentDisplay=a=>{
+    if(!a)return "Incarico staff";
+    if(a.team_member_id){
+      const profile=pmap.get(mmap.get(a.team_member_id)?.profile_id);
+      return profile?.display_name||profile?.username||a.staff_display_name||"Staff";
+    }
+    return a.staff_display_name
+      ||`${a.staff_last_name||""} ${a.staff_first_name||""}`.trim()
+      ||"Staff non associato";
+  };
 
   $("#admin-content").innerHTML=`
     <div class="page-title">
       <div>
         <h2>Staff e storico</h2>
-        <p>Incarichi attivi, storico e richieste di accesso alla gestione.</p>
+        <p>Puoi creare un incarico anche senza account: il membro potrà associarsi successivamente dal proprio login.</p>
       </div>
-      ${can("staff.manage")?`<button class="btn btn-primary" id="new-staff">➕ Nuovo incarico</button>`:""}
+      ${can("staff.manage")?`<button class="btn btn-primary" id="new-staff">➕ Nuovo membro staff</button>`:""}
     </div>
+
+    ${sectionKpis([
+      {icon:"🧑‍💼",value:assignments.filter(a=>a.status==="active").length,label:"Incarichi attivi"},
+      {icon:"🔗",value:assignments.filter(a=>a.status==="active"&&a.team_member_id).length,label:"Associati"},
+      {icon:"👤",value:assignments.filter(a=>a.status==="active"&&!a.team_member_id).length,label:"Da associare"},
+      {icon:"📥",value:pending.length,label:"Richieste pendenti"}
+    ])}
 
     ${pending.length?`
       <div class="card">
@@ -14398,11 +15126,16 @@ async function adminStaff(){
         <div class="list">
           ${pending.map(r=>{
             const profile=pmap.get(r.profile_id);
+            const linkedAssignment=r.staff_assignment_id?amap.get(r.staff_assignment_id):null;
+
             return `<div class="list-item">
               <div>
                 <strong>${esc(profile?.display_name||profile?.username||"Utente")}</strong>
                 <div class="muted">
-                  Richiede: ${esc(staffRoleLabel(r.requested_role_code))}
+                  ${linkedAssignment
+                    ? `Vuole associarsi a: ${esc(assignmentDisplay(linkedAssignment))} · ${esc(staffRoleLabel(linkedAssignment.role_code))}`
+                    : `Richiede: ${esc(staffRoleLabel(r.requested_role_code))}`
+                  }
                   · ${fmtDateTime(r.requested_at)}
                 </div>
                 ${r.message?`<div class="muted">${esc(r.message)}</div>`:""}
@@ -14425,6 +15158,7 @@ async function adminStaff(){
         <thead>
           <tr>
             <th>Persona</th>
+            <th>Associazione</th>
             <th>Ruolo</th>
             <th>Dal</th>
             <th>Al</th>
@@ -14434,9 +15168,21 @@ async function adminStaff(){
         </thead>
         <tbody>
           ${assignments.map(a=>{
-            const profile=pmap.get(mmap.get(a.team_member_id)?.profile_id);
+            const profile=a.team_member_id
+              ? pmap.get(mmap.get(a.team_member_id)?.profile_id)
+              : null;
+
             return `<tr>
-              <td>${esc(profile?.display_name||"")}</td>
+              <td>
+                <strong>${esc(assignmentDisplay(a))}</strong>
+                ${!a.team_member_id?`<div class="muted">${esc(a.staff_first_name||"")} ${esc(a.staff_last_name||"")}</div>`:""}
+              </td>
+              <td>
+                ${a.team_member_id
+                  ? `<span class="badge green">🔗 ${esc(profile?.username?`@${profile.username}`:"account")}</span>`
+                  : `<span class="badge yellow">👤 non associato</span>`
+                }
+              </td>
               <td>${esc(staffRoleLabel(a.role_code))}</td>
               <td>${fmtDate(a.start_date)}</td>
               <td>${fmtDate(a.actual_end_date||a.planned_end_date)}</td>
@@ -14454,15 +15200,27 @@ async function adminStaff(){
     </div>
   `;
 
-  $("#new-staff")?.addEventListener("click",()=>showModal("Nuovo incarico",`
+  $("#new-staff")?.addEventListener("click",()=>showModal("Nuovo membro staff",`
     <form id="staff-form">
       <div class="field">
-        <label>Utente</label>
+        <label>Account da associare</label>
         <select id="st-member">
+          <option value="">Nessun account — associa in seguito</option>
           ${members.map(m=>`
-            <option value="${m.id}">${esc(pmap.get(m.profile_id)?.display_name||"")}</option>
+            <option value="${m.id}">${esc(pmap.get(m.profile_id)?.display_name||pmap.get(m.profile_id)?.username||"Utente")}</option>
           `).join("")}
         </select>
+      </div>
+
+      <div id="st-unlinked-name">
+        <div class="field">
+          <label>Nome visualizzato membro staff</label>
+          <input id="st-display-name" placeholder="es. Mario Rossi">
+        </div>
+        <div class="form-grid">
+          <div class="field"><label>Nome</label><input id="st-first-name"></div>
+          <div class="field"><label>Cognome</label><input id="st-last-name"></div>
+        </div>
       </div>
 
       <div class="field">
@@ -14479,11 +15237,33 @@ async function adminStaff(){
         <div class="field"><label>Scadenza</label><input id="st-end" type="date" value="${state.season.end_date}"></div>
       </div>
 
-      <button class="btn btn-primary">Salva</button>
+      <div class="section-note">
+        Se non associ un account, l'incarico esiste comunque nello staff. Quando la persona accederà potrà selezionare questo incarico e chiedere l'associazione.
+      </div>
+
+      <div style="height:10px"></div>
+      <button class="btn btn-primary">Salva incarico</button>
     </form>
   `,root=>{
     const role=$("#st-role",root);
     const end=$("#st-end",root);
+    const member=$("#st-member",root);
+    const unlinked=$("#st-unlinked-name",root);
+
+    const refreshMember=()=>{
+      unlinked.classList.toggle("hidden",!!member.value);
+
+      if(member.value){
+        const m=members.find(x=>x.id===member.value);
+        const profile=pmap.get(m?.profile_id);
+        $("#st-display-name",root).value=profile?.display_name||"";
+        $("#st-first-name",root).value=profile?.first_name||"";
+        $("#st-last-name",root).value=profile?.last_name||"";
+      }
+    };
+
+    member.onchange=refreshMember;
+    refreshMember();
 
     role.onchange=()=>{
       end.value=role.value==="management"?"":state.season.end_date;
@@ -14491,21 +15271,32 @@ async function adminStaff(){
 
     $("#staff-form",root).onsubmit=async e=>{
       e.preventDefault();
+
       try{
+        const teamMemberId=member.value||null;
+        const displayName=$("#st-display-name",root).value.trim()
+          ||`${$("#st-first-name",root).value.trim()} ${$("#st-last-name",root).value.trim()}`.trim();
+
+        if(!teamMemberId&&!displayName){
+          throw new Error("Indica almeno il nome del membro staff");
+        }
+
         await must(
-          supabase.from("staff_assignments").insert({
-            team_id:state.team.id,
-            season_id:state.season.id,
-            team_member_id:$("#st-member",root).value,
-            role_code:role.value,
-            start_date:$("#st-start",root).value,
-            planned_end_date:end.value||null,
-            status:"active",
-            created_by:state.profile.id
+          supabase.rpc("create_staff_assignment",{
+            p_team_id:state.team.id,
+            p_season_id:state.season.id,
+            p_team_member_id:teamMemberId,
+            p_staff_display_name:displayName||null,
+            p_staff_first_name:$("#st-first-name",root).value.trim()||null,
+            p_staff_last_name:$("#st-last-name",root).value.trim()||null,
+            p_role_code:role.value,
+            p_start_date:$("#st-start",root).value,
+            p_planned_end_date:end.value||null
           })
         );
 
         closeModal();
+        toast("Incarico staff creato","ok");
         adminStaff();
       }catch(err){
         toast(err.message,"error");
