@@ -4955,7 +4955,51 @@
       }
     }
 
-  </style>
+  
+    .competition-discipline-box{
+      margin-top:14px;
+      padding:10px;
+      border:1px solid var(--ui-line-soft);
+      border-radius:10px;
+      background:var(--ui-record-bg);
+    }
+    .competition-discipline-summary{
+      display:flex;
+      flex-wrap:wrap;
+      gap:5px;
+      align-items:center;
+      margin-top:8px;
+    }
+    .competition-discipline-links{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:6px;
+      max-height:190px;
+      overflow:auto;
+      padding:3px;
+    }
+    .competition-discipline-link{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr);
+      gap:7px;
+      align-items:center;
+      min-height:34px;
+      padding:5px 7px;
+      border:1px solid var(--ui-line-soft);
+      border-radius:8px;
+      background:var(--panel2);
+    }
+    .competition-discipline-link span{
+      min-width:0;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    @media(max-width:700px){
+      .competition-discipline-links{grid-template-columns:1fr}
+    }
+
+</style>
 </head>
 <body>
 <div id="root" class="app"></div>
@@ -11188,30 +11232,35 @@ async function openTrainingSetup(){
 }
 
 async function pageCompetitions(){
-  const [competitions,seasons,opponents,links]=await Promise.all([
+  const [competitions,seasons,opponents,links,disciplineGroups,disciplineMembers]=await Promise.all([
     must(supabase.from("competitions").select("*").eq("team_id",state.team.id).order("start_date",{ascending:false})),
     Promise.resolve(state.seasons),
     (can("opponents.view")||can("opponents.manage")||can("matches.manage"))
       ? must(supabase.from("opponent_teams").select("*").eq("team_id",state.team.id).order("name"))
       : Promise.resolve([]),
-    must(supabase.from("competition_opponents").select("*"))
+    must(supabase.from("competition_opponents").select("*")),
+    must(supabase.from("competition_discipline_groups").select("*").eq("team_id",state.team.id)),
+    must(supabase.from("competition_discipline_group_members").select("*"))
   ]);
 
   const sm=new Map(seasons.map(x=>[x.id,x]));
   const om=new Map(opponents.map(x=>[x.id,x]));
+  const cm=new Map(competitions.map(x=>[x.id,x]));
+  const dgm=new Map(disciplineGroups.map(x=>[x.id,x]));
+  const disciplineMemberByCompetition=new Map(disciplineMembers.map(x=>[x.competition_id,x]));
 
   renderShell("Competizioni",`
     <div class="page-title">
       <div>
         <h1>Competizioni</h1>
-        <p>Formato, avversarie e durata dei tempi per ciascuna competizione.</p>
+        <p>Formato, avversarie, durata dei tempi e disciplina per ciascuna competizione.</p>
       </div>
       ${can("competitions.manage")?`<button class="btn btn-primary" id="new-competition">Nuova competizione</button>`:""}
     </div>
 
     ${sectionKpis([
       {icon:"🏆",value:competitions.filter(c=>c.active).length,label:"Attive"},
-      {icon:"🔄",value:competitions.filter(c=>c.competition_type==="league").length,label:"Campionati"},
+      {icon:"🔁",value:competitions.filter(c=>c.competition_type==="league").length,label:"Campionati"},
       {icon:"🏆",value:competitions.filter(c=>c.competition_type==="cup").length,label:"Coppe"},
       {icon:"🤝",value:competitions.filter(c=>c.competition_type==="friendly").length,label:"Amichevoli"}
     ])}
@@ -11223,12 +11272,22 @@ async function pageCompetitions(){
         const format=competitionFormatLabel(c);
         const regular=`${c.regular_period_count||2} × ${c.regular_period_minutes||45}'`;
         const extra=c.extra_time_enabled?` · supplementari ${c.extra_period_count||2} × ${c.extra_period_minutes||15}'`:"";
+        const disciplineMember=disciplineMemberByCompetition.get(c.id);
+        const disciplineGroup=disciplineMember?dgm.get(disciplineMember.group_id):null;
+        const linkedCompetitions=disciplineGroup
+          ? disciplineMembers
+              .filter(x=>x.group_id===disciplineGroup.id&&x.competition_id!==c.id)
+              .map(x=>cm.get(x.competition_id))
+              .filter(Boolean)
+          : [];
+        const threshold=disciplineGroup?.initial_yellow_threshold||4;
+        const warningAt=Math.max(0,threshold-1);
 
         return `<div class="card competition-card">
           <div class="card-head">
             <div>
               <h3 style="margin:0">${esc(c.name)}</h3>
-              <div class="muted">${esc(competitionTypeLabel(c.competition_type))}${format?` · ${esc(format)}`:""} · ${esc(season?.name||"")}</div>
+              <div class="muted">${competitionTypeEmoji(c.competition_type)} ${esc(competitionTypeLabel(c.competition_type))}${format?` · ${esc(format)}`:""} · ${esc(season?.name||"")}</div>
             </div>
             <span class="badge ${c.active?"green":"red"}">${c.active?"attiva":"archiviata"}</span>
           </div>
@@ -11242,6 +11301,24 @@ async function pageCompetitions(){
             Tempi regolamentari: <strong>${regular}</strong>${extra}
             ${c.competition_type==="friendly"?`<br>Le singole amichevoli possono sovrascrivere numero e durata dei tempi.`:""}
           </div>
+
+          ${c.competition_type!=="friendly"?`
+            <div class="competition-discipline-box">
+              <strong>🟨 Diffide e squalifiche</strong>
+              ${disciplineGroup?.enabled
+                ? `<div class="competition-discipline-summary">
+                    ${warningAt>0?`<span class="badge yellow">Diffida al ${warningAt}°</span>`:`<span class="badge yellow">Nessuna diffida</span>`}
+                    <span class="badge red">Squalifica al ${threshold}°</span>
+                    <span class="muted">poi ${Array.from({length:Math.max(1,threshold-1)},(_,i)=>Math.max(1,threshold-1-i)).join(" → ")}</span>
+                  </div>
+                  ${linkedCompetitions.length
+                    ? `<div class="muted" style="margin-top:6px">🔗 Conteggio condiviso con: ${linkedCompetitions.map(x=>esc(x.name)).join(" · ")}</div>`
+                    : `<div class="muted" style="margin-top:6px">Conteggio indipendente</div>`
+                  }`
+                : `<div class="muted" style="margin-top:5px">Controllo automatico non configurato.</div>`
+              }
+            </div>`:""
+          }
 
           ${c.competition_type==="friendly"
             ? `<div class="section-note" style="margin-top:8px">Nelle amichevoli sono disponibili tutte le avversarie attive censite.</div>`
@@ -11264,18 +11341,39 @@ async function pageCompetitions(){
     </div>
   `);
 
-  $("#new-competition")?.addEventListener("click",()=>openCompetitionModal(null,opponents,[]));
-  $$("[data-edit-competition]").forEach(b=>{
+  $("#new-competition")?.addEventListener("click",()=>openCompetitionModal(null,opponents,[],competitions));
+  $$('[data-edit-competition]').forEach(b=>{
     const c=competitions.find(x=>x.id===b.dataset.editCompetition);
     const selected=links.filter(x=>x.competition_id===c.id).map(x=>x.opponent_id);
-    b.onclick=()=>openCompetitionModal(c,opponents,selected);
+    b.onclick=()=>openCompetitionModal(c,opponents,selected,competitions);
   });
 }
 
-function openCompetitionModal(competition,opponents,selectedOpponentIds=[]){
+async function openCompetitionModal(competition,opponents,selectedOpponentIds=[],allCompetitions=[]){
   const season=state.seasons.find(s=>s.id===(competition?.season_id||state.season.id))||state.season;
   const initialStart=competition?.start_date||season.start_date;
   const initialEnd=competition?.end_date||season.end_date;
+
+  let disciplineConfig={
+    enabled:false,
+    initial_yellow_threshold:4,
+    warning_at:3,
+    linked_competition_ids:[]
+  };
+
+  if(competition?.id&&competition.competition_type!=="friendly"){
+    try{
+      disciplineConfig=await must(
+        supabase.rpc("get_competition_discipline_config",{
+          p_competition_id:competition.id
+        })
+      )||disciplineConfig;
+    }catch(err){
+      console.warn("Configurazione disciplina non disponibile",err);
+    }
+  }
+
+  const initialLinked=new Set(disciplineConfig.linked_competition_ids||[]);
 
   showModal(competition?"Modifica competizione":"Nuova competizione",`
     <form id="competition-form">
@@ -11334,6 +11432,34 @@ function openCompetitionModal(competition,opponents,selectedOpponentIds=[]){
         </div>
       </div>
 
+      <div id="comp-discipline-box" class="competition-discipline-box hidden">
+        <div class="card-head">
+          <div>
+            <h3 style="margin:0">🟨 Diffide e squalifiche</h3>
+            <div class="muted">Le amichevoli sono escluse dal conteggio.</div>
+          </div>
+          <label class="check"><input id="comp-discipline-enabled" type="checkbox" ${disciplineConfig.enabled?"checked":""}> Attiva</label>
+        </div>
+
+        <div id="comp-discipline-settings">
+          <div class="form-grid">
+            <div class="field">
+              <label>Prima squalifica dopo</label>
+              <div style="display:flex;align-items:center;gap:7px"><input id="comp-yellow-threshold" type="number" min="1" max="20" value="${disciplineConfig.initial_yellow_threshold||4}" style="max-width:90px"><span>ammonizioni</span></div>
+            </div>
+            <div class="field">
+              <label>Progressione automatica</label>
+              <div class="section-note" id="comp-discipline-rule-preview"></div>
+            </div>
+          </div>
+
+          <div style="height:8px"></div>
+          <strong>🔗 Competizioni collegate</strong>
+          <div class="muted" style="margin:3px 0 7px">Il collegamento è reciproco: ammonizioni e turno di squalifica valgono sull'intero gruppo. Collegando competizioni già configurate, il gruppo viene ricalcolato con questa soglia.</div>
+          <div class="competition-discipline-links" id="comp-discipline-links"></div>
+        </div>
+      </div>
+
       <label class="check" style="margin-top:12px"><input id="comp-active" type="checkbox" ${competition?.active===false?"":"checked"}> Competizione attiva</label>
 
       <div id="competition-opponents-box" style="margin-top:16px">
@@ -11354,7 +11480,7 @@ function openCompetitionModal(competition,opponents,selectedOpponentIds=[]){
       <button class="btn btn-primary">Salva competizione</button>
     </form>
   `,root=>{
-    root.closest(".modal").style.width="min(850px,100%)";
+    root.closest(".modal").style.width="min(900px,100%)";
 
     const type=$("#comp-type",root);
     const formatBox=$("#comp-format-box",root);
@@ -11363,6 +11489,47 @@ function openCompetitionModal(competition,opponents,selectedOpponentIds=[]){
     const seasonSelect=$("#comp-season",root);
     const extraEnabled=$("#comp-extra-enabled",root);
     const extraBox=$("#comp-extra-box",root);
+    const disciplineBox=$("#comp-discipline-box",root);
+    const disciplineEnabled=$("#comp-discipline-enabled",root);
+    const disciplineSettings=$("#comp-discipline-settings",root);
+    const disciplineThreshold=$("#comp-yellow-threshold",root);
+    const disciplineLinks=$("#comp-discipline-links",root);
+    const disciplinePreview=$("#comp-discipline-rule-preview",root);
+
+    const refreshDisciplinePreview=()=>{
+      const n=Math.max(1,Math.min(20,Number(disciplineThreshold.value)||4));
+      const warning=n-1;
+      const sequence=[];
+      for(let v=n-1;v>=1;v--)sequence.push(v);
+      disciplinePreview.innerHTML=warning>0
+        ? `Diffida al <strong>${warning}°</strong> giallo → squalifica al <strong>${n}°</strong>.<br>Dopo averla scontata: <strong>${sequence.join(" → ")}</strong>.`
+        : `Ogni ammonizione genera <strong>1 turno</strong> di squalifica.`;
+    };
+
+    const renderDisciplineLinks=()=>{
+      const selectedSeason=seasonSelect.value;
+      const candidates=allCompetitions.filter(c=>
+        c.id!==competition?.id
+        && c.season_id===selectedSeason
+        && c.competition_type!=="friendly"
+      );
+
+      disciplineLinks.innerHTML=candidates.length
+        ? candidates.map(c=>`
+            <label class="competition-discipline-link">
+              <input type="checkbox" data-discipline-link="${c.id}" ${initialLinked.has(c.id)?"checked":""}>
+              <span>${competitionTypeEmoji(c.competition_type)} ${esc(c.name)}</span>
+            </label>
+          `).join("")
+        : `<div class="muted">Nessun'altra competizione collegabile nella stessa annata.</div>`;
+    };
+
+    const refreshDiscipline=()=>{
+      const supported=type.value!=="friendly";
+      disciplineBox.classList.toggle("hidden",!supported);
+      disciplineSettings.classList.toggle("hidden",!disciplineEnabled.checked||!supported);
+      if(supported)renderDisciplineLinks();
+    };
 
     const refreshType=()=>{
       const t=type.value;
@@ -11384,6 +11551,8 @@ function openCompetitionModal(competition,opponents,selectedOpponentIds=[]){
         formatBox.classList.add("hidden");
         format.innerHTML=`<option value=""></option>`;
       }
+
+      refreshDiscipline();
     };
 
     const refreshExtra=()=>extraBox.classList.toggle("hidden",!extraEnabled.checked);
@@ -11393,12 +11562,16 @@ function openCompetitionModal(competition,opponents,selectedOpponentIds=[]){
       if(!selectedSeason)return;
       $("#comp-start",root).value=selectedSeason.start_date;
       $("#comp-end",root).value=selectedSeason.end_date;
+      renderDisciplineLinks();
     };
 
     type.onchange=refreshType;
     extraEnabled.onchange=refreshExtra;
+    disciplineEnabled.onchange=refreshDiscipline;
+    disciplineThreshold.oninput=refreshDisciplinePreview;
     refreshType();
     refreshExtra();
+    refreshDisciplinePreview();
 
     $("#competition-form",root).onsubmit=async e=>{
       e.preventDefault();
@@ -11436,12 +11609,26 @@ function openCompetitionModal(competition,opponents,selectedOpponentIds=[]){
         await must(supabase.from("competition_opponents").delete().eq("competition_id",saved.id));
 
         if(type.value!=="friendly"){
-          const selected=$$("[data-comp-opponent]",root)
+          const selected=$$('[data-comp-opponent]',root)
             .filter(x=>x.checked)
             .map(x=>({competition_id:saved.id,opponent_id:x.dataset.compOpponent}));
 
           if(selected.length)await must(supabase.from("competition_opponents").insert(selected));
         }
+
+        const disciplineOn=type.value!=="friendly"&&disciplineEnabled.checked;
+        const linkedIds=disciplineOn
+          ? $$('[data-discipline-link]',root).filter(x=>x.checked).map(x=>x.dataset.disciplineLink)
+          : [];
+
+        await must(
+          supabase.rpc("save_competition_discipline_settings",{
+            p_competition_id:saved.id,
+            p_enabled:disciplineOn,
+            p_initial_yellow_threshold:Math.max(1,Number(disciplineThreshold.value)||4),
+            p_linked_competition_ids:linkedIds
+          })
+        );
 
         closeModal();
         toast("Competizione salvata","ok");
