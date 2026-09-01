@@ -886,6 +886,169 @@
     }
     .roster-setup-option .check{margin:0;flex:none}
 
+
+    :root{--ui-font-size:14px}
+
+    /* Dimensione testo ordinario omogenea in tutta l'app */
+    body,button,input,select,textarea,label,
+    .nav button,.mobile-drawer .nav button,
+    .table td,.btn,.btn-sm,.badge,.list-item,
+    .section-note,.page-title p,.topbar-sub,.mobile-appbar-sub,
+    .muted,.field,.tabs button{
+      font-size:var(--ui-font-size)!important;
+    }
+
+    .roster-table-wrap{
+      overflow-x:auto;
+      overflow-y:auto;
+      max-height:calc(100dvh - 230px);
+      border:1px solid var(--line);
+      border-radius:12px;
+    }
+    .roster-table{
+      width:100%;
+    }
+    .roster-table thead th{
+      position:sticky!important;
+      top:0;
+      z-index:5;
+      background:var(--panel2)!important;
+    }
+    .roster-table tbody tr{
+      height:34px;
+    }
+    .roster-table th,.roster-table td{
+      padding:3px 6px!important;
+      line-height:1.05;
+    }
+    .roster-generic-role{
+      display:inline-grid;
+      place-items:center;
+      width:25px;
+      height:25px;
+      border-radius:8px;
+      background:var(--team-accent-soft);
+      border:1px solid var(--line);
+      font-weight:950;
+    }
+    .roster-age{
+      text-align:center;
+      font-variant-numeric:tabular-nums;
+    }
+    .roster-action-btn{
+      min-width:27px!important;
+      width:27px;
+      height:27px;
+      padding:0!important;
+      display:inline-grid;
+      place-items:center;
+    }
+    .roster-action-label-mobile{display:none}
+    .roster-name-cell{min-width:150px}
+    .roster-preferred-cell{min-width:150px}
+    .roster-signals{gap:2px}
+    .roster-signal{min-width:17px;width:17px;height:17px;font-size:.78rem}
+    .roster-table .avatar{width:22px;height:22px;min-width:22px;font-size:.56rem}
+
+    @media(max-width:700px){
+      .roster-page .content{
+        padding-left:8px;
+        padding-right:8px;
+      }
+      .roster-page .page-title{
+        gap:8px;
+        margin-bottom:10px;
+      }
+      .roster-page .page-title h1{
+        font-size:1.45rem;
+      }
+      .roster-page .page-title .actions{
+        gap:6px;
+        width:100%;
+      }
+      .roster-page .page-title .actions .btn{
+        padding:8px 10px;
+      }
+
+      .roster-table-wrap{
+        max-height:calc(100dvh - 245px);
+        overflow-x:hidden!important;
+        width:100%;
+      }
+      .roster-table{
+        min-width:0!important;
+        width:100%!important;
+        table-layout:fixed;
+      }
+
+      .roster-table th,.roster-table td{
+        padding:3px 2px!important;
+        font-size:11.5px!important;
+        overflow:hidden;
+      }
+      .roster-table thead th{
+        font-size:10px!important;
+        letter-spacing:0;
+      }
+      .roster-table tbody tr{
+        height:34px!important;
+      }
+
+      .roster-col-role{width:34px}
+      .roster-col-name{width:auto}
+      .roster-col-age{width:34px;text-align:center}
+      .roster-col-nation{width:34px;text-align:center}
+      .roster-col-signals{width:58px}
+      .roster-col-actions{width:58px;text-align:right}
+
+      .roster-mobile-hide{display:none!important}
+      .roster-player-link{
+        gap:4px;
+        min-width:0;
+        width:100%;
+      }
+      .roster-player-link .avatar{
+        display:none;
+      }
+      .roster-player-link strong{
+        min-width:0;
+        max-width:100%;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+        font-size:11.5px!important;
+      }
+      .roster-generic-role{
+        width:23px;height:23px;border-radius:7px;
+        font-size:11px!important;
+      }
+      .roster-flag{
+        font-size:15px!important;
+      }
+      .roster-signals{
+        justify-content:flex-start;
+        gap:1px;
+        white-space:nowrap;
+        overflow:hidden;
+      }
+      .roster-signal{
+        width:15px;min-width:15px;height:15px;font-size:12px!important;
+      }
+      .roster-action-btn{
+        min-width:25px!important;
+        width:25px;height:25px;
+        font-size:12px!important;
+      }
+      .roster-action-label-desktop{display:none}
+      .roster-action-label-mobile{display:inline}
+      .roster-row-actions{
+        display:flex;
+        gap:2px;
+        justify-content:flex-end;
+        flex-wrap:nowrap;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -2985,6 +3148,10 @@ async function route(path,push=true){
     injuries:pageAbsences
   };
 
+  if(["roster","trainings","absences","match"].includes(page)){
+    await syncMedicalAbsencesSafe();
+  }
+
   if(page==="match"&&id)return pageMatch(id);
   if(page==="live"&&id)return pageLive(id);
   if(page==="player"&&id)return pagePlayer(id);
@@ -3158,8 +3325,8 @@ function splitImportedFullName(value,format="first_last"){
 
 function downloadRosterImportTemplate(){
   const csv=[
-    ["Nome","Cognome","Data nascita","Nazionalità","Squadra tifata","Piede","Numero maglia","Data ingresso","Scadenza","Note"],
-    ["Mario","Rossi","1995-06-12","IT","Padova","Destro","8",state.season.start_date,state.season.end_date,""]
+    ["Nome","Cognome","Data nascita","Nazionalità","Squadra tifata","Ruolo generico","Piede","Numero maglia","Data ingresso","Scadenza","Note"],
+    ["Mario","Rossi","1995-06-12","IT","Padova","D","Destro","8",state.season.start_date,state.season.end_date,""]
   ].map(row=>row.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(";")).join("\r\n");
 
   const blob=new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"});
@@ -3209,6 +3376,7 @@ async function openRosterImport(){
       {key:"birth_date",label:"Data nascita",required:false,aliases:["data nascita","nascita","birth date","birthdate","dob"]},
       {key:"nationality_code",label:"Nazionalità",required:false,aliases:["nazionalita","nazionalità","nazione","nationality","country","paese"]},
       {key:"favorite_team",label:"Squadra tifata",required:false,aliases:["squadra tifata","tifata","squadra del cuore","favorite team","favourite team","club tifato"]},
+      {key:"generic_role_manual",label:"Ruolo generico",required:false,aliases:["ruolo generico","ruolo","macro ruolo","generic role","role"]},
       {key:"preferred_foot",label:"Piede",required:false,aliases:["piede","piede preferito","preferred foot","foot"]},
       {key:"shirt_number",label:"Numero maglia",required:false,aliases:["numero maglia","maglia","numero","shirt number","shirt","n maglia"]},
       {key:"start_date",label:"Data ingresso",required:false,aliases:["data ingresso","ingresso","inizio","data inizio","start date","dal"]},
@@ -3283,6 +3451,7 @@ async function openRosterImport(){
                 <th>Nascita</th>
                 <th>Naz.</th>
                 <th>Tifata</th>
+                <th>Ruolo</th>
                 <th>Piede</th>
                 <th>#</th>
                 <th>Permanenza</th>
@@ -3437,6 +3606,10 @@ async function openRosterImport(){
 
           const nationality=countryCodeFromValue(cell(row,"nationality_code"));
           const favoriteTeam=String(cell(row,"favorite_team")??"").trim()||null;
+          const genericRoleRaw=String(cell(row,"generic_role_manual")??"").trim().toUpperCase();
+          const genericRole=genericRoleRaw
+            ? ({PORTIERE:"P",DIFENSORE:"D",CENTROCAMPISTA:"C",ATTACCANTE:"A"}[genericRoleRaw]||genericRoleRaw)
+            : null;
           const foot=normalizeImportedFoot(cell(row,"preferred_foot"));
           const shirt=parseImportedShirtNumber(cell(row,"shirt_number"));
 
@@ -3454,6 +3627,7 @@ async function openRosterImport(){
             birth_date:birth,
             nationality_code:nationality,
             favorite_team:favoriteTeam,
+            generic_role_manual:genericRole,
             preferred_foot:foot,
             shirt_number:shirt,
             start_date:start,
@@ -3473,6 +3647,9 @@ async function openRosterImport(){
           }else if(nationality==="__INVALID__"){
             rec.status="error";
             rec.message="Nazionalità non riconosciuta";
+          }else if(genericRole && !["P","D","C","A"].includes(genericRole)){
+            rec.status="error";
+            rec.message="Ruolo generico non valido";
           }else if(foot==="__INVALID__"){
             rec.status="error";
             rec.message="Piede non riconosciuto";
@@ -3562,12 +3739,13 @@ async function openRosterImport(){
             <td>${r.birth_date&&r.birth_date!=="__INVALID__"?fmtDate(r.birth_date):"—"}</td>
             <td>${r.nationality_code&&r.nationality_code!=="__INVALID__"?`${countryFlag(r.nationality_code)} ${esc(r.nationality_code)}`:"—"}</td>
             <td>${esc(r.favorite_team||"—")}</td>
+            <td>${esc(r.generic_role_manual||"—")}</td>
             <td>${r.preferred_foot!=="__INVALID__"?esc(importedFootLabel(r.preferred_foot)):"—"}</td>
             <td>${typeof r.shirt_number==="number"?r.shirt_number:"—"}</td>
             <td>${r.start_date!=="__INVALID__"&&r.end_date!=="__INVALID__"?`${fmtDate(r.start_date)} → ${fmtDate(r.end_date)}`:"—"}</td>
             <td class="${cls}"><strong>${esc(r.message)}</strong></td>
           </tr>`;
-        }).join("")||`<tr><td colspan="9">Nessuna riga dati</td></tr>`;
+        }).join("")||`<tr><td colspan="10">Nessuna riga dati</td></tr>`;
 
         const mappingValid=hasSeparate||hasFull;
         importButton.disabled=!mappingValid||valid===0;
@@ -3695,7 +3873,7 @@ async function openRosterImport(){
         for(const row of rows){
           try{
             const response=await must(
-              supabase.rpc("import_roster_player_extended",{
+              supabase.rpc("import_roster_player_extended_v2",{
                 p_team_id:state.team.id,
                 p_season_id:state.season.id,
                 p_first_name:row.first_name,
@@ -3707,7 +3885,8 @@ async function openRosterImport(){
                 p_shirt_number:typeof row.shirt_number==="number"?row.shirt_number:null,
                 p_notes:row.notes,
                 p_nationality_code:row.nationality_code||null,
-                p_favorite_team:row.favorite_team||null
+                p_favorite_team:row.favorite_team||null,
+                p_generic_role_manual:row.generic_role_manual||null
               })
             );
 
@@ -3766,12 +3945,22 @@ async function openRosterImport(){
    ROSA / CALCIATORI / CONTRATTI
 ========================================================= */
 async function pageRoster(){
+  await syncMedicalAbsencesSafe();
   const settings=await getRosterSettings();
 
-  const [players,rosterHistory,affinities,statusIndicators,nextSeasonRows,myLinkRequests]=await Promise.all([
+  const [
+    players,
+    rosterHistory,
+    affinities,
+    genericRoles,
+    statusIndicators,
+    nextSeasonRows,
+    myLinkRequests
+  ]=await Promise.all([
     must(supabase.from("players").select("*").eq("team_id",state.team.id).order("last_name")),
     must(supabase.rpc("get_season_roster_history",{p_team_id:state.team.id,p_season_id:state.season.id})),
     must(supabase.rpc("get_roster_position_affinities",{p_team_id:state.team.id,p_season_id:state.season.id})),
+    must(supabase.rpc("get_roster_generic_roles",{p_team_id:state.team.id,p_season_id:state.season.id})),
     must(supabase.rpc("get_roster_status_indicators",{p_team_id:state.team.id,p_season_id:state.season.id,p_at:today()})),
     must(supabase.rpc("get_roster_next_season_status",{p_team_id:state.team.id,p_season_id:state.season.id})),
     must(supabase.from("player_link_requests").select("*").eq("team_id",state.team.id).eq("profile_id",state.profile.id).order("requested_at",{ascending:false}))
@@ -3784,6 +3973,10 @@ async function pageRoster(){
     state.permissions=new Set((await must(supabase.rpc("get_my_permissions",{p_team_id:state.team.id}))).map(x=>x.permission_key));
   }
 
+  const fanOnly=!state.isSuperAdmin
+    && state.roles.length>0
+    && state.roles.every(r=>r==="fan");
+
   const pendingLink=myLinkRequests.find(r=>r.status==="pending")||null;
   const pendingPlayer=pendingLink?players.find(p=>p.id===pendingLink.player_id):null;
 
@@ -3793,6 +3986,7 @@ async function pageRoster(){
     amap.get(a.player_id).push(a);
   });
 
+  const gmap=new Map(genericRoles.map(x=>[x.player_id,x]));
   const simap=new Map(statusIndicators.map(x=>[x.player_id,x]));
   const nextMap=new Map();
   nextSeasonRows.forEach(row=>{
@@ -3800,11 +3994,20 @@ async function pageRoster(){
   });
 
   const canSeeMedicalFor=p=>
-    can("medical.view_all")||(can("medical.view_own")&&p.profile_id===state.profile.id);
+    !fanOnly
+    && (can("medical.view_all")||(can("medical.view_own")&&p.profile_id===state.profile.id));
 
   const makeSignals=(p,indicator,next)=>{
     const signals=[];
     let severity=0;
+
+    if(fanOnly){
+      if(indicator?.generic_unavailable){
+        signals.push(`<span class="roster-signal" title="Indisponibile">❌</span>`);
+        severity=50;
+      }
+      return {html:signals.length?signals.join(""):`<span class="muted">—</span>`,severity};
+    }
 
     if(indicator?.injury_active){
       signals.push(`<span class="roster-signal injury" title="Infortunato">✚</span>`);
@@ -3852,26 +4055,30 @@ async function pageRoster(){
 
     const last=pcs[pcs.length-1];
     const roles=amap.get(p.id)||[];
+    const generic=gmap.get(p.id)||{};
     const indicator=simap.get(p.id)||{};
     const next=nextMap.get(p.id)||{};
     const signals=makeSignals(p,indicator,next);
     const medicalExpiry=canSeeMedicalFor(p)?indicator.medical_expires_on:null;
+    const age=playerAge(p.birth_date);
 
     let associationAction="";
     if(state.myPlayer?.id===p.id){
       associationAction=`<span class="badge green" title="Account associato">Io</span>`;
     }else if(!state.myPlayer&&can("player_link.request")&&!p.profile_id){
       if(pendingLink?.player_id===p.id){
-        associationAction=`<span class="badge" title="Richiesta in attesa">Pending</span>`;
+        associationAction=`<span class="badge" title="Richiesta in attesa">…</span>`;
       }else if(!pendingLink){
-        associationAction=`<button class="btn btn-sm" data-claim-player="${p.id}">Sono io</button>`;
+        associationAction=`<button class="btn btn-sm roster-action-btn" data-claim-player="${p.id}" title="Sono io">👤</button>`;
       }
     }
 
     return {
-      p,last,active,roles,indicator,next,signals,associationAction,medicalExpiry,
+      p,last,active,roles,generic,indicator,next,signals,associationAction,medicalExpiry,age,
       sort:{
+        generic:generic.generic_role_code||"Z",
         name:`${p.last_name} ${p.first_name}`,
+        age:age??999,
         shirt:last.shirt_number??999,
         birth:p.birth_date||"9999-12-31",
         nationality:countryName(p.nationality_code)||"ZZZ",
@@ -3885,42 +4092,63 @@ async function pageRoster(){
     };
   }).filter(Boolean);
 
-  const sort=state.rosterSort||{key:"name",dir:"asc"};
+  const sort=state.rosterSort||{key:"generic",dir:"asc"};
   data.sort((a,b)=>{
     const result=compareRosterValues(a,b,sort.key);
-    return sort.dir==="asc"?result:-result;
+    if(result!==0)return sort.dir==="asc"?result:-result;
+    return a.sort.name.localeCompare(b.sort.name,"it",{sensitivity:"base"});
   });
 
   const showNextColumn=!settings.show_contract_period&&(can("contracts.view")||can("contracts.manage"));
+  const showPreferred=!fanOnly;
 
   const rows=data.map(row=>{
-    const {p,last,active,roles,next,signals,associationAction,medicalExpiry}=row;
+    const {p,last,active,roles,generic,next,signals,associationAction,medicalExpiry,age}=row;
+    const genericCode=generic.generic_role_code||"—";
+    const genericTitle=generic.generic_role_code
+      ? `${genericRoleLabel(generic.generic_role_code)}${generic.source==="manual"?" · generico manuale":" · predominante"}`
+      : "Ruolo generico non impostato";
 
     return `<tr class="${active?"":"roster-row-inactive"}">
-      <td>
+      <td class="roster-col-role">
+        <span class="roster-generic-role" title="${esc(genericTitle)}">${esc(genericCode)}</span>
+      </td>
+
+      <td class="roster-col-name roster-name-cell">
         <div class="roster-player-link" data-player="${p.id}" role="button" tabindex="0">
           <span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}">`:initials(p.first_name,p.last_name)}</span>
           <strong>${esc(p.last_name)} ${esc(p.first_name)}</strong>
         </div>
       </td>
 
-      ${settings.show_shirt_numbers?`<td>${last.shirt_number||"—"}</td>`:""}
-      <td>${p.birth_date?shortDate(p.birth_date):"—"}</td>
-      <td>${p.nationality_code?`<span class="roster-flag" title="${esc(countryName(p.nationality_code))}">${countryFlag(p.nationality_code)}</span>`:"—"}</td>
-      <td><span class="roster-favorite" title="${esc(p.favorite_team||"")}">${esc(p.favorite_team||"—")}</span></td>
+      <td class="roster-col-age roster-age">${age??"—"}</td>
 
-      <td>
-        ${roles.length
-          ? roles.map(r=>`<span class="badge ${r.role_rank===1?"green":""}">${esc(r.position_code)} ${r.affinity_percent}%</span>`).join(" ")
-          : `<span class="roster-role-empty">—</span>`
+      ${settings.show_shirt_numbers?`<td class="roster-mobile-hide">${last.shirt_number||"—"}</td>`:""}
+      <td class="roster-mobile-hide">${p.birth_date?shortDate(p.birth_date):"—"}</td>
+
+      <td class="roster-col-nation">
+        ${p.nationality_code
+          ? `<span class="roster-flag" title="${esc(countryName(p.nationality_code))}">${countryFlag(p.nationality_code)}</span>`
+          : "—"
         }
       </td>
 
-      <td>${medicalExpiry?shortDate(medicalExpiry):"—"}</td>
-      <td><div class="roster-signals">${signals.html}</div></td>
+      <td class="roster-mobile-hide"><span class="roster-favorite" title="${esc(p.favorite_team||"")}">${esc(p.favorite_team||"—")}</span></td>
+
+      ${showPreferred?`
+        <td class="roster-mobile-hide roster-preferred-cell">
+          ${roles.length
+            ? roles.map(r=>`<span class="badge ${r.role_rank===1?"green":""}">${esc(r.position_code)} ${r.affinity_percent}%</span>`).join(" ")
+            : `<span class="roster-role-empty">—</span>`
+          }
+        </td>
+      `:""}
+
+      <td class="roster-mobile-hide">${medicalExpiry?shortDate(medicalExpiry):"—"}</td>
+      <td class="roster-col-signals"><div class="roster-signals">${signals.html}</div></td>
 
       ${settings.show_contract_period
-        ? `<td>
+        ? `<td class="roster-mobile-hide">
             <span class="roster-period">${shortDate(last.start_date)}–${shortDate(last.actual_end_date||last.planned_end_date)}</span>
             ${active?"":`<span class="badge red">${esc(last.roster_status)}</span>`}
           </td>`
@@ -3928,18 +4156,24 @@ async function pageRoster(){
       }
 
       ${showNextColumn
-        ? `<td>${next.next_season_confirmed
+        ? `<td class="roster-mobile-hide">${next.next_season_confirmed
             ? `<span class="next-season-confirmed">✅ Confermato</span>`
             : "—"
           }</td>`
         : ""
       }
 
-      <td>
-        <div class="actions">
+      <td class="roster-col-actions">
+        <div class="roster-row-actions">
           ${associationAction}
-          ${can("roster.manage")?`<button class="btn btn-sm" data-edit-player="${p.id}" title="Modifica calciatore">✎</button>`:""}
-          ${can("affinity.evaluate_players")?`<button class="btn btn-sm" data-eval="${p.id}" title="Valuta ruoli">Ruoli</button>`:""}
+          ${can("roster.manage")
+            ? `<button class="btn btn-sm roster-action-btn" data-edit-player="${p.id}" title="Modifica">✎</button>`
+            : ""
+          }
+          ${can("affinity.evaluate_players")&&!fanOnly
+            ? `<button class="btn btn-sm roster-action-btn" data-eval="${p.id}" title="Valuta ruoli">◎</button>`
+            : ""
+          }
         </div>
       </td>
     </tr>`;
@@ -3953,22 +4187,22 @@ async function pageRoster(){
     : "";
 
   const headers=[
-    rosterSortHeader("Calciatore","name"),
-    settings.show_shirt_numbers?rosterSortHeader("#","shirt"):"",
-    rosterSortHeader("Nascita","birth"),
-    rosterSortHeader("Naz.","nationality"),
-    rosterSortHeader("Tifata","favorite"),
-    rosterSortHeader("Ruoli","roles"),
-    rosterSortHeader("Visita","medical"),
-    rosterSortHeader("Segn.","signals"),
-    settings.show_contract_period?rosterSortHeader("Permanenza","permanence"):"",
-    showNextColumn?rosterSortHeader("Prossima","next"):"",
-    `<th>Azioni</th>`
+    rosterSortHeader("Ruolo","generic","roster-col-role"),
+    rosterSortHeader("Calciatore","name","roster-col-name"),
+    rosterSortHeader("Età","age","roster-col-age"),
+    settings.show_shirt_numbers?rosterSortHeader("#","shirt","roster-mobile-hide"):"",
+    rosterSortHeader("Nascita","birth","roster-mobile-hide"),
+    rosterSortHeader("Naz.","nationality","roster-col-nation"),
+    rosterSortHeader("Tifata","favorite","roster-mobile-hide"),
+    showPreferred?rosterSortHeader("Ruoli preferenziali","roles","roster-mobile-hide"):"",
+    rosterSortHeader("Visita","medical","roster-mobile-hide"),
+    rosterSortHeader("Segn.","signals","roster-col-signals"),
+    settings.show_contract_period?rosterSortHeader("Permanenza","permanence","roster-mobile-hide"):"",
+    showNextColumn?rosterSortHeader("Prossima","next","roster-mobile-hide"):"",
+    `<th class="roster-col-actions">Azioni</th>`
   ].join("");
 
-  const columnCount=
-    1+(settings.show_shirt_numbers?1:0)+6+
-    (settings.show_contract_period?1:0)+(showNextColumn?1:0)+1;
+  const columnCount=headers.split("<th").length-1;
 
   renderShell("Rosa",`
     <div class="page-title">
@@ -3977,19 +4211,21 @@ async function pageRoster(){
         ${can("roster.setup")?`<button class="btn" id="roster-setup">⚙ Setup Rosa</button>`:""}
         ${can("roster.manage")&&can("contracts.manage")?`<button class="btn" id="import-roster">⇧ Importa Excel/CSV</button>`:""}
         ${can("roster.manage")?`<button class="btn btn-primary" id="new-player">Nuovo calciatore</button>`:""}
-        ${state.myPlayer&&can("affinity.evaluate_self")?`<button class="btn" id="my-affinity">I miei ruoli</button>`:""}
+        ${state.myPlayer&&can("affinity.evaluate_self")&&!fanOnly?`<button class="btn" id="my-affinity">I miei ruoli</button>`:""}
       </div>
     </div>
 
     ${pendingNotice}
 
-    <div class="table-wrap">
+    <div class="roster-table-wrap">
       <table class="table roster-table">
         <thead><tr>${headers}</tr></thead>
         <tbody>${rows||`<tr><td colspan="${columnCount}">Nessun calciatore in questa stagione</td></tr>`}</tbody>
       </table>
     </div>
   `);
+
+  $(".shell")?.classList.add("roster-page");
 
   $$("[data-roster-sort]").forEach(th=>th.onclick=()=>{
     const key=th.dataset.rosterSort;
@@ -4100,6 +4336,12 @@ async function openEditRosterPlayer(playerId){
           <div class="field"><label>Squadra tifata</label><input id="erp-favorite" value="${esc(player.favorite_team||"")}" placeholder="es. Padova"></div>
         </div>
 
+        <div class="field">
+          <label>Ruolo generico</label>
+          <select id="erp-generic-role">${genericRoleOptions(player.generic_role_manual||"")}</select>
+          <div class="muted" style="margin-top:5px">Usato finché non esiste un ruolo preferenziale calcolato oltre il 50%.</div>
+        </div>
+
         ${settings.show_contact_options?`
           <div class="field"><label>Telefono</label><input id="erp-phone" type="tel" value="${esc(contacts?.phone||"")}" placeholder="+39 ..."></div>
         `:""}
@@ -4164,7 +4406,8 @@ async function openEditRosterPlayer(playerId){
               p_preferred_foot:$("#erp-foot",root).value||null,
               p_phone:settings.show_contact_options?($("#erp-phone",root)?.value.trim()||null):null,
               p_nationality_code:$("#erp-nationality",root).value||null,
-              p_favorite_team:$("#erp-favorite",root).value.trim()||null
+              p_favorite_team:$("#erp-favorite",root).value.trim()||null,
+              p_generic_role_manual:$("#erp-generic-role",root).value||null
             })
           );
 
@@ -4224,7 +4467,7 @@ async function openNewPlayer(){
 
     <div class="form-grid">
       <div class="field"><label>Data di nascita</label><input id="np-birth" type="date"></div>
-      <div class="field"><label>Nazionalità</label><select id="np-nationality">${countryOptions("")}</select></div>
+      <div class="field"><label>Nazionalità</label><select id="np-nationality">${countryOptions("IT")}</select></div>
     </div>
 
     <div class="form-grid">
@@ -4238,6 +4481,11 @@ async function openNewPlayer(){
         </select>
       </div>
       <div class="field"><label>Squadra tifata</label><input id="np-favorite" placeholder="es. Padova"></div>
+    </div>
+
+    <div class="field">
+      <label>Ruolo generico</label>
+      <select id="np-generic-role">${genericRoleOptions("")}</select>
     </div>
 
     ${settings.show_contact_options?`
@@ -4269,6 +4517,7 @@ async function openNewPlayer(){
               birth_date:$("#np-birth",root).value||null,
               nationality_code:$("#np-nationality",root).value||null,
               favorite_team:$("#np-favorite",root).value.trim()||null,
+              generic_role_manual:$("#np-generic-role",root).value||null,
               preferred_foot:$("#np-foot",root).value||null
             })
             .select("*")
@@ -4296,7 +4545,8 @@ async function openNewPlayer(){
             p_preferred_foot:$("#np-foot",root).value||null,
             p_phone:settings.show_contact_options?($("#np-phone",root)?.value.trim()||null):null,
             p_nationality_code:$("#np-nationality",root).value||null,
-            p_favorite_team:$("#np-favorite",root).value.trim()||null
+            p_favorite_team:$("#np-favorite",root).value.trim()||null,
+            p_generic_role_manual:$("#np-generic-role",root).value||null
           })
         );
 
@@ -4324,22 +4574,25 @@ async function openNewPlayer(){
 async function pagePlayer(id){
   const settings=await getRosterSettings();
   const p=await must(supabase.from("players").select("*").eq("id",id).single());
+  const fanOnly=!state.isSuperAdmin&&state.roles.length>0&&state.roles.every(r=>r==="fan");
 
-  const [contracts,statsRows,pos,affinity,contacts,exams]=await Promise.all([
+  const [contracts,statsRows,pos,affinity,genericRows,contacts,exams]=await Promise.all([
     must(supabase.from("player_contracts").select("*").eq("player_id",id).order("start_date",{ascending:false})),
     must(supabase.from("v_player_season_stats").select("*").eq("player_id",id).eq("season_id",state.season.id)),
     must(supabase.from("v_player_position_minutes").select("*").eq("player_id",id).eq("season_id",state.season.id).order("minutes",{ascending:false})),
     must(supabase.rpc("get_roster_position_affinities",{p_team_id:state.team.id,p_season_id:state.season.id})),
-    can("roster.manage")&&settings.show_contact_options
+    must(supabase.rpc("get_roster_generic_roles",{p_team_id:state.team.id,p_season_id:state.season.id})),
+    can("roster.manage")&&settings.show_contact_options&&!fanOnly
       ? must(supabase.from("player_contacts").select("*").eq("player_id",id).maybeSingle())
       : Promise.resolve(null),
-    (can("medical.view_all")||(can("medical.view_own")&&p.profile_id===state.profile.id))
+    (!fanOnly&&(can("medical.view_all")||(can("medical.view_own")&&p.profile_id===state.profile.id)))
       ? must(supabase.from("medical_examinations").select("*").eq("team_id",state.team.id).eq("player_id",id).order("issued_date",{ascending:false}).limit(1))
       : Promise.resolve([])
   ]);
 
   const stats=statsRows[0]||{};
   const roles=affinity.filter(a=>a.player_id===id);
+  const generic=genericRows.find(x=>x.player_id===id)||{};
   const exam=exams[0]||null;
 
   const metaCards=[
@@ -4357,7 +4610,12 @@ async function pagePlayer(id){
     <div class="page-title">
       <div>
         <h1>${esc(p.first_name)} ${esc(p.last_name)}</h1>
-        <div class="actions">${roles.map(r=>`<span class="badge green">${esc(r.position_code)} ${r.affinity_percent}%</span>`).join("")}</div>
+        <div class="actions">
+          ${fanOnly
+            ? (generic.generic_role_code?`<span class="badge green">${esc(generic.generic_role_code)} · ${esc(genericRoleLabel(generic.generic_role_code))}</span>`:"")
+            : roles.map(r=>`<span class="badge green">${esc(r.position_code)} ${r.affinity_percent}%</span>`).join("")
+          }
+        </div>
       </div>
       <div class="actions">
         ${can("roster.manage")?`<button class="btn" id="edit-player-detail">✎ Modifica</button>`:""}
@@ -6643,6 +6901,7 @@ function absenceTypeLabel(type){
     work:"Lavoro",
     family:"Famiglia",
     undeclared:"Non dichiarata",
+    medical_missing:"Visita mancante",
     other:"Altro"
   })[type]||type;
 }
@@ -6682,6 +6941,45 @@ function playerFootLabel(value){
   return value==="right"?"Destro":value==="left"?"Sinistro":value==="both"?"Entrambi":"—";
 }
 
+function playerAge(birthDate,at=new Date()){
+  if(!birthDate)return null;
+  const birth=new Date(birthDate+"T00:00:00");
+  if(Number.isNaN(birth.getTime()))return null;
+  let age=at.getFullYear()-birth.getFullYear();
+  const m=at.getMonth()-birth.getMonth();
+  if(m<0||(m===0&&at.getDate()<birth.getDate()))age--;
+  return age>=0?age:null;
+}
+
+function genericRoleLabel(code){
+  return ({P:"Portiere",D:"Difensore",C:"Centrocampista",A:"Attaccante"})[code]||"";
+}
+
+function genericRoleOptions(selected=""){
+  return `
+    <option value="">—</option>
+    <option value="P" ${selected==="P"?"selected":""}>P · Portiere</option>
+    <option value="D" ${selected==="D"?"selected":""}>D · Difensore</option>
+    <option value="C" ${selected==="C"?"selected":""}>C · Centrocampista</option>
+    <option value="A" ${selected==="A"?"selected":""}>A · Attaccante</option>
+  `;
+}
+
+async function syncMedicalAbsencesSafe(){
+  if(!state.team?.id||!state.season?.id||!can("roster.view"))return;
+  try{
+    await must(
+      supabase.rpc("sync_team_medical_absences",{
+        p_team_id:state.team.id,
+        p_season_id:state.season.id,
+        p_at:today()
+      })
+    );
+  }catch(err){
+    console.warn("Sync visite/assenze:",err);
+  }
+}
+
 const ISO_COUNTRY_CODES = `
 AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ
 CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR
@@ -6710,11 +7008,18 @@ function countryName(code){
 
 function countryOptions(selected=""){
   const current=String(selected||"").toUpperCase();
-  return `<option value="">—</option>`+
-    ISO_COUNTRY_CODES
+  const ordered=[
+    "IT",
+    ...ISO_COUNTRY_CODES
+      .filter(code=>code!=="IT")
       .map(code=>({code,name:countryName(code)}))
       .sort((a,b)=>a.name.localeCompare(b.name,"it"))
-      .map(x=>`<option value="${x.code}" ${x.code===current?"selected":""}>${countryFlag(x.code)} ${esc(x.name)}</option>`)
+      .map(x=>x.code)
+  ];
+
+  return `<option value="">—</option>`+
+    ordered
+      .map(code=>`<option value="${code}" ${code===current?"selected":""}>${countryFlag(code)} ${esc(countryName(code))}</option>`)
       .join("");
 }
 
@@ -6788,10 +7093,10 @@ async function getRosterSettings(force=false){
   return state.rosterSettings;
 }
 
-function rosterSortHeader(label,key){
+function rosterSortHeader(label,key,className=""){
   const current=state.rosterSort||{key:"name",dir:"asc"};
   const arrow=current.key===key?(current.dir==="asc"?"▲":"▼"):"";
-  return `<th class="sort-th" data-roster-sort="${key}">
+  return `<th class="sort-th ${className}" data-roster-sort="${key}">
     <span class="sort-head">${esc(label)}<span class="sort-arrow">${arrow}</span></span>
   </th>`;
 }
