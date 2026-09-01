@@ -4739,7 +4739,143 @@
       .captain-deadline-badge{justify-self:start}
     }
 
-</style>
+
+    /* =====================================================
+       050 — Calendario mobile compatto / KPI 30 giorni
+    ===================================================== */
+    .calendar-controls-row.calendar-controls-compact{
+      display:grid!important;
+      grid-template-columns:auto minmax(150px,1fr) auto!important;
+      align-items:center!important;
+      gap:6px!important;
+      padding:4px!important;
+      border:1px solid var(--ui-line-soft)!important;
+      border-radius:9px!important;
+      background:var(--panel)!important;
+      box-shadow:none!important;
+      margin-bottom:8px!important;
+      overflow:visible!important;
+    }
+    .calendar-controls-compact .calendar-view-toggle{
+      gap:2px!important;
+      padding:2px!important;
+      border-radius:8px!important;
+    }
+    .calendar-controls-compact .calendar-view-toggle button{
+      min-height:30px!important;
+      padding:4px 7px!important;
+      font-size:.68rem!important;
+      border-radius:6px!important;
+    }
+    .calendar-controls-compact .calendar-search-compact input{
+      height:31px!important;
+      min-height:31px!important;
+      padding:4px 8px!important;
+      font-size:.72rem!important;
+      border-radius:7px!important;
+    }
+    .calendar-filter-popover{
+      position:relative;
+      min-width:0;
+    }
+    .calendar-filter-popover > summary{
+      list-style:none;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+      min-height:31px;
+      padding:4px 8px;
+      border:1px solid var(--line);
+      border-radius:7px;
+      background:var(--panel2);
+      color:var(--text);
+      font-size:.68rem!important;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .calendar-filter-popover > summary::-webkit-details-marker{display:none}
+    .calendar-filter-popover[open] > summary{border-color:var(--team-primary-line);background:var(--team-accent-soft)}
+    .calendar-filter-menu{
+      position:absolute;
+      z-index:50;
+      right:0;
+      top:calc(100% + 5px);
+      width:max-content;
+      max-width:min(420px,88vw);
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px;
+      padding:6px;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:var(--panel);
+      box-shadow:0 12px 26px rgba(0,0,0,.28);
+    }
+    .calendar-filter-menu .filter-chip{
+      min-height:27px!important;
+      padding:3px 6px!important;
+      gap:4px!important;
+      font-size:.62rem!important;
+      border-radius:7px!important;
+    }
+    .calendar-filter-menu .filter-chip input{
+      width:13px!important;
+      height:13px!important;
+    }
+    .calendar-filter-count{
+      min-width:16px;
+      height:16px;
+      display:grid;
+      place-items:center;
+      border-radius:99px;
+      background:var(--team-accent-soft);
+      font-size:.54rem!important;
+      font-weight:900;
+    }
+    .calendar-training-title{display:inline-flex;align-items:center;gap:5px}
+    .calendar-training-mobile{display:none}
+    .calendar-competition-icon{margin-right:4px}
+
+    @media(max-width:700px){
+      .calendar-controls-row.calendar-controls-compact{
+        grid-template-columns:auto minmax(0,1fr) auto!important;
+        gap:4px!important;
+      }
+      .calendar-controls-compact .calendar-view-toggle button{
+        padding:4px 6px!important;
+        font-size:.64rem!important;
+      }
+      .calendar-controls-compact .calendar-search-compact input{
+        width:100%!important;
+        min-width:0!important;
+        font-size:.68rem!important;
+      }
+      .calendar-filter-popover > summary{
+        padding:4px 6px!important;
+        font-size:.63rem!important;
+      }
+      .calendar-filter-menu{
+        position:fixed;
+        left:12px;
+        right:12px;
+        top:auto;
+        width:auto;
+        max-width:none;
+      }
+      .calendar-training-desktop{display:none!important}
+      .calendar-training-mobile{display:inline!important}
+      .calendar-event-title .calendar-training-title{font-size:1rem!important}
+      .calendar-event-type-inline{display:none}
+    }
+    @media(max-width:430px){
+      .calendar-controls-compact .calendar-view-toggle .view-label{display:none}
+      .calendar-controls-compact .calendar-view-toggle button{min-width:31px!important}
+      .calendar-filter-popover .filter-label{display:none}
+    }
+
+  </style>
 </head>
 <body>
 <div id="root" class="app"></div>
@@ -4811,6 +4947,23 @@ const eventTypeLabel = type => ({
   social:"Evento sociale",
   other:"Altro"
 }[type]||type);
+
+function competitionTypeEmoji(type){
+  return ({
+    friendly:"🤝",
+    league:"🔁",
+    cup:"🏆",
+    tournament:"🏆"
+  })[type]||"⚽";
+}
+
+function calendarEventIcon(event,match=null,competition=null){
+  if(event?.event_type==="training")return "🏋🏻‍♀️";
+  if(event?.event_type==="match")return competitionTypeEmoji(competition?.competition_type);
+  if(event?.event_type==="meeting")return "🧑‍💼";
+  if(event?.event_type==="social")return "🎉";
+  return "📌";
+}
 
 const attendanceLabel = status => ({
   unknown:"Da indicare",
@@ -7946,7 +8099,7 @@ async function pageDashboardStaff(){
         <div class="card dashboard-panel dashboard-events-card dashboard-priority">
           <div class="card-head"><h3>📅 Agenda squadra</h3><button class="btn btn-sm btn-ghost" data-go="calendar">Calendario</button></div>
           <div class="dashboard-panel-list">
-            ${events.slice(0,12).map(e=>dashboardEventRecord(e,e.event_type==="match"?"⚽":e.event_type==="training"?"🏃":e.event_type==="meeting"?"🧑‍💼":e.event_type==="social"?"🎉":"📌")).join("")||`<div class="empty">Nessun evento programmato</div>`}
+            ${events.slice(0,12).map(e=>dashboardEventRecord(e,e.event_type==="match"?"⚽":e.event_type==="training"?"🏋🏻‍♀️":e.event_type==="meeting"?"🧑‍💼":e.event_type==="social"?"🎉":"📌")).join("")||`<div class="empty">Nessun evento programmato</div>`}
           </div>
         </div>
 
@@ -7957,7 +8110,7 @@ async function pageDashboardStaff(){
 
         <div class="card dashboard-panel dashboard-events-card">
           <div class="card-head"><h3>🏃 Allenamenti</h3><button class="btn btn-sm btn-ghost" data-go="trainings">Apri</button></div>
-          <div class="dashboard-panel-list">${eventsByType.training.slice(0,6).map(e=>dashboardEventRecord(e,"🏃")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}</div>
+          <div class="dashboard-panel-list">${eventsByType.training.slice(0,6).map(e=>dashboardEventRecord(e,"🏋🏻‍♀️")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}</div>
         </div>
       </div>
     </div>
@@ -8147,7 +8300,7 @@ async function pageDashboardPlayer(){
           ${events.slice(0,14).map(e=>dashboardEventRecord(
             e,
             e.event_type==="match"?"⚽":
-            e.event_type==="training"?"🏃":
+            e.event_type==="training"?"🏋🏻‍♀️":
             e.event_type==="meeting"?"🧑‍💼":
             e.event_type==="social"?"🎉":"📌"
           )).join("")||`<div class="empty">Nessun appuntamento programmato</div>`}
@@ -8164,7 +8317,7 @@ async function pageDashboardPlayer(){
       <div class="card dashboard-panel">
         <div class="card-head"><h3>🏃 Allenamenti</h3><button class="btn btn-sm btn-ghost" data-go="trainings">Apri</button></div>
         <div class="dashboard-panel-list">
-          ${events.filter(e=>e.event_type==="training").slice(0,8).map(e=>dashboardEventRecord(e,"🏃")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}
+          ${events.filter(e=>e.event_type==="training").slice(0,8).map(e=>dashboardEventRecord(e,"🏋🏻‍♀️")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}
         </div>
       </div>
 
@@ -10404,13 +10557,17 @@ async function saveCalendarView(view){
 
 function calendarEventRow(event,extra="",titleOverride=null){
   const d=calendarDateParts(event.start_at);
+  const titleHtml=event.event_type==="training"
+    ? `<span class="calendar-training-title"><span>🏋🏻‍♀️</span><span class="calendar-training-desktop">Allenamento</span><span class="calendar-training-mobile" aria-label="Allenamento"></span></span>`
+    : esc(titleOverride||event.title);
+
   return `<div class="calendar-event-row" data-event="${event.id}">
     <div class="calendar-date-tile">
       <div class="calendar-date-day">${d.day}</div>
       <div class="calendar-date-month">${d.month}</div>
     </div>
     <div class="calendar-event-main">
-      <div class="calendar-event-title">${esc(titleOverride||event.title)}</div>
+      <div class="calendar-event-title">${titleHtml}</div>
       <div class="calendar-event-place">
         <span class="calendar-event-time-inline">${d.time}</span>
         · ${esc(event.location||"Luogo non indicato")}
@@ -10446,7 +10603,7 @@ async function pageCalendar(){
     ),
     must(
       supabase.from("competitions")
-        .select("id,name")
+        .select("id,name,competition_type")
         .eq("team_id",state.team.id)
         .eq("season_id",state.season.id)
     )
@@ -10469,8 +10626,9 @@ async function pageCalendar(){
     const other=opponentDisplayName(opponent)||m.opponent_name||"Avversaria";
     const home=m.home_away==="away"?other:our;
     const away=m.home_away==="away"?our:other;
-    const comp=competitionMap.get(m.competition_id)?.name;
-    return `${comp?`${comp} · `:""}${home} - ${away}`;
+    const competition=competitionMap.get(m.competition_id);
+    const comp=competition?.name;
+    return `${competitionTypeEmoji(competition?.competition_type)} ${comp?`${comp} · `:""}${home} - ${away}`;
   };
 
   let view=state.preferences?.calendar_view||"list";
@@ -10493,6 +10651,13 @@ async function pageCalendar(){
     state.calendarMonth=(nowKey>=startMonth&&nowKey<=endMonth)?nowKey:startMonth;
   }
 
+  const nowMs=Date.now();
+  const horizon30Ms=nowMs+(30*24*60*60*1000);
+  const withinNext30=e=>{
+    const t=new Date(e.start_at).getTime();
+    return t>=nowMs&&t<=horizon30Ms;
+  };
+
   renderShell("Calendario",`
     <div class="page-title">
       <div>
@@ -10503,31 +10668,34 @@ async function pageCalendar(){
     </div>
 
     ${sectionKpis([
-      {icon:"📅",value:visibleEvents.filter(e=>new Date(e.start_at).getTime()>=Date.now()).length,label:"Prossimi eventi"},
+      {icon:"📅",value:visibleEvents.filter(withinNext30).length,label:"Eventi · 30 gg"},
       {icon:"☀️",value:visibleEvents.filter(e=>localDateKey(e.start_at)===today()).length,label:"Oggi"},
-      {icon:"⚽",value:visibleEvents.filter(e=>e.event_type==="match"&&new Date(e.start_at).getTime()>=Date.now()).length,label:"Prossime partite"},
-      {icon:"🏃",value:fanView?"—":visibleEvents.filter(e=>e.event_type==="training"&&new Date(e.start_at).getTime()>=Date.now()).length,label:fanView?"Solo partite":"Allenamenti futuri"}
+      {icon:"⚽",value:visibleEvents.filter(e=>e.event_type==="match"&&withinNext30(e)).length,label:"Partite · 30 gg"},
+      {icon:"🏋🏻‍♀️",value:fanView?"—":visibleEvents.filter(e=>e.event_type==="training"&&withinNext30(e)).length,label:fanView?"Solo partite":"Allenamenti · 30 gg"}
     ])}
 
-    <div class="calendar-controls-row">
+    <div class="calendar-controls-row calendar-controls-compact">
       <div class="calendar-view-toggle">
-        <button type="button" id="cal-view-list" class="${view==="list"?"active":""}">☷ Lista</button>
-        <button type="button" id="cal-view-month" class="${view==="month"?"active":""}">▦ Mese</button>
+        <button type="button" id="cal-view-list" class="${view==="list"?"active":""}">☷ <span class="view-label">Lista</span></button>
+        <button type="button" id="cal-view-month" class="${view==="month"?"active":""}">▦ <span class="view-label">Mese</span></button>
       </div>
 
       <div class="calendar-search-compact">
-        <input id="calendar-search" type="search" placeholder="Cerca titolo, luogo o note…" value="${esc(state.calendarFilters?.query||"")}">
+        <input id="calendar-search" type="search" placeholder="Cerca…" value="${esc(state.calendarFilters?.query||"")}">
       </div>
 
-      ${fanView?"":`
-        <div class="calendar-type-filters">
-          ${typeOptions.map(([value,label])=>`
-            <label class="filter-chip">
-              <input type="checkbox" data-cal-type="${value}" ${(state.calendarFilters?.types||[]).includes(value)?"checked":""}>
-              ${label}
-            </label>
-          `).join("")}
-        </div>
+      ${fanView?`<span></span>`:`
+        <details class="calendar-filter-popover" id="calendar-filter-popover">
+          <summary>⚙ <span class="filter-label">Filtri</span>${(state.calendarFilters?.types||[]).length?`<span class="calendar-filter-count">${(state.calendarFilters?.types||[]).length}</span>`:""}</summary>
+          <div class="calendar-filter-menu">
+            ${typeOptions.map(([value,label])=>`
+              <label class="filter-chip">
+                <input type="checkbox" data-cal-type="${value}" ${(state.calendarFilters?.types||[]).includes(value)?"checked":""}>
+                ${label}
+              </label>
+            `).join("")}
+          </div>
+        </details>
       `}
     </div>
 
@@ -10662,17 +10830,22 @@ async function pageCalendar(){
             if(match){
               const opponent=opponentMap.get(match.opponent_id);
 
-              return `<button type="button" class="month-event match-mini" data-event="${e.id}" title="${esc(e.title)}">
+              const competition=competitionMap.get(match.competition_id);
+              return `<button type="button" class="month-event match-mini" data-event="${e.id}" title="${esc(calendarFullTitle(e))}">
                 <span class="time">${p.time}</span>
+                <span class="calendar-competition-icon">${competitionTypeEmoji(competition?.competition_type)}</span>
                 <span class="month-ha-icon">${matchLocationIcon(match.home_away)}</span>
                 ${opponentLogoHtml(opponent,"month-match-logo")}
                 <span class="month-event-text">${esc(opponent?.short_name||opponent?.name||match.opponent_name)}</span>
               </button>`;
             }
 
-            return `<button type="button" class="month-event" data-event="${e.id}" title="${esc(e.title)}">
+            return `<button type="button" class="month-event" data-event="${e.id}" title="${esc(e.event_type==="training"?"Allenamento":e.title)}">
               <span class="time">${p.time}</span>
-              <span class="month-event-text">${esc(e.event_type==="training"?"ALL":e.title)}</span>
+              ${e.event_type==="training"
+                ? `<span aria-label="Allenamento">🏋🏻‍♀️</span><span class="month-event-text calendar-training-desktop"> Allenamento</span>`
+                : `<span class="month-event-text">${esc(e.title)}</span>`
+              }
             </button>`;
           }).join("")}
 
