@@ -892,7 +892,7 @@
     /* Dimensione testo ordinario omogenea in tutta l'app */
     body,button,input,select,textarea,label,
     .nav button,.mobile-drawer .nav button,
-    .table td,.btn,.btn-sm,.badge,.list-item,
+    .table th,.table td,.btn,.btn-sm,.badge,.list-item,
     .section-note,.page-title p,.topbar-sub,.mobile-appbar-sub,
     .muted,.field,.tabs button{
       font-size:var(--ui-font-size)!important;
@@ -1047,6 +1047,124 @@
         justify-content:flex-end;
         flex-wrap:nowrap;
       }
+    }
+
+
+    :root{--ui-font-size:13px}
+
+    body,button,input,select,textarea,label,
+    .nav button,.mobile-drawer .nav button,
+    .table td,.btn,.btn-sm,.badge,.list-item,
+    .section-note,.page-title p,.topbar-sub,.mobile-appbar-sub,
+    .muted,.field,.tabs button{
+      font-size:var(--ui-font-size)!important;
+    }
+
+    .roster-table-wrap{
+      overflow-x:hidden!important;
+      overflow-y:auto;
+      width:100%;
+    }
+    .roster-table{
+      width:100%!important;
+      min-width:0!important;
+      table-layout:fixed;
+    }
+    .roster-table th,.roster-table td{
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .roster-surname{font-weight:800}
+    .roster-firstname{font-weight:400}
+
+    .roster-generic-role{
+      width:19px!important;
+      height:19px!important;
+      border-radius:5px!important;
+      border:0!important;
+      font-size:10px!important;
+      font-weight:850!important;
+      line-height:1!important;
+    }
+    .roster-generic-role.role-P{background:rgba(245,158,11,.18);color:#fbbf24}
+    .roster-generic-role.role-D{background:rgba(59,130,246,.18);color:#60a5fa}
+    .roster-generic-role.role-C{background:rgba(16,185,129,.18);color:#34d399}
+    .roster-generic-role.role-A{background:rgba(239,68,68,.18);color:#f87171}
+    .roster-generic-role.role-empty{background:var(--panel2);color:var(--muted)}
+
+    @media(min-width:701px){
+      .roster-col-role{width:3%}
+      .roster-col-name{width:17%}
+      .roster-col-age{width:4%}
+      .roster-col-shirt{width:3%}
+      .roster-col-birth{width:7%}
+      .roster-col-nation{width:3.5%}
+      .roster-col-favorite{width:9%}
+      .roster-col-preferred{width:16%}
+      .roster-col-medical{width:7%}
+      .roster-col-signals{width:7%}
+      .roster-col-permanence{width:11%}
+      .roster-col-next{width:7%}
+      .roster-col-actions{width:6.5%}
+
+      .roster-table th,.roster-table td{
+        padding-left:4px!important;
+        padding-right:4px!important;
+      }
+      .roster-preferred-cell,
+      .roster-favorite,
+      .roster-period{
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+      .roster-row-actions{
+        flex-wrap:nowrap!important;
+        gap:2px!important;
+      }
+    }
+
+    .signal-popover{
+      position:fixed;
+      z-index:200;
+      max-width:min(260px,82vw);
+      padding:7px 9px;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:var(--panel);
+      color:var(--text);
+      box-shadow:var(--shadow);
+      font-size:12px!important;
+      pointer-events:none;
+    }
+
+    .medical-scheduled{
+      display:inline-flex;
+      align-items:center;
+      gap:5px;
+      white-space:nowrap;
+    }
+    .medical-due{
+      border-color:var(--warn)!important;
+    }
+
+    @media(max-width:700px){
+      .roster-generic-role{
+        width:18px!important;
+        height:18px!important;
+        font-size:9px!important;
+      }
+      .roster-col-role{width:27px!important}
+      .roster-col-age{width:31px!important}
+      .roster-col-nation{width:31px!important}
+      .roster-col-signals{width:54px!important}
+      .roster-col-actions{width:56px!important}
+      .roster-player-link strong{
+        font-weight:400!important;
+      }
+      .roster-surname{font-weight:800!important}
+      .roster-firstname{font-weight:400!important}
     }
 
   </style>
@@ -4003,41 +4121,41 @@ async function pageRoster(){
 
     if(fanOnly){
       if(indicator?.generic_unavailable){
-        signals.push(`<span class="roster-signal" title="Indisponibile">❌</span>`);
+        signals.push(signalHtml("❌","Indisponibile"));
         severity=50;
       }
       return {html:signals.length?signals.join(""):`<span class="muted">—</span>`,severity};
     }
 
     if(indicator?.injury_active){
-      signals.push(`<span class="roster-signal injury" title="Infortunato">✚</span>`);
+      signals.push(signalHtml("✚","Infortunato","injury"));
       severity+=50;
     }
 
     const absence=absenceSignal(indicator?.absence_type);
     if(absence){
-      signals.push(`<span class="roster-signal" title="${esc(absence.label)}">${absence.icon}</span>`);
+      signals.push(signalHtml(absence.icon,absence.label));
       severity+=40;
     }
 
     if(indicator?.financial_pending){
-      signals.push(`<span class="roster-signal" title="Quota o multa da pagare">💰</span>`);
+      signals.push(signalHtml("💰","Quota o multa da pagare"));
       severity+=30;
     }
 
     if(canSeeMedicalFor(p)){
       const days=medicalDaysToExpiry(indicator?.medical_expires_on);
       if(!indicator?.medical_expires_on||days<0){
-        signals.push(`<span class="roster-signal" title="${indicator?.medical_expires_on?"Visita medica scaduta":"Visita medica mancante"}">☠️</span>`);
+        signals.push(signalHtml("☠️",indicator?.medical_expires_on?"Visita medica scaduta":"Visita medica mancante"));
         severity+=20;
       }else if(days<=45){
-        signals.push(`<span class="roster-signal" title="Visita medica in scadenza tra ${days} giorni">🚨</span>`);
+        signals.push(signalHtml("🚨",`Visita medica in scadenza tra ${days} giorni`));
         severity+=10;
       }
     }
 
     if(next?.next_season_confirmed){
-      signals.push(`<span class="roster-signal" title="Confermato anche per la prossima stagione">✅</span>`);
+      signals.push(signalHtml("✅","Confermato anche per la prossima stagione"));
     }
 
     return {html:signals.length?signals.join(""):`<span class="muted">—</span>`,severity};
@@ -4111,20 +4229,23 @@ async function pageRoster(){
 
     return `<tr class="${active?"":"roster-row-inactive"}">
       <td class="roster-col-role">
-        <span class="roster-generic-role" title="${esc(genericTitle)}">${esc(genericCode)}</span>
+        <span class="roster-generic-role ${genericCode!=="—"?`role-${genericCode}`:"role-empty"}" title="${esc(genericTitle)}">${esc(genericCode)}</span>
       </td>
 
       <td class="roster-col-name roster-name-cell">
         <div class="roster-player-link" data-player="${p.id}" role="button" tabindex="0">
           <span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}">`:initials(p.first_name,p.last_name)}</span>
-          <strong>${esc(p.last_name)} ${esc(p.first_name)}</strong>
+          <span>
+            <span class="roster-surname">${esc(p.last_name)}</span>
+            <span class="roster-firstname"> ${esc(p.first_name)}</span>
+          </span>
         </div>
       </td>
 
       <td class="roster-col-age roster-age">${age??"—"}</td>
 
-      ${settings.show_shirt_numbers?`<td class="roster-mobile-hide">${last.shirt_number||"—"}</td>`:""}
-      <td class="roster-mobile-hide">${p.birth_date?shortDate(p.birth_date):"—"}</td>
+      ${settings.show_shirt_numbers?`<td class="roster-mobile-hide roster-col-shirt">${last.shirt_number||"—"}</td>`:""}
+      <td class="roster-mobile-hide roster-col-birth">${p.birth_date?shortDate(p.birth_date):"—"}</td>
 
       <td class="roster-col-nation">
         ${p.nationality_code
@@ -4133,10 +4254,10 @@ async function pageRoster(){
         }
       </td>
 
-      <td class="roster-mobile-hide"><span class="roster-favorite" title="${esc(p.favorite_team||"")}">${esc(p.favorite_team||"—")}</span></td>
+      <td class="roster-mobile-hide roster-col-favorite"><span class="roster-favorite" title="${esc(p.favorite_team||"")}">${esc(p.favorite_team||"—")}</span></td>
 
       ${showPreferred?`
-        <td class="roster-mobile-hide roster-preferred-cell">
+        <td class="roster-mobile-hide roster-preferred-cell roster-col-preferred">
           ${roles.length
             ? roles.map(r=>`<span class="badge ${r.role_rank===1?"green":""}">${esc(r.position_code)} ${r.affinity_percent}%</span>`).join(" ")
             : `<span class="roster-role-empty">—</span>`
@@ -4144,11 +4265,11 @@ async function pageRoster(){
         </td>
       `:""}
 
-      <td class="roster-mobile-hide">${medicalExpiry?shortDate(medicalExpiry):"—"}</td>
+      <td class="roster-mobile-hide roster-col-medical">${medicalExpiry?shortDate(medicalExpiry):"—"}</td>
       <td class="roster-col-signals"><div class="roster-signals">${signals.html}</div></td>
 
       ${settings.show_contract_period
-        ? `<td class="roster-mobile-hide">
+        ? `<td class="roster-mobile-hide roster-col-permanence">
             <span class="roster-period">${shortDate(last.start_date)}–${shortDate(last.actual_end_date||last.planned_end_date)}</span>
             ${active?"":`<span class="badge red">${esc(last.roster_status)}</span>`}
           </td>`
@@ -4156,7 +4277,7 @@ async function pageRoster(){
       }
 
       ${showNextColumn
-        ? `<td class="roster-mobile-hide">${next.next_season_confirmed
+        ? `<td class="roster-mobile-hide roster-col-next">${next.next_season_confirmed
             ? `<span class="next-season-confirmed">✅ Confermato</span>`
             : "—"
           }</td>`
@@ -4190,15 +4311,15 @@ async function pageRoster(){
     rosterSortHeader("Ruolo","generic","roster-col-role"),
     rosterSortHeader("Calciatore","name","roster-col-name"),
     rosterSortHeader("Età","age","roster-col-age"),
-    settings.show_shirt_numbers?rosterSortHeader("#","shirt","roster-mobile-hide"):"",
-    rosterSortHeader("Nascita","birth","roster-mobile-hide"),
+    settings.show_shirt_numbers?rosterSortHeader("#","shirt","roster-mobile-hide roster-col-shirt"):"",
+    rosterSortHeader("Nascita","birth","roster-mobile-hide roster-col-birth"),
     rosterSortHeader("Naz.","nationality","roster-col-nation"),
-    rosterSortHeader("Tifata","favorite","roster-mobile-hide"),
-    showPreferred?rosterSortHeader("Ruoli preferenziali","roles","roster-mobile-hide"):"",
-    rosterSortHeader("Visita","medical","roster-mobile-hide"),
+    rosterSortHeader("Tifata","favorite","roster-mobile-hide roster-col-favorite"),
+    showPreferred?rosterSortHeader("Ruoli preferenziali","roles","roster-mobile-hide roster-col-preferred"):"",
+    rosterSortHeader("Visita","medical","roster-mobile-hide roster-col-medical"),
     rosterSortHeader("Segn.","signals","roster-col-signals"),
-    settings.show_contract_period?rosterSortHeader("Permanenza","permanence","roster-mobile-hide"):"",
-    showNextColumn?rosterSortHeader("Prossima","next","roster-mobile-hide"):"",
+    settings.show_contract_period?rosterSortHeader("Permanenza","permanence","roster-mobile-hide roster-col-permanence"):"",
+    showNextColumn?rosterSortHeader("Prossima","next","roster-mobile-hide roster-col-next"):"",
     `<th class="roster-col-actions">Azioni</th>`
   ].join("");
 
@@ -4226,6 +4347,7 @@ async function pageRoster(){
   `);
 
   $(".shell")?.classList.add("roster-page");
+  wireSignalPopovers($(".roster-table-wrap"));
 
   $$("[data-roster-sort]").forEach(th=>th.onclick=()=>{
     const key=th.dataset.rosterSort;
@@ -4293,7 +4415,7 @@ async function openEditRosterPlayer(playerId){
   try{
     const settings=await getRosterSettings();
 
-    const [player,contacts,contracts,exams]=await Promise.all([
+    const [player,contacts,contracts,exams,medicalAppointments]=await Promise.all([
       must(supabase.from("players").select("*").eq("id",playerId).eq("team_id",state.team.id).single()),
       can("roster.manage")&&settings.show_contact_options
         ? must(supabase.from("player_contacts").select("*").eq("player_id",playerId).maybeSingle())
@@ -4302,12 +4424,24 @@ async function openEditRosterPlayer(playerId){
         ? must(supabase.from("player_contracts").select("*").eq("player_id",playerId).eq("season_id",state.season.id).order("start_date",{ascending:false}))
         : Promise.resolve([]),
       (can("medical.view_all")||can("medical.manage"))
-        ? must(supabase.from("medical_examinations").select("*").eq("team_id",state.team.id).eq("player_id",playerId).order("issued_date",{ascending:false}).limit(1))
+        ? must(supabase.from("medical_examinations").select("*").eq("team_id",state.team.id).eq("player_id",playerId).lte("issued_date",today()).order("issued_date",{ascending:false}).limit(1))
+        : Promise.resolve([]),
+      can("medical.manage")
+        ? must(
+            supabase.from("medical_appointments")
+              .select("*")
+              .eq("team_id",state.team.id)
+              .eq("player_id",playerId)
+              .eq("status","scheduled")
+              .order("scheduled_for",{ascending:true})
+              .limit(1)
+          )
         : Promise.resolve([])
     ]);
 
     const currentContract=contracts.find(c=>c.status!=="cancelled")||contracts[0]||null;
     const latestExam=exams[0]||null;
+    const scheduledExam=medicalAppointments[0]||null;
 
     showModal(`Modifica · ${player.first_name} ${player.last_name}`,`
       <form id="edit-roster-player-form">
@@ -4368,8 +4502,17 @@ async function openEditRosterPlayer(playerId){
         ${can("medical.manage")?`
           <h3>Visita medica</h3>
           <div class="form-grid">
-            <div class="field"><label>Data effettuazione</label><input id="erp-medical-issued" type="date" value="${latestExam?.issued_date||""}"></div>
-            <div class="field"><label>Scadenza calcolata</label><input id="erp-medical-expiry" value="${latestExam?.expires_on?fmtDate(latestExam.expires_on):"—"}" disabled></div>
+            <div class="field">
+              <label>Scadenza ultimo certificato</label>
+              <input value="${latestExam?.expires_on?fmtDate(latestExam.expires_on):"Nessun certificato valido registrato"}" disabled>
+            </div>
+            <div class="field">
+              <label>Prossima visita programmata</label>
+              <input id="erp-medical-scheduled" type="date" value="${scheduledExam?.scheduled_for||""}">
+            </div>
+          </div>
+          <div class="muted" style="margin-top:-6px;margin-bottom:12px">
+            La data programmata non abilita il calciatore: deve essere confermata come svolta nel menu Visite mediche.
           </div>
         `:""}
 
@@ -4378,20 +4521,7 @@ async function openEditRosterPlayer(playerId){
     `,root=>{
       root.closest(".modal").style.width="min(780px,100%)";
 
-      const medicalIssued=$("#erp-medical-issued",root);
-      const medicalExpiry=$("#erp-medical-expiry",root);
-
-      if(medicalIssued&&medicalExpiry){
-        medicalIssued.oninput=()=>{
-          if(!medicalIssued.value){
-            medicalExpiry.value="—";
-            return;
-          }
-          const d=new Date(medicalIssued.value+"T00:00:00");
-          d.setFullYear(d.getFullYear()+1);
-          medicalExpiry.value=new Intl.DateTimeFormat("it-IT").format(d);
-        };
-      }
+      const medicalScheduled=$("#erp-medical-scheduled",root);
 
       $("#edit-roster-player-form",root).onsubmit=async e=>{
         e.preventDefault();
@@ -4432,15 +4562,36 @@ async function openEditRosterPlayer(playerId){
             }
           }
 
-          if(can("medical.manage")&&medicalIssued?.value&&medicalIssued.value!==(latestExam?.issued_date||"")){
-            await must(
-              supabase.rpc("register_player_medical_date",{
-                p_team_id:state.team.id,
-                p_season_id:state.season.id,
-                p_player_id:playerId,
-                p_issued_date:medicalIssued.value
-              })
-            );
+          if(can("medical.manage")&&medicalScheduled){
+            const newDate=medicalScheduled.value||null;
+            const oldDate=scheduledExam?.scheduled_for||null;
+
+            if(newDate!==oldDate){
+              if(newDate){
+                await must(
+                  supabase.rpc("schedule_medical_appointment",{
+                    p_team_id:state.team.id,
+                    p_season_id:state.season.id,
+                    p_player_id:playerId,
+                    p_scheduled_for:newDate,
+                    p_examination_type:scheduledExam?.examination_type||"competitive",
+                    p_provider:scheduledExam?.provider||null,
+                    p_notes:scheduledExam?.notes||null
+                  })
+                );
+              }else if(scheduledExam){
+                await must(
+                  supabase.rpc("resolve_medical_appointment",{
+                    p_appointment_id:scheduledExam.id,
+                    p_result:"cancelled",
+                    p_actual_date:null,
+                    p_provider:null,
+                    p_certificate_number:null,
+                    p_notes:"Programmazione rimossa dalla scheda calciatore"
+                  })
+                );
+              }
+            }
           }
 
           closeModal();
@@ -4500,7 +4651,7 @@ async function openNewPlayer(){
     <div class="field"><label>Numero maglia</label><input id="np-number" type="number" min="1" max="99"></div>
 
     ${can("medical.manage")?`
-      <div class="field"><label>Data visita medica (facoltativa)</label><input id="np-medical" type="date"></div>
+      <div class="field"><label>Visita medica programmata (facoltativa)</label><input id="np-medical" type="date"></div>
     `:""}
 
     <button class="btn btn-primary">Crea e inserisci in rosa</button>
@@ -4552,11 +4703,14 @@ async function openNewPlayer(){
 
         if(can("medical.manage")&&$("#np-medical",root)?.value){
           await must(
-            supabase.rpc("register_player_medical_date",{
+            supabase.rpc("schedule_medical_appointment",{
               p_team_id:state.team.id,
               p_season_id:state.season.id,
               p_player_id:p.id,
-              p_issued_date:$("#np-medical",root).value
+              p_scheduled_for:$("#np-medical",root).value,
+              p_examination_type:"competitive",
+              p_provider:null,
+              p_notes:null
             })
           );
         }
@@ -4586,7 +4740,7 @@ async function pagePlayer(id){
       ? must(supabase.from("player_contacts").select("*").eq("player_id",id).maybeSingle())
       : Promise.resolve(null),
     (!fanOnly&&(can("medical.view_all")||(can("medical.view_own")&&p.profile_id===state.profile.id)))
-      ? must(supabase.from("medical_examinations").select("*").eq("team_id",state.team.id).eq("player_id",id).order("issued_date",{ascending:false}).limit(1))
+      ? must(supabase.from("medical_examinations").select("*").eq("team_id",state.team.id).eq("player_id",id).lte("issued_date",today()).order("issued_date",{ascending:false}).limit(1))
       : Promise.resolve([])
   ]);
 
@@ -4603,7 +4757,9 @@ async function pagePlayer(id){
     settings.show_contact_options
       ? `<div class="card"><div class="stat-label">Telefono</div><strong>${esc(contacts?.phone||"—")}</strong></div>`
       : "",
-    `<div class="card"><div class="stat-label">Visita medica</div><strong>${exam?`${fmtDate(exam.issued_date)} → ${fmtDate(exam.expires_on)}`:"—"}</strong></div>`
+    !fanOnly
+      ? `<div class="card"><div class="stat-label">Visita medica</div><strong>${exam?`${fmtDate(exam.issued_date)} → ${fmtDate(exam.expires_on)}`:"—"}</strong></div>`
+      : ""
   ].filter(Boolean).join("");
 
   renderShell(`${p.first_name} ${p.last_name}`,`
@@ -6931,6 +7087,65 @@ function medicalStatus(exam){
   return {label:"Valida",cls:"green",icon:""};
 }
 
+function signalHtml(icon,label,className=""){
+  return `<span
+    class="roster-signal ${className}"
+    title="${esc(label)}"
+    data-signal-label="${esc(label)}"
+    tabindex="0"
+    role="button"
+  >${icon}</span>`;
+}
+
+let activeSignalPopover=null;
+
+function hideSignalPopover(){
+  activeSignalPopover?.remove();
+  activeSignalPopover=null;
+}
+
+function showSignalPopover(el){
+  hideSignalPopover();
+
+  const label=el.dataset.signalLabel;
+  if(!label)return;
+
+  const pop=document.createElement("div");
+  pop.className="signal-popover";
+  pop.textContent=label;
+  document.body.appendChild(pop);
+
+  const rect=el.getBoundingClientRect();
+  const pRect=pop.getBoundingClientRect();
+
+  let left=rect.left+rect.width/2-pRect.width/2;
+  left=Math.max(8,Math.min(left,window.innerWidth-pRect.width-8));
+
+  let top=rect.top-pRect.height-7;
+  if(top<8)top=rect.bottom+7;
+
+  pop.style.left=`${left}px`;
+  pop.style.top=`${top}px`;
+
+  activeSignalPopover=pop;
+  setTimeout(hideSignalPopover,2200);
+}
+
+function wireSignalPopovers(root=document){
+  $$("[data-signal-label]",root).forEach(el=>{
+    el.onclick=e=>{
+      e.stopPropagation();
+      showSignalPopover(el);
+    };
+    el.onkeydown=e=>{
+      if(e.key==="Enter"||e.key===" "){
+        e.preventDefault();
+        showSignalPopover(el);
+      }
+    };
+  });
+}
+
 function shortDate(value){
   if(!value)return "—";
   return new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit"})
@@ -7497,75 +7712,301 @@ function openOpponentModal(opponent,venues){
 }
 
 async function pageMedical(){
-  const allPlayers=await must(supabase.from("players").select("id,first_name,last_name,profile_id").eq("team_id",state.team.id).order("last_name"));
-  const players=can("medical.view_all")?allPlayers:allPlayers.filter(p=>p.profile_id===state.profile.id);
-  const exams=await must(supabase.from("medical_examinations").select("*").eq("team_id",state.team.id).order("issued_date",{ascending:false}));
+  await syncMedicalAbsencesSafe();
+
+  const allPlayers=await must(
+    supabase.from("players")
+      .select("id,first_name,last_name,profile_id")
+      .eq("team_id",state.team.id)
+      .order("last_name")
+  );
+
+  const players=can("medical.view_all")
+    ? allPlayers
+    : allPlayers.filter(p=>p.profile_id===state.profile.id);
+
+  const [exams,appointments]=await Promise.all([
+    must(
+      supabase.from("medical_examinations")
+        .select("*")
+        .eq("team_id",state.team.id)
+        .lte("issued_date",today())
+        .order("issued_date",{ascending:false})
+    ),
+    must(
+      supabase.from("medical_appointments")
+        .select("*")
+        .eq("team_id",state.team.id)
+        .order("scheduled_for",{ascending:true})
+    )
+  ]);
+
   const latest=new Map();
-  exams.forEach(e=>{if(!latest.has(e.player_id))latest.set(e.player_id,e)});
-  const expiring=players.filter(p=>{const e=latest.get(p.id);return e&&e.expires_on>=today()&&Math.ceil((new Date(e.expires_on)-new Date(today()))/86400000)<=45}).length;
-  const expired=players.filter(p=>{const e=latest.get(p.id);return !e||e.expires_on<today()}).length;
+  exams.forEach(e=>{
+    if(!latest.has(e.player_id))latest.set(e.player_id,e);
+  });
+
+  const scheduled=new Map();
+  appointments
+    .filter(a=>a.status==="scheduled")
+    .forEach(a=>{
+      if(!scheduled.has(a.player_id))scheduled.set(a.player_id,a);
+    });
+
+  const validCount=players.filter(p=>{
+    const e=latest.get(p.id);
+    return e&&e.issued_date<=today()&&e.expires_on>=today();
+  }).length;
+
+  const expiring=players.filter(p=>{
+    const e=latest.get(p.id);
+    if(!e||e.expires_on<today())return false;
+    const days=medicalDaysToExpiry(e.expires_on);
+    return days!==null&&days<=45;
+  }).length;
+
+  const invalid=players.length-validCount;
 
   renderShell("Visite mediche",`
     <div class="page-title">
-      <div><h1>Visite mediche</h1><p>La scadenza viene calcolata automaticamente a un anno dal rilascio.</p></div>
-      ${can("medical.manage")?`<button class="btn btn-primary" id="new-medical">Registra visita</button>`:""}
+      <div>
+        <h1>Visite mediche</h1>
+        <p>Una visita programmata non abilita il calciatore finché non viene confermata come svolta dalla dirigenza.</p>
+      </div>
+      ${can("medical.manage")?`<button class="btn btn-primary" id="new-medical">Programma visita</button>`:""}
     </div>
+
     <div class="grid grid-3">
-      <div class="card"><div class="stat">${players.length-expired}</div><div class="stat-label">Con certificato valido</div></div>
-      <div class="card"><div class="stat">${expiring}</div><div class="stat-label">In scadenza ≤45 gg</div></div>
-      <div class="card"><div class="stat">${expired}</div><div class="stat-label">Scadute / mancanti</div></div>
+      <div class="card"><div class="stat">${validCount}</div><div class="stat-label">Abilitati oggi</div></div>
+      <div class="card"><div class="stat">${expiring}</div><div class="stat-label">Scadenza ≤45 gg</div></div>
+      <div class="card"><div class="stat">${invalid}</div><div class="stat-label">Non abilitati</div></div>
     </div>
+
     <div style="height:14px"></div>
-    <div class="table-wrap"><table class="table">
-      <thead><tr><th>Calciatore</th><th>Rilascio</th><th>Scadenza</th><th>Centro / medico</th><th>Stato</th><th></th></tr></thead>
-      <tbody>${players.map(p=>{
-        const e=latest.get(p.id),st=medicalStatus(e);
-        return `<tr>
-          <td>${esc(p.last_name)} ${esc(p.first_name)}</td>
-          <td>${e?fmtDate(e.issued_date):"—"}</td>
-          <td>${e?fmtDate(e.expires_on):"—"}</td>
-          <td>${esc(e?.provider||"—")}</td>
-          <td><span class="badge ${st.cls}">${esc(st.label)}</span></td>
-          <td>${can("medical.manage")?`<button class="btn btn-sm" data-medical-player="${p.id}">${e?"Nuova visita":"Registra"}</button>`:""}</td>
-        </tr>`;
-      }).join("")}</tbody>
-    </table></div>
+
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Calciatore</th>
+            <th>Ultima visita</th>
+            <th>Scadenza</th>
+            <th>Prossima visita</th>
+            <th>Stato</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          ${players.map(p=>{
+            const exam=latest.get(p.id);
+            const appointment=scheduled.get(p.id);
+            const status=medicalStatus(exam);
+            const due=appointment&&appointment.scheduled_for<=today();
+
+            return `<tr>
+              <td>${esc(p.last_name)} ${esc(p.first_name)}</td>
+              <td>${exam?fmtDate(exam.issued_date):"—"}</td>
+              <td>${exam?fmtDate(exam.expires_on):"—"}</td>
+              <td>
+                ${appointment
+                  ? `<span class="medical-scheduled ${due?"medical-due":""}">
+                      ${due?"⏳":"📅"} ${fmtDate(appointment.scheduled_for)}
+                    </span>`
+                  : "—"
+                }
+              </td>
+              <td><span class="badge ${status.cls}">${esc(status.label)}</span></td>
+              <td>
+                ${can("medical.manage")?`
+                  <div class="actions">
+                    <button class="btn btn-sm" data-schedule-medical="${p.id}">
+                      ${appointment?"Riprogramma":"Programma"}
+                    </button>
+                    ${appointment&&due
+                      ? `<button class="btn btn-sm btn-primary" data-approve-medical="${appointment.id}">Approva svolta</button>
+                         <button class="btn btn-sm btn-danger" data-missed-medical="${appointment.id}">Non svolta</button>`
+                      : ""
+                    }
+                    ${appointment&&!due
+                      ? `<button class="btn btn-sm btn-ghost" data-cancel-medical="${appointment.id}">Annulla</button>`
+                      : ""
+                    }
+                  </div>
+                `:""}
+              </td>
+            </tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
   `);
 
-  $("#new-medical")?.addEventListener("click",()=>openMedicalModal(players));
-  $$("[data-medical-player]").forEach(b=>b.onclick=()=>openMedicalModal(players,b.dataset.medicalPlayer));
+  $("#new-medical")?.addEventListener("click",()=>openMedicalScheduleModal(players));
+
+  $$("[data-schedule-medical]").forEach(b=>{
+    const playerId=b.dataset.scheduleMedical;
+    b.onclick=()=>openMedicalScheduleModal(
+      players,
+      playerId,
+      scheduled.get(playerId)||null
+    );
+  });
+
+  $$("[data-approve-medical]").forEach(b=>b.onclick=()=>{
+    const appointment=appointments.find(a=>a.id===b.dataset.approveMedical);
+    if(appointment)openMedicalApprovalModal(appointment,players);
+  });
+
+  $$("[data-missed-medical]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Confermi che la visita programmata non è stata svolta?"))return;
+    try{
+      await must(
+        supabase.rpc("resolve_medical_appointment",{
+          p_appointment_id:b.dataset.missedMedical,
+          p_result:"missed",
+          p_actual_date:null,
+          p_provider:null,
+          p_certificate_number:null,
+          p_notes:"Visita non svolta come programmato"
+        })
+      );
+      toast("Visita segnata come non svolta","ok");
+      pageMedical();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
+
+  $$("[data-cancel-medical]").forEach(b=>b.onclick=async()=>{
+    if(!confirm("Annullare la visita programmata?"))return;
+    try{
+      await must(
+        supabase.rpc("resolve_medical_appointment",{
+          p_appointment_id:b.dataset.cancelMedical,
+          p_result:"cancelled",
+          p_actual_date:null,
+          p_provider:null,
+          p_certificate_number:null,
+          p_notes:"Appuntamento annullato"
+        })
+      );
+      toast("Visita programmata annullata","ok");
+      pageMedical();
+    }catch(err){
+      toast(err.message,"error");
+    }
+  });
 }
 
-function openMedicalModal(players,selectedPlayerId=null){
-  showModal("Registra visita medica",`
-    <form id="medical-form">
-      <div class="field"><label>Calciatore</label><select id="med-player">${players.map(p=>`<option value="${p.id}" ${p.id===selectedPlayerId?"selected":""}>${esc(p.last_name)} ${esc(p.first_name)}</option>`).join("")}</select></div>
-      <div class="field"><label>Tipo</label><select id="med-type"><option value="competitive">Agonistica</option><option value="non_competitive">Non agonistica</option><option value="other">Altro</option></select></div>
-      <div class="field"><label>Data rilascio</label><input id="med-issued" type="date" value="${today()}" required></div>
-      <div class="section-note">Scadenza automatica: un anno dalla data di rilascio.</div>
+function openMedicalScheduleModal(players,selectedPlayerId=null,appointment=null){
+  showModal(appointment?"Riprogramma visita":"Programma visita medica",`
+    <form id="medical-schedule-form">
+      <div class="field">
+        <label>Calciatore</label>
+        <select id="med-player" ${selectedPlayerId?"disabled":""}>
+          ${players.map(p=>`<option value="${p.id}" ${p.id===selectedPlayerId?"selected":""}>${esc(p.last_name)} ${esc(p.first_name)}</option>`).join("")}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Tipo</label>
+        <select id="med-type">
+          <option value="competitive" ${appointment?.examination_type==="competitive"?"selected":""}>Agonistica</option>
+          <option value="non_competitive" ${appointment?.examination_type==="non_competitive"?"selected":""}>Non agonistica</option>
+          <option value="other" ${appointment?.examination_type==="other"?"selected":""}>Altro</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Data programmata</label>
+        <input id="med-scheduled" type="date" value="${appointment?.scheduled_for||today()}" required>
+      </div>
+
+      <div class="section-note">
+        La programmazione non rende valida la visita. Il calciatore resta abilitato solo se possiede un certificato precedente ancora valido.
+      </div>
+
       <div style="height:10px"></div>
-      <div class="field"><label>Centro / medico</label><input id="med-provider"></div>
-      <div class="field"><label>Numero certificato</label><input id="med-number"></div>
-      <div class="field"><label>Note</label><textarea id="med-notes"></textarea></div>
-      <button class="btn btn-primary">Salva visita</button>
+
+      <div class="field"><label>Centro / medico previsto</label><input id="med-provider" value="${esc(appointment?.provider||"")}"></div>
+      <div class="field"><label>Note</label><textarea id="med-notes">${esc(appointment?.notes||"")}</textarea></div>
+
+      <button class="btn btn-primary">${appointment?"Salva nuova data":"Programma visita"}</button>
     </form>
   `,root=>{
-    $("#medical-form",root).onsubmit=async e=>{
+    $("#medical-schedule-form",root).onsubmit=async e=>{
       e.preventDefault();
       try{
-        await must(supabase.from("medical_examinations").insert({
-          team_id:state.team.id,season_id:state.season.id,
-          player_id:$("#med-player",root).value,
-          examination_type:$("#med-type",root).value,
-          issued_date:$("#med-issued",root).value,
-          expires_on:$("#med-issued",root).value,
-          provider:$("#med-provider",root).value.trim()||null,
-          certificate_number:$("#med-number",root).value.trim()||null,
-          notes:$("#med-notes",root).value.trim()||null,
-          created_by:state.profile.id
-        }));
-        closeModal();toast("Visita registrata","ok");pageMedical();
-      }catch(err){toast(err.message,"error")}
+        await must(
+          supabase.rpc("schedule_medical_appointment",{
+            p_team_id:state.team.id,
+            p_season_id:state.season.id,
+            p_player_id:$("#med-player",root).value,
+            p_scheduled_for:$("#med-scheduled",root).value,
+            p_examination_type:$("#med-type",root).value,
+            p_provider:$("#med-provider",root).value.trim()||null,
+            p_notes:$("#med-notes",root).value.trim()||null
+          })
+        );
+
+        closeModal();
+        toast("Visita programmata","ok");
+        pageMedical();
+      }catch(err){
+        toast(err.message,"error");
+      }
+    };
+  });
+}
+
+function openMedicalApprovalModal(appointment,players){
+  const player=players.find(p=>p.id===appointment.player_id);
+
+  showModal("Approva visita svolta",`
+    <form id="medical-approval-form">
+      <div class="section-note">
+        ${esc(player?`${player.last_name} ${player.first_name}`:"Calciatore")} · programmata ${fmtDate(appointment.scheduled_for)}
+      </div>
+
+      <div style="height:12px"></div>
+
+      <div class="field">
+        <label>Data effettiva della visita</label>
+        <input id="med-actual-date" type="date" value="${appointment.scheduled_for}" max="${today()}" required>
+      </div>
+
+      <div class="field"><label>Centro / medico</label><input id="med-approve-provider" value="${esc(appointment.provider||"")}"></div>
+      <div class="field"><label>Numero certificato</label><input id="med-approve-number"></div>
+      <div class="field"><label>Note</label><textarea id="med-approve-notes">${esc(appointment.notes||"")}</textarea></div>
+
+      <div class="section-note">
+        La nuova scadenza sarà calcolata come data visita +1 anno −1 giorno.
+      </div>
+
+      <div style="height:10px"></div>
+      <button class="btn btn-primary">Conferma visita svolta</button>
+    </form>
+  `,root=>{
+    $("#medical-approval-form",root).onsubmit=async e=>{
+      e.preventDefault();
+      try{
+        await must(
+          supabase.rpc("resolve_medical_appointment",{
+            p_appointment_id:appointment.id,
+            p_result:"completed",
+            p_actual_date:$("#med-actual-date",root).value,
+            p_provider:$("#med-approve-provider",root).value.trim()||null,
+            p_certificate_number:$("#med-approve-number",root).value.trim()||null,
+            p_notes:$("#med-approve-notes",root).value.trim()||null
+          })
+        );
+
+        closeModal();
+        toast("Visita approvata e certificato attivato","ok");
+        pageMedical();
+      }catch(err){
+        toast(err.message,"error");
+      }
     };
   });
 }
