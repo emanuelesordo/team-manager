@@ -2374,6 +2374,405 @@
       }
     }
 
+
+    /* =====================================================
+       032 — LAPTOP-FIRST RESPONSIVE LAYOUT
+       13"/15": niente scroll del documento su desktop.
+       Lo scroll vive nel contenuto o nei container record.
+       ===================================================== */
+    @media(min-width:901px){
+      html,body,#root{
+        width:100%;
+        height:100%;
+        min-height:0;
+        overflow:hidden!important;
+      }
+
+      .shell,
+      .shell:not(.calendar-page){
+        width:100%;
+        height:100dvh!important;
+        min-height:0!important;
+        overflow:hidden!important;
+      }
+
+      .main,
+      .shell:not(.calendar-page) .main{
+        height:100dvh!important;
+        min-height:0!important;
+        overflow:hidden!important;
+        display:flex;
+        flex-direction:column;
+      }
+
+      .topbar{
+        flex:none;
+        min-height:58px!important;
+        padding:8px 16px!important;
+      }
+
+      .content,
+      .shell:not(.calendar-page) .content{
+        flex:1;
+        height:auto!important;
+        min-height:0!important;
+        max-width:none!important;
+        width:100%;
+        padding:12px 14px 13px!important;
+        overflow:auto!important;
+        overscroll-behavior:contain;
+      }
+
+      .sidebar,
+      .shell:not(.calendar-page) .sidebar{
+        height:100dvh!important;
+        max-height:100dvh!important;
+        overflow:hidden!important;
+        padding-top:10px!important;
+      }
+
+      .page-title{
+        margin-bottom:9px!important;
+        min-height:38px!important;
+      }
+      .page-title h1{
+        font-size:clamp(1.15rem,1.35vw,1.38rem)!important;
+      }
+      .page-title p{
+        font-size:clamp(.7rem,.76vw,.8rem)!important;
+      }
+
+      /* Tabelle desktop: occupano la larghezza, mai scrollbar orizzontale. */
+      .table-wrap{
+        width:100%!important;
+        max-width:100%!important;
+        overflow-x:hidden!important;
+        overflow-y:auto;
+      }
+      .table{
+        width:100%!important;
+        min-width:0!important;
+        max-width:100%!important;
+        table-layout:auto;
+      }
+      .table th,
+      .table td{
+        max-width:220px;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+        font-size:clamp(.66rem,.73vw,.78rem)!important;
+        padding-left:clamp(3px,.45vw,7px)!important;
+        padding-right:clamp(3px,.45vw,7px)!important;
+      }
+      .table th{
+        font-size:clamp(.59rem,.64vw,.69rem)!important;
+      }
+
+      /* Tabelle dense (Rosa/Statistiche/Cassa) comprimono ulteriormente. */
+      .roster-table th,.roster-table td,
+      .stats-table th,.stats-table td,
+      .cash-table th,.cash-table td{
+        font-size:clamp(.61rem,.69vw,.74rem)!important;
+        padding-left:3px!important;
+        padding-right:3px!important;
+      }
+
+      .grid{gap:8px!important}
+      .card{padding:10px!important}
+      .list{min-height:0}
+      .list-item{padding:5px 7px!important;min-height:34px!important}
+
+      /* Dashboard: usa tutto il viewport e scrolla solo i singoli box. */
+      .dashboard-page .content{
+        overflow:hidden!important;
+        display:flex;
+        flex-direction:column;
+      }
+      .dashboard-page .page-title{
+        flex:none;
+      }
+      .dashboard-kpis{
+        flex:none;
+        display:grid;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        gap:7px;
+        margin-bottom:8px;
+      }
+      .dashboard-kpis .card{
+        min-height:64px!important;
+      }
+      .dashboard-ops-grid{
+        flex:1;
+        min-height:0;
+        display:grid;
+        grid-template-columns:repeat(4,minmax(0,1fr));
+        grid-template-rows:repeat(2,minmax(0,1fr));
+        gap:8px;
+      }
+      .dashboard-panel{
+        min-height:0;
+        display:flex;
+        flex-direction:column;
+        overflow:hidden;
+      }
+      .dashboard-panel .card-head{
+        flex:none;
+        margin-bottom:5px!important;
+        padding-bottom:5px!important;
+      }
+      .dashboard-panel .card-head h3{
+        font-size:clamp(.78rem,.88vw,.94rem)!important;
+      }
+      .dashboard-panel-list{
+        flex:1;
+        min-height:0;
+        overflow-y:auto;
+        overflow-x:hidden;
+        padding-right:2px;
+      }
+      .dashboard-mini-record{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) auto;
+        gap:7px;
+        align-items:center;
+        padding:5px 2px;
+        border-bottom:1px solid var(--ui-line-soft);
+      }
+      .dashboard-mini-record:last-child{border-bottom:0}
+      .dashboard-mini-title{
+        min-width:0;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+        font-weight:750;
+      }
+      .dashboard-mini-meta{
+        margin-top:2px;
+        font-size:clamp(.58rem,.64vw,.68rem)!important;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+      .dashboard-mini-side{
+        white-space:nowrap;
+        font-size:clamp(.62rem,.68vw,.72rem)!important;
+      }
+
+      .opponents-page .content{
+        overflow:hidden!important;
+        display:flex;
+        flex-direction:column;
+      }
+      .opponents-page .page-title{flex:none}
+      .opponent-tiles{
+        flex:1;
+        min-height:0;
+        overflow:auto;
+        display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(145px,1fr));
+        grid-auto-rows:118px;
+        gap:8px;
+        align-content:start;
+        padding-right:2px;
+      }
+      .opponent-tile{
+        min-width:0;
+        height:118px;
+      }
+
+      /* Record-heavy pages: tables may use most of remaining viewport. */
+      .content > .table-wrap:last-child,
+      .content > .card:last-child > .table-wrap{
+        max-height:calc(100dvh - 165px);
+      }
+    }
+
+    @media(min-width:901px) and (max-height:800px){
+      .content,
+      .shell:not(.calendar-page) .content{
+        padding-top:8px!important;
+        padding-bottom:8px!important;
+      }
+      .dashboard-kpis{
+        gap:5px;
+        margin-bottom:6px;
+      }
+      .dashboard-kpis .card{
+        min-height:56px!important;
+        padding:7px!important;
+      }
+      .dashboard-ops-grid{gap:6px}
+      .dashboard-panel{padding:7px!important}
+      .dashboard-mini-record{padding:3px 1px}
+      .stat{font-size:1.15rem!important}
+      .stat-label{font-size:.62rem!important}
+    }
+
+    @media(min-width:901px) and (max-width:1380px){
+      .content,
+      .shell:not(.calendar-page) .content{
+        padding-left:10px!important;
+        padding-right:10px!important;
+      }
+      .dashboard-ops-grid{
+        gap:6px;
+      }
+      .table th,.table td{
+        max-width:170px;
+      }
+    }
+
+    @media(max-width:900px){
+      html,body,#root{
+        max-width:100%;
+        overflow-x:hidden!important;
+      }
+
+      .dashboard-kpis{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:6px;
+        margin-bottom:7px;
+      }
+      .dashboard-ops-grid{
+        display:grid;
+        grid-template-columns:1fr;
+        gap:7px;
+      }
+      .dashboard-panel{
+        max-height:250px;
+        overflow:hidden;
+        display:flex;
+        flex-direction:column;
+      }
+      .dashboard-panel-list{
+        min-height:0;
+        overflow-y:auto;
+      }
+
+      .opponent-tiles{
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:7px;
+      }
+      .opponent-tile{
+        min-height:104px;
+      }
+    }
+
+    .opponent-tile{
+      cursor:pointer;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      text-align:center;
+      padding:9px!important;
+      transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease;
+    }
+    .opponent-tile:hover{
+      transform:translateY(-2px);
+      border-color:var(--team-primary-line)!important;
+      box-shadow:var(--ui-shadow-hover);
+    }
+    .opponent-tile.archived{
+      opacity:.48;
+      filter:saturate(.55);
+    }
+    .opponent-tile-logo{
+      width:58px;
+      height:58px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+      background:var(--panel2);
+      border:1px solid var(--ui-line-soft);
+      font-weight:900;
+      font-size:.75rem!important;
+    }
+    .opponent-tile-logo img{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+    }
+    .opponent-tile-name{
+      width:100%;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-weight:800;
+    }
+
+    .dual-fee-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    .fee-plan-column{
+      min-width:0;
+      border:1px solid var(--ui-line-soft);
+      border-radius:11px;
+      padding:10px;
+      background:var(--panel2);
+    }
+    .fee-plan-column > h3{
+      margin-top:0;
+    }
+    .fee-plan-column .fee-installments-editor{
+      max-height:300px;
+      overflow-y:auto;
+      padding-right:2px;
+    }
+    @media(max-width:760px){
+      .dual-fee-grid{grid-template-columns:1fr}
+    }
+
+    .inherit-venue-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      margin-top:5px;
+    }
+
+
+    @media(min-width:901px){
+      .table{
+        table-layout:fixed!important;
+      }
+      .table th,
+      .table td{
+        min-width:0!important;
+        width:auto!important;
+      }
+      .table td input,
+      .table td select,
+      .table td textarea{
+        width:100%;
+        max-width:100%;
+        min-width:0;
+      }
+      .table td .actions{
+        min-width:0;
+        gap:2px;
+        flex-wrap:wrap;
+      }
+      .table td .actions .btn{
+        min-width:0;
+        max-width:100%;
+        padding-left:5px!important;
+        padding-right:5px!important;
+        font-size:clamp(.58rem,.64vw,.7rem)!important;
+      }
+      .table td .player-list-identity{
+        max-width:100%;
+        overflow:hidden;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -4504,26 +4903,341 @@ window.addEventListener("hashchange",()=>{
    DASHBOARD
 ========================================================= */
 async function pageDashboard(){
-  const now=new Date().toISOString();
-  const events=await must(supabase.from("events").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id).gte("start_at",now).order("start_at").limit(4));
-  const teamStats=(await must(supabase.from("v_team_season_stats").select("*").eq("team_id",state.team.id).eq("season_id",state.season.id)))[0]||{};
-  const pendingContracts=can("contracts.manage")?(await must(supabase.from("player_contract_requests").select("id").eq("team_id",state.team.id).eq("status","pending"))).length:0;
-  let ownFine=0;
-  if(can("fines.view_own")){const fs=await must(supabase.from("fines").select("amount,status").eq("team_id",state.team.id).eq("season_id",state.season.id).eq("status","pending"));ownFine=fs.reduce((a,x)=>a+Number(x.amount||0),0)}
+  const nowDate=new Date();
+  const nowIso=nowDate.toISOString();
+  const todayKey=today();
+  const in7=new Date(nowDate.getTime()+7*86400000);
+  const in30=new Date(nowDate.getTime()+30*86400000);
+  const in7Key=localDateKey(in7);
+
+  const canMedicalAll=can("medical.view_all");
+  const canMedicalOwn=can("medical.view_own");
+  const canMedical=canMedicalAll||canMedicalOwn;
+  const canFees=can("fees.view_all")||can("fees.view_own")||can("fees.manage");
+  const canAbsences=can("absences.view_all")||can("absences.view_own");
+  const canInjuries=can("injuries.view_all")||can("injuries.view_own");
+
+  const [
+    teamStatsRows,
+    events,
+    players,
+    rosterHistory,
+    genericRows,
+    medicalRows,
+    feeRows,
+    absenceRows,
+    injuryRows
+  ]=await Promise.all([
+    must(
+      supabase.from("v_team_season_stats")
+        .select("*")
+        .eq("team_id",state.team.id)
+        .eq("season_id",state.season.id)
+    ),
+    must(
+      supabase.from("events")
+        .select("*")
+        .eq("team_id",state.team.id)
+        .eq("season_id",state.season.id)
+        .gte("start_at",nowIso)
+        .order("start_at")
+        .limit(30)
+    ),
+    must(
+      supabase.from("players")
+        .select("id,first_name,last_name,photo_url,birth_date,profile_id")
+        .eq("team_id",state.team.id)
+    ),
+    must(
+      supabase.rpc("get_season_roster_history",{
+        p_team_id:state.team.id,
+        p_season_id:state.season.id
+      })
+    ),
+    must(
+      supabase.rpc("get_roster_generic_roles",{
+        p_team_id:state.team.id,
+        p_season_id:state.season.id
+      })
+    ),
+    canMedical
+      ? must(
+          supabase.from("medical_examinations")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .order("issued_date",{ascending:false})
+        )
+      : Promise.resolve([]),
+    canFees
+      ? must(
+          supabase.from("membership_fees")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .eq("season_id",state.season.id)
+            .eq("status","pending")
+            .lte("due_date",in7Key)
+            .order("due_date")
+        )
+      : Promise.resolve([]),
+    canAbsences
+      ? must(
+          supabase.from("player_unavailabilities")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .eq("season_id",state.season.id)
+            .eq("status","active")
+            .lte("start_date",in7Key)
+            .order("start_date")
+        )
+      : Promise.resolve([]),
+    canInjuries
+      ? must(
+          supabase.from("injuries")
+            .select("*")
+            .eq("team_id",state.team.id)
+            .eq("season_id",state.season.id)
+            .in("status",["active","recovering"])
+            .order("injury_date")
+        )
+      : Promise.resolve([])
+  ]);
+
+  const teamStats=teamStatsRows[0]||{};
+  const playerMap=new Map(players.map(p=>[p.id,p]));
+  const genericMap=new Map(genericRows.map(x=>[x.player_id,x.generic_role_code||null]));
+
+  const currentRosterIds=new Set(
+    rosterHistory
+      .filter(c=>
+        c.roster_status==="active"
+        && todayKey>=c.start_date
+        && todayKey<=(c.actual_end_date||c.planned_end_date)
+      )
+      .map(c=>c.player_id)
+  );
+
+  const roster=players.filter(p=>currentRosterIds.has(p.id));
+
+  const birthdayRows=roster
+    .map(p=>({...p,days:birthdayDistanceDays(p.birth_date)}))
+    .filter(p=>Number.isFinite(p.days)&&p.days<=30)
+    .sort((a,b)=>a.days-b.days);
+
+  const latestMedical=new Map();
+  medicalRows.forEach(x=>{
+    if(!latestMedical.has(x.player_id))latestMedical.set(x.player_id,x);
+  });
+
+  const medicalTargets=canMedicalAll
+    ? roster
+    : roster.filter(p=>p.profile_id===state.profile.id);
+
+  const medicalAlerts=medicalTargets
+    .map(p=>{
+      const exam=latestMedical.get(p.id);
+      if(!exam)return {...p,medicalKind:"missing",medicalDays:-999,expires_on:null};
+
+      const days=medicalDaysToExpiry(exam.expires_on);
+      if(days===null||days>45)return null;
+
+      return {
+        ...p,
+        medicalKind:days<0?"expired":"expiring",
+        medicalDays:days,
+        expires_on:exam.expires_on
+      };
+    })
+    .filter(Boolean)
+    .sort((a,b)=>a.medicalDays-b.medicalDays);
+
+  const feeAlerts=feeRows
+    .map(x=>({
+      ...x,
+      player:playerMap.get(x.player_id),
+      overdue:x.due_date<todayKey
+    }))
+    .sort((a,b)=>a.due_date.localeCompare(b.due_date));
+
+  const absences=[
+    ...absenceRows.map(x=>({
+      kind:"absence",
+      player_id:x.player_id,
+      start_date:x.start_date,
+      end_date:x.end_date,
+      label:absenceTypeLabel(x.absence_type),
+      reason:x.reason
+    })),
+    ...injuryRows.map(x=>({
+      kind:"injury",
+      player_id:x.player_id,
+      start_date:x.injury_date,
+      end_date:x.expected_return||x.actual_return||null,
+      label:"Infortunio",
+      reason:x.public_summary||""
+    }))
+  ]
+    .filter(x=>!x.end_date||x.end_date>=todayKey)
+    .sort((a,b)=>a.start_date.localeCompare(b.start_date));
+
+  const upcomingMatches=events.filter(e=>e.event_type==="match").slice(0,8);
+  const upcomingTrainings=events.filter(e=>e.event_type==="training").slice(0,8);
+  const upcomingOther=events.filter(e=>!["match","training"].includes(e.event_type)).slice(0,8);
+
+  const unavailableToday=new Set(
+    absences
+      .filter(x=>x.start_date<=todayKey&&(!x.end_date||x.end_date>=todayKey))
+      .map(x=>x.player_id)
+  ).size;
+
+  const totalFinancialAlerts=feeAlerts.length;
+  const totalMedicalAlerts=medicalAlerts.length;
+
+  const personRecord=(p,meta,side="")=>`
+    <div class="dashboard-mini-record">
+      <div>
+        <div class="dashboard-mini-title">${playerListIdentity(p,genericMap.get(p?.id),{avatar:false})}</div>
+        <div class="muted dashboard-mini-meta">${esc(meta||"")}</div>
+      </div>
+      ${side?`<div class="dashboard-mini-side">${side}</div>`:""}
+    </div>
+  `;
+
+  const eventRecord=(e,icon)=>`
+    <div class="dashboard-mini-record" data-dashboard-event="${e.id}" role="button" tabindex="0">
+      <div>
+        <div class="dashboard-mini-title">${icon} ${esc(e.title||eventTypeLabel(e.event_type))}</div>
+        <div class="muted dashboard-mini-meta">${fmtDateTime(e.start_at)}${e.location?` · ${esc(e.location)}`:""}</div>
+      </div>
+      <div class="dashboard-mini-side">›</div>
+    </div>
+  `;
+
   renderShell("Dashboard",`
-    <div class="page-title"><div><h1>${esc(state.team.name)}</h1><p>Stagione ${esc(state.season.name)}</p></div></div>
-    <div class="grid grid-4">
+    <div class="page-title">
+      <div><h1>${esc(state.team.name)}</h1><p>Centro operativo · ${esc(state.season.name)}</p></div>
+    </div>
+
+    <div class="dashboard-kpis">
       <div class="card"><div class="stat">${teamStats.matches_played||0}</div><div class="stat-label">Partite</div></div>
       <div class="card"><div class="stat">${teamStats.wins||0}</div><div class="stat-label">Vittorie</div></div>
-      <div class="card"><div class="stat">${teamStats.goals_for||0}:${teamStats.goals_against||0}</div><div class="stat-label">Gol fatti/subiti</div></div>
-      <div class="card"><div class="stat">${can("contracts.manage")?pendingContracts:`€ ${ownFine.toFixed(2)}`}</div><div class="stat-label">${can("contracts.manage")?"Rinnovi da gestire":"Multe pendenti"}</div></div>
+      <div class="card"><div class="stat">${unavailableToday}</div><div class="stat-label">Indisponibili oggi</div></div>
+      <div class="card"><div class="stat">${totalMedicalAlerts+totalFinancialAlerts}</div><div class="stat-label">Alert operativi</div></div>
     </div>
-    <div style="height:14px"></div>
-    <div class="grid grid-2"><div class="card"><div class="card-head"><h2>Prossimi eventi</h2><button class="btn btn-sm" data-go="calendar">Calendario</button></div>
-      <div class="list">${events.length?events.map(e=>`<div class="list-item"><div><strong>${esc(e.title)}</strong><div class="muted">${fmtDateTime(e.start_at)} · ${esc(e.location||"")}</div></div><span class="badge">${esc(e.event_type)}</span></div>`).join(""):`<div class="empty">Nessun evento programmato</div>`}</div>
-    </div><div class="card"><h2>Il tuo accesso</h2><div class="actions">${state.roles.map(r=>`<span class="badge green">${esc(r)}</span>`).join("")}</div><div style="height:12px"></div><div class="muted">I permessi sono determinati dalla matrice amministrativa, dai tuoi incarichi attivi e dall'eventuale permanenza in rosa.</div></div></div>
+
+    <div class="dashboard-ops-grid">
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🎂 Compleanni</h3><span class="badge">${birthdayRows.length}</span></div>
+        <div class="dashboard-panel-list">
+          ${birthdayRows.map(p=>personRecord(
+            p,
+            p.birth_date?fmtDate(p.birth_date):"",
+            p.days===0?"oggi":p.days===1?"domani":`+${p.days} gg`
+          )).join("")||`<div class="empty">Nessun compleanno nei prossimi 30 giorni</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🩺 Visite mediche</h3><span class="badge ${medicalAlerts.some(x=>x.medicalDays<0)?"red":""}">${medicalAlerts.length}</span></div>
+        <div class="dashboard-panel-list">
+          ${canMedical
+            ? medicalAlerts.map(p=>personRecord(
+                p,
+                p.medicalKind==="missing"
+                  ?"Visita mancante"
+                  : p.medicalKind==="expired"
+                    ?`Scaduta ${fmtDate(p.expires_on)}`
+                    :`Scade ${fmtDate(p.expires_on)}`,
+                p.medicalKind==="expired"||p.medicalKind==="missing"
+                  ?`<span class="badge red">critica</span>`
+                  :`<span class="badge yellow">${p.medicalDays} gg</span>`
+              )).join("")||`<div class="empty">Nessuna visita in scadenza o scaduta</div>`
+            : `<div class="empty">Dati non disponibili per il tuo ruolo</div>`
+          }
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>💳 Quote</h3><span class="badge ${feeAlerts.some(x=>x.overdue)?"red":""}">${feeAlerts.length}</span></div>
+        <div class="dashboard-panel-list">
+          ${canFees
+            ? feeAlerts.map(x=>personRecord(
+                x.player,
+                `${x.title} · € ${Number(x.amount||0).toFixed(2)}`,
+                x.overdue
+                  ?`<span class="badge red">scaduta</span>`
+                  :`<span class="badge yellow">${fmtDate(x.due_date)}</span>`
+              )).join("")||`<div class="empty">Nessuna quota scaduta o in scadenza nei prossimi 7 giorni</div>`
+            : `<div class="empty">Dati non disponibili per il tuo ruolo</div>`
+          }
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🚑 Assenze</h3><span class="badge">${absences.length}</span></div>
+        <div class="dashboard-panel-list">
+          ${canAbsences||canInjuries
+            ? absences.map(x=>{
+                const p=playerMap.get(x.player_id);
+                const current=x.start_date<=todayKey;
+                return personRecord(
+                  p,
+                  `${x.label}${x.reason?` · ${x.reason}`:""}`,
+                  current
+                    ?`<span class="badge red">in corso</span>`
+                    :`<span class="badge">${fmtDate(x.start_date)}</span>`
+                );
+              }).join("")||`<div class="empty">Nessuna assenza in corso o prevista nei prossimi 7 giorni</div>`
+            : `<div class="empty">Dati non disponibili per il tuo ruolo</div>`
+          }
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>⚽ Prossime partite</h3><button class="btn btn-sm btn-ghost" data-go="matches">Apri</button></div>
+        <div class="dashboard-panel-list">
+          ${upcomingMatches.map(e=>eventRecord(e,"⚽")).join("")||`<div class="empty">Nessuna partita programmata</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>🏃 Prossimi allenamenti</h3><button class="btn btn-sm btn-ghost" data-go="trainings">Apri</button></div>
+        <div class="dashboard-panel-list">
+          ${upcomingTrainings.map(e=>eventRecord(e,"🏃")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>📅 Prossimi eventi</h3><button class="btn btn-sm btn-ghost" data-go="calendar">Calendario</button></div>
+        <div class="dashboard-panel-list">
+          ${upcomingOther.map(e=>eventRecord(e,"📌")).join("")||`<div class="empty">Nessun altro evento programmato</div>`}
+        </div>
+      </div>
+
+      <div class="card dashboard-panel">
+        <div class="card-head"><h3>📊 Stagione</h3><button class="btn btn-sm btn-ghost" data-go="stats">Statistiche</button></div>
+        <div class="dashboard-panel-list">
+          <div class="stats-kv"><span>Gol fatti</span><strong>${teamStats.goals_for||0}</strong></div>
+          <div class="stats-kv"><span>Gol subiti</span><strong>${teamStats.goals_against||0}</strong></div>
+          <div class="stats-kv"><span>Pareggi</span><strong>${teamStats.draws||0}</strong></div>
+          <div class="stats-kv"><span>Sconfitte</span><strong>${teamStats.losses||0}</strong></div>
+          <div class="stats-kv"><span>Rosa attuale</span><strong>${roster.length}</strong></div>
+        </div>
+      </div>
+    </div>
   `);
+
+  $(".shell")?.classList.add("dashboard-page");
+
   $$("[data-go]").forEach(b=>b.onclick=()=>route(b.dataset.go));
+  $$("[data-dashboard-event]").forEach(el=>{
+    el.onclick=()=>openEventDetail(el.dataset.dashboardEvent);
+    el.onkeydown=e=>{
+      if(e.key==="Enter"||e.key===" "){
+        e.preventDefault();
+        openEventDetail(el.dataset.dashboardEvent);
+      }
+    };
+  });
 }
 
 /* =========================================================
@@ -8456,6 +9170,10 @@ async function openMatchEditModal(matchId,afterSave=null){
         <div class="field" id="mep-free-location-box">
           <label>Luogo partita</label>
           <input id="mep-location" value="${esc(ev.location||"")}">
+          <div class="inherit-venue-row hidden" id="mep-inherit-row">
+            <span class="muted" id="mep-inherit-preview"></span>
+            <button class="btn btn-sm" type="button" id="mep-inherit-opponent-venue">↻ Eredita campo avversaria</button>
+          </div>
         </div>
 
         <div class="field"><label>Giornata / turno</label><input id="mep-round" value="${esc(m.round_label||"")}"></div>
@@ -8472,6 +9190,9 @@ async function openMatchEditModal(matchId,afterSave=null){
       const location=$("#mep-location",root);
       const homeVenueBox=$("#mep-home-venue-box",root);
       const friendlyBox=$("#mep-friendly-periods",root);
+      const inheritRow=$("#mep-inherit-row",root);
+      const inheritPreview=$("#mep-inherit-preview",root);
+      const inheritButton=$("#mep-inherit-opponent-venue",root);
 
       const currentComp=()=>competitions.find(c=>c.id===compSel.value);
       const currentOpp=()=>opponents.find(o=>o.id===oppSel.value);
@@ -8487,8 +9208,13 @@ async function openMatchEditModal(matchId,afterSave=null){
 
         homeVenueBox.classList.toggle("hidden",mode!=="home");
 
+        const inheritedOpponentLocation=opponentVenueLocation(currentOpp());
+        const canInherit=mode==="away"&&!!inheritedOpponentLocation;
+        inheritRow.classList.toggle("hidden",!canInherit);
+        inheritPreview.textContent=canInherit?inheritedOpponentLocation:"";
+
         if(applyDefault&&mode==="away"){
-          location.value=opponentVenueLocation(currentOpp());
+          location.value=inheritedOpponentLocation;
         }else if(applyDefault&&mode==="neutral"){
           location.value="";
         }else if(applyDefault&&mode==="home"){
@@ -8508,6 +9234,17 @@ async function openMatchEditModal(matchId,afterSave=null){
 
       compSel.onchange=refreshCompetition;
       oppSel.onchange=()=>{ if(mode==="away")refreshMode(true); };
+
+      inheritButton.onclick=()=>{
+        const inherited=opponentVenueLocation(currentOpp());
+        if(!inherited){
+          toast("La squadra avversaria non ha ancora un campo configurato","error");
+          return;
+        }
+        location.value=inherited;
+        toast("Campo ereditato dalla scheda avversaria","ok");
+      };
+
       venueSel.onchange=()=>{
         if(mode!=="home")return;
         const venue=venues.find(v=>v.id===venueSel.value);
@@ -9049,6 +9786,7 @@ async function pageStats(){
 
   const youngest=withAge[0]||null;
   const oldest=withAge[withAge.length-1]||null;
+  const ageSpread=youngest&&oldest?Math.max(0,oldest.age-youngest.age):null;
 
   const withHeight=roster
     .filter(p=>p.height_cm!==null&&p.height_cm!==undefined&&p.height_cm!==""&&Number.isFinite(Number(p.height_cm)))
@@ -9067,11 +9805,6 @@ async function pageStats(){
     roster.filter(p=>p.birth_date),
     p=>Number(p.birth_date.slice(5,7))
   );
-
-  const nextBirthdays=roster
-    .map(p=>({...p,days:birthdayDistanceDays(p.birth_date)}))
-    .filter(p=>Number.isFinite(p.days)&&p.days<=30)
-    .sort((a,b)=>a.days-b.days);
 
   const mostBirthMonth=birthMonthCounts[0];
   const mostBirthMonthLabel=mostBirthMonth
@@ -9130,7 +9863,7 @@ async function pageStats(){
     <div class="card">
       <h2>Statistiche calciatori</h2>
       <div class="table-wrap">
-        <table class="table">
+        <table class="table stats-table">
           <thead>
             <tr>
               <th>Calciatore</th><th>PG</th><th>Tit.</th><th>Min</th>
@@ -9171,7 +9904,7 @@ async function pageStats(){
       <div class="card"><div class="stat">${medHeight!==null?medHeight.toFixed(1):"—"}</div><div class="stat-label">Altezza mediana cm</div></div>
       <div class="card"><div class="stat">${nationalityCounts.length}</div><div class="stat-label">Nazionalità</div></div>
       <div class="card"><div class="stat">${favoriteCounts.length}</div><div class="stat-label">Squadre del cuore diverse</div></div>
-      <div class="card"><div class="stat">${nextBirthdays.length}</div><div class="stat-label">Compleanni nei prossimi 30 gg</div></div>
+      <div class="card"><div class="stat">${ageSpread!==null?ageSpread:"—"}</div><div class="stat-label">Escursione età (anni)</div></div>
     </div>
 
     <div style="height:14px"></div>
@@ -9281,15 +10014,11 @@ async function pageStats(){
         </div>
 
         <div style="height:12px"></div>
-        <h3>Prossimi compleanni</h3>
-
-        <div class="list">
-          ${nextBirthdays.slice(0,8).map(p=>`
-            <div class="list-item">
-              ${playerListIdentity(p,genericMap.get(p.id))}
-              <span>${p.days===0?"oggi":p.days===1?"domani":`tra ${p.days} gg`}</span>
-            </div>
-          `).join("")||`<div class="empty">Nessun compleanno nei prossimi 30 giorni</div>`}
+        <div class="section-note">
+          🌍 ${nationalityCounts.length===1
+            ?"Rosa interamente della stessa nazionalità."
+            : `${nationalityCounts.length} nazionalità rappresentate nella rosa.`
+          }
         </div>
       </div>
     </div>
@@ -9996,6 +10725,7 @@ async function pageOpponents(){
     supabase.from("opponent_teams")
       .select("*")
       .eq("team_id",state.team.id)
+      .order("active",{ascending:false})
       .order("name")
   );
 
@@ -10003,46 +10733,87 @@ async function pageOpponents(){
     <div class="page-title">
       <div>
         <h1>Squadre avversarie</h1>
-        <p>Logo, anagrafica e campo di casa vengono gestiti direttamente nella scheda della squadra.</p>
+        <p>Seleziona una squadra per aprirne la scheda e il campo di casa.</p>
       </div>
-      ${can("opponents.manage")?`<button class="btn btn-primary" id="new-opponent">Nuova avversaria</button>`:""}
+      ${can("opponents.manage")?`<button class="btn btn-primary" id="new-opponent">➕ Nuova avversaria</button>`:""}
     </div>
 
-    <div class="grid grid-2">
+    <div class="opponent-tiles">
       ${opponents.map(o=>`
-        <div class="card">
-          <div class="card-head">
-            <div class="player-name">
-              <span class="avatar">${o.logo_url?`<img src="${esc(o.logo_url)}">`:esc((o.short_name||o.name).slice(0,3).toUpperCase())}</span>
-              <div>
-                <strong>${esc(o.name)}</strong>
-                <div class="muted">${esc(o.short_name||"")}</div>
-              </div>
-            </div>
-            <span class="badge ${o.active?"green":"red"}">${o.active?"attiva":"archiviata"}</span>
-          </div>
-
-          <div class="opponent-field-box">
-            <strong>${esc(o.home_venue_name||"Campo di casa non impostato")}</strong>
-            <div class="muted">${esc(opponentVenueAddress(o)||"Indirizzo non indicato")}</div>
-          </div>
-
-          ${o.notes?`<p>${esc(o.notes)}</p>`:""}
-
-          ${can("opponents.manage")
-            ? `<div class="actions" style="margin-top:12px">
-                <button class="btn btn-sm" data-edit-opponent="${o.id}">Modifica</button>
-              </div>`
-            : ""
-          }
-        </div>
+        <button type="button" class="card opponent-tile ${o.active?"":"archived"}" data-opponent-detail="${o.id}">
+          <span class="opponent-tile-logo">
+            ${o.logo_url
+              ? `<img src="${esc(o.logo_url)}" alt="">`
+              : esc((o.short_name||o.name).slice(0,3).toUpperCase())
+            }
+          </span>
+          <span class="opponent-tile-name">${esc(o.name)}</span>
+        </button>
       `).join("")||`<div class="empty">Nessuna squadra avversaria</div>`}
     </div>
   `);
 
+  $(".shell")?.classList.add("opponents-page");
+
   $("#new-opponent")?.addEventListener("click",()=>openOpponentModal(null));
-  $$("[data-edit-opponent]").forEach(b=>{
-    b.onclick=()=>openOpponentModal(opponents.find(o=>o.id===b.dataset.editOpponent));
+
+  $$("[data-opponent-detail]").forEach(b=>{
+    b.onclick=()=>openOpponentDetail(
+      opponents.find(o=>o.id===b.dataset.opponentDetail)
+    );
+  });
+}
+
+function openOpponentDetail(opponent){
+  if(!opponent)return;
+
+  showModal(opponent.name,`
+    <div class="team-logo-settings" style="align-items:center">
+      <div class="team-logo-preview">
+        ${opponent.logo_url
+          ? `<img src="${esc(opponent.logo_url)}">`
+          : esc((opponent.short_name||opponent.name).slice(0,3).toUpperCase())
+        }
+      </div>
+      <div>
+        <h2 style="margin:0">${esc(opponent.name)}</h2>
+        ${opponent.short_name?`<div class="muted">${esc(opponent.short_name)}</div>`:""}
+        <div style="height:5px"></div>
+        <span class="badge ${opponent.active?"green":"red"}">${opponent.active?"attiva":"archiviata"}</span>
+      </div>
+    </div>
+
+    <div style="height:14px"></div>
+
+    <div class="card">
+      <div class="card-head"><h3>🏟️ Campo di casa</h3></div>
+      ${opponent.home_venue_name||opponentVenueAddress(opponent)
+        ? `<strong>${esc(opponent.home_venue_name||"Campo di casa")}</strong>
+           <div class="muted" style="margin-top:4px">${esc(opponentVenueAddress(opponent)||"Indirizzo non indicato")}</div>`
+        : `<div class="empty">Campo di casa non ancora configurato</div>`
+      }
+    </div>
+
+    ${opponent.notes?`
+      <div style="height:10px"></div>
+      <div class="card">
+        <div class="card-head"><h3>📝 Note</h3></div>
+        <div>${esc(opponent.notes)}</div>
+      </div>
+    `:""}
+
+    ${can("opponents.manage")?`
+      <div class="actions" style="margin-top:12px">
+        <button class="btn btn-primary" id="edit-opponent-detail">✎ Modifica squadra</button>
+      </div>
+    `:""}
+  `,root=>{
+    root.closest(".modal").style.width="min(620px,100%)";
+
+    $("#edit-opponent-detail",root)?.addEventListener("click",()=>{
+      closeModal();
+      openOpponentModal(opponent);
+    });
   });
 }
 
@@ -10634,7 +11405,7 @@ async function pageCash(){
     <div class="card">
       <h2>Quote</h2>
       <div class="table-wrap">
-        <table class="table">
+        <table class="table cash-table">
           <thead><tr><th>Scadenza</th><th>Calciatore</th><th>Rata</th><th>Importo</th><th>Stato</th><th></th></tr></thead>
           <tbody>${feeRows||`<tr><td colspan="6">Nessuna quota generata. Configurala da Setup Cassa.</td></tr>`}</tbody>
         </table>
@@ -10646,7 +11417,7 @@ async function pageCash(){
     <div class="card">
       <h2>Multe</h2>
       <div class="table-wrap">
-        <table class="table">
+        <table class="table cash-table">
           <thead><tr><th>Data</th><th>Calciatore</th><th>Sanzione</th><th>Importo</th><th>Stato</th><th></th></tr></thead>
           <tbody>${fineRows||`<tr><td colspan="6">Nessuna multa</td></tr>`}</tbody>
         </table>
@@ -10709,7 +11480,7 @@ async function openCashSetup(){
       })
     );
 
-    const [planRows,rules]=await Promise.all([
+    const [planRows,rules,players,rosterHistory,genericRows,assignments]=await Promise.all([
       must(
         supabase.from("season_fee_plans")
           .select("*")
@@ -10722,70 +11493,177 @@ async function openCashSetup(){
           .eq("team_id",state.team.id)
           .eq("season_id",state.season.id)
           .order("sort_order")
+      ),
+      must(
+        supabase.from("players")
+          .select("id,first_name,last_name,photo_url")
+          .eq("team_id",state.team.id)
+          .order("last_name")
+      ),
+      must(
+        supabase.rpc("get_season_roster_history",{
+          p_team_id:state.team.id,
+          p_season_id:state.season.id
+        })
+      ),
+      must(
+        supabase.rpc("get_roster_generic_roles",{
+          p_team_id:state.team.id,
+          p_season_id:state.season.id
+        })
+      ),
+      must(
+        supabase.from("player_fee_plan_assignments")
+          .select("*")
+          .eq("team_id",state.team.id)
+          .eq("season_id",state.season.id)
       )
     ]);
 
-    const plan=planRows[0]||null;
-    const installments=plan
+    const planSingle=planRows.find(x=>x.payment_mode==="single")||null;
+    const planInstallments=planRows.find(x=>x.payment_mode==="installments")||null;
+    const planIds=planRows.map(x=>x.id);
+
+    const allInstallments=planIds.length
       ? await must(
           supabase.from("season_fee_installments")
             .select("*")
-            .eq("plan_id",plan.id)
+            .in("plan_id",planIds)
             .eq("active",true)
             .order("installment_no")
         )
       : [];
 
-    let currentTab="fees";
+    const singleItems=planSingle
+      ? allInstallments.filter(x=>x.plan_id===planSingle.id)
+      : [];
+
+    const installmentItems=planInstallments
+      ? allInstallments.filter(x=>x.plan_id===planInstallments.id)
+      : [];
+
+    const activeIds=new Set(
+      rosterHistory
+        .filter(c=>
+          c.roster_status==="active"
+          && today()>=c.start_date
+          && today()<=(c.actual_end_date||c.planned_end_date)
+        )
+        .map(c=>c.player_id)
+    );
+
+    const activePlayers=players.filter(p=>activeIds.has(p.id));
+    const genericMap=new Map(genericRows.map(x=>[x.player_id,x.generic_role_code||null]));
+    const assignmentMap=new Map(assignments.map(x=>[x.player_id,x.payment_mode]));
+
     let draftRules=rules.map(x=>({...x}));
 
     showModal("Setup Cassa",`
       <div class="cash-tabs">
-        <button class="btn active" type="button" data-cash-tab="fees">Quote</button>
-        <button class="btn" type="button" data-cash-tab="fines">Tariffario multe</button>
+        <button class="btn active" type="button" data-cash-tab="fees">💳 Quote</button>
+        <button class="btn" type="button" data-cash-tab="fines">💸 Tariffario multe</button>
       </div>
 
       <div id="cash-setup-fees">
-        <form id="fee-plan-form">
-          <div class="field">
-            <label>Descrizione</label>
-            <input id="fsp-title" value="${esc(plan?.title||`Quota ${state.season.name}`)}" required>
-          </div>
+        <div class="dual-fee-grid">
+          <form class="fee-plan-column" id="fee-single-form">
+            <h3>💳 Pagamento unico</h3>
 
-          <div class="form-grid">
             <div class="field">
-              <label>Modalità pagamento</label>
-              <select id="fsp-mode">
-                <option value="single" ${plan?.payment_mode!=="installments"?"selected":""}>Pagamento unico</option>
-                <option value="installments" ${plan?.payment_mode==="installments"?"selected":""}>Pagamento dilazionato</option>
-              </select>
+              <label>Descrizione</label>
+              <input id="fsp-single-title" value="${esc(planSingle?.title||`Quota ${state.season.name}`)}" required>
             </div>
-            <div class="field" id="fsp-count-field">
+
+            <div class="form-grid">
+              <div class="field">
+                <label>Importo €</label>
+                <input id="fsp-single-amount" type="number" min="0" step=".01" value="${singleItems[0]?.amount??""}" required>
+              </div>
+              <div class="field">
+                <label>Scadenza</label>
+                <input id="fsp-single-due" type="date" value="${singleItems[0]?.due_date||""}" required>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Note</label>
+              <textarea id="fsp-single-notes">${esc(planSingle?.notes||"")}</textarea>
+            </div>
+
+            <label class="check">
+              <input id="fsp-single-active" type="checkbox" ${planSingle?.active===false?"":"checked"}>
+              Pagamento unico disponibile
+            </label>
+
+            <div class="actions" style="margin-top:10px">
+              <button class="btn btn-primary">Salva pagamento unico</button>
+            </div>
+          </form>
+
+          <form class="fee-plan-column" id="fee-installments-form">
+            <h3>🗓️ Pagamento dilazionato</h3>
+
+            <div class="field">
+              <label>Descrizione</label>
+              <input id="fsp-inst-title" value="${esc(planInstallments?.title||`Quota ${state.season.name} dilazionata`)}" required>
+            </div>
+
+            <div class="field">
               <label>Numero tranche</label>
-              <input id="fsp-count" type="number" min="2" max="12" value="${Math.max(2,installments.length||2)}">
+              <input id="fsp-inst-count" type="number" min="2" max="12" value="${Math.max(2,installmentItems.length||2)}">
+            </div>
+
+            <div class="fee-installments-editor" id="fsp-inst-editor"></div>
+
+            <div class="field" style="margin-top:8px">
+              <label>Note</label>
+              <textarea id="fsp-inst-notes">${esc(planInstallments?.notes||"")}</textarea>
+            </div>
+
+            <label class="check">
+              <input id="fsp-inst-active" type="checkbox" ${planInstallments?.active===false?"":"checked"}>
+              Pagamento dilazionato disponibile
+            </label>
+
+            <div class="actions" style="margin-top:10px">
+              <button class="btn btn-primary">Salva pagamento dilazionato</button>
+            </div>
+          </form>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h3>👥 Modalità per calciatore</h3>
+              <div class="muted">Ogni calciatore utilizza una sola delle due configurazioni.</div>
             </div>
           </div>
 
-          <div class="fee-installments-editor" id="fsp-installments"></div>
-
-          <div class="field" style="margin-top:10px">
-            <label>Note</label>
-            <textarea id="fsp-notes">${esc(plan?.notes||"")}</textarea>
+          <div class="table-wrap" style="max-height:260px">
+            <table class="table">
+              <thead><tr><th>Calciatore</th><th>Modalità quota</th></tr></thead>
+              <tbody>
+                ${activePlayers.map(p=>`
+                  <tr>
+                    <td>${playerListIdentity(p,genericMap.get(p.id))}</td>
+                    <td>
+                      <select data-player-fee-mode="${p.id}">
+                        <option value="single" ${(assignmentMap.get(p.id)||"single")==="single"?"selected":""}>Pagamento unico</option>
+                        <option value="installments" ${assignmentMap.get(p.id)==="installments"?"selected":""}>Dilazionato</option>
+                      </select>
+                    </td>
+                  </tr>
+                `).join("")||`<tr><td colspan="2">Nessun calciatore attivo</td></tr>`}
+              </tbody>
+            </table>
           </div>
+        </div>
 
-          <label class="check">
-            <input id="fsp-active" type="checkbox" ${plan?.active===false?"":"checked"}>
-            Piano quote attivo
-          </label>
-
-          <div class="section-note" style="margin-top:10px">
-            Le rate vengono generate automaticamente per tutti i calciatori della stagione. Una rata non pagata diventa indisponibilità dal giorno successivo alla scadenza.
-          </div>
-
-          <div class="actions" style="margin-top:12px">
-            <button class="btn btn-primary">Salva piano quote</button>
-          </div>
-        </form>
+        <div class="section-note" style="margin-top:10px">
+          Le due formule possono essere attive contemporaneamente. La quota viene generata soltanto secondo la modalità assegnata al singolo calciatore.
+        </div>
       </div>
 
       <div id="cash-setup-fines" class="hidden">
@@ -10796,47 +11674,36 @@ async function openCashSetup(){
         <div id="fine-rules-editor" style="margin-top:10px"></div>
 
         <div class="actions" style="margin-top:12px">
-          <button class="btn" type="button" id="add-fine-rule">+ Aggiungi voce</button>
+          <button class="btn" type="button" id="add-fine-rule">➕ Aggiungi voce</button>
           <button class="btn btn-primary" type="button" id="save-fine-rules">Salva tariffario</button>
         </div>
       </div>
     `,root=>{
-      root.closest(".modal").style.width="min(880px,100%)";
+      root.closest(".modal").style.width="min(1080px,100%)";
 
-      const mode=$("#fsp-mode",root);
-      const count=$("#fsp-count",root);
-      const countField=$("#fsp-count-field",root);
-      const editor=$("#fsp-installments",root);
+      const instCount=$("#fsp-inst-count",root);
+      const instEditor=$("#fsp-inst-editor",root);
       const rulesEditor=$("#fine-rules-editor",root);
 
-      const currentInstallments=()=>installments.map(i=>({
-        installment_no:i.installment_no,
-        amount:Number(i.amount),
-        due_date:i.due_date
-      }));
-
       const renderInstallments=()=>{
-        const isSingle=mode.value==="single";
-        countField.classList.toggle("hidden",isSingle);
+        const n=Math.max(2,Number(instCount.value)||2);
 
-        const n=isSingle?1:Math.max(2,Number(count.value)||2);
-        const existing=currentInstallments();
-
-        editor.innerHTML=Array.from({length:n},(_,idx)=>{
+        instEditor.innerHTML=Array.from({length:n},(_,idx)=>{
           const no=idx+1;
-          const old=existing.find(x=>x.installment_no===no);
+          const old=installmentItems.find(x=>x.installment_no===no);
+
           return `<div class="fee-installment-row">
             <div class="field">
               <label>Rata</label>
               <input value="${no}" disabled>
             </div>
             <div class="field">
-              <label>Importo €</label>
-              <input data-fee-amount="${no}" type="number" min="0" step=".01" value="${old?.amount??""}" required>
+              <label>€</label>
+              <input data-inst-amount="${no}" type="number" min="0" step=".01" value="${old?.amount??""}" required>
             </div>
             <div class="field installment-due">
               <label>Scadenza</label>
-              <input data-fee-due="${no}" type="date" value="${old?.due_date||""}" required>
+              <input data-inst-due="${no}" type="date" value="${old?.due_date||""}" required>
             </div>
           </div>`;
         }).join("");
@@ -10868,55 +11735,97 @@ async function openCashSetup(){
         });
       };
 
-      mode.onchange=renderInstallments;
-      count.oninput=renderInstallments;
+      instCount.oninput=renderInstallments;
       renderInstallments();
       renderRules();
 
       $$("[data-cash-tab]",root).forEach(b=>b.onclick=()=>{
-        currentTab=b.dataset.cashTab;
         $$("[data-cash-tab]",root).forEach(x=>x.classList.toggle("active",x===b));
-        $("#cash-setup-fees",root).classList.toggle("hidden",currentTab!=="fees");
-        $("#cash-setup-fines",root).classList.toggle("hidden",currentTab!=="fines");
+        const tab=b.dataset.cashTab;
+        $("#cash-setup-fees",root).classList.toggle("hidden",tab!=="fees");
+        $("#cash-setup-fines",root).classList.toggle("hidden",tab!=="fines");
       });
 
-      $("#fee-plan-form",root).onsubmit=async e=>{
+      $("#fee-single-form",root).onsubmit=async e=>{
         e.preventDefault();
+
         try{
-          const isSingle=mode.value==="single";
-          const n=isSingle?1:Math.max(2,Number(count.value)||2);
+          await must(
+            supabase.rpc("save_season_fee_plan",{
+              p_team_id:state.team.id,
+              p_season_id:state.season.id,
+              p_title:$("#fsp-single-title",root).value.trim(),
+              p_payment_mode:"single",
+              p_installments:[{
+                installment_no:1,
+                amount:Number($("#fsp-single-amount",root).value),
+                due_date:$("#fsp-single-due",root).value
+              }],
+              p_active:$("#fsp-single-active",root).checked,
+              p_notes:$("#fsp-single-notes",root).value.trim()||null
+            })
+          );
+
+          toast("Pagamento unico salvato","ok");
+        }catch(err){
+          toast(err.message,"error");
+        }
+      };
+
+      $("#fee-installments-form",root).onsubmit=async e=>{
+        e.preventDefault();
+
+        try{
+          const n=Math.max(2,Number(instCount.value)||2);
           const payload=Array.from({length:n},(_,idx)=>{
             const no=idx+1;
             return {
               installment_no:no,
-              amount:Number($(`[data-fee-amount="${no}"]`,root).value),
-              due_date:$(`[data-fee-due="${no}"]`,root).value
+              amount:Number($(`[data-inst-amount="${no}"]`,root).value),
+              due_date:$(`[data-inst-due="${no}"]`,root).value
             };
           });
 
           if(payload.some(x=>!Number.isFinite(x.amount)||x.amount<0||!x.due_date)){
-            throw new Error("Completa importo e scadenza di tutte le rate");
+            throw new Error("Completa importo e scadenza di tutte le tranche");
           }
 
           await must(
             supabase.rpc("save_season_fee_plan",{
               p_team_id:state.team.id,
               p_season_id:state.season.id,
-              p_title:$("#fsp-title",root).value.trim(),
-              p_payment_mode:mode.value,
+              p_title:$("#fsp-inst-title",root).value.trim(),
+              p_payment_mode:"installments",
               p_installments:payload,
-              p_active:$("#fsp-active",root).checked,
-              p_notes:$("#fsp-notes",root).value.trim()||null
+              p_active:$("#fsp-inst-active",root).checked,
+              p_notes:$("#fsp-inst-notes",root).value.trim()||null
             })
           );
 
-          toast("Piano quote salvato","ok");
-          closeModal();
-          pageCash();
+          toast("Pagamento dilazionato salvato","ok");
         }catch(err){
           toast(err.message,"error");
         }
       };
+
+      $$("[data-player-fee-mode]",root).forEach(sel=>{
+        sel.onchange=async()=>{
+          try{
+            await must(
+              supabase.rpc("set_player_fee_payment_mode",{
+                p_team_id:state.team.id,
+                p_season_id:state.season.id,
+                p_player_id:sel.dataset.playerFeeMode,
+                p_payment_mode:sel.value
+              })
+            );
+
+            toast("Modalità quota aggiornata","ok");
+          }catch(err){
+            toast(err.message,"error");
+          }
+        };
+      });
 
       $("#add-fine-rule",root).onclick=()=>{
         draftRules.push({
@@ -10983,8 +11892,6 @@ async function openCashSetup(){
           );
 
           toast("Tariffario salvato","ok");
-          closeModal();
-          pageCash();
         }catch(err){
           toast(err.message,"error");
         }
