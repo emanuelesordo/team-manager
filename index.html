@@ -1530,6 +1530,850 @@
       .player-list-identity .avatar{display:none}
     }
 
+
+    /* =====================================================
+       MANAGERIAL UI SYSTEM
+       Stile coerente per tutto l'impianto
+    ===================================================== */
+    :root{
+      --ui-card-radius:12px;
+      --ui-record-radius:10px;
+      --ui-gap:10px;
+      --ui-shadow-soft:0 4px 16px rgba(0,0,0,.13);
+      --ui-shadow-hover:0 9px 26px rgba(0,0,0,.20);
+      --ui-record-bg:color-mix(in srgb,var(--panel) 91%,var(--team-accent) 9%);
+      --ui-record-hover:color-mix(in srgb,var(--panel2) 88%,var(--team-accent) 12%);
+      --ui-line-soft:color-mix(in srgb,var(--line) 80%,transparent);
+    }
+
+    body{
+      background:
+        linear-gradient(180deg,rgba(255,255,255,.012),transparent 240px),
+        repeating-linear-gradient(
+          90deg,
+          transparent 0,
+          transparent 88px,
+          color-mix(in srgb,var(--team-accent) 2.8%,transparent) 88px,
+          color-mix(in srgb,var(--team-accent) 2.8%,transparent) 176px
+        ),
+        var(--bg);
+    }
+
+    .content{
+      max-width:1500px;
+      padding:18px 20px 28px;
+    }
+
+    /* --- Gerarchia pagina --- */
+    .page-title{
+      position:relative;
+      align-items:center;
+      min-height:46px;
+      margin-bottom:14px;
+      padding:2px 0 2px 13px;
+      border-left:3px solid var(--team-accent);
+    }
+    .page-title h1{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:3px;
+      font-size:1.42rem;
+      letter-spacing:-.025em;
+    }
+    .page-title p{
+      margin-top:1px;
+      line-height:1.25;
+      max-width:900px;
+    }
+    .ui-title-icon{
+      width:30px;
+      height:30px;
+      display:inline-grid;
+      place-items:center;
+      flex:none;
+      border-radius:9px;
+      background:var(--team-accent-soft);
+      border:1px solid var(--team-primary-line);
+      font-size:16px!important;
+      box-shadow:inset 0 1px rgba(255,255,255,.05);
+    }
+    .ui-heading-icon{
+      display:inline-grid;
+      place-items:center;
+      margin-right:6px;
+      font-size:.95em!important;
+      vertical-align:-.03em;
+    }
+    .topbar-section-icon{
+      display:inline-block;
+      margin-right:7px;
+      filter:saturate(.9);
+    }
+
+    /* --- Sidebar / navigazione --- */
+    .sidebar{
+      padding:14px 12px;
+      background:
+        linear-gradient(180deg,color-mix(in srgb,var(--team-accent) 5%,var(--panel)),var(--panel) 180px);
+      box-shadow:4px 0 18px rgba(0,0,0,.08);
+      scrollbar-width:thin;
+    }
+    .sidebar::before{
+      content:"";
+      position:absolute;
+      top:0;
+      left:0;
+      right:0;
+      height:3px;
+      background:var(--team-accent);
+    }
+    .sidebar .brand{
+      margin:3px 5px 13px;
+      padding:8px 6px 10px;
+      border-bottom:1px solid var(--ui-line-soft);
+    }
+    .nav{gap:2px}
+    .nav button{
+      min-height:36px;
+      gap:8px;
+      padding:6px 8px;
+      border-radius:8px;
+      font-weight:650;
+      transition:background .16s ease,color .16s ease,transform .16s ease;
+    }
+    .nav button>span:first-child{
+      width:25px;
+      height:25px;
+      min-width:25px;
+      display:grid;
+      place-items:center;
+      border-radius:7px;
+      background:color-mix(in srgb,var(--panel2) 85%,transparent);
+      font-size:13px!important;
+      line-height:1;
+    }
+    .nav button.active{
+      background:var(--team-accent-soft);
+      color:var(--text);
+      box-shadow:inset 3px 0 var(--team-accent);
+      font-weight:800;
+    }
+    .nav button.active>span:first-child{
+      background:var(--team-accent);
+      color:var(--accent-contrast);
+      box-shadow:0 3px 10px color-mix(in srgb,var(--team-accent) 28%,transparent);
+    }
+    .nav button:hover{transform:translateX(1px)}
+    .nav .section{
+      padding:11px 8px 3px;
+      font-size:.62rem!important;
+      opacity:.7;
+    }
+
+    /* --- Topbar --- */
+    .topbar{
+      min-height:58px;
+      padding:10px 18px;
+      border-bottom:1px solid var(--ui-line-soft);
+      box-shadow:0 5px 20px rgba(0,0,0,.07);
+    }
+    .topbar-title{
+      display:flex;
+      align-items:center;
+      font-weight:850;
+      letter-spacing:-.01em;
+    }
+    .mobile-appbar-title{
+      display:flex;
+      align-items:center;
+      font-weight:850;
+    }
+
+    /* --- Card / tile unificate --- */
+    .card,
+    .attendance-zone,
+    .match-team-slot,
+    .competition-rule-box,
+    .opponent-field-box,
+    .roster-setup-option{
+      position:relative;
+      border:1px solid var(--ui-line-soft)!important;
+      border-radius:var(--ui-card-radius)!important;
+      background:
+        linear-gradient(
+          145deg,
+          color-mix(in srgb,var(--panel) 97%,white 3%),
+          var(--panel)
+        )!important;
+      box-shadow:var(--ui-shadow-soft);
+    }
+    .card{
+      padding:13px;
+      transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease;
+    }
+    button.card:hover,
+    .card[data-platform-go]:hover{
+      transform:translateY(-1px);
+      border-color:var(--team-primary-line)!important;
+      box-shadow:var(--ui-shadow-hover);
+    }
+    .card-head{
+      margin-bottom:9px;
+      padding-bottom:8px;
+      border-bottom:1px solid var(--ui-line-soft);
+    }
+    .card h2,.card h3{
+      letter-spacing:-.015em;
+    }
+
+    /* KPI / dashboard tiles */
+    .manager-kpi-card{
+      overflow:hidden;
+      min-height:86px;
+      padding-right:52px!important;
+    }
+    .manager-kpi-card::before{
+      content:attr(data-ui-icon);
+      position:absolute;
+      top:11px;
+      right:11px;
+      width:34px;
+      height:34px;
+      display:grid;
+      place-items:center;
+      border-radius:10px;
+      background:var(--team-accent-soft);
+      border:1px solid var(--team-primary-line);
+      font-size:17px!important;
+      opacity:.92;
+    }
+    .manager-kpi-card::after{
+      content:"";
+      position:absolute;
+      left:0;
+      bottom:0;
+      width:100%;
+      height:2px;
+      background:linear-gradient(90deg,var(--team-accent),transparent 65%);
+      opacity:.65;
+    }
+    .stat{
+      font-size:1.52rem!important;
+      line-height:1.05;
+      letter-spacing:-.04em;
+    }
+    .stat-label{
+      margin-top:5px;
+      line-height:1.15;
+    }
+
+    /* --- Record unificato --- */
+    .list{gap:5px}
+    .list-item,
+    .calendar-event-row,
+    .callup-card,
+    .timeline-item{
+      border:1px solid var(--ui-line-soft)!important;
+      border-radius:var(--ui-record-radius)!important;
+      background:var(--ui-record-bg)!important;
+      box-shadow:0 1px 5px rgba(0,0,0,.08);
+      transition:background .14s ease,border-color .14s ease,transform .14s ease;
+    }
+    .list-item{
+      min-height:42px;
+      padding:7px 9px;
+    }
+    .calendar-event-row{
+      padding:7px 9px;
+    }
+    .callup-card{
+      min-height:40px;
+      padding:6px 8px;
+    }
+    .list-item:hover,
+    .calendar-event-row:hover,
+    .callup-card:hover{
+      background:var(--ui-record-hover)!important;
+      border-color:var(--team-primary-line)!important;
+    }
+
+    /* Record persona */
+    .player-list-identity{
+      gap:5px;
+    }
+    .player-list-identity .avatar{
+      width:25px!important;
+      height:25px!important;
+      min-width:25px!important;
+      border:1px solid var(--ui-line-soft);
+      box-shadow:0 2px 7px rgba(0,0,0,.12);
+    }
+    .player-list-role{
+      border:1px solid rgba(255,255,255,.06);
+      box-shadow:inset 0 1px rgba(255,255,255,.05);
+    }
+
+    /* --- Tabelle come record manageriale --- */
+    .table-wrap{
+      overflow:auto;
+      border:0!important;
+      border-radius:0!important;
+      background:transparent!important;
+      scrollbar-width:thin;
+    }
+    .table{
+      border-collapse:separate!important;
+      border-spacing:0 4px!important;
+      min-width:0;
+    }
+    .table thead th{
+      z-index:7;
+      top:0;
+      padding:6px 8px!important;
+      border:0!important;
+      background:color-mix(in srgb,var(--panel2) 96%,transparent)!important;
+      box-shadow:0 1px 0 var(--line);
+      font-size:.67rem!important;
+      letter-spacing:.055em;
+    }
+    .table tbody td{
+      padding:6px 8px!important;
+      background:var(--ui-record-bg);
+      border-top:1px solid var(--ui-line-soft)!important;
+      border-bottom:1px solid var(--ui-line-soft)!important;
+      transition:background .14s ease,border-color .14s ease;
+    }
+    .table tbody td:first-child{
+      border-left:1px solid var(--ui-line-soft)!important;
+      border-radius:var(--ui-record-radius) 0 0 var(--ui-record-radius);
+    }
+    .table tbody td:last-child{
+      border-right:1px solid var(--ui-line-soft)!important;
+      border-radius:0 var(--ui-record-radius) var(--ui-record-radius) 0;
+    }
+    .table tbody tr:hover td{
+      background:var(--ui-record-hover);
+      border-color:var(--team-primary-line)!important;
+    }
+    .table tbody tr.roster-row-inactive td{
+      opacity:.58;
+    }
+
+    /* Rosa resta ultra-compatta */
+    .roster-table{
+      border-spacing:0 2px!important;
+    }
+    .roster-table tbody tr{height:31px!important}
+    .roster-table th,.roster-table td{padding-top:3px!important;padding-bottom:3px!important}
+
+    /* --- Badge / status --- */
+    .badge{
+      min-height:20px;
+      padding:2px 7px;
+      border-radius:7px;
+      font-weight:800;
+      background:color-mix(in srgb,var(--panel2) 82%,var(--team-accent) 18%);
+      border-color:var(--ui-line-soft);
+      box-shadow:inset 0 1px rgba(255,255,255,.035);
+    }
+    .badge.green{background:rgba(34,197,94,.13);border-color:rgba(34,197,94,.28);color:#86efac}
+    .badge.red{background:rgba(239,68,68,.13);border-color:rgba(239,68,68,.28);color:#fca5a5}
+    .badge.yellow{background:rgba(245,158,11,.13);border-color:rgba(245,158,11,.28);color:#fcd34d}
+    .badge.blue{background:rgba(59,130,246,.13);border-color:rgba(59,130,246,.28);color:#93c5fd}
+
+    /* --- Buttons --- */
+    .btn{
+      border-radius:8px!important;
+      min-height:34px;
+      padding:7px 11px;
+      border:1px solid var(--ui-line-soft);
+      background:color-mix(in srgb,var(--panel2) 96%,white 4%);
+      font-weight:750;
+      box-shadow:0 2px 7px rgba(0,0,0,.08);
+      transition:transform .14s ease,filter .14s ease,border-color .14s ease;
+    }
+    .btn:hover{
+      transform:translateY(-1px);
+      border-color:var(--team-primary-line);
+    }
+    .btn-primary{
+      background:linear-gradient(
+        180deg,
+        color-mix(in srgb,var(--team-accent) 88%,white 12%),
+        var(--team-accent)
+      )!important;
+      border-color:var(--team-accent)!important;
+      color:var(--accent-contrast)!important;
+      box-shadow:0 4px 12px color-mix(in srgb,var(--team-accent) 22%,transparent);
+    }
+    .btn-danger{
+      background:rgba(127,29,29,.72)!important;
+      border-color:rgba(239,68,68,.28)!important;
+    }
+    .btn-ghost{
+      background:transparent!important;
+      box-shadow:none;
+    }
+    .btn-sm{
+      min-height:29px;
+      padding:5px 8px!important;
+    }
+
+    /* --- Forms --- */
+    input,select,textarea{
+      border-radius:8px!important;
+      border-color:var(--ui-line-soft);
+      background:color-mix(in srgb,var(--input-bg) 96%,white 4%);
+      min-height:38px;
+      padding:8px 10px;
+      transition:border-color .14s ease,box-shadow .14s ease,background .14s ease;
+    }
+    input:focus,select:focus,textarea:focus{
+      border-color:var(--team-accent)!important;
+      box-shadow:0 0 0 3px color-mix(in srgb,var(--team-accent) 13%,transparent);
+    }
+    label{
+      margin-bottom:4px;
+      font-weight:650;
+    }
+    .field{margin-bottom:10px}
+    .form-grid{gap:9px}
+
+    /* --- Tabs / setup selectors --- */
+    .tabs,.cash-tabs{
+      gap:4px;
+      padding:3px;
+      border:1px solid var(--ui-line-soft);
+      border-radius:10px;
+      background:color-mix(in srgb,var(--panel) 92%,transparent);
+      width:max-content;
+      max-width:100%;
+    }
+    .tab,.cash-tabs button{
+      border-radius:7px!important;
+      padding:6px 9px!important;
+      min-height:31px;
+    }
+    .tab.active,.cash-tabs button.active{
+      background:var(--team-accent-soft)!important;
+      color:var(--text)!important;
+      border-color:var(--team-primary-line)!important;
+    }
+
+    /* --- Notes / empty --- */
+    .section-note{
+      border-radius:9px!important;
+      border:1px solid var(--team-primary-line);
+      border-left:3px solid var(--team-accent);
+      background:color-mix(in srgb,var(--team-accent-soft) 70%,var(--panel) 30%);
+      padding:8px 10px;
+      line-height:1.28;
+    }
+    .empty{
+      border-radius:10px;
+      padding:20px;
+      background:color-mix(in srgb,var(--panel) 96%,var(--team-accent) 4%);
+      border-color:var(--ui-line-soft);
+    }
+    .empty.manager-empty::before{
+      content:attr(data-ui-icon);
+      display:block;
+      font-size:1.45rem!important;
+      margin-bottom:5px;
+      filter:saturate(.85);
+    }
+
+    /* --- Calendario --- */
+    .calendar-controls-row{
+      border:1px solid var(--ui-line-soft);
+      border-radius:10px;
+      background:var(--panel);
+      box-shadow:var(--ui-shadow-soft);
+      padding:6px;
+      margin-bottom:9px;
+    }
+    .calendar-date-tile{
+      width:52px!important;
+      min-height:50px!important;
+      border-radius:9px!important;
+      border-color:var(--team-primary-line)!important;
+      background:var(--team-accent-soft)!important;
+    }
+    .calendar-date-day{font-size:1.18rem!important}
+    .calendar-event-title{font-weight:800}
+    .calendar-past-event{opacity:.50}
+    .month-calendar-wrap{
+      border:1px solid var(--ui-line-soft);
+      border-radius:10px;
+      overflow:hidden;
+      background:var(--panel);
+      box-shadow:var(--ui-shadow-soft);
+    }
+    .month-day{
+      border-color:var(--ui-line-soft)!important;
+      background:color-mix(in srgb,var(--panel) 97%,transparent);
+    }
+    .month-day.today{
+      box-shadow:inset 0 0 0 2px var(--team-accent);
+    }
+    .month-event{
+      border-radius:5px!important;
+      border-color:var(--ui-line-soft)!important;
+      background:var(--team-accent-soft)!important;
+    }
+
+    /* --- Allenamenti / presenze --- */
+    .attendance-zone{
+      padding:10px!important;
+      min-height:190px;
+    }
+    .attendance-zone-head{
+      margin-bottom:7px;
+      padding-bottom:7px;
+      border-bottom:1px solid var(--ui-line-soft);
+    }
+    .attendance-zone.drag-over{
+      box-shadow:inset 0 0 0 2px var(--team-accent),var(--ui-shadow-soft)!important;
+    }
+    .attendance-summary{
+      gap:7px!important;
+    }
+
+    /* --- Partite / FIFA-like --- */
+    .home-away-selector{
+      gap:3px;
+      padding:3px;
+      border-radius:10px!important;
+      border-color:var(--ui-line-soft)!important;
+      background:var(--panel)!important;
+    }
+    .home-away-selector button{
+      min-height:34px;
+      padding:6px 8px!important;
+      border-radius:7px!important;
+    }
+    .home-away-selector button.active{
+      background:var(--team-accent-soft)!important;
+      border-color:var(--team-primary-line)!important;
+      box-shadow:inset 0 -2px var(--team-accent);
+    }
+    .match-team-slot{
+      min-height:150px;
+      padding:11px!important;
+    }
+    .match-scoreboard{
+      padding:13px;
+      border:1px solid var(--ui-line-soft);
+      border-radius:13px;
+      background:
+        radial-gradient(circle at 50% -50%,var(--team-accent-soft),transparent 55%),
+        var(--panel);
+      box-shadow:var(--ui-shadow-soft);
+    }
+    .match-score-number{
+      font-size:2.15rem!important;
+      letter-spacing:-.05em;
+    }
+    .match-score-team img,
+    .match-score-team .fallback{
+      width:54px!important;
+      height:54px!important;
+      border-radius:10px!important;
+    }
+    .callup-grid{gap:7px!important}
+    .pitch{
+      border-radius:12px!important;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.12),var(--ui-shadow-soft);
+      background:
+        repeating-linear-gradient(
+          90deg,
+          #155e36 0,
+          #155e36 12.5%,
+          #166534 12.5%,
+          #166534 25%
+        )!important;
+    }
+    .pitch-player{
+      border-radius:8px!important;
+      box-shadow:0 3px 9px rgba(0,0,0,.2);
+    }
+
+    /* --- LIVE --- */
+    .live-score{
+      border:1px solid var(--ui-line-soft);
+      border-radius:12px;
+      background:
+        radial-gradient(circle at 50% 0,var(--team-accent-soft),transparent 60%),
+        var(--panel);
+      box-shadow:var(--ui-shadow-soft);
+    }
+    .live-score .score{font-size:2.35rem!important}
+    .timeline{gap:5px}
+    .timeline-item{
+      padding:7px 9px!important;
+      border-left:3px solid var(--team-accent)!important;
+    }
+    .timeline-item.pending{
+      border-left-color:var(--warn)!important;
+      background:rgba(245,158,11,.08)!important;
+    }
+    .live-actions{gap:6px}
+    .live-actions .btn{
+      min-height:48px;
+      font-size:.82rem!important;
+    }
+
+    /* --- Cassa / competizioni --- */
+    .fine-rule-row{
+      min-height:40px;
+      padding:5px 0!important;
+    }
+    .fee-installment-row{
+      padding:7px!important;
+      border-radius:9px!important;
+      background:var(--ui-record-bg)!important;
+      border-color:var(--ui-line-soft)!important;
+    }
+    .competition-card{
+      overflow:hidden;
+    }
+    .competition-card::after{
+      content:"🏆";
+      position:absolute;
+      right:10px;
+      bottom:7px;
+      font-size:22px!important;
+      opacity:.055;
+    }
+    .competition-opponents{
+      margin-top:8px;
+      display:flex;
+      gap:4px;
+      flex-wrap:wrap;
+    }
+
+    /* --- Modal --- */
+    .modal-backdrop{
+      background:rgba(2,6,23,.72);
+      backdrop-filter:blur(5px);
+    }
+    .modal{
+      border-radius:14px!important;
+      border-color:var(--ui-line-soft)!important;
+      padding:14px!important;
+      box-shadow:0 22px 70px rgba(0,0,0,.40);
+    }
+    .modal-head{
+      margin:-2px -2px 11px;
+      padding:2px 2px 9px;
+      border-bottom:1px solid var(--ui-line-soft);
+    }
+    .modal-head h2{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      margin:0;
+    }
+
+    /* --- Scrollbars --- */
+    *{
+      scrollbar-width:thin;
+      scrollbar-color:color-mix(in srgb,var(--team-accent) 35%,var(--line)) transparent;
+    }
+    *::-webkit-scrollbar{width:7px;height:7px}
+    *::-webkit-scrollbar-track{background:transparent}
+    *::-webkit-scrollbar-thumb{
+      background:color-mix(in srgb,var(--team-accent) 30%,var(--line));
+      border-radius:99px;
+    }
+
+    /* --- Responsive --- */
+    @media(max-width:900px){
+      .content{
+        padding:9px 7px 18px!important;
+      }
+      .mobile-appbar{
+        min-height:52px;
+        padding:6px 8px!important;
+        border-bottom:1px solid var(--ui-line-soft);
+        box-shadow:0 5px 17px rgba(0,0,0,.10);
+      }
+      .mobile-appbar-brand{
+        width:36px!important;
+        height:36px!important;
+        border-radius:9px!important;
+      }
+      .mobile-menu-btn{
+        width:36px!important;
+        height:36px!important;
+        border-radius:9px!important;
+      }
+
+      .mobile-drawer{
+        width:min(90vw,330px)!important;
+        padding:calc(7px + env(safe-area-inset-top)) 7px calc(7px + env(safe-area-inset-bottom))!important;
+        background:
+          linear-gradient(180deg,color-mix(in srgb,var(--team-accent) 5%,var(--panel)),var(--panel) 180px)!important;
+      }
+      .mobile-drawer-head{
+        padding:0 1px 6px!important;
+        margin-bottom:4px!important;
+      }
+      .mobile-drawer .nav{
+        grid-template-columns:1fr!important;
+        gap:0!important;
+        padding:0!important;
+      }
+      .mobile-drawer .nav button{
+        min-height:28px!important;
+        padding:3px 6px!important;
+        border-radius:6px!important;
+        font-size:11.5px!important;
+        line-height:1!important;
+      }
+      .mobile-drawer .nav button>span:first-child{
+        width:22px!important;
+        height:22px!important;
+        min-width:22px!important;
+        border-radius:6px!important;
+        font-size:11px!important;
+      }
+      .mobile-drawer-context{
+        padding:4px 0!important;
+        gap:3px!important;
+      }
+      .mobile-drawer-context select{
+        min-height:30px!important;
+        padding:4px 6px!important;
+        font-size:10.5px!important;
+      }
+      .mobile-drawer-account{
+        gap:3px!important;
+        padding-top:4px!important;
+      }
+      .mobile-drawer-account .btn{
+        min-height:29px!important;
+        padding:4px 5px!important;
+        font-size:10px!important;
+      }
+
+      .page-title{
+        min-height:auto;
+        padding-left:9px;
+        margin-bottom:9px;
+        border-left-width:2px;
+      }
+      .page-title h1{
+        font-size:1.25rem!important;
+      }
+      .ui-title-icon{
+        width:26px;height:26px;font-size:14px!important;
+      }
+      .page-title .actions{
+        gap:4px!important;
+      }
+      .page-title .actions .btn{
+        min-height:31px!important;
+        padding:5px 8px!important;
+      }
+
+      .grid{gap:7px!important}
+      .grid-4{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      .card{
+        padding:9px!important;
+        border-radius:10px!important;
+      }
+      .manager-kpi-card{
+        min-height:72px;
+        padding-right:39px!important;
+      }
+      .manager-kpi-card::before{
+        width:29px;height:29px;top:8px;right:8px;font-size:14px!important;
+      }
+      .stat{font-size:1.3rem!important}
+      .stat-label{font-size:10.5px!important}
+
+      .list{gap:3px}
+      .list-item,.calendar-event-row,.callup-card{
+        min-height:35px;
+        padding:5px 6px!important;
+        border-radius:8px!important;
+      }
+
+      .table{
+        border-spacing:0 3px!important;
+      }
+      .table thead th{
+        padding:5px 5px!important;
+      }
+      .table tbody td{
+        padding:5px 5px!important;
+      }
+
+      .btn{min-height:31px;padding:5px 8px!important}
+      input,select,textarea{
+        min-height:35px;
+        padding:7px 8px;
+      }
+
+      .section-note{
+        padding:6px 8px;
+      }
+      .modal{
+        padding:11px!important;
+      }
+      .modal-head{
+        padding-bottom:7px;
+      }
+
+      .match-team-slot{
+        min-height:132px!important;
+        padding:8px!important;
+      }
+      .live-actions .btn{
+        min-height:43px!important;
+      }
+    }
+
+    @media(max-width:520px){
+      .grid-3,.grid-2{
+        grid-template-columns:1fr!important;
+      }
+      .grid-4{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      }
+
+      .calendar-controls-row{
+        padding:4px!important;
+      }
+      .calendar-event-row{
+        grid-template-columns:48px minmax(0,1fr) auto!important;
+        gap:6px!important;
+      }
+      .calendar-date-tile{
+        width:44px!important;
+        min-height:43px!important;
+      }
+
+      .match-scoreboard{
+        gap:7px!important;
+        padding:9px!important;
+      }
+      .match-score-team img,
+      .match-score-team .fallback{
+        width:44px!important;
+        height:44px!important;
+      }
+      .match-score-number{font-size:1.72rem!important}
+
+      .player-list-identity .avatar{
+        width:22px!important;
+        height:22px!important;
+        min-width:22px!important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -2943,14 +3787,15 @@ function renderPlatformShell(title,content,active="dashboard"){
   stopLive();
   closeMobileDrawer();
   resetTeamBranding();
+  const shellTitleIcon=uiSectionEmoji(title);
   state.currentContext="platform";
   state.currentPage=`platform-${active}`;
 
   const items=[
-    ["dashboard","Dashboard","⌂"],
-    ["teams","Squadre","◆"],
-    ["users","Utenti","●"],
-    ["requests","Richieste","▣"]
+    ["dashboard","Dashboard","📊"],
+    ["teams","Squadre","⚽"],
+    ["users","Utenti","👥"],
+    ["requests","Richieste","📥"]
   ];
 
   const nav=items.map(([id,label,icon])=>
@@ -2970,8 +3815,8 @@ function renderPlatformShell(title,content,active="dashboard"){
       <nav class="nav">
         ${nav}
         <div class="section">Contesto</div>
-        <button id="platform-team-switch">⇄ Squadre</button>
-        <button id="platform-logout">↪ Esci</button>
+        <button id="platform-team-switch">🔄 Squadre</button>
+        <button id="platform-logout">🚪 Esci</button>
       </nav>
     </aside>
 
@@ -2979,7 +3824,7 @@ function renderPlatformShell(title,content,active="dashboard"){
       <header class="mobile-appbar">
         <div class="mobile-appbar-brand">TM</div>
         <div class="mobile-appbar-copy">
-          <div class="mobile-appbar-title">${esc(title)}</div>
+          <div class="mobile-appbar-title">${shellTitleIcon?`<span class="topbar-section-icon">${shellTitleIcon}</span>`:""}${esc(title)}</div>
           <div class="mobile-appbar-sub">${esc(CONFIG.APP_NAME)} · Super Admin</div>
         </div>
         <button class="mobile-menu-btn" id="mobile-menu-open" aria-label="Apri menu">☰</button>
@@ -2987,7 +3832,7 @@ function renderPlatformShell(title,content,active="dashboard"){
 
       <header class="topbar">
         <div class="topbar-left">
-          <div class="topbar-title">${esc(title)}</div>
+          <div class="topbar-title">${shellTitleIcon?`<span class="topbar-section-icon">${shellTitleIcon}</span>`:""}${esc(title)}</div>
           <div class="topbar-sub">${esc(state.profile?.display_name||"")} · platform_super_admin</div>
         </div>
         <div class="topbar-actions actions">
@@ -3017,9 +3862,9 @@ function renderPlatformShell(title,content,active="dashboard"){
       </nav>
 
       <div class="mobile-drawer-account">
-        <button class="btn" id="platform-create-team-mobile">＋ Nuova squadra</button>
-        <button class="btn" id="platform-team-switch-mobile">⇄ Vai alle squadre</button>
-        <button class="btn btn-ghost" id="platform-logout-mobile">↪ Esci</button>
+        <button class="btn" id="platform-create-team-mobile">➕ Nuova squadra</button>
+        <button class="btn" id="platform-team-switch-mobile">🔄 Vai alle squadre</button>
+        <button class="btn btn-ghost" id="platform-logout-mobile">🚪 Esci</button>
       </div>
     </aside>
   </div>`;
@@ -3407,24 +4252,25 @@ async function platformRequests(){
    SHELL / ROUTING
 ========================================================= */
 const navItems=()=>[
-  ["dashboard","Home","⌂","dashboard.view"],
-  ["calendar","Calendario","▣","calendar.view"],
-  ["trainings","Allenamenti","◫","trainings.view"],
+  ["dashboard","Home","🏠","dashboard.view"],
+  ["calendar","Calendario","📅","calendar.view"],
+  ["trainings","Allenamenti","🏃","trainings.view"],
   ["matches","Partite","⚽","matches.view"],
   ["competitions","Competizioni","🏆","competitions.view"],
-  ["roster","Rosa","♟","roster.view"],
-  ["absences","Assenze","⊘",can("absences.view_own")||can("absences.view_all")?null:"__no"],
-  ["opponents","Avversarie","VS","opponents.view"],
-  ["venues","Campi","⌖","venues.view"],
-  ["medical","Visite mediche","✚",can("medical.view_own")||can("medical.view_all")?null:"__no"],
-  ["cash","Cassa","€",can("fees.view_own")||can("fees.view_all")||can("fines.view_own")||can("fines.view_all")?null:"__no"],
-  ["stats","Statistiche","▥","stats.view"],
-  ["profile","Profilo","●",null],
-  ["admin","Admin","⚙",can("users.manage")||can("permissions.manage")||can("seasons.manage")||can("team.settings.manage")||can("organization.settings.manage")||can("staff.manage")||can("contracts.manage")||can("audit.view")||can("player_link.approve")?null:"__no"]
+  ["roster","Rosa","👥","roster.view"],
+  ["absences","Assenze","🚑",can("absences.view_own")||can("absences.view_all")?null:"__no"],
+  ["opponents","Avversarie","🆚","opponents.view"],
+  ["venues","Campi","🏟️","venues.view"],
+  ["medical","Visite mediche","🩺",can("medical.view_own")||can("medical.view_all")?null:"__no"],
+  ["cash","Cassa","💰",can("fees.view_own")||can("fees.view_all")||can("fines.view_own")||can("fines.view_all")?null:"__no"],
+  ["stats","Statistiche","📊","stats.view"],
+  ["profile","Profilo","👤",null],
+  ["admin","Admin","⚙️",can("users.manage")||can("permissions.manage")||can("seasons.manage")||can("team.settings.manage")||can("organization.settings.manage")||can("staff.manage")||can("contracts.manage")||can("audit.view")||can("player_link.approve")?null:"__no"]
 ].filter(x=>x[3]===null || can(x[3]));
 function renderShell(title, content, nav=true){
   closeMobileDrawer();
 
+  const shellTitleIcon=uiSectionEmoji(title);
   const navHtml=navItems()
     .map(([id,label,icon])=>`<button data-nav="${id}" class="${state.currentPage===id?"active":""}"><span>${icon}</span>${esc(label)}</button>`)
     .join("");
@@ -3447,9 +4293,9 @@ function renderShell(title, content, nav=true){
       <nav class="nav">
         ${navHtml}
         <div class="section">Account</div>
-        ${state.isSuperAdmin?`<button id="platform-side">◆ Piattaforma</button>`:""}
-        <button id="manage-teams-side">⇄ Squadre</button>
-        <button id="logout-side">↪ Esci</button>
+        ${state.isSuperAdmin?`<button id="platform-side">🛡️ Piattaforma</button>`:""}
+        <button id="manage-teams-side">🔄 Squadre</button>
+        <button id="logout-side">🚪 Esci</button>
       </nav>
     </aside>
 
@@ -3537,7 +4383,7 @@ function renderShell(title, content, nav=true){
         <div class="mobile-drawer-account">
           ${state.isSuperAdmin?`<button class="btn" id="platform-mobile">◆ Pannello piattaforma</button>`:""}
           <button class="btn" id="manage-teams-mobile">⇄ Gestisci squadre</button>
-          <button class="btn btn-ghost" id="logout-mobile">↪ Esci</button>
+          <button class="btn btn-ghost" id="logout-mobile">🚪 Esci</button>
         </div>
       </aside>
     `:""}
@@ -11715,6 +12561,180 @@ async function adminSettings(){
   };
 }
 
+
+/* =========================================================
+   MANAGERIAL UI DECORATOR
+========================================================= */
+function uiSectionEmoji(text=""){
+  const t=String(text).toLowerCase();
+
+  const rules=[
+    [["home","dashboard"],"🏠"],
+    [["calendario","evento"],"📅"],
+    [["allenament"],"🏃"],
+    [["partit","match"],"⚽"],
+    [["competizion"],"🏆"],
+    [["rosa","calciator"],"👥"],
+    [["assenze","indisponibil"],"🚑"],
+    [["infortun"],"🤕"],
+    [["squalif"],"🟥"],
+    [["avversar"],"🆚"],
+    [["campi","campo"],"🏟️"],
+    [["visite mediche","visita medica"],"🩺"],
+    [["cassa"],"💰"],
+    [["quote","quota"],"💳"],
+    [["multe","multa","sanzion"],"💸"],
+    [["statistic"],"📊"],
+    [["profilo"],"👤"],
+    [["admin","impostaz","setup"],"⚙️"],
+    [["staff"],"🧑‍💼"],
+    [["contratt","permanenz"],"📄"],
+    [["convocaz"],"📋"],
+    [["formazion"],"🧩"],
+    [["live"],"🔴"],
+    [["gol"],"⚽"],
+    [["assist"],"🎯"],
+    [["presenze","presenti"],"✅"],
+    [["assenti"],"❌"],
+    [["ruoli","ruolo"],"🎯"],
+    [["società","squadra"],"🛡️"],
+    [["utenti"],"👥"],
+    [["richieste"],"📥"],
+    [["audit"],"🧾"],
+    [["permessi"],"🔐"],
+    [["stagion"],"🗓️"]
+  ];
+
+  for(const [words,emoji] of rules){
+    if(words.some(w=>t.includes(w)))return emoji;
+  }
+  return "";
+}
+
+function uiStatEmoji(text=""){
+  const t=String(text).toLowerCase();
+
+  const rules=[
+    [["partite"],"⚽"],
+    [["v-n-p","vittor"],"🏆"],
+    [["gol fatti","gol"],"🥅"],
+    [["gol subiti"],"🧤"],
+    [["assist"],"🎯"],
+    [["minuti"],"⏱️"],
+    [["presenze"],"✅"],
+    [["mvp"],"⭐"],
+    [["età"],"🎂"],
+    [["altezza"],"📏"],
+    [["nazional"],"🌍"],
+    [["compleann"],"🎉"],
+    [["calciatori"],"👥"],
+    [["squadre del cuore","tifoser"],"❤️"],
+    [["quote scadute"],"⚠️"],
+    [["quote"],"💳"],
+    [["multe"],"💸"],
+    [["incassato"],"💰"],
+    [["utenti"],"👥"],
+    [["squadre"],"⚽"],
+    [["richieste"],"📥"],
+    [["abilitati"],"✅"],
+    [["non abilitati"],"❌"],
+    [["scadenza"],"⏳"]
+  ];
+
+  for(const [words,emoji] of rules){
+    if(words.some(w=>t.includes(w)))return emoji;
+  }
+  return "⚽";
+}
+
+function uiEmptyEmoji(text=""){
+  const t=String(text).toLowerCase();
+  if(t.includes("infortun"))return "🩹";
+  if(t.includes("squalif"))return "🟥";
+  if(t.includes("multa")||t.includes("quota"))return "💰";
+  if(t.includes("partit"))return "⚽";
+  if(t.includes("allenament"))return "🏃";
+  if(t.includes("calciator")||t.includes("rosa"))return "👥";
+  if(t.includes("evento"))return "📅";
+  return "⚽";
+}
+
+function decorateManagerialUI(root=document){
+  if(!root?.querySelectorAll)return;
+
+  root.querySelectorAll(".page-title h1").forEach(h=>{
+    if(h.dataset.uiDecorated)return;
+    const emoji=uiSectionEmoji(h.textContent);
+    if(emoji){
+      const span=document.createElement("span");
+      span.className="ui-title-icon";
+      span.textContent=emoji;
+      h.prepend(span);
+    }
+    h.dataset.uiDecorated="1";
+  });
+
+  root.querySelectorAll(".card .stat-label").forEach(label=>{
+    const card=label.closest(".card");
+    if(!card||card.dataset.uiKpiDecorated)return;
+    card.classList.add("manager-kpi-card");
+    card.dataset.uiIcon=uiStatEmoji(label.textContent);
+    card.dataset.uiKpiDecorated="1";
+  });
+
+  root.querySelectorAll(".card h2,.card h3").forEach(h=>{
+    if(h.dataset.uiDecorated)return;
+    const emoji=uiSectionEmoji(h.textContent);
+    if(emoji){
+      const span=document.createElement("span");
+      span.className="ui-heading-icon";
+      span.textContent=emoji;
+      h.prepend(span);
+    }
+    h.dataset.uiDecorated="1";
+  });
+
+  root.querySelectorAll(".empty").forEach(el=>{
+    if(el.dataset.uiEmptyDecorated)return;
+    el.classList.add("manager-empty");
+    el.dataset.uiIcon=uiEmptyEmoji(el.textContent);
+    el.dataset.uiEmptyDecorated="1";
+  });
+
+  root.querySelectorAll(".list-item").forEach(el=>{
+    el.classList.add("manager-record");
+  });
+}
+
+let managerialUiObserver=null;
+let managerialUiQueued=false;
+
+function scheduleManagerialUIDecoration(){
+  if(managerialUiQueued)return;
+  managerialUiQueued=true;
+
+  requestAnimationFrame(()=>{
+    managerialUiQueued=false;
+    decorateManagerialUI(document);
+  });
+}
+
+function startManagerialUIDecorator(){
+  decorateManagerialUI(document);
+
+  if(managerialUiObserver)return;
+
+  managerialUiObserver=new MutationObserver(()=>{
+    scheduleManagerialUIDecoration();
+  });
+
+  managerialUiObserver.observe(document.body,{
+    childList:true,
+    subtree:true
+  });
+}
+
+
 /* =========================================================
    AVVIO
 ========================================================= */
@@ -11722,6 +12742,7 @@ supabase.auth.onAuthStateChange((event,session)=>{
   if(event==="SIGNED_OUT"){resetTeamBranding();renderLogin()}
   state.session=session;
 });
+startManagerialUIDecorator();
 boot();
 </script>
 </body>
