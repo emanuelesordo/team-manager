@@ -4693,6 +4693,34 @@
         text-overflow:ellipsis;
       }
     }
+
+    /* 046 — radio button uniformi alle checkbox */
+    input[type="radio"]{
+      width:15px!important;
+      height:15px!important;
+      min-width:15px!important;
+      min-height:15px!important;
+      margin:0!important;
+      padding:0!important;
+      vertical-align:middle!important;
+      accent-color:var(--team-accent)!important;
+      flex:0 0 15px!important;
+    }
+    label:has(> input[type="radio"]),
+    .radio,
+    .radio-option{
+      align-items:center!important;
+    }
+    @media(max-width:900px){
+      input[type="radio"]{
+        width:14px!important;
+        height:14px!important;
+        min-width:14px!important;
+        min-height:14px!important;
+        flex-basis:14px!important;
+      }
+    }
+
 </style>
 </head>
 <body>
