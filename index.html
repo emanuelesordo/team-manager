@@ -6560,6 +6560,7 @@ const navItems=()=>{
     ["matches","Partite","⚽",can("matches.view")],
     ["competitions","Competizioni","🏆",can("competitions.view")],
     ["roster","Rosa","👥",can("roster.view")],
+    ["captain","Capitano","🅲",audience!=="fan"&&(can("captain_election.manage")||can("captain_election.vote"))],
     ["absences","Assenze","🚑",audience!=="fan"&&(can("absences.view_own")||can("absences.view_all"))],
     ["opponents","Avversarie","🆚",audience!=="fan"&&can("opponents.view")],
     ["venues","Campi","🏟️",audience!=="fan"&&can("venues.view")],
@@ -6817,6 +6818,7 @@ async function openNotifications(){
 
         if(type==="player_unavailability")return route("absences");
         if(type==="membership_fee"||type==="fine")return route("cash");
+        if(type==="captain_election")return route("captain");
         if(type==="event"&&el.dataset.notificationEntityId){
           return openEventDetail(el.dataset.notificationEntityId);
         }
@@ -6852,7 +6854,7 @@ async function route(path,push=true){
 
   const requestedPage=page||"dashboard";
   const fanBlockedPages=new Set([
-    "trainings","absences","opponents","venues","medical","cash","admin",
+    "trainings","captain","absences","opponents","venues","medical","cash","admin",
     "discipline","fines","injuries"
   ]);
 
@@ -6873,6 +6875,7 @@ async function route(path,push=true){
     matches:pageMatches,
     competitions:pageCompetitions,
     roster:pageRoster,
+    captain:pageCaptainElection,
     absences:pageAbsences,
     opponents:pageOpponents,
     venues:pageVenues,
@@ -7098,6 +7101,38 @@ function wireDashboardLinks(){
   });
 }
 
+async function openDashboardApprovalItem(item,player){
+  const name=`${player?.last_name||""} ${player?.first_name||""}`.trim()||"Calciatore";
+  if(item.type==="medical"){
+    showModal(`🩺 Approva visita · ${name}`,`
+      <div class="dashboard-direct-summary">
+        <div><div class="muted">Visita dichiarata</div><strong>${fmtDate(item.declared_issued_date)}</strong></div>
+        <div><div class="muted">Scadenza dichiarata</div><strong>${fmtDate(item.declared_expires_on)}</strong></div>
+        <div><div class="muted">Scadenza ufficiale attuale</div><strong>${item.official_expires_on?fmtDate(item.official_expires_on):"—"}</strong></div>
+      </div>
+      <div class="section-note">La data dichiarata resta separata dai dati ufficiali finché non viene validata. Se la data visita è futura non potrà essere approvata in anticipo.</div>
+      <div style="height:10px"></div>
+      <div class="actions"><button class="btn btn-primary" id="approval-medical-ok">Approva</button><button class="btn btn-danger" id="approval-medical-no">Rifiuta</button></div>
+    `,root=>{
+      $('#approval-medical-ok',root).onclick=async()=>{try{await must(supabase.rpc('review_self_reported_medical',{p_team_id:state.team.id,p_season_id:state.season.id,p_player_id:item.player_id,p_action:'approve',p_note:null}));closeModal();toast('Visita approvata','ok');pageDashboardStaff();}catch(err){toast(err.message,'error')}};
+      $('#approval-medical-no',root).onclick=async()=>{const note=prompt('Motivo del rifiuto (facoltativo)','');try{await must(supabase.rpc('review_self_reported_medical',{p_team_id:state.team.id,p_season_id:state.season.id,p_player_id:item.player_id,p_action:'reject',p_note:note||null}));closeModal();toast('Dichiarazione rifiutata','ok');pageDashboardStaff();}catch(err){toast(err.message,'error')}};
+    });
+    return;
+  }
+
+  const isFee=item.type==="fee";
+  showModal(`${isFee?'💳 Quota':'💸 Multa'} · ${name}`,`
+    <div class="dashboard-direct-summary"><div><div class="muted">Voce</div><strong>${esc(item.title||'Pagamento')}</strong></div><div><div class="muted">Importo</div><strong>€ ${Number(item.amount||0).toFixed(2)}</strong></div><div><div class="muted">Segnalazione</div><strong>Pagamento dichiarato</strong></div></div>
+    <div style="height:10px"></div><div class="actions"><button class="btn btn-primary" id="approval-payment-ok">Approva</button><button class="btn btn-danger" id="approval-payment-no">Rifiuta</button></div>
+  `,root=>{
+    const rpc=isFee?'review_fee_payment_report':'review_fine_payment_report';
+    const idKey=isFee?'p_fee_id':'p_fine_id';
+    const review=async action=>{const note=action==='reject'?prompt('Motivo del rifiuto (facoltativo)',''):null;try{await must(supabase.rpc(rpc,{[idKey]:item.entity_id,p_action:action,p_note:note||null}));closeModal();toast(action==='approve'?'Pagamento approvato':'Segnalazione rifiutata','ok');pageDashboardStaff();}catch(err){toast(err.message,'error')}};
+    $('#approval-payment-ok',root).onclick=()=>review('approve');
+    $('#approval-payment-no',root).onclick=()=>review('reject');
+  });
+}
+
 async function pageDashboardStaff(){
   const now=new Date();
   const nowIso=now.toISOString();
@@ -7106,7 +7141,7 @@ async function pageDashboardStaff(){
 
   const ctx=await dashboardRosterContext();
 
-  const [teamRows,events,medicalRows,feeRows,absenceRows,injuryRows]=await Promise.all([
+  const [teamRows,events,medicalRows,feeRows,absenceRows,injuryRows,approvalState]=await Promise.all([
     must(
       supabase.from("v_team_season_stats")
         .select("*")
@@ -7161,7 +7196,10 @@ async function pageDashboardStaff(){
             .in("status",["active","recovering"])
             .order("injury_date")
         )
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    isStaffAudience()
+      ? must(supabase.rpc("get_dashboard_pending_approvals",{p_team_id:state.team.id,p_season_id:state.season.id}))
+      : Promise.resolve({medical:[],fees:[],fines:[],total:0})
   ]);
 
   const team=teamRows[0]||{};
@@ -7171,8 +7209,13 @@ async function pageDashboardStaff(){
     if(!latestMedical.has(x.player_id))latestMedical.set(x.player_id,x);
   });
 
+  const approvalItems=[...(approvalState?.medical||[]),...(approvalState?.fees||[]),...(approvalState?.fines||[])];
+  const pendingMedicalApprovalPlayers=new Set((approvalState?.medical||[]).map(x=>x.player_id));
+  const pendingPaymentApprovalPlayers=new Set([...(approvalState?.fees||[]),...(approvalState?.fines||[])].map(x=>x.player_id));
+
   const medicalAlerts=can("medical.view_all")
     ? ctx.roster.map(p=>{
+        if(pendingMedicalApprovalPlayers.has(p.id))return null;
         const exam=latestMedical.get(p.id);
 
         if(!exam)return {...p,kind:"missing",days:-999,expires_on:null};
@@ -7189,17 +7232,20 @@ async function pageDashboardStaff(){
       }).filter(Boolean).sort((a,b)=>a.days-b.days)
     : [];
 
-  const feeAlerts=feeRows.map(x=>({
-    ...x,
-    player:ctx.playerMap.get(x.player_id),
-    overdue:x.due_date<todayKey
-  }));
+  const feeAlerts=feeRows
+    .filter(x=>x.payment_report_status!=="reported")
+    .map(x=>({
+      ...x,
+      player:ctx.playerMap.get(x.player_id),
+      overdue:x.due_date<todayKey
+    }));
 
   const absences=[
     ...absenceRows.map(x=>({
       player_id:x.player_id,
       start_date:x.start_date,
       end_date:x.end_date,
+      absence_type:x.absence_type,
       label:absenceTypeLabel(x.absence_type),
       reason:x.reason||""
     })),
@@ -7207,6 +7253,7 @@ async function pageDashboardStaff(){
       player_id:x.player_id,
       start_date:x.injury_date,
       end_date:x.expected_return||x.actual_return||null,
+      absence_type:"injury",
       label:"Infortunio",
       reason:x.public_summary||""
     }))
@@ -7214,9 +7261,12 @@ async function pageDashboardStaff(){
     .filter(x=>!x.end_date||x.end_date>=todayKey)
     .sort((a,b)=>a.start_date.localeCompare(b.start_date));
 
-  const currentUnavailable=new Set(
-    absences
-      .filter(x=>x.start_date<=todayKey&&(!x.end_date||x.end_date>=todayKey))
+  const currentAbsences=absences.filter(x=>x.start_date<=todayKey&&(!x.end_date||x.end_date>=todayKey));
+  const currentUnavailable=new Set(currentAbsences.map(x=>x.player_id));
+  const criticalUnavailable=new Set(
+    currentAbsences
+      .filter(x=>!(x.absence_type==="medical_missing"&&pendingMedicalApprovalPlayers.has(x.player_id)))
+      .filter(x=>!(x.absence_type==="fee_overdue"&&pendingPaymentApprovalPlayers.has(x.player_id)))
       .map(x=>x.player_id)
   );
 
@@ -7231,7 +7281,7 @@ async function pageDashboardStaff(){
   const criticalPlayerIds=new Set([
     ...medicalAlerts.map(x=>x.id),
     ...feeAlerts.filter(x=>x.overdue).map(x=>x.player_id),
-    ...currentUnavailable
+    ...criticalUnavailable
   ]);
   const criticalCount=criticalPlayerIds.size;
 
@@ -7256,10 +7306,12 @@ async function pageDashboardStaff(){
       icon:"👥",
       label:"Disponibilità",
       route:"absences",
-      ok:currentUnavailable.size===0,
-      detail:currentUnavailable.size
-        ?`${currentUnavailable.size} indisponibili oggi`
-        :`${ctx.roster.length} disponibili`
+      ok:criticalUnavailable.size===0,
+      detail:criticalUnavailable.size
+        ?`${criticalUnavailable.size} indisponibili oggi`
+        : currentUnavailable.size
+          ?`${currentUnavailable.size} in attesa di approvazione`
+          :`${ctx.roster.length} disponibili`
     }
   ];
 
@@ -7310,6 +7362,27 @@ async function pageDashboardStaff(){
             `).join("")}
           </div>
         </div>
+
+        ${approvalItems.length?`
+          <div class="card dashboard-panel dashboard-approval-card">
+            <div class="card-head"><h3>⏳ Da approvare</h3><span class="badge yellow">${approvalItems.length}</span></div>
+            <div class="dashboard-panel-list">
+              ${approvalItems.map(item=>{
+                const p=ctx.playerMap.get(item.player_id);
+                const meta=item.type==="medical"
+                  ? `Visita dichiarata · scad. ${fmtDate(item.declared_expires_on)}`
+                  : item.type==="fee"
+                    ? `${item.title} · € ${Number(item.amount||0).toFixed(2)}`
+                    : `${item.title||"Multa"} · € ${Number(item.amount||0).toFixed(2)}`;
+                return `<div class="dashboard-approval-row" data-dashboard-approval-type="${item.type}" data-dashboard-approval-id="${item.entity_id}">
+                  <span class="dashboard-approval-icon">${item.type==="medical"?"🩺":item.type==="fee"?"💳":"💸"}</span>
+                  <div><strong>${esc(p?.last_name||"")} <span style="font-weight:400">${esc(p?.first_name||"")}</span></strong><div class="muted">${esc(meta)}</div></div>
+                  <span class="badge yellow">verifica</span>
+                </div>`;
+              }).join("")}
+            </div>
+          </div>
+        `:""}
 
         <div class="card dashboard-panel">
           <div class="card-head"><h3>🩺 Visite</h3><span class="badge ${medicalAlerts.some(x=>x.kind!=="expiring")?"red":""}">${medicalAlerts.length}</span></div>
@@ -7381,6 +7454,10 @@ async function pageDashboardStaff(){
   wireDashboardLinks();
   $$('[data-dashboard-medical-player]').forEach(el=>el.onclick=e=>{e.stopPropagation();openDashboardMedicalPlayer(el.dataset.dashboardMedicalPlayer)});
   $$('[data-dashboard-fee-player]').forEach(el=>el.onclick=e=>{e.stopPropagation();openDashboardFeePlayer(el.dataset.dashboardFeePlayer)});
+  $$('[data-dashboard-approval-type]').forEach(el=>el.onclick=()=>{
+    const item=approvalItems.find(x=>x.type===el.dataset.dashboardApprovalType&&String(x.entity_id)===String(el.dataset.dashboardApprovalId));
+    if(item)openDashboardApprovalItem(item,ctx.playerMap.get(item.player_id));
+  });
 }
 
 async function pageDashboardPlayer(){
@@ -8639,6 +8716,251 @@ async function openRosterImport(){
 }
 
 /* =========================================================
+   CAPITANO — VOTAZIONE SEGRETA / GERARCHIA
+========================================================= */
+function captainMethodLabel(method){
+  return method==="score_sum"?"Somma dei voti 1–10":"Numero di prime scelte";
+}
+function captainRankBadge(rank){
+  if(Number(rank)===1)return `<span class="captain-mini-badge">C</span>`;
+  if(Number(rank)===2)return `<span class="captain-mini-badge vice">VC</span>`;
+  return `<span class="badge">#${rank}</span>`;
+}
+
+async function openCaptainElectionSetup(){
+  try{
+    const [players,history,genericRows]=await Promise.all([
+      must(supabase.from("players").select("id,first_name,last_name,photo_url").eq("team_id",state.team.id).order("last_name")),
+      must(supabase.rpc("get_season_roster_history",{p_team_id:state.team.id,p_season_id:state.season.id})),
+      must(supabase.rpc("get_roster_generic_roles",{p_team_id:state.team.id,p_season_id:state.season.id}))
+    ]);
+    const activeIds=new Set(history.filter(x=>x.roster_status==="active"&&today()>=x.start_date&&today()<=(x.actual_end_date||x.planned_end_date)).map(x=>x.player_id));
+    const active=players.filter(p=>activeIds.has(p.id));
+    const gm=new Map(genericRows.map(x=>[x.player_id,x.generic_role_code||null]));
+
+    showModal("Apri votazione capitano",`
+      <form id="captain-election-open-form">
+        <div class="section-note">
+          🔒 La modalità viene fissata <strong>prima</strong> dell'apertura. I voti dei singoli calciatori non saranno consultabili da staff o compagni.
+        </div>
+        <div style="height:10px"></div>
+        <div class="field"><label>Titolo</label><input id="ce-title" value="Elezione capitano ${esc(state.season.name)}"></div>
+        <div class="grid grid-2">
+          <label class="captain-method-card active" data-captain-method-card="first_choice">
+            <input type="radio" name="captain-method" value="first_choice" checked>
+            <strong>🥇 Prime scelte</strong>
+            <span class="muted">Capitano chi riceve più posizioni #1. Somma voti e media vengono usate come spareggio.</span>
+          </label>
+          <label class="captain-method-card" data-captain-method-card="score_sum">
+            <input type="radio" name="captain-method" value="score_sum">
+            <strong>⭐ Somma voti</strong>
+            <span class="muted">Gerarchia determinata dalla somma dei voti 1–10. Le prime scelte restano visibili nello spoglio.</span>
+          </label>
+        </div>
+        <div style="height:10px"></div>
+        <div class="card-head"><div><h3>Candidati</h3><div class="muted">Seleziona volontari e altri giocatori che ritieni adatti.</div></div><span class="badge" id="ce-selected-count">0</span></div>
+        <div class="captain-candidate-picker">
+          ${active.map(p=>`<div class="captain-candidate-pick">
+            <input type="checkbox" data-ce-candidate="${p.id}">
+            <div>${playerListIdentity(p,gm.get(p.id),{avatar:false})}</div>
+            <label class="check"><input type="checkbox" data-ce-volunteer="${p.id}" disabled> volontario</label>
+          </div>`).join("")||`<div class="empty">Nessun calciatore attivo</div>`}
+        </div>
+        <div style="height:12px"></div>
+        <button class="btn btn-primary">Apri votazione</button>
+      </form>
+    `,root=>{
+      root.closest('.modal').style.width='min(820px,100%)';
+      const refreshCount=()=>{
+        const n=$$('[data-ce-candidate]:checked',root).length;
+        $('#ce-selected-count',root).textContent=String(n);
+      };
+      $$('[data-ce-candidate]',root).forEach(ch=>ch.onchange=()=>{
+        const vol=$(`[data-ce-volunteer="${ch.dataset.ceCandidate}"]`,root);
+        if(vol){vol.disabled=!ch.checked;if(!ch.checked)vol.checked=false;}
+        refreshCount();
+      });
+      $$('input[name="captain-method"]',root).forEach(r=>r.onchange=()=>{
+        $$('[data-captain-method-card]',root).forEach(card=>card.classList.toggle('active',card.dataset.captainMethodCard===r.value&&r.checked));
+      });
+      $('#captain-election-open-form',root).onsubmit=async e=>{
+        e.preventDefault();
+        const selected=$$('[data-ce-candidate]:checked',root);
+        if(selected.length<2){toast('Seleziona almeno due candidati','error');return;}
+        const candidates=selected.map(ch=>({
+          player_id:ch.dataset.ceCandidate,
+          volunteered:!!$(`[data-ce-volunteer="${ch.dataset.ceCandidate}"]`,root)?.checked
+        }));
+        try{
+          await must(supabase.rpc('open_captain_election',{
+            p_team_id:state.team.id,
+            p_season_id:state.season.id,
+            p_evaluation_method:$('input[name="captain-method"]:checked',root).value,
+            p_candidates:candidates,
+            p_title:$('#ce-title',root).value.trim()||null
+          }));
+          closeModal();toast('Votazione capitano aperta','ok');pageCaptainElection();
+        }catch(err){toast(err.message,'error')}
+      };
+      refreshCount();
+    });
+  }catch(err){toast(err.message,'error')}
+}
+
+function renderCaptainBallotEditor(container,electionState){
+  const candidates=electionState.candidates||[];
+  const saved=electionState.own_ballot||[];
+  const savedMap=new Map(saved.map(x=>[x.player_id,x]));
+  let ranked=saved.length
+    ? saved.slice().sort((a,b)=>a.rank-b.rank).map(x=>x.player_id)
+    : candidates.map(x=>x.player_id);
+  let excluded=candidates.map(x=>x.player_id).filter(id=>!ranked.includes(id));
+  const scores=new Map(saved.map(x=>[x.player_id,Number(x.score)]));
+  const candidateMap=new Map(candidates.map(x=>[x.player_id,x]));
+  let dragged=null;
+
+  const cardName=c=>`${esc(c.last_name)} <span style="font-weight:400">${esc(c.first_name)}</span>${c.is_self?` <span class="badge">tu</span>`:""}${c.volunteered?` <span class="badge green">volontario</span>`:""}`;
+
+  const rerender=()=>{
+    container.innerHTML=`
+      <div class="section-note">🔒 Il voto è segreto. Ordina chi ritieni adatto dal primo all'ultimo, sposta negli esclusi chi non ritieni idoneo e assegna un voto 1–10 a ogni giocatore mantenuto in classifica.</div>
+      <div style="height:9px"></div>
+      <div class="captain-ballot-board">
+        <section class="captain-ballot-column">
+          <div class="captain-ballot-head"><strong>🏆 La mia classifica</strong><span class="badge">${ranked.length}</span></div>
+          <div class="captain-ballot-list" data-captain-vote-drop="ranked">
+            ${ranked.map((id,idx)=>{
+              const c=candidateMap.get(id); const score=scores.get(id)||0;
+              return `<div class="captain-vote-card" draggable="true" data-captain-vote-player="${id}">
+                <span class="captain-rank-number">${idx+1}</span>
+                <div><strong>${cardName(c)}</strong></div>
+                <div class="captain-score-buttons">${Array.from({length:10},(_,i)=>i+1).map(v=>`<button type="button" class="btn ${score===v?'active':''}" data-captain-score="${id}" data-score="${v}">${v}</button>`).join('')}</div>
+                <div class="captain-card-actions">
+                  <button type="button" class="btn btn-sm" data-captain-up="${id}" ${idx===0?'disabled':''}>↑</button>
+                  <button type="button" class="btn btn-sm" data-captain-down="${id}" ${idx===ranked.length-1?'disabled':''}>↓</button>
+                  <button type="button" class="btn btn-sm btn-ghost" data-captain-exclude="${id}">×</button>
+                </div>
+              </div>`;
+            }).join('')||`<div class="empty">Trascina qui almeno un candidato</div>`}
+          </div>
+        </section>
+        <section class="captain-ballot-column">
+          <div class="captain-ballot-head"><strong>○ Esclusi</strong><span class="badge">${excluded.length}</span></div>
+          <div class="captain-ballot-list" data-captain-vote-drop="excluded">
+            ${excluded.map(id=>{const c=candidateMap.get(id);return `<div class="captain-excluded-card" draggable="true" data-captain-vote-player="${id}"><div><strong>${cardName(c)}</strong></div><button type="button" class="btn btn-sm" data-captain-include="${id}">← includi</button></div>`;}).join('')||`<div class="empty">Nessun escluso</div>`}
+          </div>
+        </section>
+      </div>
+      <div style="height:10px"></div>
+      <div class="actions"><button class="btn btn-primary" type="button" id="captain-submit-secret-vote">🔒 ${electionState.has_voted?'Aggiorna voto segreto':'Invia voto segreto'}</button>${electionState.has_voted?`<span class="badge green">Voto già salvato · modificabile finché la votazione è aperta</span>`:""}</div>
+    `;
+
+    $$('[data-captain-score]',container).forEach(b=>b.onclick=()=>{scores.set(b.dataset.captainScore,Number(b.dataset.score));rerender();});
+    $$('[data-captain-up]',container).forEach(b=>b.onclick=()=>{const i=ranked.indexOf(b.dataset.captainUp);if(i>0){[ranked[i-1],ranked[i]]=[ranked[i],ranked[i-1]];rerender();}});
+    $$('[data-captain-down]',container).forEach(b=>b.onclick=()=>{const i=ranked.indexOf(b.dataset.captainDown);if(i>=0&&i<ranked.length-1){[ranked[i+1],ranked[i]]=[ranked[i],ranked[i+1]];rerender();}});
+    $$('[data-captain-exclude]',container).forEach(b=>b.onclick=()=>{const id=b.dataset.captainExclude;ranked=ranked.filter(x=>x!==id);if(!excluded.includes(id))excluded.push(id);rerender();});
+    $$('[data-captain-include]',container).forEach(b=>b.onclick=()=>{const id=b.dataset.captainInclude;excluded=excluded.filter(x=>x!==id);if(!ranked.includes(id))ranked.push(id);rerender();});
+
+    $$('[data-captain-vote-player]',container).forEach(card=>{
+      card.addEventListener('dragstart',e=>{dragged=card.dataset.captainVotePlayer;card.classList.add('dragging');e.dataTransfer?.setData('text/plain',dragged);});
+      card.addEventListener('dragend',()=>{card.classList.remove('dragging');$$('[data-captain-vote-drop]',container).forEach(x=>x.classList.remove('drag-over'));dragged=null;});
+      card.addEventListener('dragover',e=>e.preventDefault());
+      card.addEventListener('drop',e=>{
+        e.preventDefault();e.stopPropagation();
+        const id=dragged||e.dataTransfer?.getData('text/plain');
+        const target=card.dataset.captainVotePlayer;
+        if(!id||id===target)return;
+        ranked=ranked.filter(x=>x!==id);excluded=excluded.filter(x=>x!==id);
+        const ti=ranked.indexOf(target);
+        if(ti>=0)ranked.splice(ti,0,id);else excluded.splice(Math.max(0,excluded.indexOf(target)),0,id);
+        rerender();
+      });
+    });
+    $$('[data-captain-vote-drop]',container).forEach(zone=>{
+      zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');});
+      zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
+      zone.addEventListener('drop',e=>{
+        e.preventDefault();zone.classList.remove('drag-over');
+        const id=dragged||e.dataTransfer?.getData('text/plain');if(!id)return;
+        ranked=ranked.filter(x=>x!==id);excluded=excluded.filter(x=>x!==id);
+        if(zone.dataset.captainVoteDrop==='ranked')ranked.push(id);else excluded.push(id);
+        rerender();
+      });
+    });
+    $('#captain-submit-secret-vote',container)?.addEventListener('click',async()=>{
+      if(!ranked.length){toast('Mantieni almeno un candidato in classifica','error');return;}
+      const missing=ranked.filter(id=>!scores.get(id));
+      if(missing.length){toast('Assegna un voto da 1 a 10 a tutti i candidati in classifica','error');return;}
+      try{
+        await must(supabase.rpc('submit_captain_ballot',{
+          p_election_id:electionState.election.id,
+          p_choices:ranked.map((id,idx)=>({player_id:id,rank:idx+1,score:scores.get(id)}))
+        }));
+        toast('Voto segreto salvato','ok');pageCaptainElection();
+      }catch(err){toast(err.message,'error')}
+    });
+  };
+  rerender();
+}
+
+async function pageCaptainElection(){
+  try{
+    const data=await must(supabase.rpc('get_captain_election_state',{p_team_id:state.team.id,p_season_id:state.season.id}));
+    const election=data.election;
+    const results=data.results||[];
+    const podium=results.slice(0,3);
+
+    renderShell('Capitano',`
+      <div class="page-title">
+        <div><h1>Capitano</h1><p>Votazione segreta dei calciatori e gerarchia C / VC della stagione.</p></div>
+        <div class="actions">${data.can_manage&&(!election||election.status==='closed')?`<button class="btn btn-primary" id="captain-new-election">＋ Nuova votazione</button>`:""}</div>
+      </div>
+
+      ${sectionKpis([
+        {icon:'🗳️',value:election?election.status:'—',label:'Votazione'},
+        {icon:'👥',value:data.eligible_count||0,label:'Calciatori abilitati'},
+        {icon:'✉️',value:data.ballot_count||0,label:'Schede consegnate'},
+        {icon:'⚖️',value:election?captainMethodLabel(election.evaluation_method):'—',label:'Criterio'}
+      ])}
+
+      ${!election?`
+        <div class="card"><div class="empty">${data.can_manage?'Nessuna votazione aperta. Puoi crearne una selezionando i candidati e il criterio di spoglio.':'Nessuna votazione capitano disponibile.'}</div></div>
+      `:''}
+
+      ${election&&election.status==='open'?`
+        <div class="card captain-election-hero">
+          <div><h2>${esc(election.title)}</h2><div class="muted">Aperta ${fmtDateTime(election.opened_at)} · criterio: <strong>${esc(captainMethodLabel(election.evaluation_method))}</strong></div></div>
+          ${data.can_manage?`<div class="actions"><button class="btn btn-primary" id="captain-close-election">Chiudi e fai lo spoglio</button><button class="btn btn-danger" id="captain-cancel-election">Annulla</button></div>`:''}
+        </div>
+        ${data.can_manage?`<div class="card"><div class="card-head"><h3>Candidati</h3><span class="badge">${data.ballot_count}/${data.eligible_count} schede</span></div><div class="list">${(data.candidates||[]).map(c=>`<div class="list-item"><strong>${esc(c.last_name)} <span style="font-weight:400">${esc(c.first_name)}</span></strong>${c.volunteered?`<span class="badge green">volontario</span>`:''}</div>`).join('')}</div><div class="section-note" style="margin-top:8px">🔒 Lo staff vede soltanto il numero totale di schede consegnate, mai chi ha votato né come.</div></div><div style="height:10px"></div>`:''}
+        ${data.can_vote?`<div class="card"><div class="card-head"><h2>La mia scheda</h2><span class="badge">segreta</span></div><div id="captain-ballot-editor"></div></div>`:''}
+      `:''}
+
+      ${election&&election.status==='closed'?`
+        <div class="card captain-election-hero"><div><h2>Spoglio anonimo</h2><div class="muted">Gerarchia calcolata con: <strong>${esc(captainMethodLabel(election.evaluation_method))}</strong></div></div><span class="badge green">${data.ballot_count} schede</span></div>
+        <div class="captain-podium">
+          ${podium.map(r=>`<div class="card"><div class="podium-rank">${captainRankBadge(r.hierarchy_rank)}</div><div class="podium-name">${esc(r.last_name)} ${esc(r.first_name)}</div><div class="muted">${r.first_choice_count} prime scelte · ${r.score_sum} punti</div></div>`).join('')}
+        </div>
+        <div class="card"><div class="table-wrap"><table class="table captain-results-table"><thead><tr><th>#</th><th>Calciatore</th><th>Prime scelte</th><th>Somma voti</th><th>Media</th><th>Voti ricevuti</th></tr></thead><tbody>${results.map(r=>`<tr><td class="rank-cell">${captainRankBadge(r.hierarchy_rank)}</td><td><strong>${esc(r.last_name)}</strong> ${esc(r.first_name)}</td><td>${r.first_choice_count}</td><td>${r.score_sum}</td><td>${Number(r.score_average||0).toFixed(2)}</td><td>${r.scored_ballots}</td></tr>`).join('')}</tbody></table></div></div>
+      `:''}
+    `);
+
+    $('#captain-new-election')?.addEventListener('click',openCaptainElectionSetup);
+    $('#captain-close-election')?.addEventListener('click',async()=>{
+      if(!confirm('Chiudere la votazione? Dopo lo spoglio le schede non saranno più modificabili.'))return;
+      try{await must(supabase.rpc('close_captain_election',{p_election_id:election.id}));toast('Spoglio completato','ok');pageCaptainElection();}catch(err){toast(err.message,'error')}
+    });
+    $('#captain-cancel-election')?.addEventListener('click',async()=>{
+      if(!confirm('Annullare questa votazione e tutte le schede raccolte?'))return;
+      try{await must(supabase.rpc('cancel_captain_election',{p_election_id:election.id}));toast('Votazione annullata','ok');pageCaptainElection();}catch(err){toast(err.message,'error')}
+    });
+    if(election?.status==='open'&&data.can_vote){
+      const target=$('#captain-ballot-editor');if(target)renderCaptainBallotEditor(target,data);
+    }
+  }catch(err){toast(err.message,'error')}
+}
+
+/* =========================================================
    ROSA / CALCIATORI / CONTRATTI
 ========================================================= */
 async function pageRoster(){
@@ -8652,7 +8974,9 @@ async function pageRoster(){
     genericRoles,
     statusIndicators,
     nextSeasonRows,
-    myLinkRequests
+    myLinkRequests,
+    captainHierarchyRows,
+    activeAbsenceRows
   ]=await Promise.all([
     must(supabase.from("players").select("*").eq("team_id",state.team.id).order("last_name")),
     must(supabase.rpc("get_season_roster_history",{p_team_id:state.team.id,p_season_id:state.season.id})),
@@ -8660,7 +8984,9 @@ async function pageRoster(){
     must(supabase.rpc("get_roster_generic_roles",{p_team_id:state.team.id,p_season_id:state.season.id})),
     must(supabase.rpc("get_roster_status_indicators",{p_team_id:state.team.id,p_season_id:state.season.id,p_at:today()})),
     must(supabase.rpc("get_roster_next_season_status",{p_team_id:state.team.id,p_season_id:state.season.id})),
-    must(supabase.from("player_link_requests").select("*").eq("team_id",state.team.id).eq("profile_id",state.profile.id).order("requested_at",{ascending:false}))
+    must(supabase.from("player_link_requests").select("*").eq("team_id",state.team.id).eq("profile_id",state.profile.id).order("requested_at",{ascending:false})),
+    must(supabase.rpc("get_current_captain_hierarchy",{p_team_id:state.team.id,p_season_id:state.season.id,p_at:today()})),
+    must(supabase.rpc("get_roster_active_absence_types",{p_team_id:state.team.id,p_season_id:state.season.id,p_at:today()}))
   ]);
 
   const linkedSelf=players.find(p=>p.profile_id===state.profile.id)||null;
@@ -8707,6 +9033,8 @@ async function pageRoster(){
 
   const gmap=new Map(genericRoles.map(x=>[x.player_id,x]));
   const simap=new Map(statusIndicators.map(x=>[x.player_id,x]));
+  const captainMap=new Map(captainHierarchyRows.map(x=>[x.player_id,Number(x.effective_rank)]));
+  const absenceTypesMap=new Map(activeAbsenceRows.map(x=>[x.player_id,x.absence_types||[]]));
   const nextMap=new Map();
   nextSeasonRows.forEach(row=>{
     if(!nextMap.has(row.player_id))nextMap.set(row.player_id,row);
@@ -8733,13 +9061,16 @@ async function pageRoster(){
       severity+=50;
     }
 
-    const absence=absenceSignal(indicator?.absence_type);
-    if(absence){
-      signals.push(signalHtml(absence.icon,absence.label));
-      severity+=40;
-    }
+    const absenceTypes=[...new Set(absenceTypesMap.get(p.id)||[indicator?.absence_type].filter(Boolean))];
+    absenceTypes.forEach(type=>{
+      const absence=absenceSignal(type);
+      if(absence){
+        signals.push(signalHtml(absence.icon,absence.label));
+        severity+=40;
+      }
+    });
 
-    if(indicator?.financial_pending && indicator?.absence_type!=="fee_overdue"){
+    if(indicator?.financial_pending && !absenceTypes.includes("fee_overdue")){
       signals.push(signalHtml("💰","Multa o pagamento scaduto"));
       severity+=30;
     }
@@ -8794,7 +9125,7 @@ async function pageRoster(){
     }
 
     return {
-      p,last,active,roles,generic,indicator,next,signals,associationAction,medicalExpiry,selfReportedMedicalExpiry,age,
+      p,last,active,roles,generic,indicator,next,signals,associationAction,medicalExpiry,selfReportedMedicalExpiry,age,captainRank:captainMap.get(p.id)||null,
       sort:{
         generic:generic.generic_role_code||"Z",
         name:`${p.last_name} ${p.first_name}`,
@@ -8823,7 +9154,7 @@ async function pageRoster(){
   const showPreferred=!fanOnly;
 
   const rows=data.map(row=>{
-    const {p,last,active,roles,generic,next,signals,associationAction,medicalExpiry,selfReportedMedicalExpiry,age}=row;
+    const {p,last,active,roles,generic,next,signals,associationAction,medicalExpiry,selfReportedMedicalExpiry,age,captainRank}=row;
     const genericCode=generic.generic_role_code||"—";
     const genericTitle=generic.generic_role_code
       ? `${genericRoleLabel(generic.generic_role_code)}${generic.source==="manual"?" · generico manuale":" · predominante"}`
@@ -8840,6 +9171,7 @@ async function pageRoster(){
           <span>
             <span class="roster-surname">${esc(p.last_name)}</span>
             <span class="roster-firstname"> ${esc(p.first_name)}</span>
+            ${captainRank===1?`<span class="captain-mini-badge" title="Capitano">C</span>`:captainRank===2?`<span class="captain-mini-badge vice" title="Vice capitano">VC</span>`:""}
           </span>
         </div>
       </td>
@@ -12571,7 +12903,7 @@ async function applyLiveDrop(matchId,d,draggedId,targetType,targetValue,targetPl
   const dragged=map.get(String(draggedId));
   if(!dragged)return;
   const target=targetPlayerId?map.get(String(targetPlayerId)):null;
-  const defaultRow=(p)=>({match_id:matchId,player_id:p.player_id,called_up:true,starter:!!p.starter,starting_position_id:p.starting_position_id||null,shirt_number:p.shirt_number||null,captain:!!p.captain});
+  const defaultRow=(p)=>({match_id:matchId,player_id:p.player_id,called_up:true,starter:!!p.starter,starting_position_id:p.starting_position_id||null,shirt_number:p.shirt_number||null,captain:!!p.starter&&!!p.captain,vice_captain:!!p.starter&&!!p.vice_captain});
   const reportAllowed=matchCanReportEvents(d.m.status);
 
   if(targetType==='bench'){
@@ -12887,7 +13219,7 @@ async function pageMatch(id){
   const m=await must(supabase.from("matches").select("*").eq("id",id).single());
   const ev=await must(supabase.from("events").select("*").eq("id",m.event_id).single());
 
-  const [callupRoster,positions,scoreRows,opponents,competitions,genericRows,selfReports]=await Promise.all([
+  const [callupRoster,positions,scoreRows,opponents,competitions,genericRows,selfReports,captainHierarchyRows]=await Promise.all([
     must(supabase.rpc("get_match_callup_roster",{p_match_id:id})),
     must(supabase.from("football_positions").select("*").eq("active",true).order("sort_order")),
     must(supabase.from("v_match_score").select("*").eq("match_id",id)),
@@ -12901,7 +13233,8 @@ async function pageMatch(id){
             .eq("event_id",m.event_id)
             .in("status",["absent","late"])
         )
-      : Promise.resolve([])
+      : Promise.resolve([]),
+    must(supabase.rpc("get_current_captain_hierarchy",{p_team_id:state.team.id,p_season_id:state.season.id,p_at:(ev.start_at?localDateKey(ev.start_at):today())}))
   ]);
   const genericMap=new Map(genericRows.map(x=>[x.player_id,x.generic_role_code||null]));
   const score=scoreRows[0]||{goals_for:0,goals_against:0};
@@ -12911,6 +13244,13 @@ async function pageMatch(id){
   const unavailable=callupRoster.filter(p=>!p.available);
   const called=available.filter(p=>p.called_up);
   const excluded=available.filter(p=>!p.called_up);
+  const starters=called.filter(p=>p.starter);
+  const starterIds=new Set(starters.map(p=>p.player_id));
+  const hierarchyStarters=captainHierarchyRows.filter(h=>starterIds.has(h.player_id)).sort((a,b)=>Number(a.hierarchy_rank)-Number(b.hierarchy_rank));
+  const currentCaptain=starters.find(p=>p.captain)||null;
+  const currentViceCaptain=starters.find(p=>p.vice_captain)||null;
+  const suggestedCaptainId=currentCaptain?.player_id||hierarchyStarters[0]?.player_id||"";
+  const suggestedViceId=currentViceCaptain?.player_id||hierarchyStarters.find(h=>h.player_id!==suggestedCaptainId)?.player_id||"";
   const pmMap=new Map(callupRoster.map(x=>[x.player_id,{...x}]));
   const meetingAt=m.meeting_at||ev.start_at;
   const callupsLocked=Date.now()>=new Date(meetingAt).getTime();
@@ -13000,12 +13340,19 @@ async function pageMatch(id){
     <div style="height:14px"></div>
     <div class="grid grid-2">
       <div class="card">
-        <div class="card-head"><h2>Formazione</h2></div>
+        <div class="card-head"><h2>Formazione</h2>${captainHierarchyRows.length?`<span class="badge">gerarchia capitani attiva</span>`:""}</div>
+        ${can("lineup.manage")&&starters.length>=2?`
+          <div class="captain-assignment-box">
+            <div class="field"><label>Capitano proposto</label><select id="match-captain-select">${starters.map(p=>`<option value="${p.player_id}" ${p.player_id===suggestedCaptainId?'selected':''}>${esc(p.last_name)} ${esc(p.first_name)}</option>`).join('')}</select></div>
+            <div class="field"><label>Vice capitano proposto</label><select id="match-vice-captain-select">${starters.map(p=>`<option value="${p.player_id}" ${p.player_id===suggestedViceId?'selected':''}>${esc(p.last_name)} ${esc(p.first_name)}</option>`).join('')}</select></div>
+            <button class="btn btn-sm btn-primary" id="save-match-captains">Salva C / VC</button>
+          </div>
+        `:starters.length?`<div class="section-note">Definisci almeno due titolari per ricevere la proposta automatica di capitano e vice.</div>`:""}
         <div class="table-wrap">
           <table class="table">
             <thead><tr><th>Convocato</th><th>Titolare</th><th>Ruolo iniziale</th></tr></thead>
             <tbody>
-              ${called.map(p=>`<tr><td>${playerListIdentity(p,genericMap.get(p.player_id),{avatar:false})}</td><td><input type="checkbox" data-start="${p.player_id}" ${p.starter?'checked':''} ${can("lineup.manage")?"":"disabled"}></td><td><select data-pos="${p.player_id}" ${can("lineup.manage")?"":"disabled"}><option value="">—</option>${positions.map(x=>`<option value="${x.id}" ${p.starting_position_id===x.id?'selected':''}>${esc(x.code)}</option>`).join('')}</select></td></tr>`).join('')||`<tr><td colspan="3">Nessun convocato</td></tr>`}
+              ${called.map(p=>`<tr><td>${playerListIdentity(p,genericMap.get(p.player_id),{avatar:false})}${p.captain?`<span class="captain-mini-badge">C</span>`:p.vice_captain?`<span class="captain-mini-badge vice">VC</span>`:""}</td><td><input type="checkbox" data-start="${p.player_id}" ${p.starter?'checked':''} ${can("lineup.manage")?"":"disabled"}></td><td><select data-pos="${p.player_id}" ${can("lineup.manage")?"":"disabled"}><option value="">—</option>${positions.map(x=>`<option value="${x.id}" ${p.starting_position_id===x.id?'selected':''}>${esc(x.code)}</option>`).join('')}</select></td></tr>`).join('')||`<tr><td colspan="3">Nessun convocato</td></tr>`}
             </tbody>
           </table>
         </div>
@@ -13037,9 +13384,18 @@ async function pageMatch(id){
 
   wireCallupDnD(id,can('callups.manage')&&!callupsLocked);
 
+  $('#save-match-captains')?.addEventListener('click',async()=>{
+    const c=$('#match-captain-select')?.value;
+    const vc=$('#match-vice-captain-select')?.value;
+    if(!c||!vc){toast('Seleziona capitano e vice','error');return;}
+    if(c===vc){toast('Capitano e vice devono essere due giocatori diversi','error');return;}
+    try{await must(supabase.rpc('set_match_captains',{p_match_id:id,p_captain_player_id:c,p_vice_captain_player_id:vc}));toast('Capitano e vice salvati','ok');pageMatch(id);}catch(err){toast(err.message,'error')}
+  });
+
   async function saveLineup(pid,patch){
     const cur=pmMap.get(pid); if(!cur)return;
-    const row={ match_id:id, player_id:pid, called_up:true, starter:patch.starter??cur.starter??false, starting_position_id:patch.starting_position_id!==undefined?patch.starting_position_id:cur.starting_position_id, shirt_number:cur.shirt_number||null, captain:false };
+    const nextStarter=patch.starter??cur.starter??false;
+    const row={ match_id:id, player_id:pid, called_up:true, starter:nextStarter, starting_position_id:patch.starting_position_id!==undefined?patch.starting_position_id:cur.starting_position_id, shirt_number:cur.shirt_number||null, captain:nextStarter?!!cur.captain:false, vice_captain:nextStarter?!!cur.vice_captain:false };
     await must(supabase.from('match_players').upsert(row,{onConflict:'match_id,player_id'}));
     pmMap.set(pid,{...cur,...row});
   }
@@ -13716,7 +14072,7 @@ function absenceTypeLabel(type){
 function absenceSignal(type){
   return ({
     travel:{icon:"✈️",label:"In viaggio"},
-    work:{icon:"💼",label:"Impegno di lavoro"},
+    work:{icon:"🧳",label:"Impegno di lavoro"},
     family:{icon:"👪",label:"Impegno familiare"},
     undeclared:{icon:"✖️",label:"Assenza non motivata"},
     fee_overdue:{icon:"💰",label:"Quota scaduta non pagata"},
