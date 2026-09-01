@@ -4730,6 +4730,15 @@
       }
     }
 
+
+    .captain-deadline-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}
+    .captain-deadline-badge{white-space:nowrap}
+    .captain-results-empty{padding:18px;text-align:center;color:var(--muted)}
+    @media(max-width:700px){
+      .captain-deadline-row{grid-template-columns:1fr}
+      .captain-deadline-badge{justify-self:start}
+    }
+
 </style>
 </head>
 <body>
@@ -9249,6 +9258,15 @@ async function openCaptainElectionSetup(){
         </div>
         <div style="height:10px"></div>
         <div class="field"><label>Titolo</label><input id="ce-title" value="Elezione capitano ${esc(state.season.name)}"></div>
+        <div class="captain-deadline-row">
+          <div class="field">
+            <label>Chiusura votazione</label>
+            <input id="ce-closes-at" type="datetime-local" min="${toDatetimeLocal(new Date().toISOString())}" required>
+          </div>
+          <span class="badge captain-deadline-badge">⏱️ spoglio automatico</span>
+        </div>
+        <div class="section-note">Alla data e ora indicate la votazione viene chiusa e viene generata automaticamente la classifica finale. Dopo la scadenza non è più possibile modificare la scheda.</div>
+        <div style="height:10px"></div>
         <div class="grid grid-2">
           <label class="captain-method-card active" data-captain-method-card="first_choice">
             <input type="radio" name="captain-method" value="first_choice" checked>
@@ -9291,6 +9309,9 @@ async function openCaptainElectionSetup(){
         e.preventDefault();
         const selected=$$('[data-ce-candidate]:checked',root);
         if(selected.length<2){toast('Seleziona almeno due candidati','error');return;}
+        const closeValue=$('#ce-closes-at',root).value;
+        if(!closeValue){toast('Indica data e ora di chiusura','error');return;}
+        if(new Date(closeValue).getTime()<=Date.now()){toast('La chiusura deve essere futura','error');return;}
         const candidates=selected.map(ch=>({
           player_id:ch.dataset.ceCandidate,
           volunteered:!!$(`[data-ce-volunteer="${ch.dataset.ceCandidate}"]`,root)?.checked
@@ -9301,7 +9322,8 @@ async function openCaptainElectionSetup(){
             p_season_id:state.season.id,
             p_evaluation_method:$('input[name="captain-method"]:checked',root).value,
             p_candidates:candidates,
-            p_title:$('#ce-title',root).value.trim()||null
+            p_title:$('#ce-title',root).value.trim()||null,
+            p_closes_at:new Date($('#ce-closes-at',root).value).toISOString()
           }));
           closeModal();toast('Votazione capitano aperta','ok');pageCaptainElection();
         }catch(err){toast(err.message,'error')}
@@ -9433,25 +9455,38 @@ async function pageCaptainElection(){
 
       ${election&&election.status==='open'?`
         <div class="card captain-election-hero">
-          <div><h2>${esc(election.title)}</h2><div class="muted">Aperta ${fmtDateTime(election.opened_at)} · criterio: <strong>${esc(captainMethodLabel(election.evaluation_method))}</strong></div></div>
-          ${data.can_manage?`<div class="actions"><button class="btn btn-primary" id="captain-close-election">Chiudi e fai lo spoglio</button><button class="btn btn-danger" id="captain-cancel-election">Annulla</button></div>`:''}
+          <div>
+            <h2>${esc(election.title)}</h2>
+            <div class="muted">Aperta ${fmtDateTime(election.opened_at)} · criterio: <strong>${esc(captainMethodLabel(election.evaluation_method))}</strong></div>
+            ${election.closes_at?`<div style="margin-top:4px"><span class="badge yellow">⏱️ Chiusura automatica ${fmtDateTime(election.closes_at)}</span></div>`:''}
+          </div>
+          ${data.can_manage?`<div class="actions"><button class="btn btn-primary" id="captain-close-election">Chiudi ora e fai lo spoglio</button><button class="btn btn-danger" id="captain-cancel-election">Annulla</button></div>`:''}
         </div>
         ${data.can_manage?`<div class="card"><div class="card-head"><h3>Candidati</h3><span class="badge">${data.ballot_count}/${data.eligible_count} schede</span></div><div class="list">${(data.candidates||[]).map(c=>`<div class="list-item"><strong>${esc(c.last_name)} <span style="font-weight:400">${esc(c.first_name)}</span></strong>${c.volunteered?`<span class="badge green">volontario</span>`:''}</div>`).join('')}</div><div class="section-note" style="margin-top:8px">🔒 Lo staff vede soltanto il numero totale di schede consegnate, mai chi ha votato né come.</div></div><div style="height:10px"></div>`:''}
         ${data.can_vote?`<div class="card"><div class="card-head"><h2>La mia scheda</h2><span class="badge">segreta</span></div><div id="captain-ballot-editor"></div></div>`:''}
       `:''}
 
       ${election&&election.status==='closed'?`
-        <div class="card captain-election-hero"><div><h2>Spoglio anonimo</h2><div class="muted">Gerarchia calcolata con: <strong>${esc(captainMethodLabel(election.evaluation_method))}</strong></div></div><span class="badge green">${data.ballot_count} schede</span></div>
-        <div class="captain-podium">
-          ${podium.map(r=>`<div class="card"><div class="podium-rank">${captainRankBadge(r.hierarchy_rank)}</div><div class="podium-name">${esc(r.last_name)} ${esc(r.first_name)}</div><div class="muted">${r.first_choice_count} prime scelte · ${r.score_sum} punti</div></div>`).join('')}
+        <div class="card captain-election-hero">
+          <div>
+            <h2>Spoglio anonimo</h2>
+            <div class="muted">Gerarchia calcolata con: <strong>${esc(captainMethodLabel(election.evaluation_method))}</strong></div>
+            <div class="muted">Conclusa ${election.closed_at?fmtDateTime(election.closed_at):'—'}${election.closes_at?` · scadenza prevista ${fmtDateTime(election.closes_at)}`:''}</div>
+          </div>
+          <span class="badge green">${data.ballot_count} schede</span>
         </div>
-        <div class="card"><div class="table-wrap"><table class="table captain-results-table"><thead><tr><th>#</th><th>Calciatore</th><th>Prime scelte</th><th>Somma voti</th><th>Media</th><th>Voti ricevuti</th></tr></thead><tbody>${results.map(r=>`<tr><td class="rank-cell">${captainRankBadge(r.hierarchy_rank)}</td><td><strong>${esc(r.last_name)}</strong> ${esc(r.first_name)}</td><td>${r.first_choice_count}</td><td>${r.score_sum}</td><td>${Number(r.score_average||0).toFixed(2)}</td><td>${r.scored_ballots}</td></tr>`).join('')}</tbody></table></div></div>
+        ${results.length?`
+          <div class="captain-podium">
+            ${podium.map(r=>`<div class="card"><div class="podium-rank">${captainRankBadge(r.hierarchy_rank)}</div><div class="podium-name">${esc(r.last_name)} ${esc(r.first_name)}</div><div class="muted">${r.first_choice_count} prime scelte · ${r.score_sum} punti</div></div>`).join('')}
+          </div>
+          <div class="card"><div class="table-wrap"><table class="table captain-results-table"><thead><tr><th>#</th><th>Calciatore</th><th>Prime scelte</th><th>Somma voti</th><th>Media</th><th>Voti ricevuti</th></tr></thead><tbody>${results.map(r=>`<tr><td class="rank-cell">${captainRankBadge(r.hierarchy_rank)}</td><td><strong>${esc(r.last_name)}</strong> ${esc(r.first_name)}</td><td>${r.first_choice_count}</td><td>${r.score_sum}</td><td>${Number(r.score_average||0).toFixed(2)}</td><td>${r.scored_ballots}</td></tr>`).join('')}</tbody></table></div></div>
+        `:`<div class="card captain-results-empty">Nessuna scheda valida consegnata entro la chiusura: non è stata generata una gerarchia.</div>`}
       `:''}
     `);
 
     $('#captain-new-election')?.addEventListener('click',openCaptainElectionSetup);
     $('#captain-close-election')?.addEventListener('click',async()=>{
-      if(!confirm('Chiudere la votazione? Dopo lo spoglio le schede non saranno più modificabili.'))return;
+      if(!confirm('Chiudere subito la votazione? La scadenza programmata verrà anticipata e le schede non saranno più modificabili.'))return;
       try{await must(supabase.rpc('close_captain_election',{p_election_id:election.id}));toast('Spoglio completato','ok');pageCaptainElection();}catch(err){toast(err.message,'error')}
     });
     $('#captain-cancel-election')?.addEventListener('click',async()=>{
@@ -9460,6 +9495,21 @@ async function pageCaptainElection(){
     });
     if(election?.status==='open'&&data.can_vote){
       const target=$('#captain-ballot-editor');if(target)renderCaptainBallotEditor(target,data);
+    }
+
+    if(state.captainCloseTimer){
+      clearTimeout(state.captainCloseTimer);
+      state.captainCloseTimer=null;
+    }
+    if(election?.status==='open'&&election.closes_at){
+      const remaining=new Date(election.closes_at).getTime()-Date.now();
+      if(remaining<=0){
+        setTimeout(()=>pageCaptainElection(),500);
+      }else if(remaining<2147480000){
+        state.captainCloseTimer=setTimeout(()=>{
+          if(state.currentPage==='captain')pageCaptainElection();
+        },remaining+750);
+      }
     }
   }catch(err){toast(err.message,'error')}
 }
