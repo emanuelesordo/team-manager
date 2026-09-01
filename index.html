@@ -4027,6 +4027,208 @@
       .training-record{grid-template-columns:42px 38px 20px minmax(0,1fr)}
     }
 
+
+    /* =====================================================
+       041 — Home operativa + convocazioni drag & drop
+    ===================================================== */
+    .dashboard-staff-layout{
+      flex:1;
+      min-height:0;
+      display:grid;
+      grid-template-columns:minmax(255px,1.05fr) minmax(235px,.9fr) minmax(370px,1.45fr);
+      gap:8px;
+      overflow:hidden;
+    }
+    .dashboard-staff-column{
+      min-height:0;
+      display:grid;
+      gap:8px;
+      overflow:hidden;
+    }
+    .dashboard-staff-column.left{grid-template-rows:auto minmax(0,1fr) minmax(0,1fr)}
+    .dashboard-staff-column.middle{grid-template-rows:minmax(0,1.15fr) minmax(0,.85fr)}
+    .dashboard-staff-column.events{grid-template-rows:minmax(0,1.35fr) minmax(0,.85fr) minmax(0,.85fr)}
+    .dashboard-health-static .dashboard-panel-list{
+      overflow:visible!important;
+      flex:none!important;
+    }
+    .dashboard-health-static .dashboard-health-line{
+      min-height:44px;
+    }
+    .dashboard-player-row{
+      cursor:pointer;
+    }
+    .dashboard-player-row:hover{
+      background:var(--team-accent-soft);
+    }
+    .dashboard-event-compact{
+      grid-template-columns:42px minmax(0,1fr) auto!important;
+      gap:7px!important;
+      min-height:40px;
+      padding:4px 2px!important;
+    }
+    .dashboard-event-compact .dashboard-event-date{
+      min-width:40px;
+      width:40px;
+      text-align:center;
+      border:1px solid var(--ui-line-soft);
+      border-radius:8px;
+      padding:4px 2px;
+      background:var(--panel2);
+    }
+    .dashboard-event-compact .dashboard-event-date strong{font-size:.78rem!important}
+    .dashboard-event-compact .dashboard-event-date span{font-size:.52rem!important}
+    .dashboard-event-compact .dashboard-mini-title{
+      font-size:clamp(.66rem,.72vw,.76rem)!important;
+      font-weight:800;
+    }
+    .dashboard-event-compact .dashboard-mini-meta{
+      font-size:clamp(.52rem,.57vw,.61rem)!important;
+      margin-top:1px;
+    }
+    .dashboard-event-time{
+      font-weight:900;
+      white-space:nowrap;
+      font-size:clamp(.64rem,.69vw,.73rem)!important;
+    }
+    .dashboard-events-card .dashboard-panel-list{overflow-y:auto}
+
+    .dashboard-direct-modal .modal{width:min(680px,100%)}
+    .dashboard-direct-summary{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:6px;
+      margin:8px 0;
+    }
+    .dashboard-direct-summary > div{
+      padding:7px;
+      border:1px solid var(--ui-line-soft);
+      border-radius:8px;
+      background:var(--panel2);
+    }
+
+    .callup-dnd-board{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+      gap:8px;
+      align-items:start;
+    }
+    .callup-dnd-column,
+    .callup-unavailable-column{
+      min-width:0;
+      border:1px solid var(--ui-line-soft);
+      border-radius:10px;
+      background:var(--panel2);
+      overflow:hidden;
+    }
+    .callup-dnd-head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding:7px 8px;
+      border-bottom:1px solid var(--ui-line-soft);
+      background:rgba(255,255,255,.025);
+    }
+    .callup-dnd-list{
+      min-height:120px;
+      max-height:340px;
+      overflow-y:auto;
+      padding:5px;
+      display:grid;
+      gap:4px;
+    }
+    .callup-dnd-list.drag-over{
+      outline:2px solid var(--team-accent);
+      outline-offset:-3px;
+      background:var(--team-accent-soft);
+    }
+    .callup-dnd-player{
+      display:grid;
+      grid-template-columns:auto minmax(0,1fr) auto;
+      align-items:center;
+      gap:6px;
+      min-height:34px;
+      padding:5px 6px;
+      border:1px solid var(--ui-line-soft);
+      border-radius:8px;
+      background:var(--ui-record-bg);
+      cursor:grab;
+      user-select:none;
+    }
+    .callup-dnd-player:active{cursor:grabbing}
+    .callup-dnd-player.dragging{opacity:.45}
+    .callup-dnd-name{
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:clamp(.64rem,.7vw,.74rem)!important;
+    }
+    .callup-dnd-meta{
+      color:var(--muted);
+      font-size:.54rem!important;
+      margin-top:1px;
+    }
+    .callup-dnd-role{
+      min-width:24px;
+      height:22px;
+      padding:0 5px;
+      border-radius:6px;
+      display:grid;
+      place-items:center;
+      font-size:.54rem!important;
+      font-weight:900;
+      background:var(--team-accent-soft);
+      color:var(--team-primary);
+    }
+    .callup-move-btn{
+      min-width:26px!important;
+      width:26px!important;
+      height:25px!important;
+      padding:0!important;
+      display:grid!important;
+      place-items:center!important;
+      font-size:.68rem!important;
+    }
+    .callup-unavailable-wrap{margin-top:8px}
+    .callup-unavailable-list{
+      max-height:190px;
+      overflow-y:auto;
+      padding:5px;
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:4px;
+    }
+    .callup-unavailable-item{
+      padding:6px;
+      border:1px solid rgba(239,68,68,.18);
+      border-radius:8px;
+      background:rgba(127,29,29,.08);
+    }
+    .callup-unavailable-item .muted{font-size:.55rem!important}
+
+    @media(max-width:1180px) and (min-width:901px){
+      .dashboard-staff-layout{
+        grid-template-columns:minmax(250px,1fr) minmax(330px,1.35fr);
+      }
+      .dashboard-staff-column.middle{display:none}
+    }
+    @media(max-width:900px){
+      .dashboard-staff-layout{
+        display:grid;
+        grid-template-columns:1fr;
+        overflow:visible;
+      }
+      .dashboard-staff-column{display:grid!important;grid-template-rows:none!important;overflow:visible}
+      .dashboard-health-static{max-height:none!important}
+      .dashboard-staff-column.events .dashboard-panel{max-height:245px}
+      .callup-dnd-board{grid-template-columns:1fr}
+      .callup-dnd-list{max-height:250px}
+      .callup-unavailable-list{grid-template-columns:1fr;max-height:220px}
+      .dashboard-direct-summary{grid-template-columns:1fr}
+    }
+
 </style>
 </head>
 <body>
@@ -6766,22 +6968,120 @@ function dashboardBirthdayRows(roster){
     .sort((a,b)=>a.days-b.days);
 }
 
+function dashboardShortPlace(location){
+  const raw=String(location||"").trim();
+  if(!raw)return "";
+  const dot=raw.split("·")[0]?.trim();
+  if(dot&&dot.length<=42)return dot;
+  const comma=raw.split(",")[0]?.trim();
+  return (comma||dot||raw).slice(0,42);
+}
 function dashboardEventRecord(e,icon="📌"){
   const d=calendarDateParts(e.start_at);
+  const place=dashboardShortPlace(e.location);
   return `
-    <div class="dashboard-mini-record" data-dashboard-event="${e.id}" role="button" tabindex="0">
+    <div class="dashboard-mini-record dashboard-event-compact" data-dashboard-event="${e.id}" role="button" tabindex="0">
       <div class="dashboard-event-date">
         <strong>${d.day}</strong>
         <span>${d.month}</span>
       </div>
       <div>
         <div class="dashboard-mini-title">${icon} ${esc(e.title||eventTypeLabel(e.event_type))}</div>
-        <div class="muted dashboard-mini-meta">
-          <strong>${d.time}</strong>${e.location?` · ${esc(e.location)}`:""}
-        </div>
+        <div class="muted dashboard-mini-meta">${place?esc(place):esc(eventTypeLabel(e.event_type))}</div>
       </div>
+      <div class="dashboard-event-time">${d.time}</div>
     </div>
   `;
+}
+
+async function openDashboardMedicalPlayer(playerId){
+  try{
+    const [player,exams,appointments,allPlayers]=await Promise.all([
+      must(supabase.from("players").select("id,first_name,last_name,photo_url").eq("id",playerId).single()),
+      must(supabase.from("medical_examinations").select("*").eq("team_id",state.team.id).eq("player_id",playerId).order("issued_date",{ascending:false}).limit(5)),
+      must(supabase.from("medical_appointments").select("*").eq("team_id",state.team.id).eq("player_id",playerId).order("scheduled_for",{ascending:true})),
+      must(supabase.from("players").select("id,first_name,last_name").eq("team_id",state.team.id).order("last_name"))
+    ]);
+    const exam=exams.find(x=>x.issued_date<=today())||exams[0]||null;
+    const appointment=appointments.find(x=>x.status==="scheduled")||null;
+    const status=medicalStatus(exam);
+    const due=appointment&&appointment.scheduled_for<=today();
+    showModal(`🩺 ${player.last_name} ${player.first_name}`,`
+      <div class="dashboard-direct-summary">
+        <div><div class="muted">Stato</div><strong>${esc(status.label)}</strong></div>
+        <div><div class="muted">Scadenza valida</div><strong>${exam?fmtDate(exam.expires_on):"—"}</strong></div>
+        <div><div class="muted">Prossima visita</div><strong>${appointment?fmtDate(appointment.scheduled_for):"—"}</strong></div>
+      </div>
+      ${exam?`<div class="section-note">Ultima visita: ${fmtDate(exam.issued_date)} · scadenza ${fmtDate(exam.expires_on)}</div>`:`<div class="section-note">Nessuna visita medica valida registrata.</div>`}
+      <div style="height:10px"></div>
+      <div class="actions">
+        ${can("medical.manage")?`<button class="btn btn-primary" id="dash-med-schedule">${appointment?"Riprogramma visita":"Programma visita"}</button>`:""}
+        ${can("medical.manage")&&appointment&&due?`<button class="btn" id="dash-med-approve">Approva svolta</button><button class="btn btn-danger" id="dash-med-missed">Non svolta</button>`:""}
+        ${can("medical.manage")&&appointment&&!due?`<button class="btn btn-ghost" id="dash-med-cancel">Annulla appuntamento</button>`:""}
+      </div>
+    `,root=>{
+      root.closest('.modal')?.classList.add('dashboard-direct-modal');
+      $('#dash-med-schedule',root)?.addEventListener('click',()=>{
+        closeModal();
+        openMedicalScheduleModal(allPlayers,playerId,appointment,()=>pageDashboardStaff());
+      });
+      $('#dash-med-approve',root)?.addEventListener('click',()=>{
+        closeModal();
+        openMedicalApprovalModal(appointment,allPlayers,()=>pageDashboardStaff());
+      });
+      $('#dash-med-missed',root)?.addEventListener('click',async()=>{
+        if(!confirm('Confermi che la visita programmata non è stata svolta?'))return;
+        try{
+          await must(supabase.rpc('resolve_medical_appointment',{p_appointment_id:appointment.id,p_result:'missed',p_actual_date:null,p_provider:null,p_certificate_number:null,p_notes:'Visita non svolta come programmato'}));
+          closeModal();toast('Visita segnata come non svolta','ok');pageDashboardStaff();
+        }catch(err){toast(err.message,'error')}
+      });
+      $('#dash-med-cancel',root)?.addEventListener('click',async()=>{
+        if(!confirm('Annullare la visita programmata?'))return;
+        try{
+          await must(supabase.rpc('resolve_medical_appointment',{p_appointment_id:appointment.id,p_result:'cancelled',p_actual_date:null,p_provider:null,p_certificate_number:null,p_notes:'Appuntamento annullato'}));
+          closeModal();toast('Visita programmata annullata','ok');pageDashboardStaff();
+        }catch(err){toast(err.message,'error')}
+      });
+    });
+  }catch(err){toast(err.message,'error')}
+}
+
+async function openDashboardFeePlayer(playerId){
+  try{
+    const [player,fees,assignment,plans]=await Promise.all([
+      must(supabase.from('players').select('id,first_name,last_name').eq('id',playerId).single()),
+      must(supabase.from('membership_fees').select('*').eq('team_id',state.team.id).eq('season_id',state.season.id).eq('player_id',playerId).neq('status','cancelled').order('due_date')),
+      must(supabase.from('player_fee_plan_assignments').select('*').eq('team_id',state.team.id).eq('season_id',state.season.id).eq('player_id',playerId)),
+      must(supabase.from('season_fee_plans').select('*').eq('team_id',state.team.id).eq('season_id',state.season.id).eq('active',true))
+    ]);
+    const now=today();
+    const pending=fees.filter(x=>x.status==='pending');
+    const overdue=pending.filter(x=>x.due_date&&x.due_date<now);
+    const paid=fees.filter(x=>x.status==='paid').reduce((a,x)=>a+Number(x.amount||0),0);
+    const due=pending.reduce((a,x)=>a+Number(x.amount||0),0);
+    const mode=assignment[0]?.payment_mode||'';
+    showModal(`💳 ${player.last_name} ${player.first_name}`,`
+      <div class="dashboard-direct-summary">
+        <div><div class="muted">Modalità</div><strong>${mode==='installments'?'Dilazionato':mode==='single'?'Una tantum':'—'}</strong></div>
+        <div><div class="muted">Da pagare</div><strong>€ ${due.toFixed(2)}</strong></div>
+        <div><div class="muted">Incassato</div><strong>€ ${paid.toFixed(2)}</strong></div>
+      </div>
+      <div class="list">
+        ${fees.map(x=>{
+          const reported=x.payment_report_status==='reported';
+          const isOverdue=x.status==='pending'&&x.due_date&&x.due_date<now;
+          const stateLabel=x.status==='paid'?'✅ pagata':x.status==='waived'?'abbuonata':reported?'⏳ in verifica':isOverdue?'⚠️ scaduta':'da pagare';
+          return `<div class="list-item"><div><strong>${esc(x.title)}</strong><div class="muted">${x.due_date?fmtDate(x.due_date):'—'} · € ${Number(x.amount||0).toFixed(2)} · ${stateLabel}</div></div><div class="actions">${can('fees.manage')&&reported?`<button class="btn btn-sm btn-primary" data-dash-fee-review="${x.id}" data-action="approve">Approva</button><button class="btn btn-sm btn-danger" data-dash-fee-review="${x.id}" data-action="reject">Rifiuta</button>`:''}${can('fees.manage')&&x.status==='pending'&&!reported?`<button class="btn btn-sm" data-dash-fee-paid="${x.id}">Pagata</button><button class="btn btn-sm btn-ghost" data-dash-fee-waive="${x.id}">Abbuona</button>`:''}</div></div>`;
+        }).join('')||`<div class="empty">Nessuna quota generata per questo calciatore.</div>`}
+      </div>
+    `,root=>{
+      root.closest('.modal')?.classList.add('dashboard-direct-modal');
+      $$('[data-dash-fee-paid]',root).forEach(b=>b.onclick=async()=>{try{await must(supabase.from('membership_fees').update({status:'paid',paid_at:new Date().toISOString()}).eq('id',b.dataset.dashFeePaid));closeModal();toast('Quota segnata pagata','ok');pageDashboardStaff()}catch(err){toast(err.message,'error')}});
+      $$('[data-dash-fee-waive]',root).forEach(b=>b.onclick=async()=>{try{await must(supabase.from('membership_fees').update({status:'waived'}).eq('id',b.dataset.dashFeeWaive));closeModal();toast('Quota abbuonata','ok');pageDashboardStaff()}catch(err){toast(err.message,'error')}});
+      $$('[data-dash-fee-review]',root).forEach(b=>b.onclick=async()=>{const action=b.dataset.action;const note=action==='reject'?prompt('Motivo del rifiuto (facoltativo)',''):null;try{await must(supabase.rpc('review_fee_payment_report',{p_fee_id:b.dataset.dashFeeReview,p_action:action,p_note:note||null}));closeModal();toast(action==='approve'?'Pagamento approvato':'Segnalazione rifiutata','ok');pageDashboardStaff()}catch(err){toast(err.message,'error')}});
+    });
+  }catch(err){toast(err.message,'error')}
 }
 
 function wireDashboardLinks(){
@@ -6963,8 +7263,8 @@ async function pageDashboardStaff(){
     }
   ];
 
-  const person=(p,meta,side="")=>`
-    <div class="dashboard-mini-record">
+  const person=(p,meta,side="",attrs="")=>`
+    <div class="dashboard-mini-record ${attrs?"dashboard-player-row":""}" ${attrs}>
       <div>
         <div class="dashboard-mini-title">${playerListIdentity(p,ctx.genericMap.get(p?.id),{avatar:false})}</div>
         <div class="muted dashboard-mini-meta">${esc(meta||"")}</div>
@@ -6991,101 +7291,87 @@ async function pageDashboardStaff(){
       <div class="card"><div class="stat">${team.wins||0}-${team.draws||0}-${team.losses||0}</div><div class="stat-label">V-N-P</div></div>
     </div>
 
-    <div class="dashboard-ops-grid">
-      <div class="card dashboard-panel dashboard-priority dashboard-staff-health ${criticalCount?"dashboard-status-alert":"dashboard-status-ok"}">
-        <div class="card-head">
-          <h3>${criticalCount?"⚠️ Stato squadra":"✅ Stato squadra"}</h3>
-          <span class="badge ${criticalCount?"red":"green"}">${criticalCount?"attenzione":"regolare"}</span>
-        </div>
-        <div class="dashboard-panel-list">
-          ${healthRows.map(x=>`
-            <div class="dashboard-health-line clickable-criticality" data-go="${x.route}">
-              <div class="dashboard-health-main">
-                <span class="dashboard-health-icon">${x.icon}</span>
-                <div>
-                  <strong>${esc(x.label)}</strong>
-                  <div class="muted">${esc(x.detail)}</div>
+    <div class="dashboard-staff-layout">
+      <div class="dashboard-staff-column left">
+        <div class="card dashboard-panel dashboard-priority dashboard-health-static ${criticalCount?"dashboard-status-alert":"dashboard-status-ok"}">
+          <div class="card-head">
+            <h3>${criticalCount?"⚠️ Stato squadra":"✅ Stato squadra"}</h3>
+            <span class="badge ${criticalCount?"red":"green"}">${criticalCount?"attenzione":"regolare"}</span>
+          </div>
+          <div class="dashboard-panel-list">
+            ${healthRows.map(x=>`
+              <div class="dashboard-health-line clickable-criticality" data-go="${x.route}">
+                <div class="dashboard-health-main">
+                  <span class="dashboard-health-icon">${x.icon}</span>
+                  <div><strong>${esc(x.label)}</strong><div class="muted">${esc(x.detail)}</div></div>
                 </div>
+                <span class="badge ${x.ok?"green":"red"}">${x.ok?"OK":"!"}</span>
               </div>
-              <span class="badge ${x.ok?"green":"red"}">${x.ok?"OK":"!"}</span>
-            </div>
-          `).join("")}
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="card dashboard-panel">
+          <div class="card-head"><h3>🩺 Visite</h3><span class="badge ${medicalAlerts.some(x=>x.kind!=="expiring")?"red":""}">${medicalAlerts.length}</span></div>
+          <div class="dashboard-panel-list">
+            ${medicalAlerts.map(p=>person(
+              p,
+              p.kind==="missing"?"Visita mancante":p.kind==="expired"?`Scaduta ${fmtDate(p.expires_on)}`:`Scade ${fmtDate(p.expires_on)}`,
+              p.kind==="expiring"?`<span class="badge yellow">${p.days} gg</span>`:`<span class="badge red">critica</span>`,
+              `data-dashboard-medical-player="${p.id}"`
+            )).join("")||`<div class="empty">✅ Nessuna criticità medica</div>`}
+          </div>
+        </div>
+
+        <div class="card dashboard-panel">
+          <div class="card-head"><h3>💳 Quote</h3><span class="badge ${feeAlerts.some(x=>x.overdue)?"red":""}">${feeAlerts.length}</span></div>
+          <div class="dashboard-panel-list">
+            ${feeAlerts.map(x=>person(
+              x.player,
+              `${x.title} · € ${Number(x.amount||0).toFixed(2)}`,
+              x.overdue?`<span class="badge red">scaduta</span>`:`<span class="badge yellow">${fmtDate(x.due_date)}</span>`,
+              `data-dashboard-fee-player="${x.player_id}"`
+            )).join("")||`<div class="empty">✅ Nessuna quota da attenzionare</div>`}
+          </div>
         </div>
       </div>
 
-      <div class="card dashboard-panel dashboard-priority dashboard-staff-agenda">
-        <div class="card-head">
-          <h3>📅 Agenda squadra</h3>
-          <button class="btn btn-sm btn-ghost" data-go="calendar">Calendario</button>
+      <div class="dashboard-staff-column middle">
+        <div class="card dashboard-panel">
+          <div class="card-head"><h3>🚑 Assenze</h3><span class="badge">${absences.length}</span></div>
+          <div class="dashboard-panel-list">
+            ${absences.map(x=>person(
+              ctx.playerMap.get(x.player_id),
+              `${x.label}${x.reason?` · ${x.reason}`:""}`,
+              x.start_date<=todayKey?`<span class="badge red">in corso</span>`:`<span class="badge">${fmtDate(x.start_date)}</span>`
+            )).join("")||`<div class="empty">✅ Nessuna assenza nei prossimi 7 giorni</div>`}
+          </div>
         </div>
-        <div class="dashboard-panel-list">
-          ${events.slice(0,14).map(e=>dashboardEventRecord(
-            e,
-            e.event_type==="match"?"⚽":
-            e.event_type==="training"?"🏃":
-            e.event_type==="meeting"?"🧑‍💼":
-            e.event_type==="social"?"🎉":"📌"
-          )).join("")||`<div class="empty">Nessun evento programmato</div>`}
+
+        <div class="card dashboard-panel">
+          <div class="card-head"><h3>🎂 Compleanni</h3><span class="badge">${birthdays.length}</span></div>
+          <div class="dashboard-panel-list">
+            ${birthdays.slice(0,10).map(p=>person(p,p.birth_date?fmtDate(p.birth_date):"",p.days===0?"oggi":p.days===1?"domani":`+${p.days} gg`)).join("")||`<div class="empty">Nessun compleanno nei prossimi 30 giorni</div>`}
+          </div>
         </div>
       </div>
 
-      <div class="card dashboard-panel dashboard-staff-quarter clickable-criticality" data-go="medical">
-        <div class="card-head"><h3>🩺 Visite</h3><span class="badge ${medicalAlerts.some(x=>x.kind!=="expiring")?"red":""}">${medicalAlerts.length}</span></div>
-        <div class="dashboard-panel-list">
-          ${medicalAlerts.map(p=>person(
-            p,
-            p.kind==="missing"?"Visita mancante":
-            p.kind==="expired"?`Scaduta ${fmtDate(p.expires_on)}`:
-            `Scade ${fmtDate(p.expires_on)}`,
-            p.kind==="expiring"?`<span class="badge yellow">${p.days} gg</span>`:`<span class="badge red">critica</span>`
-          )).join("")||`<div class="empty">✅ Nessuna criticità medica</div>`}
+      <div class="dashboard-staff-column events">
+        <div class="card dashboard-panel dashboard-events-card dashboard-priority">
+          <div class="card-head"><h3>📅 Agenda squadra</h3><button class="btn btn-sm btn-ghost" data-go="calendar">Calendario</button></div>
+          <div class="dashboard-panel-list">
+            ${events.slice(0,12).map(e=>dashboardEventRecord(e,e.event_type==="match"?"⚽":e.event_type==="training"?"🏃":e.event_type==="meeting"?"🧑‍💼":e.event_type==="social"?"🎉":"📌")).join("")||`<div class="empty">Nessun evento programmato</div>`}
+          </div>
         </div>
-      </div>
 
-      <div class="card dashboard-panel dashboard-staff-quarter clickable-criticality" data-go="cash">
-        <div class="card-head"><h3>💳 Quote</h3><span class="badge ${feeAlerts.some(x=>x.overdue)?"red":""}">${feeAlerts.length}</span></div>
-        <div class="dashboard-panel-list">
-          ${feeAlerts.map(x=>person(
-            x.player,
-            `${x.title} · € ${Number(x.amount||0).toFixed(2)}`,
-            x.overdue?`<span class="badge red">scaduta</span>`:`<span class="badge yellow">${fmtDate(x.due_date)}</span>`
-          )).join("")||`<div class="empty">✅ Nessuna quota da attenzionare</div>`}
+        <div class="card dashboard-panel dashboard-events-card">
+          <div class="card-head"><h3>⚽ Prossime partite</h3><button class="btn btn-sm btn-ghost" data-go="matches">Apri</button></div>
+          <div class="dashboard-panel-list">${eventsByType.match.slice(0,6).map(e=>dashboardEventRecord(e,"⚽")).join("")||`<div class="empty">Nessuna partita programmata</div>`}</div>
         </div>
-      </div>
 
-      <div class="card dashboard-panel dashboard-staff-quarter clickable-criticality" data-go="absences">
-        <div class="card-head"><h3>🚑 Assenze</h3><span class="badge">${absences.length}</span></div>
-        <div class="dashboard-panel-list">
-          ${absences.map(x=>person(
-            ctx.playerMap.get(x.player_id),
-            `${x.label}${x.reason?` · ${x.reason}`:""}`,
-            x.start_date<=todayKey?`<span class="badge red">in corso</span>`:`<span class="badge">${fmtDate(x.start_date)}</span>`
-          )).join("")||`<div class="empty">✅ Nessuna assenza nei prossimi 7 giorni</div>`}
-        </div>
-      </div>
-
-      <div class="card dashboard-panel dashboard-staff-quarter">
-        <div class="card-head"><h3>⚽ Prossime partite</h3><button class="btn btn-sm btn-ghost" data-go="matches">Apri</button></div>
-        <div class="dashboard-panel-list">
-          ${eventsByType.match.slice(0,8).map(e=>dashboardEventRecord(e,"⚽")).join("")||`<div class="empty">Nessuna partita programmata</div>`}
-        </div>
-      </div>
-
-      <div class="card dashboard-panel dashboard-staff-half">
-        <div class="card-head"><h3>🏃 Allenamenti</h3><button class="btn btn-sm btn-ghost" data-go="trainings">Apri</button></div>
-        <div class="dashboard-panel-list">
-          ${eventsByType.training.slice(0,8).map(e=>dashboardEventRecord(e,"🏃")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}
-        </div>
-      </div>
-
-      <div class="card dashboard-panel dashboard-staff-half">
-        <div class="card-head"><h3>🎂 Compleanni</h3><span class="badge">${birthdays.length}</span></div>
-        <div class="dashboard-panel-list">
-          ${birthdays.slice(0,8).map(p=>person(
-            p,
-            p.birth_date?fmtDate(p.birth_date):"",
-            p.days===0?"oggi":p.days===1?"domani":`+${p.days} gg`
-          )).join("")||`<div class="empty">Nessun compleanno nei prossimi 30 giorni</div>`}
+        <div class="card dashboard-panel dashboard-events-card">
+          <div class="card-head"><h3>🏃 Allenamenti</h3><button class="btn btn-sm btn-ghost" data-go="trainings">Apri</button></div>
+          <div class="dashboard-panel-list">${eventsByType.training.slice(0,6).map(e=>dashboardEventRecord(e,"🏃")).join("")||`<div class="empty">Nessun allenamento programmato</div>`}</div>
         </div>
       </div>
     </div>
@@ -7093,6 +7379,8 @@ async function pageDashboardStaff(){
 
   $(".shell")?.classList.add("dashboard-page");
   wireDashboardLinks();
+  $$('[data-dashboard-medical-player]').forEach(el=>el.onclick=e=>{e.stopPropagation();openDashboardMedicalPlayer(el.dataset.dashboardMedicalPlayer)});
+  $$('[data-dashboard-fee-player]').forEach(el=>el.onclick=e=>{e.stopPropagation();openDashboardFeePlayer(el.dataset.dashboardFeePlayer)});
 }
 
 async function pageDashboardPlayer(){
@@ -12556,6 +12844,44 @@ async function pageMatches(){
   });
 }
 
+function callupDndPlayerHtml(p,genericRole,bucket,editable){
+  const role=genericRole||"—";
+  const surname=esc(p.last_name||"");
+  const first=esc(p.first_name||"");
+  const move=bucket==='called'?'→':'←';
+  const title=bucket==='called'?'Sposta tra gli esclusi':'Convoca';
+  return `<div class="callup-dnd-player" draggable="${editable?'true':'false'}" data-callup-player="${p.player_id}" data-callup-bucket="${bucket}">
+    <span class="callup-dnd-role">${esc(role)}</span>
+    <div class="callup-dnd-name"><strong>${surname}</strong>${first?` ${first}`:''}<div class="callup-dnd-meta">${p.shirt_number?`#${p.shirt_number}`:'senza numero'}</div></div>
+    ${editable?`<button class="btn btn-sm callup-move-btn" type="button" data-callup-move="${p.player_id}" data-callup-target="${bucket==='called'?'excluded':'called'}" title="${title}">${move}</button>`:''}
+  </div>`;
+}
+function wireCallupDnD(matchId,editable){
+  if(!editable)return;
+  let dragged=null;
+  $$('[data-callup-player]').forEach(row=>{
+    row.addEventListener('dragstart',e=>{
+      dragged=row.dataset.callupPlayer;
+      row.classList.add('dragging');
+      e.dataTransfer?.setData('text/plain',dragged);
+      if(e.dataTransfer)e.dataTransfer.effectAllowed='move';
+    });
+    row.addEventListener('dragend',()=>{row.classList.remove('dragging');$$('[data-callup-drop]').forEach(x=>x.classList.remove('drag-over'));dragged=null});
+  });
+  const movePlayer=async(playerId,target)=>{
+    try{
+      await must(supabase.rpc('set_match_callup',{p_match_id:matchId,p_player_id:playerId,p_called_up:target==='called'}));
+      await pageMatch(matchId);
+    }catch(err){toast(err.message,'error')}
+  };
+  $$('[data-callup-drop]').forEach(zone=>{
+    zone.addEventListener('dragover',e=>{e.preventDefault();zone.classList.add('drag-over');if(e.dataTransfer)e.dataTransfer.dropEffect='move'});
+    zone.addEventListener('dragleave',()=>zone.classList.remove('drag-over'));
+    zone.addEventListener('drop',e=>{e.preventDefault();zone.classList.remove('drag-over');const id=dragged||e.dataTransfer?.getData('text/plain');if(id)movePlayer(id,zone.dataset.callupDrop)});
+  });
+  $$('[data-callup-move]').forEach(b=>b.onclick=()=>movePlayer(b.dataset.callupMove,b.dataset.callupTarget));
+}
+
 async function pageMatch(id){
   state.currentMatchId=id;
   const m=await must(supabase.from("matches").select("*").eq("id",id).single());
@@ -12584,6 +12910,7 @@ async function pageMatch(id){
   const available=callupRoster.filter(p=>p.available);
   const unavailable=callupRoster.filter(p=>!p.available);
   const called=available.filter(p=>p.called_up);
+  const excluded=available.filter(p=>!p.called_up);
   const pmMap=new Map(callupRoster.map(x=>[x.player_id,{...x}]));
   const meetingAt=m.meeting_at||ev.start_at;
   const callupsLocked=Date.now()>=new Date(meetingAt).getTime();
@@ -12635,19 +12962,39 @@ async function pageMatch(id){
     <div style="height:14px"></div>
     <div class="card">
       <div class="card-head">
-        <div><h2>Convocazioni</h2><div class="muted">${callupsLocked?`Convocazioni chiuse: orario di ritrovo raggiunto.`:`Modificabili fino all'orario di ritrovo.`}</div></div>
+        <div><h2>Convocazioni</h2><div class="muted">${callupsLocked?`Convocazioni chiuse: orario di ritrovo raggiunto.`:`Trascina i calciatori tra Convocati ed Esclusi.`}</div></div>
         <span class="badge ${callupsLocked?'red':'green'}">${called.length} convocati</span>
       </div>
       <div class="meeting-line">
         <div class="field"><label>Orario di ritrovo</label><input id="match-meeting-at" type="datetime-local" value="${toDatetimeLocal(meetingAt)}" ${can("callups.manage")?"":"disabled"}></div>
         ${can("callups.manage")?`<button class="btn btn-sm" id="save-meeting-time">Salva ritrovo</button>`:""}
       </div>
-      <div style="height:12px"></div>
-      <h3>Convocabili</h3>
-      <div class="callup-grid">
-        ${available.map(p=>`<label class="callup-card"><div>${playerListIdentity(p,genericMap.get(p.player_id))}<span class="muted">${p.shirt_number?` · #${p.shirt_number}`:''}</span></div><input type="checkbox" data-call="${p.player_id}" ${p.called_up?'checked':''} ${(can("callups.manage")&&!callupsLocked)?'':'disabled'}></label>`).join('')||`<div class="empty">Nessun calciatore convocabile</div>`}
+      <div style="height:9px"></div>
+
+      <div class="callup-dnd-board">
+        <section class="callup-dnd-column">
+          <div class="callup-dnd-head"><strong>✅ Convocati</strong><span class="badge green">${called.length}</span></div>
+          <div class="callup-dnd-list" data-callup-drop="called">
+            ${called.map(p=>callupDndPlayerHtml(p,genericMap.get(p.player_id),'called',can("callups.manage")&&!callupsLocked)).join('')||`<div class="empty">Trascina qui i convocati</div>`}
+          </div>
+        </section>
+
+        <section class="callup-dnd-column">
+          <div class="callup-dnd-head"><strong>○ Esclusi</strong><span class="badge">${excluded.length}</span></div>
+          <div class="callup-dnd-list" data-callup-drop="excluded">
+            ${excluded.map(p=>callupDndPlayerHtml(p,genericMap.get(p.player_id),'excluded',can("callups.manage")&&!callupsLocked)).join('')||`<div class="empty">Nessun escluso</div>`}
+          </div>
+        </section>
       </div>
-      ${unavailable.length?`<div style="height:16px"></div><h3>Non convocabili</h3><div class="callup-grid">${unavailable.map(p=>`<div class="callup-card callup-unavailable"><div>${playerListIdentity(p,genericMap.get(p.player_id))}<div class="muted">${esc(p.unavailable_kind==='suspension'?`Squalifica · ${p.unavailable_reason||''}`:p.unavailable_kind==='injury'?`Infortunio · ${p.unavailable_reason||''}`:`Indisponibile · ${p.unavailable_reason||''}`)}</div></div></div>`).join('')}</div>`:''}
+
+      ${unavailable.length?`
+        <div class="callup-unavailable-wrap">
+          <div class="callup-dnd-head"><strong>⛔ Indisponibili</strong><span class="badge red">${unavailable.length}</span></div>
+          <div class="callup-unavailable-list">
+            ${unavailable.map(p=>`<div class="callup-unavailable-item"><div>${playerListIdentity(p,genericMap.get(p.player_id),{avatar:false})}</div><div class="muted">${esc(p.unavailable_kind==='suspension'?`Squalifica · ${p.unavailable_reason||''}`:p.unavailable_kind==='injury'?`Infortunio · ${p.unavailable_reason||''}`:`Indisponibile · ${p.unavailable_reason||''}`)}</div></div>`).join('')}
+          </div>
+        </div>
+      `:''}
     </div>
 
     <div style="height:14px"></div>
@@ -12688,11 +13035,7 @@ async function pageMatch(id){
     }catch(err){ toast(err.message,'error'); }
   });
 
-  $$('[data-call]').forEach(x=>x.onchange=async()=>{
-    const previous=!x.checked;
-    try{ await must(supabase.rpc('set_match_callup',{p_match_id:id,p_player_id:x.dataset.call,p_called_up:x.checked})); await pageMatch(id); }
-    catch(e){ x.checked=previous; toast(e.message,'error'); }
-  });
+  wireCallupDnD(id,can('callups.manage')&&!callupsLocked);
 
   async function saveLineup(pid,patch){
     const cur=pmMap.get(pid); if(!cur)return;
@@ -14633,7 +14976,7 @@ async function openMedicalCallupSetup(){
   });
 }
 
-function openMedicalScheduleModal(players,selectedPlayerId=null,appointment=null){
+function openMedicalScheduleModal(players,selectedPlayerId=null,appointment=null,afterSave=pageMedical){
   showModal(appointment?"Riprogramma visita":"Programma visita medica",`
     <form id="medical-schedule-form">
       <div class="field">
@@ -14686,7 +15029,7 @@ function openMedicalScheduleModal(players,selectedPlayerId=null,appointment=null
 
         closeModal();
         toast("Visita programmata","ok");
-        pageMedical();
+        afterSave();
       }catch(err){
         toast(err.message,"error");
       }
@@ -14694,7 +15037,7 @@ function openMedicalScheduleModal(players,selectedPlayerId=null,appointment=null
   });
 }
 
-function openMedicalApprovalModal(appointment,players){
+function openMedicalApprovalModal(appointment,players,afterSave=pageMedical){
   const player=players.find(p=>p.id===appointment.player_id);
 
   showModal("Approva visita svolta",`
@@ -14738,7 +15081,7 @@ function openMedicalApprovalModal(appointment,players){
 
         closeModal();
         toast("Visita approvata e certificato attivato","ok");
-        pageMedical();
+        afterSave();
       }catch(err){
         toast(err.message,"error");
       }
