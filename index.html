@@ -1167,6 +1167,188 @@
       .roster-firstname{font-weight:400!important}
     }
 
+
+    html,body,#root{max-width:100%;overflow-x:hidden}
+    .shell,.main,.content,.card,.grid,.list,.table-wrap{min-width:0;max-width:100%}
+    .content{overflow-x:hidden}
+    .table-wrap{
+      max-width:100%;
+      overflow:auto;
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+    }
+    .modal{
+      overscroll-behavior:contain;
+      -webkit-overflow-scrolling:touch;
+    }
+    .tabs{
+      max-width:100%;
+      overscroll-behavior-x:contain;
+    }
+    .actions{max-width:100%}
+
+    @media(max-width:900px){
+      .mobile-drawer{
+        display:flex!important;
+        flex-direction:column;
+        overflow:hidden!important;
+        padding:calc(9px + env(safe-area-inset-top)) 9px calc(9px + env(safe-area-inset-bottom));
+      }
+      .mobile-drawer:not(.open){display:none!important}
+      .mobile-drawer.open{display:flex!important}
+
+      .mobile-drawer-head{
+        flex:none;
+        padding:2px 1px 8px;
+        margin-bottom:7px;
+      }
+      .mobile-drawer .mobile-appbar-brand{
+        width:36px;height:36px;border-radius:10px;
+      }
+      .mobile-drawer .mobile-menu-btn{
+        width:36px;height:36px;border-radius:10px;
+      }
+
+      .mobile-drawer .nav{
+        flex:1;
+        min-height:0;
+        overflow-y:auto;
+        overscroll-behavior:contain;
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        grid-auto-rows:min-content;
+        gap:4px;
+        align-content:start;
+        padding:1px 0 5px;
+      }
+      .mobile-drawer .nav button{
+        min-height:34px!important;
+        padding:6px 7px!important;
+        border-radius:9px!important;
+        font-size:12px!important;
+        gap:5px;
+        line-height:1.05;
+      }
+      .mobile-drawer .nav button span{
+        min-width:16px;
+        font-size:11px;
+      }
+
+      .mobile-drawer-context{
+        flex:none;
+        display:grid;
+        grid-template-columns:repeat(2,minmax(0,1fr));
+        gap:5px;
+        padding:7px 0;
+        margin-top:0;
+      }
+      .mobile-drawer-context label{
+        font-size:10px!important;
+        margin-bottom:2px;
+      }
+      .mobile-drawer-context select{
+        min-height:34px;
+        padding:6px 7px;
+        font-size:11px!important;
+      }
+
+      .mobile-drawer-account{
+        flex:none;
+        display:flex;
+        gap:4px;
+        padding:7px 0 0;
+        margin-top:0;
+      }
+      .mobile-drawer-account .btn{
+        flex:1;
+        min-width:0;
+        min-height:34px!important;
+        padding:6px!important;
+        text-align:center!important;
+        font-size:10.5px!important;
+        white-space:normal;
+        line-height:1.05;
+      }
+
+      .content{
+        padding:12px 9px 20px;
+      }
+      .page-title{
+        margin-bottom:11px;
+        gap:8px;
+      }
+      .page-title .actions{
+        width:100%;
+        display:flex;
+        flex-wrap:wrap;
+        gap:5px;
+      }
+      .page-title .actions .btn{
+        min-height:34px;
+        padding:7px 9px;
+      }
+
+      .list-item{
+        min-width:0;
+        padding:8px;
+        gap:8px;
+      }
+      .list-item>div{min-width:0}
+      .card{min-width:0}
+      .form-grid{gap:8px}
+      .field{min-width:0}
+
+      .table-wrap{
+        border-radius:10px;
+      }
+      .table{
+        width:100%;
+      }
+
+      .modal-backdrop{
+        padding:8px;
+        align-items:end;
+      }
+      .modal{
+        width:100%!important;
+        max-height:min(92dvh,780px);
+        border-radius:16px 16px 0 0;
+        padding:13px;
+      }
+    }
+
+    @media(max-width:480px){
+      .mobile-drawer{width:min(94vw,360px)}
+      .mobile-drawer .nav button{font-size:11.5px!important}
+      .mobile-appbar{
+        padding-top:calc(7px + env(safe-area-inset-top));
+        padding-bottom:7px;
+      }
+      .mobile-menu-btn{
+        width:40px;height:40px;
+      }
+      .content{padding-left:7px;padding-right:7px}
+    }
+
+    .player-confirm-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    .player-confirm-intro{margin-bottom:12px}
+    .required-mark{color:var(--danger);font-weight:900}
+    .opponent-field-box{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background:var(--panel2);
+    }
+    .match-location-mode{display:grid;gap:7px}
+
+    @media(max-width:600px){
+      .player-confirm-grid{grid-template-columns:1fr}
+    }
+
   </style>
 </head>
 <body>
@@ -2150,17 +2332,11 @@ async function enterTeam(teamId,{persist=true,targetPath="dashboard"}={}){
     return changePasswordPage();
   }
 
-  if(state.myPlayer && state.season && hasRole("player")){
-    const need=await must(
-      supabase.rpc("needs_self_affinity_assessment",{
-        p_team_id:team.id,
-        p_season_id:state.season.id
-      })
-    );
-    if(need)openAffinityAssessment(state.myPlayer,"self",true);
-  }
-
   await route(targetPath,false);
+
+  if(state.myPlayer&&state.season&&hasRole("player")){
+    await runPlayerOnboarding();
+  }
 }
 
 async function chooseFallbackTeam(){
@@ -3320,7 +3496,157 @@ async function pageDashboard(){
 /* =========================================================
    AFFIATAMENTO POSIZIONI
 ========================================================= */
-async function openAffinityAssessment(player,kind,mandatory=false){
+async function openMyPlayerDataConfirmation(mandatory=false,onSaved=null){
+  try{
+    const rows=await must(
+      supabase.rpc("get_my_player_profile_data",{
+        p_team_id:state.team.id
+      })
+    );
+
+    const data=Array.isArray(rows)?rows[0]:rows;
+    if(!data)return;
+
+    showModal("Conferma i tuoi dati da calciatore",`
+      <form id="my-player-confirm-form">
+        <div class="section-note player-confirm-intro">
+          Controlla e completa la tua scheda. I campi con <span class="required-mark">*</span> sono obbligatori.
+          La scadenza della visita medica è facoltativa e, se indicata, resta una dichiarazione personale:
+          la validità ufficiale viene gestita dalla dirigenza.
+        </div>
+
+        <div class="player-confirm-grid">
+          <div class="field">
+            <label>Data di nascita <span class="required-mark">*</span></label>
+            <input id="mpc-birth" type="date" value="${data.birth_date||""}" required>
+          </div>
+
+          <div class="field">
+            <label>Nazionalità <span class="required-mark">*</span></label>
+            <select id="mpc-nationality" required>${countryOptions(data.nationality_code||"IT")}</select>
+          </div>
+
+          <div class="field">
+            <label>Piede preferito <span class="required-mark">*</span></label>
+            <select id="mpc-foot" required>
+              <option value="">Seleziona…</option>
+              <option value="right" ${data.preferred_foot==="right"?"selected":""}>Destro</option>
+              <option value="left" ${data.preferred_foot==="left"?"selected":""}>Sinistro</option>
+              <option value="both" ${data.preferred_foot==="both"?"selected":""}>Entrambi</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Squadra del cuore <span class="required-mark">*</span></label>
+            <input id="mpc-favorite" value="${esc(data.favorite_team||"")}" required>
+          </div>
+
+          <div class="field">
+            <label>Cellulare <span class="required-mark">*</span></label>
+            <input id="mpc-phone" type="tel" value="${esc(data.phone||"")}" placeholder="+39 ..." required>
+          </div>
+
+          <div class="field">
+            <label>Altezza (cm) <span class="required-mark">*</span></label>
+            <input id="mpc-height" type="number" min="100" max="250" value="${data.height_cm||""}" required>
+          </div>
+
+          <div class="field">
+            <label>Scadenza visita medica</label>
+            <input id="mpc-medical" type="date" value="${data.medical_expires_on||""}">
+          </div>
+        </div>
+
+        <div class="actions" style="margin-top:14px">
+          <button class="btn btn-primary">Conferma dati</button>
+          ${mandatory?"":`<button type="button" class="btn btn-ghost" data-close-player-confirm>Annulla</button>`}
+        </div>
+      </form>
+    `,root=>{
+      root.closest(".modal").style.width="min(720px,100%)";
+
+      $("[data-close-player-confirm]",root)?.addEventListener("click",closeModal);
+
+      $("#my-player-confirm-form",root).onsubmit=async e=>{
+        e.preventDefault();
+
+        try{
+          await must(
+            supabase.rpc("confirm_my_player_profile",{
+              p_team_id:state.team.id,
+              p_birth_date:$("#mpc-birth",root).value,
+              p_nationality_code:$("#mpc-nationality",root).value,
+              p_preferred_foot:$("#mpc-foot",root).value,
+              p_favorite_team:$("#mpc-favorite",root).value.trim(),
+              p_phone:$("#mpc-phone",root).value.trim(),
+              p_height_cm:Number($("#mpc-height",root).value),
+              p_medical_expires_on:$("#mpc-medical",root).value||null
+            })
+          );
+
+          state.myPlayer={
+            ...state.myPlayer,
+            birth_date:$("#mpc-birth",root).value,
+            nationality_code:$("#mpc-nationality",root).value,
+            preferred_foot:$("#mpc-foot",root).value,
+            favorite_team:$("#mpc-favorite",root).value.trim(),
+            height_cm:Number($("#mpc-height",root).value)
+          };
+
+          toast("Dati calciatore confermati","ok");
+          closeModal();
+
+          if(onSaved)await onSaved();
+
+        }catch(err){
+          toast(err.message,"error");
+        }
+      };
+    });
+
+    if(mandatory){
+      const backdrop=$(".modal-backdrop");
+      if(backdrop)backdrop.onclick=e=>e.stopPropagation();
+      $("[data-close]")?.remove();
+    }
+
+  }catch(err){
+    toast(err.message,"error");
+  }
+}
+
+async function runMandatoryAffinity(){
+  if(!state.myPlayer||!state.season||!hasRole("player"))return;
+
+  const need=await must(
+    supabase.rpc("needs_self_affinity_assessment",{
+      p_team_id:state.team.id,
+      p_season_id:state.season.id
+    })
+  );
+
+  if(need){
+    openAffinityAssessment(state.myPlayer,"self",true);
+  }
+}
+
+async function runPlayerOnboarding(){
+  if(!state.myPlayer||!state.season||!hasRole("player"))return;
+
+  const needsProfile=await must(
+    supabase.rpc("needs_my_player_profile_confirmation",{
+      p_team_id:state.team.id
+    })
+  );
+
+  if(needsProfile){
+    return openMyPlayerDataConfirmation(true,runMandatoryAffinity);
+  }
+
+  await runMandatoryAffinity();
+}
+
+async function openAffinityAssessment(player,kind,mandatory=false,onSaved=null){
   const positions=await must(supabase.from("football_positions").select("*").eq("active",true).order("sort_order"));
   const current=await must(supabase.rpc("get_my_position_affinity_evaluation",{p_team_id:state.team.id,p_player_id:player.id,p_season_id:state.season.id,p_evaluator_kind:kind}));
   const values=new Map(current.map(x=>[x.position_id,x.affinity??0]));
@@ -3336,7 +3662,9 @@ async function openAffinityAssessment(player,kind,mandatory=false){
       try{
         const ratings=$$("input[type=range]",root).map(r=>({position_id:r.dataset.pos,affinity:Number(r.value)}));
         await must(supabase.rpc("save_position_affinity_evaluations",{p_team_id:state.team.id,p_player_id:player.id,p_season_id:state.season.id,p_evaluator_kind:kind,p_ratings:ratings}));
-        toast("Valutazione salvata","ok");closeModal();
+        toast("Valutazione salvata","ok");
+        closeModal();
+        if(onSaved)await onSaved();
       }catch(err){toast(err.message,"error")}
     };
   });
@@ -4085,10 +4413,14 @@ async function pageRoster(){
   ]);
 
   const linkedSelf=players.find(p=>p.profile_id===state.profile.id)||null;
-  if((state.myPlayer?.id||null)!==(linkedSelf?.id||null)){
+  const previousLinkedPlayerId=state.myPlayer?.id||null;
+  if(previousLinkedPlayerId!==(linkedSelf?.id||null)){
     state.myPlayer=linkedSelf;
     state.roles=(await must(supabase.rpc("get_my_effective_roles",{p_team_id:state.team.id}))).map(x=>x.role_code);
     state.permissions=new Set((await must(supabase.rpc("get_my_permissions",{p_team_id:state.team.id}))).map(x=>x.permission_key));
+    if(!previousLinkedPlayerId&&linkedSelf&&hasRole("player")){
+      setTimeout(()=>runPlayerOnboarding(),0);
+    }
   }
 
   const fanOnly=!state.isSuperAdmin
@@ -4417,7 +4749,7 @@ async function openEditRosterPlayer(playerId){
 
     const [player,contacts,contracts,exams,medicalAppointments]=await Promise.all([
       must(supabase.from("players").select("*").eq("id",playerId).eq("team_id",state.team.id).single()),
-      can("roster.manage")&&settings.show_contact_options
+      ((can("roster.manage")&&settings.show_contact_options)||can("medical.manage"))
         ? must(supabase.from("player_contacts").select("*").eq("player_id",playerId).maybeSingle())
         : Promise.resolve(null),
       can("contracts.manage")
@@ -4475,6 +4807,10 @@ async function openEditRosterPlayer(playerId){
           <select id="erp-generic-role">${genericRoleOptions(player.generic_role_manual||"")}</select>
           <div class="muted" style="margin-top:5px">Usato finché non esiste un ruolo preferenziale calcolato oltre il 50%.</div>
         </div>
+        <div class="field">
+          <label>Altezza (cm)</label>
+          <input id="erp-height" type="number" min="100" max="250" value="${player.height_cm||""}">
+        </div>
 
         ${settings.show_contact_options?`
           <div class="field"><label>Telefono</label><input id="erp-phone" type="tel" value="${esc(contacts?.phone||"")}" placeholder="+39 ..."></div>
@@ -4511,8 +4847,13 @@ async function openEditRosterPlayer(playerId){
               <input id="erp-medical-scheduled" type="date" value="${scheduledExam?.scheduled_for||""}">
             </div>
           </div>
-          <div class="muted" style="margin-top:-6px;margin-bottom:12px">
+          <div class="muted" style="margin-top:-6px;margin-bottom:8px">
             La data programmata non abilita il calciatore: deve essere confermata come svolta nel menu Visite mediche.
+          </div>
+
+          <div class="field">
+            <label>Scadenza dichiarata dal calciatore</label>
+            <input value="${contacts?.self_reported_medical_expires_on?fmtDate(contacts.self_reported_medical_expires_on):"—"}" disabled>
           </div>
         `:""}
 
@@ -4537,7 +4878,8 @@ async function openEditRosterPlayer(playerId){
               p_phone:settings.show_contact_options?($("#erp-phone",root)?.value.trim()||null):null,
               p_nationality_code:$("#erp-nationality",root).value||null,
               p_favorite_team:$("#erp-favorite",root).value.trim()||null,
-              p_generic_role_manual:$("#erp-generic-role",root).value||null
+              p_generic_role_manual:$("#erp-generic-role",root).value||null,
+              p_height_cm:Number($("#erp-height",root).value)||null
             })
           );
 
@@ -4638,6 +4980,10 @@ async function openNewPlayer(){
       <label>Ruolo generico</label>
       <select id="np-generic-role">${genericRoleOptions("")}</select>
     </div>
+    <div class="field">
+      <label>Altezza (cm)</label>
+      <input id="np-height" type="number" min="100" max="250">
+    </div>
 
     ${settings.show_contact_options?`
       <div class="field"><label>Telefono</label><input id="np-phone" type="tel" placeholder="+39 ..."></div>
@@ -4669,6 +5015,7 @@ async function openNewPlayer(){
               nationality_code:$("#np-nationality",root).value||null,
               favorite_team:$("#np-favorite",root).value.trim()||null,
               generic_role_manual:$("#np-generic-role",root).value||null,
+              height_cm:Number($("#np-height",root).value)||null,
               preferred_foot:$("#np-foot",root).value||null
             })
             .select("*")
@@ -4697,7 +5044,8 @@ async function openNewPlayer(){
             p_phone:settings.show_contact_options?($("#np-phone",root)?.value.trim()||null):null,
             p_nationality_code:$("#np-nationality",root).value||null,
             p_favorite_team:$("#np-favorite",root).value.trim()||null,
-            p_generic_role_manual:$("#np-generic-role",root).value||null
+            p_generic_role_manual:$("#np-generic-role",root).value||null,
+            p_height_cm:Number($("#np-height",root).value)||null
           })
         );
 
@@ -4754,6 +5102,7 @@ async function pagePlayer(id){
     `<div class="card"><div class="stat-label">Nazionalità</div><strong>${p.nationality_code?`${countryFlag(p.nationality_code)} ${esc(countryName(p.nationality_code))}`:"—"}</strong></div>`,
     `<div class="card"><div class="stat-label">Squadra tifata</div><strong>${esc(p.favorite_team||"—")}</strong></div>`,
     `<div class="card"><div class="stat-label">Piede</div><strong>${esc(playerFootLabel(p.preferred_foot))}</strong></div>`,
+    `<div class="card"><div class="stat-label">Altezza</div><strong>${p.height_cm?`${p.height_cm} cm`:"—"}</strong></div>`,
     settings.show_contact_options
       ? `<div class="card"><div class="stat-label">Telefono</div><strong>${esc(contacts?.phone||"—")}</strong></div>`
       : "",
@@ -5145,7 +5494,13 @@ async function pageTrainings(){
 async function openTrainingSetup(){
   try{
     const [venues,setting]=await Promise.all([
-      must(supabase.from("venues").select("*").eq("team_id",state.team.id).order("name")),
+      must(
+        supabase.from("venues")
+          .select("*")
+          .eq("team_id",state.team.id)
+          .eq("is_opponent_venue",false)
+          .order("name")
+      ),
       must(
         supabase.from("training_settings")
           .select("*")
@@ -5524,8 +5879,20 @@ async function openMatchSetup(){
 async function openMatchConfigurator(afterSave=null){
   try{
     const [venues,opponents,competitions,links,matchSetting]=await Promise.all([
-      must(supabase.from("venues").select("*").eq("team_id",state.team.id).order("name")),
-      must(supabase.from("opponent_teams").select("*").eq("team_id",state.team.id).eq("active",true).order("name")),
+      must(
+        supabase.from("venues")
+          .select("*")
+          .eq("team_id",state.team.id)
+          .eq("is_opponent_venue",false)
+          .order("name")
+      ),
+      must(
+        supabase.from("opponent_teams")
+          .select("*")
+          .eq("team_id",state.team.id)
+          .eq("active",true)
+          .order("name")
+      ),
       must(
         supabase.from("competitions")
           .select("*")
@@ -5555,8 +5922,8 @@ async function openMatchConfigurator(afterSave=null){
 
     const offset=Number(matchSetting?.default_meeting_offset_minutes??90);
     let mode="home";
-    let venueTouched=false;
     let timeTouched=false;
+    let locationTouched=false;
 
     const firstCompetition=competitions[0];
     const firstTime=String(firstCompetition.default_start_time||"15:00").slice(0,5);
@@ -5583,45 +5950,46 @@ async function openMatchConfigurator(afterSave=null){
         </div>
 
         <div class="form-grid">
-          <div class="field">
-            <label>Data</label>
-            <input id="mc-date" type="date" value="${today()}" required>
-          </div>
-          <div class="field">
-            <label>Ora inizio</label>
-            <input id="mc-time" type="time" value="${firstTime}" required>
-          </div>
+          <div class="field"><label>Data</label><input id="mc-date" type="date" value="${today()}" required></div>
+          <div class="field"><label>Ora inizio</label><input id="mc-time" type="time" value="${firstTime}" required></div>
         </div>
 
-        <div class="field">
-          <label>Campo di gioco</label>
-          <select id="mc-venue">
-            <option value="">Nessun campo / da definire</option>
-          </select>
-          <div class="muted" id="mc-venue-note" style="font-size:.72rem;margin-top:5px"></div>
+        <div class="match-location-mode">
+          <div class="field" id="mc-own-venue-box">
+            <label>Campo di gioco</label>
+            <select id="mc-venue"></select>
+          </div>
+
+          <div class="field hidden" id="mc-free-location-box">
+            <label id="mc-free-location-label">Campo di gioco</label>
+            <input id="mc-free-location" placeholder="Nome campo · indirizzo">
+          </div>
+
+          <div class="muted" id="mc-venue-note"></div>
         </div>
 
-        <div class="field">
-          <label>Giornata / turno</label>
-          <input id="mc-round" placeholder="es. 5ª giornata, semifinale…">
-        </div>
+        <div class="field"><label>Giornata / turno</label><input id="mc-round" placeholder="es. 5ª giornata, semifinale…"></div>
 
         <div class="meeting-preview">
           <strong>Ritrovo previsto:</strong>
           <span id="mc-meeting-preview">—</span>
-          <div class="muted" style="font-size:.72rem">Setup partite: ${Math.floor(offset/60)}h ${offset%60}m prima del calcio d'inizio.</div>
+          <div class="muted">Setup partite: ${Math.floor(offset/60)}h ${offset%60}m prima del calcio d'inizio.</div>
         </div>
 
         <div class="field"><label>Note</label><textarea id="mc-notes"></textarea></div>
-
         <button class="btn btn-primary">Crea partita</button>
       </form>
     `,root=>{
       root.closest(".modal").style.width="min(940px,100%)";
+
       const compSel=$("#mc-competition",root);
       const dateInput=$("#mc-date",root);
       const timeInput=$("#mc-time",root);
       const venueSel=$("#mc-venue",root);
+      const ownVenueBox=$("#mc-own-venue-box",root);
+      const freeBox=$("#mc-free-location-box",root);
+      const freeLocation=$("#mc-free-location",root);
+      const freeLabel=$("#mc-free-location-label",root);
       const venueNote=$("#mc-venue-note",root);
 
       const currentCompetition=()=>competitions.find(c=>c.id===compSel.value);
@@ -5638,16 +6006,11 @@ async function openMatchConfigurator(afterSave=null){
       };
 
       let selectedOpponentId=allowedOpponents()[0]?.id||null;
-
       const selectedOpponent=()=>opponents.find(o=>o.id===selectedOpponentId)||null;
 
       const teamCard=(isOwn,label)=>{
         if(isOwn){
-          return `
-            <div class="match-side-label">${label}</div>
-            ${ownLogoHtml()}
-            <strong>${esc(ownTeamDisplayName())}</strong>
-          `;
+          return `<div class="match-side-label">${label}</div>${ownLogoHtml()}<strong>${esc(ownTeamDisplayName())}</strong>`;
         }
 
         const list=allowedOpponents();
@@ -5668,47 +6031,56 @@ async function openMatchConfigurator(afterSave=null){
         return venues.filter(v=>venueIsValid(v,d));
       };
 
-      const refreshVenueOptions=()=>{
+      const refreshOwnVenueOptions=()=>{
         const current=venueSel.value;
         const valid=validVenues();
+
         venueSel.innerHTML=`<option value="">Nessun campo / da definire</option>`+
           valid.map(v=>`<option value="${v.id}">${esc(v.name)}${venueAddress(v)?` · ${esc(venueAddress(v))}`:""}</option>`).join("");
 
-        if(valid.some(v=>v.id===current))venueSel.value=current;
+        if(valid.some(v=>v.id===current)){
+          venueSel.value=current;
+        }else if(state.team.default_venue_id&&valid.some(v=>v.id===state.team.default_venue_id)){
+          venueSel.value=state.team.default_venue_id;
+        }
       };
 
-      const defaultVenueForMode=()=>{
-        if(mode==="neutral")return null;
-        if(mode==="home")return state.team.default_venue_id||null;
-        return selectedOpponent()?.default_venue_id||null;
-      };
+      const applyLocationDefault=(force=false)=>{
+        refreshOwnVenueOptions();
 
-      const applyDefaultVenue=(force=false)=>{
-        refreshVenueOptions();
-
-        if(mode==="neutral"){
-          if(force || !venueTouched)venueSel.value="";
-          venueNote.textContent="Campo neutro: nessun campo viene richiamato automaticamente.";
+        if(mode==="home"){
+          ownVenueBox.classList.remove("hidden");
+          freeBox.classList.add("hidden");
+          venueNote.textContent="Viene proposto il campo predefinito della tua squadra; puoi sceglierne un altro per questa partita.";
           return;
         }
 
-        const id=defaultVenueForMode();
-        const isValid=id && [...venueSel.options].some(x=>x.value===id);
+        ownVenueBox.classList.add("hidden");
+        freeBox.classList.remove("hidden");
 
-        if((force || !venueTouched) && isValid){
-          venueSel.value=id;
-        }else if((force || !venueTouched) && !isValid){
-          venueSel.value="";
+        if(mode==="away"){
+          const def=opponentVenueLocation(selectedOpponent());
+
+          if(force||!locationTouched){
+            freeLocation.value=def;
+          }
+
+          freeLabel.textContent="Campo della squadra di casa";
+          venueNote.textContent=def
+            ? "Richiamato dalla scheda dell'avversaria. Puoi modificarlo liberamente solo per questa partita."
+            : "L'avversaria non ha ancora un campo di casa configurato: inseriscilo per questa partita.";
+          return;
         }
 
-        venueNote.textContent=mode==="home"
-          ? "Richiamato il campo predefinito della tua squadra, se valido alla data."
-          : "Richiamato il campo predefinito dell'avversaria di casa, se valido alla data.";
+        if(force||!locationTouched)freeLocation.value="";
+        freeLabel.textContent="Campo neutro";
+        venueNote.textContent="Campo neutro: nessuna struttura viene proposta automaticamente.";
       };
 
       const refreshMeeting=()=>{
         const start=new Date(`${dateInput.value}T${timeInput.value}`);
         const meeting=meetingFromStart(start,offset);
+
         $("#mc-meeting-preview",root).textContent=meeting
           ? new Intl.DateTimeFormat("it-IT",{weekday:"short",day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}).format(meeting)
           : "—";
@@ -5731,13 +6103,14 @@ async function openMatchConfigurator(afterSave=null){
           const opp=selectedOpponent();
           $("#mc-opponent-logo",root).innerHTML=opponentLogoHtml(opp);
           $("#mc-opponent-name",root).textContent=opponentDisplayName(opp);
-          venueTouched=false;
-          applyDefaultVenue(true);
+          locationTouched=false;
+          applyLocationDefault(true);
         });
       };
 
       const refreshCompetition=()=>{
         const list=allowedOpponents();
+
         selectedOpponentId=list.some(o=>o.id===selectedOpponentId)
           ? selectedOpponentId
           : (list[0]?.id||null);
@@ -5747,30 +6120,37 @@ async function openMatchConfigurator(afterSave=null){
         }
 
         renderSides();
-        venueTouched=false;
-        applyDefaultVenue(true);
+        locationTouched=false;
+        applyLocationDefault(true);
         refreshMeeting();
       };
 
       $$("[data-match-mode]",root).forEach(b=>b.onclick=()=>{
         mode=b.dataset.matchMode;
-        $$("[data-match-mode]",root).forEach(x=>x.classList.toggle("active",x.dataset.matchMode===mode));
+
+        $$("[data-match-mode]",root).forEach(x=>{
+          x.classList.toggle("active",x.dataset.matchMode===mode);
+        });
+
         renderSides();
-        venueTouched=false;
-        applyDefaultVenue(true);
+        locationTouched=false;
+        applyLocationDefault(true);
       });
 
       compSel.onchange=refreshCompetition;
+
       dateInput.onchange=()=>{
-        venueTouched=false;
-        applyDefaultVenue(true);
+        locationTouched=false;
+        applyLocationDefault(true);
         refreshMeeting();
       };
+
       timeInput.oninput=()=>{
         timeTouched=true;
         refreshMeeting();
       };
-      venueSel.onchange=()=>venueTouched=true;
+
+      freeLocation.oninput=()=>locationTouched=true;
 
       refreshCompetition();
 
@@ -5780,6 +6160,7 @@ async function openMatchConfigurator(afterSave=null){
         try{
           const comp=currentCompetition();
           const opp=selectedOpponent();
+
           if(!comp)throw new Error("Seleziona la competizione");
           if(!opp)throw new Error("Seleziona l'avversaria");
 
@@ -5788,22 +6169,28 @@ async function openMatchConfigurator(afterSave=null){
             throw new Error("L'avversaria non è prevista per questa competizione");
           }
 
-          const startLocal=`${dateInput.value}T${timeInput.value}`;
-          const startDate=new Date(startLocal);
+          const startDate=new Date(`${dateInput.value}T${timeInput.value}`);
           if(Number.isNaN(startDate.getTime()))throw new Error("Data/ora partita non valida");
 
           const meeting=meetingFromStart(startDate,offset);
-          const venue=venues.find(v=>v.id===venueSel.value);
+
+          let venue=null;
+          let location=null;
+
+          if(mode==="home"){
+            venue=venues.find(v=>v.id===venueSel.value)||null;
+            location=venue
+              ? `${venue.name}${venueAddress(venue)?` · ${venueAddress(venue)}`:""}`
+              : null;
+          }else{
+            location=freeLocation.value.trim()||null;
+          }
 
           const own=ownTeamDisplayName();
           const other=opponentDisplayName(opp);
           const home=mode==="away"?other:own;
           const away=mode==="away"?own:other;
           const title=`${comp.name} · ${home} - ${away}`;
-
-          const location=venue
-            ? `${venue.name}${venueAddress(venue)?` · ${venueAddress(venue)}`:""}`
-            : null;
 
           const ev=await must(
             supabase.from("events")
@@ -5865,7 +6252,13 @@ async function openNewEvent(defaultType=null,afterSave=null){
       competitionLinks,
       trainingSetting
     ]=await Promise.all([
-      must(supabase.from("venues").select("*").eq("team_id",state.team.id).order("name")),
+      must(
+        supabase.from("venues")
+          .select("*")
+          .eq("team_id",state.team.id)
+          .eq("is_opponent_venue",false)
+          .order("name")
+      ),
       (can("matches.manage")||can("competitions.view"))
         ? must(supabase.from("opponent_teams").select("*").eq("team_id",state.team.id).eq("active",true).order("name"))
         : Promise.resolve([]),
@@ -7048,6 +7441,22 @@ function venueAddress(v){
   return [v.address_line,[v.postal_code,v.city].filter(Boolean).join(" "),v.province,v.country]
     .filter(Boolean).join(", ");
 }
+
+function opponentVenueAddress(o){
+  if(!o)return "";
+  return [
+    o.home_address_line,
+    [o.home_postal_code,o.home_city].filter(Boolean).join(" "),
+    o.home_province,
+    o.home_country
+  ].filter(Boolean).join(", ");
+}
+
+function opponentVenueLocation(o){
+  const name=o?.home_venue_name||"";
+  const address=opponentVenueAddress(o);
+  return [name,address].filter(Boolean).join(" · ");
+}
 function venueIsValid(v,date=today()){
   return (!v.valid_from || v.valid_from<=date) && (!v.valid_until || v.valid_until>=date);
 }
@@ -7539,10 +7948,16 @@ function openUnavailabilityModal(players){
 }
 
 async function pageVenues(){
-  const venues=await must(supabase.from("venues").select("*").eq("team_id",state.team.id).order("name"));
+  const venues=await must(
+    supabase.from("venues")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .eq("is_opponent_venue",false)
+      .order("name")
+  );
   renderShell("Campi",`
     <div class="page-title">
-      <div><h1>Campi</h1><p>I campi scaduti restano nello storico ma non vengono proposti nei nuovi eventi.</p></div>
+      <div><h1>Campi</h1><p>Campi utilizzati dalla tua squadra per allenamenti e partite in casa. I campi delle avversarie si gestiscono nella loro scheda.</p></div>
       ${can("venues.manage")?`<button class="btn btn-primary" id="new-venue">Nuovo campo</button>`:""}
     </div>
     <div class="list">
@@ -7603,110 +8018,204 @@ function openVenueModal(venue=null){
 }
 
 async function pageOpponents(){
-  const [opponents,venues]=await Promise.all([
-    must(supabase.from("opponent_teams").select("*").eq("team_id",state.team.id).order("name")),
-    must(supabase.from("venues").select("*").eq("team_id",state.team.id).order("name"))
-  ]);
-  const vm=new Map(venues.map(v=>[v.id,v]));
+  const opponents=await must(
+    supabase.from("opponent_teams")
+      .select("*")
+      .eq("team_id",state.team.id)
+      .order("name")
+  );
+
   renderShell("Avversarie",`
     <div class="page-title">
-      <div><h1>Squadre avversarie</h1><p>Anagrafica, logo e campo predefinito.</p></div>
+      <div>
+        <h1>Squadre avversarie</h1>
+        <p>Logo, anagrafica e campo di casa vengono gestiti direttamente nella scheda della squadra.</p>
+      </div>
       ${can("opponents.manage")?`<button class="btn btn-primary" id="new-opponent">Nuova avversaria</button>`:""}
     </div>
+
     <div class="grid grid-2">
-      ${opponents.map(o=>{
-        const v=vm.get(o.default_venue_id);
-        return `<div class="card">
+      ${opponents.map(o=>`
+        <div class="card">
           <div class="card-head">
             <div class="player-name">
               <span class="avatar">${o.logo_url?`<img src="${esc(o.logo_url)}">`:esc((o.short_name||o.name).slice(0,3).toUpperCase())}</span>
-              <div><strong>${esc(o.name)}</strong><div class="muted">${esc(o.short_name||"")}</div></div>
+              <div>
+                <strong>${esc(o.name)}</strong>
+                <div class="muted">${esc(o.short_name||"")}</div>
+              </div>
             </div>
             <span class="badge ${o.active?"green":"red"}">${o.active?"attiva":"archiviata"}</span>
           </div>
-          <div class="muted">${v?`Campo: ${esc(v.name)} · ${esc(venueAddress(v))}`:"Campo predefinito non impostato"}</div>
+
+          <div class="opponent-field-box">
+            <strong>${esc(o.home_venue_name||"Campo di casa non impostato")}</strong>
+            <div class="muted">${esc(opponentVenueAddress(o)||"Indirizzo non indicato")}</div>
+          </div>
+
           ${o.notes?`<p>${esc(o.notes)}</p>`:""}
-          ${can("opponents.manage")?`<div class="actions" style="margin-top:12px"><button class="btn btn-sm" data-edit-opponent="${o.id}">Modifica</button></div>`:""}
-        </div>`;
-      }).join("")||`<div class="empty">Nessuna squadra avversaria</div>`}
+
+          ${can("opponents.manage")
+            ? `<div class="actions" style="margin-top:12px">
+                <button class="btn btn-sm" data-edit-opponent="${o.id}">Modifica</button>
+              </div>`
+            : ""
+          }
+        </div>
+      `).join("")||`<div class="empty">Nessuna squadra avversaria</div>`}
     </div>
   `);
-  $("#new-opponent")?.addEventListener("click",()=>openOpponentModal(null,venues));
-  $$("[data-edit-opponent]").forEach(b=>b.onclick=()=>openOpponentModal(opponents.find(o=>o.id===b.dataset.editOpponent),venues));
+
+  $("#new-opponent")?.addEventListener("click",()=>openOpponentModal(null));
+  $$("[data-edit-opponent]").forEach(b=>{
+    b.onclick=()=>openOpponentModal(opponents.find(o=>o.id===b.dataset.editOpponent));
+  });
 }
 
-function openOpponentModal(opponent,venues){
+function openOpponentModal(opponent){
   let logoFile=null;
   let removeLogo=false;
   let previewUrl=null;
+
   showModal(opponent?"Modifica avversaria":"Nuova avversaria",`
     <form id="opponent-form">
       <div class="team-logo-settings">
-        <div class="team-logo-preview" id="opp-logo-preview">${opponent?.logo_url?`<img src="${esc(opponent.logo_url)}">`:esc((opponent?.short_name||"VS").slice(0,3).toUpperCase())}</div>
+        <div class="team-logo-preview" id="opp-logo-preview">
+          ${opponent?.logo_url
+            ? `<img src="${esc(opponent.logo_url)}">`
+            : esc((opponent?.short_name||"VS").slice(0,3).toUpperCase())
+          }
+        </div>
+
         <div>
-          <div class="field"><label>Logo</label><input id="opp-logo-file" type="file" accept="image/png,image/jpeg,image/webp"></div>
-          ${opponent?.logo_url?`<button class="btn btn-sm btn-danger" type="button" id="opp-remove-logo">Rimuovi logo</button>`:""}
+          <div class="field">
+            <label>Logo</label>
+            <input id="opp-logo-file" type="file" accept="image/png,image/jpeg,image/webp">
+          </div>
+          ${opponent?.logo_url
+            ? `<button class="btn btn-sm btn-danger" type="button" id="opp-remove-logo">Rimuovi logo</button>`
+            : ""
+          }
         </div>
       </div>
+
       <div class="field"><label>Nome</label><input id="opp-name" value="${esc(opponent?.name||"")}" required></div>
       <div class="field"><label>Nome breve / sigla</label><input id="opp-short" value="${esc(opponent?.short_name||"")}" maxlength="16"></div>
-      <div class="field"><label>Campo predefinito</label><select id="opp-venue"><option value="">—</option>${venues.map(v=>`<option value="${v.id}" ${opponent?.default_venue_id===v.id?"selected":""}>${esc(v.name)} · ${esc(venueAddress(v))}</option>`).join("")}</select></div>
-      <label class="check"><input id="opp-active" type="checkbox" ${opponent?.active===false?"":"checked"}> Avversaria attiva e proposta nelle nuove partite</label>
+
+      <h3>Campo di casa</h3>
+
+      <div class="field"><label>Nome campo</label><input id="opp-field-name" value="${esc(opponent?.home_venue_name||"")}" placeholder="es. Stadio Comunale"></div>
+      <div class="field"><label>Indirizzo</label><input id="opp-field-address" value="${esc(opponent?.home_address_line||"")}"></div>
+
+      <div class="form-grid">
+        <div class="field"><label>Città</label><input id="opp-field-city" value="${esc(opponent?.home_city||"")}"></div>
+        <div class="field"><label>Provincia</label><input id="opp-field-province" maxlength="3" value="${esc(opponent?.home_province||"")}"></div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field"><label>CAP</label><input id="opp-field-postal" value="${esc(opponent?.home_postal_code||"")}"></div>
+        <div class="field"><label>Paese</label><input id="opp-field-country" value="${esc(opponent?.home_country||"Italia")}"></div>
+      </div>
+
+      <label class="check">
+        <input id="opp-active" type="checkbox" ${opponent?.active===false?"":"checked"}>
+        Avversaria attiva e proposta nelle nuove partite
+      </label>
+
       <div style="height:10px"></div>
       <div class="field"><label>Note</label><textarea id="opp-notes">${esc(opponent?.notes||"")}</textarea></div>
+
       <button class="btn btn-primary">Salva avversaria</button>
     </form>
   `,root=>{
     $("#opp-logo-file",root).onchange=e=>{
-      const f=e.target.files?.[0]; if(!f)return;
+      const f=e.target.files?.[0];
+      if(!f)return;
       if(!["image/png","image/jpeg","image/webp"].includes(f.type)){toast("Formato logo non supportato","error");return}
       if(f.size>5*1024*1024){toast("Logo massimo 5 MB","error");return}
-      logoFile=f;removeLogo=false;
+
+      logoFile=f;
+      removeLogo=false;
       if(previewUrl)URL.revokeObjectURL(previewUrl);
       previewUrl=URL.createObjectURL(f);
       $("#opp-logo-preview",root).innerHTML=`<img src="${previewUrl}">`;
     };
+
     $("#opp-remove-logo",root)?.addEventListener("click",()=>{
-      logoFile=null;removeLogo=true;
+      logoFile=null;
+      removeLogo=true;
       $("#opp-logo-preview",root).textContent=($("#opp-short",root).value||"VS").slice(0,3).toUpperCase();
     });
+
     $("#opponent-form",root).onsubmit=async e=>{
       e.preventDefault();
       try{
-        let row={
+        const row={
           team_id:state.team.id,
           name:$("#opp-name",root).value.trim(),
           short_name:$("#opp-short",root).value.trim()||null,
-          default_venue_id:$("#opp-venue",root).value||null,
+          home_venue_name:$("#opp-field-name",root).value.trim()||null,
+          home_address_line:$("#opp-field-address",root).value.trim()||null,
+          home_city:$("#opp-field-city",root).value.trim()||null,
+          home_province:$("#opp-field-province",root).value.trim().toUpperCase()||null,
+          home_postal_code:$("#opp-field-postal",root).value.trim()||null,
+          home_country:$("#opp-field-country",root).value.trim()||"Italia",
+          default_venue_id:null,
           active:$("#opp-active",root).checked,
           notes:$("#opp-notes",root).value.trim()||null,
           created_by:opponent?.created_by||state.profile.id
         };
+
         let saved;
         if(opponent){
-          saved=await must(supabase.from("opponent_teams").update(row).eq("id",opponent.id).select("*").single());
+          saved=await must(
+            supabase.from("opponent_teams")
+              .update(row)
+              .eq("id",opponent.id)
+              .select("*")
+              .single()
+          );
         }else{
-          saved=await must(supabase.from("opponent_teams").insert(row).select("*").single());
+          saved=await must(
+            supabase.from("opponent_teams")
+              .insert(row)
+              .select("*")
+              .single()
+          );
         }
 
         let logoUrl=opponent?.logo_url||null;
         const logoPath=`${state.team.id}/${saved.id}/logo.png`;
+
         if(logoFile){
           const blob=await normalizeLogoToPng(logoFile);
-          const {error}=await supabase.storage.from("opponent-assets").upload(logoPath,blob,{contentType:"image/png",cacheControl:"3600",upsert:true});
+          const {error}=await supabase.storage
+            .from("opponent-assets")
+            .upload(logoPath,blob,{contentType:"image/png",cacheControl:"3600",upsert:true});
           if(error)throw error;
+
           const {data}=supabase.storage.from("opponent-assets").getPublicUrl(logoPath);
           logoUrl=`${data.publicUrl}?v=${Date.now()}`;
         }else if(removeLogo){
           await supabase.storage.from("opponent-assets").remove([logoPath]);
           logoUrl=null;
         }
+
         if(logoUrl!==saved.logo_url){
-          await must(supabase.from("opponent_teams").update({logo_url:logoUrl}).eq("id",saved.id));
+          await must(
+            supabase.from("opponent_teams")
+              .update({logo_url:logoUrl})
+              .eq("id",saved.id)
+          );
         }
+
         if(previewUrl)URL.revokeObjectURL(previewUrl);
-        closeModal();toast("Avversaria salvata","ok");pageOpponents();
-      }catch(err){toast(err.message,"error")}
+        closeModal();
+        toast("Avversaria salvata","ok");
+        pageOpponents();
+      }catch(err){
+        toast(err.message,"error");
+      }
     };
   });
 }
@@ -8161,8 +8670,45 @@ function simpleEntityModal(title,players,save,withCount=false,withAmount=false){
 async function pageProfile(){
   const contract=state.myPlayer?(await must(supabase.from("player_contracts").select("*").eq("player_id",state.myPlayer.id).eq("status","active").order("planned_end_date",{ascending:false}).limit(1)))[0]:null;
   const future=contract?[...state.seasons].filter(s=>s.start_date>contract.planned_end_date).sort((a,b)=>a.start_date.localeCompare(b.start_date))[0]:null;
-  renderShell("Profilo",`<div class="card" style="max-width:680px"><h1>${esc(state.profile.display_name)}</h1><div class="muted">@${esc(state.profile.username)}</div><div style="height:14px"></div>${contract?`<h3>Permanenza da calciatore</h3><p>${fmtDate(contract.start_date)} → ${fmtDate(contract.planned_end_date)}</p>${future&&can("contracts.request_own")?`<button class="btn btn-primary" id="request-renew">Richiedi conferma ${esc(future.name)}</button>`:""}`:`<p class="muted">Attualmente accesso fan/staff, senza permanenza calciatore attiva.</p>`}</div>`);
-  $("#request-renew")?.addEventListener("click",async()=>{try{await must(supabase.rpc("request_contract_extension",{p_team_id:state.team.id,p_requested_season_id:future.id,p_message:null}));toast("Richiesta inviata","ok")}catch(e){toast(e.message,"error")}});
+  renderShell("Profilo",`
+    <div class="card" style="max-width:680px">
+      <h1>${esc(state.profile.display_name)}</h1>
+      <div class="muted">@${esc(state.profile.username)}</div>
+
+      ${state.myPlayer?`
+        <div style="height:14px"></div>
+        <button class="btn" id="edit-my-player-data">⚙ I miei dati calciatore</button>
+      `:""}
+
+      <div style="height:14px"></div>
+
+      ${contract
+        ? `<h3>Permanenza da calciatore</h3>
+           <p>${fmtDate(contract.start_date)} → ${fmtDate(contract.planned_end_date)}</p>
+           ${future&&can("contracts.request_own")
+             ? `<button class="btn btn-primary" id="request-renew">Richiedi conferma ${esc(future.name)}</button>`
+             : ""
+           }`
+        : `<p class="muted">Attualmente accesso fan/staff, senza permanenza calciatore attiva.</p>`
+      }
+    </div>
+  `);
+
+  $("#edit-my-player-data")?.addEventListener("click",()=>openMyPlayerDataConfirmation(false));
+  $("#request-renew")?.addEventListener("click",async()=>{
+    try{
+      await must(
+        supabase.rpc("request_contract_extension",{
+          p_team_id:state.team.id,
+          p_requested_season_id:future.id,
+          p_message:null
+        })
+      );
+      toast("Richiesta inviata","ok");
+    }catch(e){
+      toast(e.message,"error");
+    }
+  });
 }
 
 /* =========================================================
@@ -8764,6 +9310,7 @@ async function adminOrganizationSettings(){
     supabase.from("venues")
       .select("*")
       .eq("team_id",state.team.id)
+      .eq("is_opponent_venue",false)
       .order("name")
   );
   const canOrgSettings=can("organization.settings.manage");
