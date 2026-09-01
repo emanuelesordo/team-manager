@@ -3841,6 +3841,162 @@
     }
 
 
+
+    /* =====================================================
+       053 — Cassa: tabelle compatte stile Rosa
+    ====================================================== */
+    .cash-split-layout{
+      display:grid;
+      grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr);
+      gap:8px;
+      min-height:0;
+      align-items:stretch;
+    }
+    .cash-table-card{
+      min-width:0;
+      min-height:0;
+      display:flex;
+      flex-direction:column;
+      padding:0!important;
+      overflow:hidden;
+    }
+    .cash-table-card>.card-head{
+      flex:none;
+      padding:8px 10px;
+      margin:0!important;
+      border-bottom:1px solid var(--ui-line-soft);
+      background:var(--panel2);
+    }
+    .cash-table-card>.card-head h2{margin:0!important;font-size:.82rem!important}
+    .cash-table-card>.card-head .muted{margin-top:2px;font-size:.6rem!important}
+    .cash-record-scroll{
+      flex:1;
+      min-height:180px;
+      max-height:calc(100dvh - 290px);
+      overflow:auto;
+      scrollbar-gutter:stable;
+    }
+    .cash-record-table{
+      width:100%!important;
+      min-width:0!important;
+      table-layout:auto!important;
+      border-collapse:separate!important;
+      border-spacing:0 2px!important;
+    }
+    .cash-record-table thead th{
+      position:sticky!important;
+      top:0!important;
+      z-index:5;
+      background:var(--panel2)!important;
+      border-bottom:1px solid var(--ui-line-soft)!important;
+      padding:5px 6px!important;
+      font-size:.58rem!important;
+      letter-spacing:.035em;
+      white-space:nowrap!important;
+    }
+    .cash-record-table tbody tr{
+      height:30px!important;
+      background:var(--ui-record-bg);
+    }
+    .cash-record-table tbody tr:hover{background:var(--ui-record-hover-bg,var(--panel2))}
+    .cash-record-table tbody td{
+      padding:4px 6px!important;
+      font-size:.67rem!important;
+      line-height:1.08!important;
+      vertical-align:middle!important;
+      border-top:1px solid var(--ui-line-soft)!important;
+      border-bottom:1px solid var(--ui-line-soft)!important;
+    }
+    .cash-record-table tbody td:first-child{
+      border-left:1px solid var(--ui-line-soft)!important;
+      border-radius:7px 0 0 7px;
+    }
+    .cash-record-table tbody td:last-child{
+      border-right:1px solid var(--ui-line-soft)!important;
+      border-radius:0 7px 7px 0;
+    }
+    .cash-record-table .cash-col-date,
+    .cash-record-table .cash-col-amount,
+    .cash-record-table .cash-col-status,
+    .cash-record-table .cash-col-mode,
+    .cash-record-table .cash-col-actions{
+      width:1%!important;
+      white-space:nowrap!important;
+    }
+    .cash-record-table .cash-col-player{
+      width:auto!important;
+      min-width:125px;
+      white-space:nowrap!important;
+    }
+    .cash-record-table .cash-col-description{
+      width:auto!important;
+      min-width:90px;
+      max-width:220px;
+    }
+    .cash-record-table .cash-description-text{
+      display:block;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+    .cash-record-table .player-list-identity{gap:4px!important;white-space:nowrap!important}
+    .cash-record-table .player-list-identity .avatar{width:20px!important;height:20px!important;min-width:20px!important;font-size:.5rem!important}
+    .cash-record-table .cash-mode-select{
+      width:auto!important;
+      min-width:88px!important;
+      max-width:112px!important;
+      padding:3px 20px 3px 6px!important;
+      font-size:.61rem!important;
+      min-height:25px!important;
+    }
+    .cash-record-table .cash-row-actions{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:2px;
+      flex-wrap:nowrap;
+    }
+    .cash-record-table .cash-row-actions .btn{
+      min-height:24px!important;
+      padding:2px 6px!important;
+      font-size:.58rem!important;
+      white-space:nowrap;
+    }
+    .cash-record-table .payment-report-note{
+      max-width:160px;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      font-size:.56rem!important;
+    }
+    .cash-empty-row td{
+      text-align:center!important;
+      color:var(--muted)!important;
+      padding:14px 8px!important;
+    }
+    @media(max-width:1180px){
+      .cash-split-layout{grid-template-columns:minmax(0,.82fr) minmax(0,1.18fr)}
+      .cash-record-table tbody td{font-size:.62rem!important;padding-left:4px!important;padding-right:4px!important}
+      .cash-record-table .cash-row-actions .btn{padding-left:4px!important;padding-right:4px!important}
+      .cash-record-table .cash-col-player{min-width:105px}
+    }
+    @media(max-width:900px){
+      .cash-split-layout{grid-template-columns:1fr}
+      .cash-fines-panel{order:2}
+      .cash-fees-panel{order:1}
+      .cash-record-scroll{max-height:42dvh;min-height:140px}
+      .cash-record-table .cash-col-description{max-width:150px}
+    }
+    @media(max-width:620px){
+      .cash-record-table thead th{font-size:.53rem!important;padding:4px!important}
+      .cash-record-table tbody td{font-size:.58rem!important;padding:3px 4px!important}
+      .cash-record-table .cash-col-player{min-width:92px}
+      .cash-record-table .cash-col-description{max-width:110px;min-width:60px}
+      .cash-record-table .cash-mode-select{min-width:72px!important;max-width:82px!important;font-size:.55rem!important;padding-right:15px!important}
+      .cash-record-table .cash-row-actions .btn{font-size:.54rem!important;padding:2px 4px!important}
+    }
+
     .dashboard-mini-record[data-dashboard-event] > .dashboard-event-date{order:0!important}
     .dashboard-mini-record[data-dashboard-event] > div:not(.dashboard-event-date){order:1!important}
 
@@ -16476,71 +16632,146 @@ async function pageCash(){
     const overdue=x.status==='pending'&&x.due_date&&x.due_date<now;
     const reported=x.payment_report_status==='reported';
     const rejected=x.payment_report_status==='rejected';
-    let html=x.status==='paid'?`<span class="badge green">✅ pagata</span>`:x.status==='waived'?`<span class="badge green">abbuonata</span>`:reported?`<span class="badge yellow">⏳ in verifica</span>`:overdue?`<span class="badge red">scaduta</span>`:`<span class="badge">da pagare</span>`;
-    if(rejected&&x.status==='pending')html+=`<div class="payment-report-note">Respinta${x.payment_review_note?`: ${esc(x.payment_review_note)}`:''}</div>`;
+    let html=x.status==='paid'
+      ? `<span class="badge green">pagata</span>`
+      : x.status==='waived'
+        ? `<span class="badge green">abbuonata</span>`
+        : reported
+          ? `<span class="badge yellow">in verifica</span>`
+          : overdue
+            ? `<span class="badge red">scaduta</span>`
+            : `<span class="badge">da pagare</span>`;
+    if(rejected&&x.status==='pending')html+=`<div class="payment-report-note" title="${esc(x.payment_review_note||'Segnalazione respinta')}">Respinta${x.payment_review_note?`: ${esc(x.payment_review_note)}`:''}</div>`;
     return html;
   };
 
-  const feeGroups=visiblePlayers.map(p=>{
-    const rows=activeFees.filter(x=>x.player_id===p.id).sort((a,b)=>String(a.due_date||'9999').localeCompare(String(b.due_date||'9999')));
-    const pending=rows.filter(x=>x.status==='pending');
-    const overdue=pending.filter(x=>x.due_date&&x.due_date<now);
-    const reported=pending.filter(x=>x.payment_report_status==='reported');
+  const feeRows=[];
+  visiblePlayers.forEach(p=>{
+    const playerFees=activeFees.filter(x=>x.player_id===p.id).sort((a,b)=>String(a.due_date||'9999').localeCompare(String(b.due_date||'9999')));
     const mode=assignmentMap.get(p.id)||(singleAvailable?'single':installmentsAvailable?'installments':'single');
     const canChoose=state.myPlayer?.id===p.id||can('fees.manage')||can('cash.setup');
-    const totalPending=pending.reduce((a,x)=>a+Number(x.amount||0),0);
-    const groupState=overdue.length?`<span class="badge red">${overdue.length} scadut${overdue.length===1?'a':'e'}</span>`:reported.length?`<span class="badge yellow">pagamento in verifica</span>`:pending.length?`<span class="badge">€ ${totalPending.toFixed(2)} aperti</span>`:`<span class="badge green">regolare</span>`;
 
-    const lines=rows.length?rows.map(x=>{
+    if(!playerFees.length){
+      feeRows.push(`<tr>
+        <td class="cash-col-player">${playerListIdentity(p,gm.get(p.id))}</td>
+        <td class="cash-col-mode"><select class="cash-mode-select" data-fee-mode="${p.id}" ${canChoose?'':'disabled'}>${modeOptions(mode)}</select></td>
+        <td class="cash-col-date">—</td>
+        <td class="cash-col-description"><span class="cash-description-text muted">Nessuna quota generata</span></td>
+        <td class="cash-col-amount">—</td>
+        <td class="cash-col-status"><span class="badge green">regolare</span></td>
+        <td class="cash-col-actions"></td>
+      </tr>`);
+      return;
+    }
+
+    playerFees.forEach(x=>{
       const own=state.myPlayer?.id===x.player_id;
       const reported=x.payment_report_status==='reported';
-      return `<div class="fee-line">
-        <div class="fee-line-date">${x.due_date?fmtDate(x.due_date):'—'}</div>
-        <div class="fee-line-title" title="${esc(x.title)}">${esc(x.title)}</div>
-        <div class="fee-line-amount">€ ${Number(x.amount||0).toFixed(2)}</div>
-        <div class="fee-line-status">${feeStatus(x)}</div>
-        <div class="fee-line-actions">
-          ${own&&x.status==='pending'&&!reported?`<button class="btn btn-sm btn-primary" data-report-fee-paid="${x.id}">✓ Ho pagato</button>`:''}
+      feeRows.push(`<tr>
+        <td class="cash-col-player">${playerListIdentity(p,gm.get(p.id))}</td>
+        <td class="cash-col-mode"><select class="cash-mode-select" data-fee-mode="${p.id}" ${canChoose?'':'disabled'}>${modeOptions(mode)}</select></td>
+        <td class="cash-col-date">${x.due_date?fmtDate(x.due_date):'—'}</td>
+        <td class="cash-col-description"><span class="cash-description-text" title="${esc(x.title)}">${esc(x.title)}</span></td>
+        <td class="cash-col-amount"><strong>€ ${Number(x.amount||0).toFixed(2)}</strong></td>
+        <td class="cash-col-status">${feeStatus(x)}</td>
+        <td class="cash-col-actions"><div class="cash-row-actions">
+          ${own&&x.status==='pending'&&!reported?`<button class="btn btn-sm btn-primary" data-report-fee-paid="${x.id}">Ho pagato</button>`:''}
           ${can('fees.manage')&&reported?`<button class="btn btn-sm btn-primary" data-review-fee="${x.id}" data-action="approve">Approva</button><button class="btn btn-sm btn-danger" data-review-fee="${x.id}" data-action="reject">Rifiuta</button>`:''}
           ${can('fees.manage')&&x.status==='pending'&&!reported?`<button class="btn btn-sm" data-fee-paid="${x.id}">Pagata</button><button class="btn btn-sm btn-ghost" data-fee-waive="${x.id}">Abbuona</button>`:''}
-        </div>
-      </div>`;
-    }).join(''):`<div class="fee-empty-line">Nessuna quota generata per questo calciatore.</div>`;
-
-    return `<section class="fee-player-group">
-      <div class="fee-player-head">
-        <div>${playerListIdentity(p,gm.get(p.id))}</div>
-        <div><select class="cash-mode-select" data-fee-mode="${p.id}" ${canChoose?'':'disabled'}>${modeOptions(mode)}</select></div>
-        <div class="fee-player-state">${groupState}</div>
-      </div>
-      ${lines}
-    </section>`;
-  }).join('');
+        </div></td>
+      </tr>`);
+    });
+  });
 
   const fineRows=activeFines.map(x=>{
-    const p=pm.get(x.player_id);const own=state.myPlayer?.id===x.player_id;const auto=x.source_kind==='match_event';const reported=x.payment_report_status==='reported';const rejected=x.payment_report_status==='rejected';
-    const status=x.status==='paid'?`<span class="badge green">✅ pagata</span>`:reported?`<span class="badge yellow">⏳ in verifica</span>`:`<span class="badge">da pagare</span>`;
-    return `<tr><td>${fmtDate(x.fine_date)}</td><td>${playerListIdentity(p,gm.get(x.player_id))}</td><td>${esc(x.reason)}${auto?` <span class="badge cash-auto-tag">auto</span>`:''}${x.adjustment_note?`<div class="muted">${esc(x.adjustment_note)}</div>`:''}${rejected&&x.status==='pending'?`<div class="payment-report-note">Respinta${x.payment_review_note?`: ${esc(x.payment_review_note)}`:''}</div>`:''}</td><td>€ ${Number(x.amount||0).toFixed(2)}</td><td>${status}</td><td><div class="payment-review-actions">${own&&x.status==='pending'&&!reported?`<button class="btn btn-sm btn-primary" data-report-fine-paid="${x.id}">✓ Ho pagato</button>`:''}${can('fines.manage')&&reported?`<button class="btn btn-sm btn-primary" data-review-fine="${x.id}" data-action="approve">Approva</button><button class="btn btn-sm btn-danger" data-review-fine="${x.id}" data-action="reject">Rifiuta</button>`:''}${can('fines.manage')?`<button class="btn btn-sm" data-edit-fine="${x.id}">Modifica</button>${x.status==='pending'&&!reported?`<button class="btn btn-sm" data-fine-paid="${x.id}">Pagata</button>`:''}`:''}</div></td></tr>`;
+    const p=pm.get(x.player_id);
+    const own=state.myPlayer?.id===x.player_id;
+    const auto=x.source_kind==='match_event';
+    const reported=x.payment_report_status==='reported';
+    const rejected=x.payment_report_status==='rejected';
+    const status=x.status==='paid'
+      ? `<span class="badge green">pagata</span>`
+      : reported
+        ? `<span class="badge yellow">in verifica</span>`
+        : `<span class="badge">da pagare</span>`;
+    const detail=[x.adjustment_note,rejected&&x.status==='pending'?(x.payment_review_note?`Respinta: ${x.payment_review_note}`:'Segnalazione respinta'):null].filter(Boolean).join(' · ');
+    return `<tr>
+      <td class="cash-col-date">${fmtDate(x.fine_date)}</td>
+      <td class="cash-col-player">${playerListIdentity(p,gm.get(x.player_id))}</td>
+      <td class="cash-col-description"><span class="cash-description-text" title="${esc([x.reason,detail].filter(Boolean).join(' · '))}">${esc(x.reason)}${auto?` <span class="badge cash-auto-tag">auto</span>`:''}</span></td>
+      <td class="cash-col-amount"><strong>€ ${Number(x.amount||0).toFixed(2)}</strong></td>
+      <td class="cash-col-status">${status}</td>
+      <td class="cash-col-actions"><div class="cash-row-actions">
+        ${own&&x.status==='pending'&&!reported?`<button class="btn btn-sm btn-primary" data-report-fine-paid="${x.id}">Ho pagato</button>`:''}
+        ${can('fines.manage')&&reported?`<button class="btn btn-sm btn-primary" data-review-fine="${x.id}" data-action="approve">Approva</button><button class="btn btn-sm btn-danger" data-review-fine="${x.id}" data-action="reject">Rifiuta</button>`:''}
+        ${can('fines.manage')?`<button class="btn btn-sm" data-edit-fine="${x.id}">Modifica</button>${x.status==='pending'&&!reported?`<button class="btn btn-sm" data-fine-paid="${x.id}">Pagata</button>`:''}`:''}
+      </div></td>
+    </tr>`;
   }).join('');
 
   renderShell("Cassa",`
-    <div class="page-title"><div><h1>Cassa</h1><p>Quote e multe della stagione ${esc(state.season.name)}.</p></div><div class="actions">${can('cash.setup')||can('fees.manage')||can('fines.categories_manage')?`<button class="btn" id="cash-setup">⚙ Setup Cassa</button>`:''}${can('fines.manage')?`<button class="btn btn-primary" id="cash-new-fine">+ Multa</button>`:''}</div></div>
-    ${sectionKpis([{icon:'💳',value:`€ ${pendingFees.toFixed(2)}`,label:'Quote aperte'},{icon:'⚠️',value:`€ ${overdueFees.toFixed(2)}`,label:'Quote scadute'},{icon:'💸',value:`€ ${pendingFines.toFixed(2)}`,label:'Multe aperte'},{icon:'💰',value:`€ ${paid.toFixed(2)}`,label:'Incassato'}])}
-
-    <div class="card">
-      <div class="card-head"><div><h2>💳 Quote</h2><div class="muted">Modalità, rate, scadenze e conferme nello stesso elenco.</div></div></div>
-      <div class="fees-unified-wrap"><div class="fee-unified-list">${feeGroups||`<div class="empty">Nessuna quota configurata</div>`}</div></div>
+    <div class="page-title">
+      <div><h1>Cassa</h1><p>Quote e multe della stagione ${esc(state.season.name)}.</p></div>
+      <div class="actions">
+        ${can('cash.setup')||can('fees.manage')||can('fines.categories_manage')?`<button class="btn" id="cash-setup">⚙ Setup Cassa</button>`:''}
+        ${can('fines.manage')?`<button class="btn btn-primary" id="cash-new-fine">+ Multa</button>`:''}
+      </div>
     </div>
 
-    <div style="height:9px"></div>
-    <div class="card">
-      <div class="card-head"><h2>💸 Multe</h2><span class="badge">${activeFines.length}</span></div>
-      <div class="table-wrap fines-scroll-wrap"><table class="table cash-table"><thead><tr><th>Data</th><th>Calciatore</th><th>Sanzione</th><th>Importo</th><th>Stato</th><th>Azioni</th></tr></thead><tbody>${fineRows||`<tr><td colspan="6">Nessuna multa</td></tr>`}</tbody></table></div>
+    ${sectionKpis([
+      {icon:'💳',value:`€ ${pendingFees.toFixed(2)}`,label:'Quote aperte'},
+      {icon:'⚠️',value:`€ ${overdueFees.toFixed(2)}`,label:'Quote scadute'},
+      {icon:'💸',value:`€ ${pendingFines.toFixed(2)}`,label:'Multe aperte'},
+      {icon:'💰',value:`€ ${paid.toFixed(2)}`,label:'Incassato'}
+    ])}
+
+    <div class="cash-split-layout">
+      <section class="card cash-table-card cash-fines-panel">
+        <div class="card-head">
+          <div><h2>💸 Multe</h2><div class="muted">Sanzioni, importi e conferme pagamento.</div></div>
+          <span class="badge">${activeFines.length}</span>
+        </div>
+        <div class="cash-record-scroll">
+          <table class="table roster-table cash-record-table">
+            <thead><tr>
+              <th class="cash-col-date">Data</th>
+              <th class="cash-col-player">Calciatore</th>
+              <th class="cash-col-description">Sanzione</th>
+              <th class="cash-col-amount">€</th>
+              <th class="cash-col-status">Stato</th>
+              <th class="cash-col-actions"></th>
+            </tr></thead>
+            <tbody>${fineRows||`<tr class="cash-empty-row"><td colspan="6">Nessuna multa</td></tr>`}</tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card cash-table-card cash-fees-panel">
+        <div class="card-head">
+          <div><h2>💳 Quote</h2><div class="muted">Una riga per ogni quota/rata, con modalità e azioni nello stesso record.</div></div>
+          <span class="badge">${activeFees.length}</span>
+        </div>
+        <div class="cash-record-scroll">
+          <table class="table roster-table cash-record-table">
+            <thead><tr>
+              <th class="cash-col-player">Calciatore</th>
+              <th class="cash-col-mode">Modalità</th>
+              <th class="cash-col-date">Scadenza</th>
+              <th class="cash-col-description">Quota</th>
+              <th class="cash-col-amount">€</th>
+              <th class="cash-col-status">Stato</th>
+              <th class="cash-col-actions"></th>
+            </tr></thead>
+            <tbody>${feeRows.join('')||`<tr class="cash-empty-row"><td colspan="7">Nessuna quota configurata</td></tr>`}</tbody>
+          </table>
+        </div>
+      </section>
     </div>
   `);
 
   $("#cash-setup")?.addEventListener("click",openCashSetup);
   $("#cash-new-fine")?.addEventListener("click",()=>openFineModal(players,gm));
+
   $$('[data-fee-mode]').forEach(sel=>sel.onchange=async()=>{
     const playerId=sel.dataset.feeMode;
     try{
