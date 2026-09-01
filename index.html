@@ -5006,7 +5006,25 @@ async function enterTeam(teamId,{persist=true,targetPath="dashboard"}={}){
     return changePasswordPage();
   }
 
-  await route(targetPath,false);
+  try{
+    await route(targetPath,false);
+  }catch(err){
+    console.error("Errore apertura pagina",targetPath,err);
+
+    if(targetPath!=="dashboard"){
+      location.hash="#/dashboard";
+      try{
+        await route("dashboard",false);
+        toast(`La sezione richiesta non è stata caricata: ${err.message}`,"error");
+      }catch(homeErr){
+        renderStartupRecovery(homeErr);
+        return;
+      }
+    }else{
+      renderStartupRecovery(err);
+      return;
+    }
+  }
 
   if(state.myPlayer&&state.season&&hasRole("player")){
     await runPlayerOnboarding();
@@ -5038,6 +5056,49 @@ async function chooseFallbackTeam(){
   }
 
   return renderTeamChooser();
+}
+
+function renderStartupRecovery(err){
+  console.error(err);
+  resetTeamBranding();
+  const message=err?.message||String(err||"Errore sconosciuto");
+  const root=$("#root");
+  if(!root)return;
+
+  root.innerHTML=`<div class="auth-wrap">
+    <div class="auth-card" style="width:min(720px,100%)">
+      <div class="brand">
+        <div class="brand-mark">!</div>
+        <div>
+          <h1>Errore di caricamento</h1>
+          <div class="muted">L'interfaccia è stata fermata da un errore applicativo o da una migration mancante.</div>
+        </div>
+      </div>
+
+      <div class="section-note" style="margin-bottom:12px;word-break:break-word">
+        ${esc(message)}
+      </div>
+
+      <div class="actions">
+        <button class="btn btn-primary" id="startup-retry-home">Torna alla Home</button>
+        <button class="btn" id="startup-retry">Riprova</button>
+        <button class="btn btn-ghost" id="startup-logout">Esci</button>
+      </div>
+    </div>
+  </div>`;
+
+  $("#startup-retry-home")?.addEventListener("click",async()=>{
+    location.hash="#/dashboard";
+    try{
+      if(state.team)await route("dashboard",false);
+      else await boot();
+    }catch(e){
+      renderStartupRecovery(e);
+    }
+  });
+
+  $("#startup-retry")?.addEventListener("click",()=>boot());
+  $("#startup-logout")?.addEventListener("click",logout);
 }
 
 async function boot(){
@@ -5102,7 +5163,9 @@ async function boot(){
 
   }catch(err){
     console.error(err);
-    toast(err.message,"error");
+    const root=$("#root");
+    if(!root?.innerHTML?.trim())renderStartupRecovery(err);
+    else toast(err.message,"error");
   }
 }
 
@@ -11144,9 +11207,7 @@ function buildCallupMessage(matchData){
   const title=matchData.m.home_away==='away'?`${opp}-${own}`:`${own}-${opp}`;
   const meeting=matchData.m.meeting_at?new Intl.DateTimeFormat('it-IT',{hour:'2-digit',minute:'2-digit'}).format(new Date(matchData.m.meeting_at)):'--:--';
   const lines=matchData.called.map(p=>`- ${playerShortName(p)}${p.shirt_number?` (#${p.shirt_number})`:''}`);
-  return `Buongiorno a tutti, ecco le convocazioni per la partita ${title} di ${fmtDate(matchData.ev.start_at)}, con ritrovo alle ${meeting} al campo ${matchData.ev.location||'da definire'}:
-${lines.join('
-')}`;
+  return `Buongiorno a tutti, ecco le convocazioni per la partita ${title} di ${fmtDate(matchData.ev.start_at)}, con ritrovo alle ${meeting} al campo ${matchData.ev.location||'da definire'}:\n${lines.join('\n')}`;
 }
 async function copyCallupsToClipboard(matchId){
   const data=await gatherMatchMediaData(matchId);
@@ -11174,7 +11235,7 @@ async function promptLiveStart(matchId,match,eventRow){
   const now=Date.now();
   const diffMinutes=Math.round((now-scheduledAt)/60000);
   if(now<scheduledAt-5*60000){
-    toast('Puoi avviare il LIVE solo nei 5 minuti che precedono l'orario previsto','error');
+    toast("Puoi avviare il LIVE solo nei 5 minuti che precedono l'orario previsto",'error');
     return;
   }
   if(now<=scheduledAt){
@@ -11580,7 +11641,7 @@ async function pageMatch(id){
   $('#save-meeting-time')?.addEventListener('click',async()=>{
     try{
       const value=$('#match-meeting-at').value;
-      if(!value)throw new Error('Inserisci l'orario di ritrovo');
+      if(!value)throw new Error("Inserisci l'orario di ritrovo");
       await must(supabase.rpc('set_match_meeting_at',{p_match_id:id,p_meeting_at:new Date(value).toISOString()}));
       toast('Orario di ritrovo aggiornato','ok');
       pageMatch(id);
@@ -11679,7 +11740,7 @@ async function renderLiveView(id){
   $$('[data-modify-pending]').forEach(b=>b.onclick=()=>{const g=d.pending.find(x=>x.group_id===b.dataset.modifyPending);openPendingValidationEdit(id,d,g)});
   $$('[data-confirm]').forEach(b=>b.onclick=async()=>{const g=d.pending.find(x=>x.group_id===b.dataset.confirm);try{await edge('live-validate-event',{group_id:g.group_id,action:'confirm',player_id:g.suggested_player_id,secondary_player_id:g.suggested_secondary_player_id,position_id:g.suggested_position_id,match_second:g.approx_match_second});await renderLiveView(id)}catch(err){toast(err.message,'error')}});
   $$('[data-reject]').forEach(b=>b.onclick=async()=>{const reason=prompt('Motivo del rifiuto (opzionale)','');try{await edge('live-validate-event',{group_id:b.dataset.reject,action:'reject',notes:reason});await renderLiveView(id)}catch(err){toast(err.message,'error')}});
-  $$('[data-delete-event]').forEach(b=>b.onclick=async()=>{if(!confirm('Eliminare l'evento ufficiale?'))return;try{await must(supabase.rpc('delete_match_event',{p_event_id:b.dataset.deleteEvent}));await renderLiveView(id)}catch(err){toast(err.message,'error')}});
+  $$('[data-delete-event]').forEach(b=>b.onclick=async()=>{if(!confirm("Eliminare l'evento ufficiale?"))return;try{await must(supabase.rpc('delete_match_event',{p_event_id:b.dataset.deleteEvent}));await renderLiveView(id)}catch(err){toast(err.message,'error')}});
   $$('[data-edit-event]').forEach(b=>b.onclick=()=>openEditOfficialEvent(id,d,b.dataset.editEvent));
 }
 function startClockTicker(){
@@ -16413,7 +16474,7 @@ supabase.auth.onAuthStateChange((event,session)=>{
   state.session=session;
 });
 startManagerialUIDecorator();
-boot();
+boot().catch(renderStartupRecovery);
 </script>
 </body>
 </html>
