@@ -5985,7 +5985,155 @@
       .btn{padding-left:9px!important;padding-right:9px!important}
     }
 
-</style>
+
+    /* 054 — GLASS MINIMAL SYSTEM */
+    :root{
+      --glass-bg:color-mix(in srgb,var(--panel) 78%,transparent);
+      --glass-raised:color-mix(in srgb,var(--panel2) 72%,transparent);
+      --glass-line:color-mix(in srgb,var(--team-tertiary) 12%,transparent);
+      --glass-line-strong:color-mix(in srgb,var(--team-primary) 34%,transparent);
+      --glass-shadow:0 18px 48px rgba(0,0,0,.20);
+      --glass-shadow-soft:0 8px 24px rgba(0,0,0,.12);
+      --glass-blur:blur(22px) saturate(1.25);
+      --space-page:clamp(14px,2vw,28px);
+      --radius-card:18px;
+      --radius-control:11px;
+    }
+    html{background:var(--bg)}
+    body{
+      background:
+        radial-gradient(ellipse 55% 42% at 8% -6%,color-mix(in srgb,var(--team-primary) 18%,transparent),transparent),
+        radial-gradient(ellipse 45% 36% at 95% 8%,color-mix(in srgb,var(--team-accent) 11%,transparent),transparent),
+        linear-gradient(155deg,color-mix(in srgb,var(--team-secondary) 94%,#020617 6%),var(--bg));
+      background-attachment:fixed;
+    }
+    .sidebar,.topbar,.mobile-appbar,.mobile-drawer,.mobile-bottom-dock,.modal,.auth-card{
+      background:var(--glass-bg)!important;
+      border-color:var(--glass-line)!important;
+      backdrop-filter:var(--glass-blur);
+      -webkit-backdrop-filter:var(--glass-blur);
+    }
+    .shell{grid-template-columns:250px minmax(0,1fr)}
+    .sidebar{padding:18px 14px!important;box-shadow:12px 0 42px rgba(0,0,0,.09)}
+    .sidebar .brand{padding:4px 5px 17px;margin-bottom:8px!important;border-bottom:1px solid var(--glass-line)}
+    .brand-mark{border-radius:14px!important;box-shadow:0 8px 22px color-mix(in srgb,var(--team-accent) 24%,transparent)}
+    .nav{gap:3px!important}.nav button{
+      min-height:40px;padding:9px 11px!important;border-radius:11px!important;font-size:.78rem;
+      transition:background .16s ease,color .16s ease,transform .16s ease
+    }
+    .nav button:hover{transform:translateX(2px)}.nav button.active{background:var(--team-accent-soft)!important;box-shadow:none!important;color:var(--text)!important}
+    .nav button.active:before{content:"";width:3px;height:17px;border-radius:9px;background:var(--team-accent)}
+    .nav .section{padding:13px 10px 4px!important;font-size:.59rem!important;letter-spacing:.1em!important}
+    .topbar{padding:12px var(--space-page)!important;box-shadow:0 8px 28px rgba(0,0,0,.08)}
+    .content{padding:var(--space-page)!important;max-width:1520px}
+    .page-title{margin-bottom:18px!important}.page-title h1{font-size:clamp(1.3rem,2vw,1.8rem)!important;letter-spacing:-.04em}.page-title p{font-size:.76rem!important;max-width:720px}
+    .card,.dashboard-panel,.competition-card,.stats-category-tile,.opponent-tile,.attendance-zone,
+    .fee-plan-column,.competition-rule-box,.opponent-field-box,.match-team-slot{
+      border:1px solid var(--glass-line)!important;border-radius:var(--radius-card)!important;
+      background:linear-gradient(145deg,var(--glass-raised),color-mix(in srgb,var(--panel) 70%,transparent))!important;
+      box-shadow:var(--glass-shadow-soft)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)
+    }
+    .card:hover,.stats-category-tile:hover,.opponent-tile:hover{border-color:var(--glass-line-strong)!important}
+    .card-head{padding-bottom:9px!important;border-bottom:1px solid var(--glass-line);margin-bottom:11px!important}
+    h2,h3{letter-spacing:-.022em}.muted{color:color-mix(in srgb,var(--text) 58%,transparent)!important}
+    .btn{
+      border-radius:var(--radius-control)!important;border-color:var(--glass-line)!important;
+      background:var(--glass-raised)!important;box-shadow:none!important;transition:transform .15s ease,filter .15s ease
+    }
+    .btn:hover{transform:translateY(-1px)}.btn-primary{background:var(--team-accent)!important;border-color:transparent!important;box-shadow:0 7px 20px color-mix(in srgb,var(--team-accent) 23%,transparent)!important}
+    input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{
+      border-color:var(--glass-line)!important;background:color-mix(in srgb,var(--input-bg) 72%,transparent)!important;
+      border-radius:var(--radius-control)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)
+    }
+    input:focus,select:focus,textarea:focus{border-color:var(--team-accent)!important;box-shadow:0 0 0 3px var(--team-accent-soft)}
+    .badge{border-radius:999px!important;background:color-mix(in srgb,var(--panel2) 60%,transparent)!important}
+    .tabs{padding:4px!important;border:1px solid var(--glass-line);border-radius:14px;background:color-mix(in srgb,var(--panel) 42%,transparent)}
+    .tab{border:0!important;border-radius:10px!important}.tab.active{box-shadow:none!important}
+    .table-wrap,.roster-table-wrap,.cash-record-scroll,.absence-scroll{
+      border-color:var(--glass-line)!important;border-radius:15px!important;background:color-mix(in srgb,var(--panel) 48%,transparent)
+    }
+    .table th{background:color-mix(in srgb,var(--panel2) 72%,transparent)!important;backdrop-filter:blur(16px)}
+    .table td{border-color:var(--glass-line)!important}.table tbody tr{transition:background .14s ease}.table tbody tr:hover{background:rgba(255,255,255,.025)}
+    .list-item,.manager-record,.calendar-event-row,.notification-item,.callup-dnd-player,.captain-candidate-pick,
+    .absence-record,.match-record,.training-record,.dashboard-mini-record,.dashboard-health-line,.dashboard-approval-row{
+      border-color:var(--glass-line)!important;background:color-mix(in srgb,var(--panel2) 54%,transparent)!important;box-shadow:none!important
+    }
+    .dashboard-kpis,.stats-data-grid{gap:10px!important}.manager-kpi-card,.dashboard-state-kpi{
+      position:relative;overflow:hidden;background:linear-gradient(145deg,color-mix(in srgb,var(--panel2) 70%,var(--team-primary) 8%),var(--glass-bg))!important
+    }
+    .manager-kpi-card:after,.dashboard-state-kpi:after{content:"";position:absolute;right:-28px;bottom:-30px;width:84px;height:84px;border-radius:50%;background:var(--team-accent-soft);filter:blur(2px)}
+    .stat{letter-spacing:-.055em}.calendar-date-tile{border-color:var(--glass-line)!important;background:var(--team-accent-soft)!important}
+    .month-calendar-wrap{border-color:var(--glass-line)!important;background:var(--glass-bg)!important;backdrop-filter:var(--glass-blur)}
+    .month-calendar-head,.month-day{border-color:var(--glass-line)!important}.month-event{border-color:var(--glass-line)!important;background:var(--team-accent-soft)!important}
+    .pitch{box-shadow:inset 0 0 80px rgba(0,0,0,.16),var(--glass-shadow-soft)}
+    .modal-backdrop{background:rgba(2,6,23,.64)!important;backdrop-filter:blur(7px)}.modal{box-shadow:var(--glass-shadow)!important}
+    .auth-wrap{background:transparent!important}.auth-card{box-shadow:var(--glass-shadow)!important}
+    .stats-category-grid,.opponent-tiles{gap:10px!important}.stats-category-tile,.opponent-tile{min-height:118px}
+    .cash-split-layout,.absence-board,.attendance-board,.captain-ballot-board,.callup-dnd-board{gap:12px!important}
+    .cash-fees-panel,.cash-fines-panel,.absence-column,.captain-ballot-column,.callup-dnd-column,.callup-unavailable-column{
+      border:1px solid var(--glass-line)!important;border-radius:16px!important;background:color-mix(in srgb,var(--panel) 55%,transparent)!important;overflow:hidden
+    }
+    .cash-table-card,.dashboard-panel-list,.callup-dnd-list,.notification-list{scrollbar-width:thin;scrollbar-color:var(--glass-line-strong) transparent}
+
+    @media(min-width:901px){
+      .dashboard-staff-layout{gap:12px!important}.dashboard-staff-column{gap:12px!important}
+      .grid{gap:12px}.grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}.grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .modal{border-radius:22px!important}.table th,.table td{padding:8px 10px!important}
+      .responsive-stack-table{display:table!important}.responsive-stack-table thead{display:table-header-group!important}.responsive-stack-table tbody{display:table-row-group!important}.responsive-stack-table tbody tr{display:table-row!important}.responsive-stack-table tbody td{display:table-cell!important}
+      .responsive-stack-table tbody td:before{display:none!important}
+    }
+
+    @media(max-width:900px){
+      :root{--radius-card:15px;--space-page:10px}
+      .shell{display:block}.content{padding:10px 10px calc(84px + env(safe-area-inset-bottom))!important}
+      .mobile-appbar{background:color-mix(in srgb,var(--panel) 70%,transparent)!important;border-bottom:1px solid var(--glass-line)!important}
+      .mobile-bottom-dock{background:color-mix(in srgb,var(--panel) 76%,transparent)!important;border-color:var(--glass-line)!important}
+      .mobile-drawer{background:color-mix(in srgb,var(--panel) 88%,transparent)!important}
+      .page-title{margin-bottom:9px!important}.page-title h1{font-size:1.12rem!important}.page-title p{font-size:.62rem!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      .card,.dashboard-panel,.competition-card,.stats-category-tile,.opponent-tile{box-shadow:0 7px 22px rgba(0,0,0,.1)!important}
+      .card-head{padding-bottom:6px!important;margin-bottom:7px!important}
+      .dashboard-kpis,.stats-data-grid,.kpi-grid,.stats-kpis,.admin-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      .manager-kpi-card,.dashboard-state-kpi{min-height:70px!important}
+      .table-wrap,.roster-table-wrap,.cash-record-scroll,.absence-scroll{max-height:min(62dvh,520px);overflow-y:auto!important;overflow-x:hidden!important}
+      .responsive-stack-table tbody tr{background:var(--glass-raised)!important;border:1px solid var(--glass-line)!important;box-shadow:0 5px 16px rgba(0,0,0,.08)!important}
+      .list-item,.manager-record,.calendar-event-row,.notification-item,.absence-record,.match-record,.training-record,.dashboard-mini-record{
+        background:transparent!important;border-width:0 0 1px!important;border-radius:0!important;padding-block:8px!important
+      }
+      .list-item:last-child,.manager-record:last-child,.calendar-event-row:last-child{border-bottom:0!important}
+      .match-record-competition,.match-record-city,.match-record-address,.training-record-city,.training-record-address,
+      .calendar-event-type-inline,.calendar-event-place,.roster-mobile-hide{display:none!important}
+      .dashboard-staff-column.middle{display:none!important}
+      .dashboard-staff-column.events .dashboard-panel:nth-child(n+3){display:none!important}
+      .stats-category-grid,.opponent-tiles{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+      .stats-category-tile,.opponent-tile{min-height:88px;padding:9px!important}
+      .cash-split-layout,.absence-board,.attendance-board,.captain-ballot-board,.callup-dnd-board{grid-template-columns:1fr!important;gap:8px!important}
+      .cash-fees-panel,.cash-fines-panel,.absence-column,.captain-ballot-column,.callup-dnd-column{border-radius:14px!important}
+      .modal{background:color-mix(in srgb,var(--panel) 92%,transparent)!important}
+      .form-grid{grid-template-columns:1fr!important}
+      .competition-rules-grid,.dual-fee-grid{grid-template-columns:1fr!important}
+      .competition-opponent-checks,.competition-discipline-links{grid-template-columns:1fr!important}
+      .attendance-player-card{grid-template-columns:minmax(0,1fr) auto!important}
+      .profile-header,.player-detail-head{grid-template-columns:auto minmax(0,1fr)!important}
+    }
+    @media(max-width:430px){
+      .content{padding-inline:8px!important}.mobile-appbar{padding-inline:10px!important}
+      .page-title{grid-template-columns:1fr!important}.page-title>.actions{width:100%;justify-content:flex-start!important}
+      .page-title>.actions .btn{flex:1 1 auto}.dashboard-kpis,.stats-data-grid,.kpi-grid,.stats-kpis,.admin-kpis{gap:6px!important}
+      .manager-kpi-card,.dashboard-state-kpi{min-height:64px!important;padding:8px!important}
+      .manager-kpi-card .stat,.dashboard-state-kpi .stat{font-size:1.12rem!important}
+      .stats-category-grid,.opponent-tiles{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+      .calendar-controls-row.calendar-controls-compact{grid-template-columns:auto minmax(0,1fr) auto!important}
+      .calendar-event-row{grid-template-columns:42px minmax(0,1fr) auto!important}
+      .month-day{min-height:52px!important}.month-event{font-size:.48rem!important}
+      .responsive-stack-table tbody tr{grid-template-columns:1fr!important}
+      .player-detail-meta{grid-template-columns:1fr!important}
+    }
+    @media(max-width:360px){
+      .mobile-bottom-dock{left:5px;right:5px}.mobile-bottom-dock button small{font-size:.48rem}
+      .stats-category-tile,.opponent-tile{min-height:80px}.card{padding:7px!important}
+    }
+
+  </style>
 </head>
 <body>
 <div id="root" class="app"></div>
