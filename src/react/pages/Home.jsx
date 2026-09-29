@@ -10,7 +10,7 @@ export default function Home({d}){
   const last=finished[0],next=d.matches.find(m=>m.status==='live')||upcoming[0];
   const scorers=[...d.stats].sort((a,b)=>n(b.goals)-n(a.goals)).slice(0,5);
 
-  return <div className="pageStack">
+  return <div className="pageStack homePage">
     <Title title="Team Manager" sub="Stagione, risultati e squadra in un colpo d’occhio."/>
 
     <section className="heroMatches">
