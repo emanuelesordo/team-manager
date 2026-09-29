@@ -27,7 +27,8 @@ export default function Roster({d}){
             <span className="playerIndex">{i+1}</span>
             <span className="playerIdentity"><span className="playerAvatar">{p.photo_url?<img src={p.photo_url} alt=""/>:initials(p.first_name,p.last_name)}</span><span><strong>{p.first_name} {p.last_name}</strong><small>{p.preferred_foot||'—'}</small></span></span>
             <Pill tone={'role '+(p.generic_role_manual||'')}>{p.generic_role_manual||'—'}</Pill>
-            <strong data-label="Pres.">{n(s.appearances)}</strong><strong data-label="Gol">{n(s.goals)}</strong><strong data-label="Assist">{n(s.assists)}</strong>
+            <strong className="desktopStat">{n(s.appearances)}</strong><strong className="desktopStat">{n(s.goals)}</strong><strong className="desktopStat">{n(s.assists)}</strong>
+            <span className="mobilePlayerStats"><span>Pres. <b>{n(s.appearances)}</b></span><span>Gol <b>{n(s.goals)}</b></span><span>Assist <b>{n(s.assists)}</b></span></span>
           </button>})}
         </div>
       </Surface>
