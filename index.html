@@ -34,12 +34,22 @@
       </div>
     </header>
 <main class="main">
-  <section id="homeView">
+  <section id="homeView" class="home-viewport">
     <div id="dashboardHero" class="dashboard-hero"></div>
     <div id="dashboardKpis" class="kpi-grid"></div>
     <div class="dashboard-bottom">
-      <section class="ui-card"><div class="card-section-head"><strong>Prossime partite</strong><button class="ghost-link" type="button" data-go-calendar>Vedi calendario</button></div><div id="dashboardUpcoming"></div></section>
-      <section class="ui-card"><div class="card-section-head"><strong>Classifica</strong><button class="ghost-link" type="button" data-go-competition>Completa</button></div><div id="dashboardStandings"></div></section>
+      <section class="ui-card dashboard-list-card">
+        <div class="card-section-head"><strong>Ultime partite</strong></div>
+        <div id="dashboardRecent"></div>
+      </section>
+      <section class="ui-card dashboard-list-card">
+        <div class="card-section-head"><strong>Prossime partite</strong><button class="ghost-link" type="button" data-go-calendar>Calendario</button></div>
+        <div id="dashboardUpcoming"></div>
+      </section>
+      <section id="dashboardStandingsCard" class="ui-card dashboard-standings-card">
+        <div class="card-section-head"><strong>Classifica</strong><button class="ghost-link" type="button" data-go-competition>Completa</button></div>
+        <div id="dashboardStandings"></div>
+      </section>
     </div>
   </section>
 
