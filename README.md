@@ -109,6 +109,17 @@ Le modifiche di Squadra, Avversarie e Competizioni verificano ora esplicitamente
 
 Le competizioni sono modificabili integralmente dal Setup, incluse formula, durata, punteggio, playoff/playout, A/R, supplementari, rigori, diffide e avversarie associate.
 
+## Modulo Competizioni operative
+
+La navigazione principale espone la sezione Competizioni per la stagione selezionata. La sezione legge:
+- configurazione da `app_competitions`;
+- classifica derivata da `app_competition_standings`;
+- calendario e risultati da `app_competition_fixtures`.
+
+Il calendario importato mantiene i nomi ufficiali originari. L'anagrafica `app_opponents` resta separata e modificabile senza riscrivere retroattivamente i fixture storici.
+
+Nota di congruenza corrente: nei fixture la squadra principale è registrata come `Calcio Caselle`, mentre l'anagrafica principale è `Calcio Caselle '08`. Il frontend la riconosce per evidenziazione tramite normalizzazione del nome; il dato storico non viene modificato automaticamente.
+
 ## Roadmap
 
 1. Setup e creazione guidata — in sviluppo
