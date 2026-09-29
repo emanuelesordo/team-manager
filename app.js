@@ -6,7 +6,21 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const fmt=d=>d?new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):"—";
 const statusLabel={active:"Attiva",future:"Futura",archived:"Archiviata"};
-let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set();
+let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null;
+
+async function loadAuthState(){
+  const {data:{session}}=await db.auth.getSession();
+  sessionUser=session?.user||null;
+  if(!sessionUser){$("#authState").textContent="Non autenticato";$("#authState").className="auth-state error";return}
+  const role=await db.from("app_user_roles").select("role").eq("user_id",sessionUser.id).maybeSingle();
+  $("#authState").textContent=role.data?.role==="admin"?"Admin":"Autenticato";
+  $("#authState").className="auth-state ok";
+}
+function assertSaved(result,label){
+  if(result.error) throw result.error;
+  if(!result.data) throw new Error(label+" non salvato: la sessione non ha permessi di modifica o non è più valida.");
+  return result.data;
+}
 
 function setPanel(name){
   $$(".setup-link").forEach(b=>b.classList.toggle("active",b.dataset.section===name));
@@ -55,7 +69,12 @@ $("#teamLogoFile").onchange=async e=>{const file=e.target.files[0];if(!file)retu
 async function extractColors(file){return new Promise(resolve=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d");x.drawImage(img,0,0,64,64);const d=x.getImageData(0,0,64,64).data,m=new Map();for(let i=0;i<d.length;i+=16){if(d[i+3]<180)continue;const r=Math.round(d[i]/32)*32,g=Math.round(d[i+1]/32)*32,b=Math.round(d[i+2]/32)*32;if(r>240&&g>240&&b>240)continue;const k=[Math.min(r,255),Math.min(g,255),Math.min(b,255)].join(",");m.set(k,(m.get(k)||0)+1)}const arr=[...m].sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>"#"+k.split(",").map(n=>(+n).toString(16).padStart(2,"0")).join(""));resolve(arr)};img.src=URL.createObjectURL(file)})}
 $("#teamForm").onsubmit=async e=>{e.preventDefault();if(!team)return;let logo=team.logo_url;const file=$("#teamLogoFile").files[0];if(file){const canvas=document.createElement("canvas"),img=new Image();await new Promise(res=>{img.onload=res;img.src=URL.createObjectURL(file)});const scale=Math.min(1,1200/Math.max(img.width,img.height));canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);const blob=await new Promise(res=>canvas.toBlob(res,"image/png"));const path=`${team.id}/logo.png`;const up=await db.storage.from("team-assets").upload(path,blob,{contentType:"image/png",upsert:true});if(up.error)return teamMsg(up.error.message,true);logo=db.storage.from("team-assets").getPublicUrl(path).data.publicUrl+"?t="+Date.now()}
   const payload={name:$("#teamName").value.trim(),short_name:$("#teamShort").value.trim().toUpperCase(),logo_url:logo,primary_color:$("#teamColor1").value,secondary_color:$("#teamColor2").value,accent_color:$("#teamColor3").value,inherit_organization_branding:false};
-  const r=await db.from("teams").update(payload).eq("id",team.id);teamMsg(r.error?r.error.message:"Salvato.",!!r.error);if(!r.error)loadTeam();
+  try{
+    const r=await db.from("teams").update(payload).eq("id",team.id).select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color").maybeSingle();
+    assertSaved(r,"Squadra");
+    teamMsg("Salvato.");
+    await loadTeam();
+  }catch(err){teamMsg(err.message||String(err),true)}
 }
 function teamMsg(t,err=false){$("#teamMessage").textContent=t;$("#teamMessage").className="form-message"+(err?" form-error":"")}
 
@@ -65,7 +84,8 @@ async function loadCompetitions(){
   competitions=r.data||[];renderCompetitions();
 }
 function renderCompetitions(){
-  $("#competitionList").innerHTML=competitions.map(c=>`<article class="card"><div class="card-head"><div class="card-title">${esc(c.name)}</div><span class="badge">${c.kind==="league"?"Campionato":c.kind==="cup"?"Coppa":"Amichevoli"}</span></div><div class="meta"><span>${esc(c.format||"—")}</span><span>${c.periods}×${c.minutes_per_period}'</span></div></article>`).join("")||'<div class="muted">Nessuna competizione.</div>';
+  $("#competitionList").innerHTML=competitions.map(c=>`<article class="card"><div class="card-head"><div class="card-title">${esc(c.name)}</div><span class="badge">${c.kind==="league"?"Campionato":c.kind==="cup"?"Coppa":"Amichevoli"}</span></div><div class="meta"><span>${esc(c.format||"—")}</span><span>${c.periods}×${c.minutes_per_period}'</span></div><div class="card-actions"><button class="text-btn" data-comp-edit="${c.id}">Modifica</button></div></article>`).join("")||'<div class="muted">Nessuna competizione.</div>';
+  $("[data-comp-edit]").forEach(b=>b.onclick=()=>openCompetitionEdit(b.dataset.compEdit));
 }
 $("#addCompetitionBtn").onclick=()=>openWizard(currentSeason,true);
 
@@ -78,7 +98,44 @@ $("#opponentSearch").oninput=e=>renderOpponents(e.target.value);
 $("#addOpponentBtn").onclick=()=>openOpponent();
 function openOpponent(o=null){$("#opponentForm").reset();$("#opponentId").value=o?.id||"";$("#opponentName").value=o?.name||"";$("#opponentShort").value=o?.short_name||"";$("#opponentDialog").showModal()}
 $$("[data-close-opponent]").forEach(b=>b.onclick=()=>$("#opponentDialog").close());
-$("#opponentForm").onsubmit=async e=>{e.preventDefault();const id=$("#opponentId").value,p={name:$("#opponentName").value.trim(),short_name:$("#opponentShort").value.trim()||null};const r=id?await db.from("app_opponents").update(p).eq("id",id):await db.from("app_opponents").insert(p);if(r.error)return alert(r.error.message);$("#opponentDialog").close();const o=await db.from("app_opponents").select("*").order("name");opponents=o.data||[];renderOpponents()};
+$("#opponentForm").onsubmit=async e=>{e.preventDefault();const id=$("#opponentId").value,p={name:$("#opponentName").value.trim(),short_name:$("#opponentShort").value.trim()||null};try{const r=id?await db.from("app_opponents").update(p).eq("id",id).select("*").maybeSingle():await db.from("app_opponents").insert(p).select("*").single();assertSaved(r,"Avversaria");$("#opponentDialog").close();const o=await db.from("app_opponents").select("*").order("name");opponents=o.data||[];renderOpponents()}catch(err){alert(err.message||String(err))}};
+
+
+async function openCompetitionEdit(id){
+  const c=competitions.find(x=>x.id===id);if(!c)return;
+  $("#competitionForm").reset();$("#competitionId").value=c.id;$("#cName").value=c.name||"";$("#cKind").value=c.kind||"league";
+  refreshCompetitionEditFormat(c.format);
+  $("#cPeriods").value=c.periods||2;$("#cMinutes").value=c.minutes_per_period||35;
+  $("#cWinPts").value=c.win_points??3;$("#cDrawPts").value=c.draw_points??1;$("#cLossPts").value=c.loss_points??0;
+  $("#cPlayoff").checked=!!c.playoff_playout_enabled;$("#cTwoLegged").checked=!!c.knockout_two_legged;
+  $("#cExtraTime").checked=!!c.extra_time_enabled;$("#cPenalties").checked=!!c.penalties_enabled;
+  $("#cYellowThresholds").value=(c.discipline_rules?.yellow_thresholds||[5,4,3,2]).join(",");
+  const links=await db.from("app_competition_opponents").select("opponent_id").eq("competition_id",id);
+  const selected=new Set((links.data||[]).map(x=>x.opponent_id));
+  $("#cOpponents").innerHTML=opponents.map(o=>`<label class="choice"><input type="checkbox" value="${o.id}" ${selected.has(o.id)?"checked":""}><span>${esc(o.name)}</span></label>`).join("");
+  $("#competitionError").classList.add("hidden");$("#competitionDialog").showModal();
+}
+function refreshCompetitionEditFormat(selected=null){
+  const kind=$("#cKind").value;
+  $("#cFormat").innerHTML=competitionFormats(kind).map(x=>`<option value="${x[0]}">${x[1]}</option>`).join("");
+  if(selected&&[...$("#cFormat").options].some(o=>o.value===selected))$("#cFormat").value=selected;
+  $("#cLeagueRules").classList.toggle("hidden",kind!=="league");
+  $("#cKnockoutRules").classList.toggle("hidden",kind==="friendly");
+}
+$("#cKind").onchange=()=>refreshCompetitionEditFormat();
+$("[data-close-competition]").forEach(b=>b.onclick=()=>$("#competitionDialog").close());
+$("#competitionForm").onsubmit=async e=>{
+  e.preventDefault();$("#competitionError").classList.add("hidden");
+  const id=$("#competitionId").value;
+  const payload={name:$("#cName").value.trim(),kind:$("#cKind").value,format:$("#cFormat").value,periods:+$("#cPeriods").value||2,minutes_per_period:+$("#cMinutes").value||45,win_points:+$("#cWinPts").value||0,draw_points:+$("#cDrawPts").value||0,loss_points:+$("#cLossPts").value||0,playoff_playout_enabled:$("#cPlayoff").checked,knockout_two_legged:$("#cTwoLegged").checked,extra_time_enabled:$("#cExtraTime").checked,penalties_enabled:$("#cPenalties").checked,discipline_rules:{yellow_thresholds:$("#cYellowThresholds").value.split(",").map(x=>+x.trim()).filter(Boolean),suspension_matches:1}};
+  try{
+    const r=await db.from("app_competitions").update(payload).eq("id",id).select("*").maybeSingle();assertSaved(r,"Competizione");
+    const del=await db.from("app_competition_opponents").delete().eq("competition_id",id);if(del.error)throw del.error;
+    const selected=[...$("#cOpponents").querySelectorAll("input:checked")].map(i=>({competition_id:id,opponent_id:i.value}));
+    if(selected.length){const ins=await db.from("app_competition_opponents").insert(selected);if(ins.error)throw ins.error}
+    $("#competitionDialog").close();await loadCompetitions();
+  }catch(err){$("#competitionError").textContent=err.message||String(err);$("#competitionError").classList.remove("hidden")}
+};
 
 function competitionFormats(kind){
   return kind==="league"?[["league_double","Girone unico A/R"],["league_single","Girone unico solo andata"],["league_playoff","Girone + playoff/playout"]]:kind==="cup"?[["cup_groups_knockout","Girone + eliminazione"],["cup_knockout","Eliminazione diretta"],["cup_group","Solo girone"]]:[["friendly","Partite singole"]];
@@ -142,4 +199,4 @@ function refreshCalendarCompetition(){
 }
 $("#previewCalendarBtn").onclick=async()=>{const f=$("#calendarFile").files[0];if(!f)return;if(f.type==="application/pdf"||f.name.toLowerCase().endsWith(".pdf")){$("#calendarPreview").textContent="PDF selezionato: "+f.name+". Verrà interpretato e poi confermato prima del salvataggio.";return}const txt=await f.text();const rows=txt.split(/\r?\n/).filter(Boolean).slice(0,20).map(r=>r.split(/[;,]/));$("#calendarPreview").innerHTML=`<table>${rows.map(r=>"<tr>"+r.map(c=>"<td>"+esc(c.trim())+"</td>").join("")+"</tr>").join("")}</table>`};
 
-loadAll().then(loadCompetitions);
+loadAuthState();loadAll().then(loadCompetitions);
