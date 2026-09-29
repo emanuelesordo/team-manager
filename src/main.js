@@ -238,6 +238,7 @@ function playerSheet(p){
     ${isStaff()?`<div class="sheet-actions"><button class="ghost" data-edit-player="${p.id}">Modifica</button><button class="ghost danger" data-delete-player="${p.id}">Elimina</button></div>`:''}
   </section></div>`;
 }
+const nationalities=['Albania','Algeria','Argentina','Australia','Austria','Belgio','Bolivia','Bosnia ed Erzegovina','Brasile','Bulgaria','Camerun','Canada','Cile','Cina','Colombia','Corea del Sud','Costa d’Avorio','Costa Rica','Croazia','Danimarca','Ecuador','Egitto','Finlandia','Francia','Germania','Ghana','Giappone','Grecia','India','Inghilterra','Iran','Irlanda','Islanda','Israele','Italia','Kosovo','Marocco','Messico','Montenegro','Nigeria','Norvegia','Paesi Bassi','Paraguay','Perù','Polonia','Portogallo','Repubblica Ceca','Romania','Russia','Scozia','Senegal','Serbia','Slovacchia','Slovenia','Spagna','Stati Uniti','Svezia','Svizzera','Tunisia','Turchia','Ucraina','Ungheria','Uruguay','Venezuela'];
 function playerEditor(){
   const p=state.selectedPlayerId?player(state.selectedPlayerId):null;
   return `<div class="sheet-backdrop"><section class="player-sheet editor"><button class="sheet-close" data-close-editor>×</button><h2>${p?'Modifica giocatore':'Nuovo giocatore'}</h2>
@@ -248,7 +249,7 @@ function playerEditor(){
       <label>Piede<select name="preferred_foot"><option value="">—</option>${['right','left','both'].map(v=>`<option value="${v}" ${p?.preferred_foot===v?'selected':''}>${v}</option>`).join('')}</select></label>
       <label>Data nascita<input type="date" name="birth_date" value="${p?.birth_date||''}"></label>
       <label>Altezza cm<input type="number" name="height_cm" value="${p?.height_cm||''}"></label>
-      <label>Nazionalità<input name="nationality_code" value="${esc(p?.nationality_code||'')}"></label>
+      <label>Nazionalità<div class="nationality-picker"><input id="nationality-search" autocomplete="off" placeholder="Cerca nazionalità…" value="${esc(p?.nationality_code||'')}"><input type="hidden" name="nationality_code" value="${esc(p?.nationality_code||'')}"><div id="nationality-options" class="nationality-options"></div></div></label>
       <label>Foto URL<input name="photo_url" value="${esc(p?.photo_url||'')}"></label>
     </div><button class="primary" type="submit">Salva giocatore</button></form></section></div>`;
 }
@@ -343,7 +344,7 @@ function bind(){
  document.querySelectorAll('[data-delete-match]').forEach(x=>x.onclick=()=>deleteMatch(x.dataset.deleteMatch));
  const np=document.querySelector('[data-new-player]');if(np)np.onclick=()=>{state.selectedPlayerId=null;state.playerEditorOpen=true;render()};
  document.querySelectorAll('[data-role-filter]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-role-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.player-profile-card').forEach(c=>c.style.display=b.dataset.roleFilter==='all'||c.dataset.role===b.dataset.roleFilter?'':'none')});
- const pf=document.querySelector('#player-form');if(pf)pf.onsubmit=savePlayer;
+ const pf=document.querySelector('#player-form');if(pf){pf.onsubmit=savePlayer;bindNationalityPicker();}
  const cf=document.querySelector('#competition-form');if(cf)cf.onsubmit=saveCompetition;
  const of=document.querySelector('#opponent-form');if(of)of.onsubmit=saveOpponent;
  const uf=document.querySelector('#user-form');if(uf)uf.onsubmit=createUser;
@@ -360,6 +361,11 @@ function bind(){
 }
 function bindShirtPicker(){const b=document.querySelector('.shirt-popover-backdrop');if(!b)return;b.onclick=()=>b.remove();b.querySelectorAll('[data-pick-shirt]').forEach(x=>x.onclick=()=>pickShirt(x.dataset.player,Number(x.dataset.pickShirt)));}
 function bindUnavailable(){const b=document.querySelector('.mini-modal-backdrop');if(!b)return;b.onclick=()=>b.remove();const f=b.querySelector('#unavailable-form');if(f)f.onsubmit=saveUnavailable;}
+function bindNationalityPicker(){
+ const input=document.querySelector('#nationality-search'),hidden=document.querySelector('input[name="nationality_code"]'),box=document.querySelector('#nationality-options');if(!input||!hidden||!box)return;
+ const draw=()=>{const q=input.value.trim().toLocaleLowerCase('it');const rows=nationalities.filter(n=>!q||n.toLocaleLowerCase('it').includes(q)).slice(0,12);box.innerHTML=rows.map(n=>`<button type="button" data-nationality="${esc(n)}">${esc(n)}</button>`).join('');box.classList.toggle('open',document.activeElement===input);box.querySelectorAll('[data-nationality]').forEach(b=>b.onclick=()=>{input.value=b.dataset.nationality;hidden.value=b.dataset.nationality;box.classList.remove('open')})};
+ input.onfocus=draw;input.oninput=()=>{hidden.value='';draw()};input.onblur=()=>setTimeout(()=>{box.classList.remove('open');if(!nationalities.includes(input.value)){input.value=hidden.value||''}},120);
+}
 function bindOverlay(){
  document.querySelectorAll('[data-close-sheet]').forEach(x=>x.onclick=()=>{document.querySelector('.sheet-backdrop')?.remove();state.selectedPlayerId=null});
  const e=document.querySelector('[data-edit-player]');if(e)e.onclick=()=>{document.querySelector('.sheet-backdrop')?.remove();state.selectedPlayerId=e.dataset.editPlayer;state.playerEditorOpen=true;render()};
