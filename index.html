@@ -13,7 +13,7 @@
   <nav class="main-nav">
     <button class="main-link active" data-app-view="setup">Setup</button>
     <button class="main-link" data-app-view="competitions">Competizioni</button>
-    <button class="main-link" disabled>Calendario</button>
+    <button class="main-link" data-app-view="calendar">Calendario</button>
     <button class="main-link" disabled>Giocatori</button>
     <button class="main-link" disabled>Rosa</button>
     <button class="main-link" disabled>Partite</button>
@@ -91,6 +91,21 @@
     <div id="competitionSummary" class="competition-summary"></div>
     <section id="competitionStandings"></section>
     <section id="competitionFixtures" class="hidden"></section>
+  </section>
+
+  <section id="calendarView" class="hidden">
+    <div class="toolbar calendar-toolbar">
+      <select id="calendarHubSelect" aria-label="Competizione"></select>
+      <div class="calendar-actions">
+        <div class="segmented">
+          <button class="segment active" type="button" data-calendar-filter="all">Tutte</button>
+          <button class="segment" type="button" data-calendar-filter="mine">Caselle</button>
+        </div>
+        <button class="primary" id="addFixtureBtn" type="button">+ Partita</button>
+      </div>
+    </div>
+    <div id="calendarHubMeta" class="muted"></div>
+    <div id="calendarHubList"></div>
   </section>
 </main>
 
@@ -170,6 +185,34 @@
     </div>
     <p id="opponentMessage" class="form-message hidden"></p>
     <div class="dialog-actions"><button type="button" class="secondary" data-close-opponent>Annulla</button><button class="primary" type="submit">Salva</button></div>
+  </form>
+</dialog>
+
+<dialog id="fixtureDialog">
+  <form id="fixtureForm">
+    <div class="dialog-head"><strong id="fixtureDialogTitle">Partita</strong><button type="button" class="icon-btn" data-close-fixture>×</button></div>
+    <input type="hidden" id="fixtureId">
+    <div class="compact-grid three">
+      <label>Giornata<input id="fixtureRound" type="number" min="1" required></label>
+      <label>Data e ora<input id="fixtureKickoff" type="datetime-local" required></label>
+      <label>Stato<select id="fixtureStatus"><option value="scheduled">Programmata</option><option value="finished">Conclusa</option><option value="postponed">Rinviata</option><option value="cancelled">Annullata</option></select></label>
+    </div>
+    <div class="compact-grid">
+      <label>Casa<input id="fixtureHome" list="fixtureTeamNames" required></label>
+      <label>Trasferta<input id="fixtureAway" list="fixtureTeamNames" required></label>
+    </div>
+    <datalist id="fixtureTeamNames"></datalist>
+    <div class="compact-grid">
+      <label>Campo<input id="fixtureVenue"></label>
+      <label>Codice gara<input id="fixtureCode"></label>
+    </div>
+    <div class="compact-grid three">
+      <label>Gol casa<input id="fixtureHomeScore" type="number" min="0"></label>
+      <label>Gol trasferta<input id="fixtureAwayScore" type="number" min="0"></label>
+      <label>Fonte<input id="fixtureSource"></label>
+    </div>
+    <p id="fixtureError" class="form-error hidden"></p>
+    <div class="dialog-actions"><button type="button" class="secondary" data-close-fixture>Annulla</button><button class="primary" type="submit">Salva</button></div>
   </form>
 </dialog>
 
