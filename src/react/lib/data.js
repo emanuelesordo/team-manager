@@ -6,7 +6,8 @@ export const TEAM_ID='d0c3210b-6a8a-4a1b-93c8-e2400029006e';
 const empty={
   loading:true,error:null,session:null,role:null,
   matches:[],players:[],roster:[],opponents:[],competitions:[],seasons:[],
-  scores:[],stats:[],ratings:[],events:[],profiles:[],userRoles:[],settings:{}
+  scores:[],stats:[],ratings:[],events:[],profiles:[],userRoles:[],settings:{},
+  competitionFixtures:[],standings:[]
 };
 
 function timeout(ms){
@@ -46,10 +47,12 @@ export function useTeamData(){
             supabase.from('app_settings').select('*').eq('id',true).maybeSingle(),
             supabase.from('app_match_events').select('*').order('minute',{ascending:true}),
             supabase.from('app_match_ratings').select('*'),
-            supabase.from('app_roster').select('*')
+            supabase.from('app_roster').select('*'),
+            supabase.from('app_competition_fixtures').select('*').order('kickoff_at',{ascending:true}),
+            supabase.from('app_competition_standings').select('*')
           ]);
 
-          const [players,seasons,competitions,opponents,matches,scores,settings,events,ratings,roster]=results;
+          const [players,seasons,competitions,opponents,matches,scores,settings,events,ratings,roster,competitionFixtures,standings]=results;
           const firstError=results.find(x=>x.error)?.error;
           if(firstError)throw firstError;
 
@@ -79,6 +82,7 @@ export function useTeamData(){
             matches:matches.data||[],scores:scores.data||[],
             settings:settings.data||{},events:events.data||[],
             ratings:ratings.data||[],roster:roster.data||[],
+            competitionFixtures:competitionFixtures.data||[],standings:standings.data||[],
             stats:stats.data||[],profiles,userRoles
           };
         })();
