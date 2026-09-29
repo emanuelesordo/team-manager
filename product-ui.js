@@ -182,4 +182,84 @@
       : `<span class="club-badge fallback">${esc((short||name||"---").slice(0,3).toUpperCase())}</span>`;
   }
   function eventLabel(v) {
-    return {goal:"Gol",substitution:"Sostituzione",yellow_card:
+    return {goal:"Gol",substitution:"Sostituzione",yellow_card:"Giallo",red_card:"Rosso",own_goal:"Autogol"}[v] || v;
+  }
+  function playerName(id) {
+    const p = players.find(x=>x.id===id);
+    return p ? `${p.first_name} ${p.last_name}` : "";
+  }
+  function matchLabel(m) {
+    const o = opponentById(m.opponent_id);
+    return `${shortDate(m.kickoff_at)} \xb7 ${m.home_away==="home"?"vs":"@"} ${o?.name||"Avversaria"}`;
+  }
+  function age(date) {
+    if (!date) return "\u2014";
+    const d = new Date(date+"T12:00:00"), n = new Date();
+    let a = n.getFullYear()-d.getFullYear();
+    if (n < new Date(n.getFullYear(),d.getMonth(),d.getDate())) a--;
+    return a;
+  }
+
+  async function ownFixtures() {
+    const s = currentSeason();
+    if (!s) return [];
+    await TM.loadCalendarHub();
+    const st = state();
+    return (st.calendarRows || []).slice().sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
+  }
+
+  async function loadHome() {
+    await TM.loadCompetitions();
+    const fixtures = await ownFixtures();
+    const now = Date.now();
+    const next = fixtures.find(x=>new Date(x.kickoff_at).getTime()>=now) || fixtures.find(x=>x.status!=="finished") || null;
+    const last = [...fixtures].reverse().find(x=>x.status==="finished") || null;
+    const finished = fixtures.filter(x=>x.status==="finished");
+    let wins=0,draws=0,losses=0,gf=0,ga=0;
+    finished.forEach(x=>{
+      const home=TM.isOwnTeamName(x.home_team);
+      const ours=home?+x.home_score:+x.away_score;
+      const theirs=home?+x.away_score:+x.home_score;
+      gf+=ours;ga+=theirs;
+      if (ours>theirs) wins++; else if (ours===theirs) draws++; else losses++;
+    });
+
+    const card = (f,title) => {
+      if (!f) return `<article class="glass-card hero-match-card"><div class="section-cap"><strong>${title}</strong></div><div class="empty-state">Nessuna partita</div></article>`;
+      const h=TM.teamVisual(f.home_team), a=TM.teamVisual(f.away_team);
+      const score=f.status==="finished"?`${f.home_score} - ${f.away_score}`:"\u2013";
+      return `<article class="glass-card hero-match-card">
+        <div class="section-cap"><strong>${title}</strong><span class="soft-badge">${esc(competitionById(f.competition_id)?.name||"")}</span></div>
+        <div class="hero-score"><div>${badgeLogo(h.name,h.logo,h.short)}<b>${esc(h.short)}</b></div><strong>${score}</strong><div>${badgeLogo(a.name,a.logo,a.short)}<b>${esc(a.short)}</b></div></div>
+        <div class="hero-date">${TM.localDateTime(f.kickoff_at)}</div>
+      </article>`;
+    };
+    $("#homeHeroGrid").innerHTML = card(next,"Prossima partita")+card(last,"Ultima partita");
+    $("#homeMetricGrid").innerHTML = [
+      ["Partite",finished.length],["Vittorie",wins],["Pareggi",draws],["Sconfitte",losses],["Gol fatti",gf],["Gol subiti",ga]
+    ].map(x=>`<article class="metric-card"><strong>${x[1]}</strong><span>${x[0]}</span></article>`).join("");
+
+    $("#homeUpcoming").innerHTML = fixtures.filter(x=>x.status!=="finished").slice(0,4).map(f=>{
+      const opp=TM.teamVisual(TM.isOwnTeamName(f.home_team)?f.away_team:f.home_team);
+      return `<div class="compact-match-row"><time>${shortDate(f.kickoff_at)}</time>${badgeLogo(opp.name,opp.logo,opp.short)}<strong>${esc(opp.name)}</strong><span>${timeOnly(f.kickoff_at)}</span></div>`;
+    }).join("") || '<div class="empty-state">Nessuna prossima partita</div>';
+
+    const c=competitions()[0];
+    if (c) {
+      const sr=await db.from("app_competition_standings").select("*").eq("season_id",currentSeason().id).eq("competition_id",c.id);
+      const rows=[...(sr.data||[])].sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference).slice(0,5);
+      $("#homeStandings").innerHTML=`<table class="mini-table"><tbody>${rows.map((r,i)=>`<tr class="${TM.isOwnTeamName(r.team)?"own-team":""}"><td>${i+1}</td><td>${esc(r.team)}</td><td>${r.played}</td><td><strong>${r.points}</strong></td></tr>`).join("")}</tbody></table>`;
+    } else $("#homeStandings").innerHTML='<div class="empty-state">Nessuna classifica</div>';
+  }
+
+  function pstats(id) {
+    const apps=matchPlayers.filter(x=>x.player_id===id&&(x.started||(+x.minutes_played||0)>0)).length;
+    const goals=events.filter(x=>x.player_id===id&&x.team_side==="team"&&x.event_type==="goal").length;
+    const yellows=events.filter(x=>x.player_id===id&&x.event_type==="yellow_card").length;
+    const reds=events.filter(x=>x.player_id===id&&x.event_type==="red_card").length;
+    return {apps,goals,yellows,reds};
+  }
+
+  async function loadRoster() {
+    await loadCore();
+    renderRoster($
