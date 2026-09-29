@@ -37,7 +37,7 @@ export default function CalendarPage({d}){
         <span>Calendario</span>
         <h1>Il nostro <em>percorso</em></h1>
         <p>Partite, risultati e prossimi impegni.</p>
-        {isStaff(d)&&<div className="calAdminActions"><button className="calPrimary" onClick={()=>setEdit(true)}><Plus/>Nuova partita</button><button className="calImportButton" onClick={()=>setImporter(true)}><Download/>Importa calendario</button></div>}
+        {isStaff(d)&&<div className="calAdminActions"><button className="calPrimary" onClick={()=>setEdit(true)}><Plus/>Nuova partita</button></div>}
       </section>
 
       <Surface className="calMonth">
@@ -71,9 +71,12 @@ export default function CalendarPage({d}){
     <Surface className="calProgramme">
       <div className="calProgrammeHead">
         <h2>Tutte le <em>partite</em></h2>
-        <div className="calViewSwitch">
+        <div className="calProgrammeActions">
+          {isStaff(d)&&<button className="calImportButton" onClick={()=>setImporter(true)}><Download/>Importa calendario</button>}
+          <div className="calViewSwitch">
           <button className={view==='list'?'active':''} onClick={()=>setView('list')}><List/>Lista</button>
           <button className={view==='calendar'?'active':''} onClick={()=>setView('calendar')}><CalendarDays/>Calendario</button>
+        </div>
         </div>
       </div>
 
