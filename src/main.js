@@ -69,7 +69,7 @@ function nav(){return [['home','Home'],['calendar','Calendario'],['live','Partit
 function shell(content){
  const items=nav(),logo=state.settings.team_logo_url?'<img src="'+esc(state.settings.team_logo_url)+'" alt="Calcio Caselle">':'CC';
  const roleName=esc(labels[state.role]||'Ospite');
- app.innerHTML=`<div class="app-shell">
+ app.innerHTML=`<div class="app-shell view-${state.view}">
   <aside class="sidebar">
    <div class="brand"><div class="brand-mark">${logo}</div><div><strong>TEAM MANAGER</strong><span>Calcio Caselle</span></div></div>
    <nav class="side-nav">${items.map(([id,l])=>`<button data-view="${id}" class="${state.view===id?'active':''}"><span class="nav-glyph">${icons[id]}</span><span>${l}</span></button>`).join('')}
