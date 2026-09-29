@@ -81,29 +81,23 @@
   </section>
   </div>
   <section id="competitionsView" class="hidden">
-    <div class="toolbar competition-toolbar">
-      <select id="competitionHubSelect" aria-label="Competizione"></select>
-      <div class="segmented">
-        <button class="segment active" type="button" data-comp-tab="standings">Classifica</button>
-        <button class="segment" type="button" data-comp-tab="fixtures">Calendario</button>
-      </div>
+    <div class="competition-picker"><select id="competitionHubSelect" aria-label="Competizione"></select></div>
+    <div class="competition-split">
+      <section class="competition-half"><div id="competitionStandings"></div></section>
+      <section class="competition-half">
+        <div class="mini-calendar-tools">
+          <div class="segmented">
+            <button class="segment active" type="button" data-comp-fixture-filter="all">Tutte</button>
+            <button class="segment" type="button" data-comp-fixture-filter="mine">Caselle</button>
+          </div>
+        </div>
+        <div id="competitionFixtures"></div>
+      </section>
     </div>
-    <div id="competitionSummary" class="competition-summary"></div>
-    <section id="competitionStandings"></section>
-    <section id="competitionFixtures" class="hidden"></section>
   </section>
 
   <section id="calendarView" class="hidden">
-    <div class="toolbar calendar-toolbar">
-      <select id="calendarHubSelect" aria-label="Competizione"></select>
-      <div class="calendar-actions">
-        <div class="segmented">
-          <button class="segment active" type="button" data-calendar-filter="all">Tutte</button>
-          <button class="segment" type="button" data-calendar-filter="mine">Caselle</button>
-        </div>
-        <button class="primary" id="addFixtureBtn" type="button">+ Partita</button>
-      </div>
-    </div>
+    <div id="calendarCompetitionFilters" class="competition-filter-row"></div>
     <div id="calendarHubMeta" class="muted"></div>
     <div id="calendarHubList"></div>
   </section>
@@ -202,17 +196,36 @@
       <label>Trasferta<input id="fixtureAway" list="fixtureTeamNames" required></label>
     </div>
     <datalist id="fixtureTeamNames"></datalist>
+    <label>Campo<input id="fixtureVenue"></label>
     <div class="compact-grid">
-      <label>Campo<input id="fixtureVenue"></label>
-      <label>Codice gara<input id="fixtureCode"></label>
-    </div>
-    <div class="compact-grid three">
       <label>Gol casa<input id="fixtureHomeScore" type="number" min="0"></label>
       <label>Gol trasferta<input id="fixtureAwayScore" type="number" min="0"></label>
-      <label>Fonte<input id="fixtureSource"></label>
     </div>
     <p id="fixtureError" class="form-error hidden"></p>
     <div class="dialog-actions"><button type="button" class="secondary" data-close-fixture>Annulla</button><button class="primary" type="submit">Salva</button></div>
+  </form>
+</dialog>
+
+<dialog id="matchDetailDialog" class="wizard">
+  <form id="matchDetailForm">
+    <div class="dialog-head"><strong id="matchDetailTitle">Partita</strong><button type="button" class="icon-btn" data-close-match-detail>×</button></div>
+    <input type="hidden" id="matchDetailFixtureId">
+    <input type="hidden" id="matchDetailMatchId">
+    <div class="compact-grid three">
+      <label>Data e ora<input id="matchDetailKickoff" type="datetime-local" required></label>
+      <label>Stato<select id="matchDetailStatus"><option value="scheduled">Programmata</option><option value="finished">Conclusa</option><option value="postponed">Rinviata</option><option value="cancelled">Annullata</option></select></label>
+      <label>Campo<input id="matchDetailVenue"></label>
+    </div>
+    <div class="compact-grid">
+      <label>Gol casa<input id="matchDetailHomeScore" type="number" min="0"></label>
+      <label>Gol trasferta<input id="matchDetailAwayScore" type="number" min="0"></label>
+    </div>
+    <div id="matchEventSection" class="match-event-section">
+      <div class="match-event-label">Eventi</div>
+      <div id="matchEventList"></div>
+    </div>
+    <p id="matchDetailError" class="form-error hidden"></p>
+    <div class="dialog-actions"><button type="button" class="secondary" data-close-match-detail>Chiudi</button><button class="primary" type="submit">Salva partita</button></div>
   </form>
 </dialog>
 
