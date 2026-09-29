@@ -99,6 +99,10 @@ Creata `app_competition_opponents` con RLS:
 - lettura pubblica coerente con le anagrafiche già esposte;
 - scrittura solo utenti autenticati che soddisfano `private.is_staff()`.
 
+### Autenticazione
+
+L'header integra login/logout con Supabase Auth tramite email e password. La sessione viene salvata nel browser, rinnovata tramite refresh token e usata per tutte le richieste protette. Dopo il login viene letto `app_user_roles` per mostrare lo stato `Admin` quando applicabile.
+
 ### Persistenza Setup
 
 Le modifiche di Squadra, Avversarie e Competizioni verificano ora esplicitamente che Supabase restituisca la riga modificata. Un'operazione bloccata da RLS/sessione non viene più mostrata come salvata. L'header mostra inoltre lo stato della sessione (`Admin / Autenticato / Non autenticato`).
