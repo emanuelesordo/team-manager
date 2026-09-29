@@ -91,3 +91,95 @@
                 <button class="primary full-btn" type="submit">Salva evento</button>
               </form>
             </section>
+          </div>
+        </section>
+        <section id="statsView" class="hidden product-view">
+          <div id="statsMetricGrid" class="metric-grid"></div>
+          <div class="stats-grid">
+            <section class="glass-card"><div class="section-cap"><strong>Marcatori</strong></div><div id="statsScorers"></div></section>
+            <section class="glass-card"><div class="section-cap"><strong>Disciplina</strong></div><div id="statsDiscipline"></div></section>
+            <section class="glass-card span-2"><div class="section-cap"><strong>Risultati per partita</strong></div><div id="statsResults"></div></section>
+          </div>
+        </section>`);
+    }
+
+    const nav = $(".main-nav");
+    if (nav) {
+      nav.innerHTML = `
+        <button class="main-link active" data-product-view="home">Home</button>
+        <button class="main-link" data-product-view="competitions">Competizioni</button>
+        <button class="main-link" data-product-view="calendar">Calendario</button>
+        <button class="main-link" data-product-view="roster">Rosa</button>
+        <button class="main-link" data-product-view="matches">Partite</button>
+        <button class="main-link" data-product-view="events">Eventi</button>
+        <button class="main-link" data-product-view="stats">Statistiche</button>
+        <button class="main-link" data-product-view="setup">Amministrazione</button>`;
+    }
+
+    $$("[data-product-view]").forEach(b => b.onclick = () => showView(b.dataset.productView));
+    $$("[data-jump-view]").forEach(b => b.onclick = () => showView(b.dataset.jumpView));
+
+    $("#rosterSearch")?.addEventListener("input", e => renderRoster(e.target.value));
+    $("#eventsMatchFilter")?.addEventListener("change", renderEvents);
+    $("#eventCreateForm")?.addEventListener("submit", createEvent);
+  }
+
+  function visibleIds() {
+    return ["homeView","competitionsView","calendarView","rosterView","matchesView","eventsView","statsView","setupView"];
+  }
+
+  async function showView(name) {
+    const map = {
+      home:"homeView", competitions:"competitionsView", calendar:"calendarView",
+      roster:"rosterView", matches:"matchesView", events:"eventsView",
+      stats:"statsView", setup:"setupView"
+    };
+    visibleIds().forEach(id => $("#"+id)?.classList.toggle("hidden", id !== map[name]));
+    $$("[data-product-view]").forEach(b => b.classList.toggle("active", b.dataset.productView === name));
+
+    if (name === "home") await loadHome();
+    if (name === "competitions") await TM.loadCompetitionHub();
+    if (name === "calendar") await TM.loadCalendarHub();
+    if (name === "roster") await loadRoster();
+    if (name === "matches") await loadMatches();
+    if (name === "events") await loadEvents();
+    if (name === "stats") await loadStats();
+    if (name === "setup") TM.setPanel?.("seasons");
+  }
+
+  async function loadCore() {
+    const s = currentSeason();
+    if (!s) return;
+    await TM.ensureMainTeam();
+    const [pr,mr,mpr,er,rr] = await Promise.all([
+      db.from("players").select("*").eq("team_id",s.team_id).order("last_name",{ascending:true}),
+      db.from("app_matches").select("*").eq("season_id",s.id).order("kickoff_at",{ascending:true}),
+      db.from("app_match_players").select("*"),
+      db.from("app_match_events").select("*").order("minute",{ascending:true}),
+      db.from("app_match_ratings").select("*")
+    ]);
+    players = pr.data || [];
+    matches = mr.data || [];
+    const ids = new Set(matches.map(m=>m.id));
+    matchPlayers = (mpr.data || []).filter(x=>ids.has(x.match_id));
+    events = (er.data || []).filter(x=>ids.has(x.match_id) && x.validation_status !== "rejected");
+    ratings = (rr.data || []).filter(x=>ids.has(x.match_id));
+  }
+
+  function opponentById(id) { return opponents().find(o=>o.id===id) || null; }
+  function competitionById(id) { return competitions().find(c=>c.id===id) || null; }
+  function shortDate(v) {
+    if (!v) return "\u2014";
+    return new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short"}).format(new Date(v));
+  }
+  function timeOnly(v) {
+    if (!v) return "";
+    return new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(new Date(v));
+  }
+  function badgeLogo(name,logo,short) {
+    return logo
+      ? `<img class="club-badge" src="${esc(logo)}" alt="">`
+      : `<span class="club-badge fallback">${esc((short||name||"---").slice(0,3).toUpperCase())}</span>`;
+  }
+  function eventLabel(v) {
+    return {goal:"Gol",substitution:"Sostituzione",yellow_card:
