@@ -127,24 +127,34 @@ const formationSlots={
  '4-3-1-2':[[50,91],[18,70],[40,76],[60,76],[82,70],[25,51],[50,56],[75,51],[50,34],[34,17],[66,17]],
  '4-1-4-1':[[50,91],[18,70],[40,76],[60,76],[82,70],[50,58],[14,38],[38,42],[62,42],[86,38],[50,15]]
 };
+const unavailabilityLabels={injury:'Infortunio',work:'Lavoro',personal:'Personale',suspension:'Squalifica',illness:'Malattia',travel:'Viaggio',other:'Altro'};
 function formationWorkspace(m){
  const mp=new Map(state.matchPlayers.map(x=>[x.player_id,x])),formation=m.formation||'4-4-2',slots=formationSlots[formation]||formationSlots['4-4-2'];
  const starters=state.matchPlayers.filter(x=>x.selection_status==='starter'||x.started).sort((x,y)=>(x.tactical_slot||99)-(y.tactical_slot||99));
- const bySlot=new Map(starters.map((x,i)=>[x.tactical_slot||i+1,x]));
- const bench=state.matchPlayers.filter(x=>x.selection_status==='bench');
- const assigned=new Set([...starters,...bench].map(x=>x.player_id));
- const available=state.players.filter(p=>!assigned.has(p.id));
- const token=(p,x,cls='')=>`<div class="drag-player ${cls}" draggable="${isStaff()?'true':'false'}" data-drag-player="${p.id}"><span class="drag-no">${x?.shirt_number||'—'}</span><div><b>${esc(p.last_name)}</b><small>${labels[p.generic_role_manual]||'—'}</small></div></div>`;
- return `<div class="formation-workspace">
- <aside class="squad-panel"><div class="squad-panel-head"><div><span class="eyebrow">ROSA</span><strong>Trascina i giocatori</strong></div><span>${available.length}</span></div><div class="squad-scroll">${available.map(p=>token(p,mp.get(p.id))).join('')||'<small>Tutti assegnati</small>'}</div></aside>
+ const bySlot=new Map(starters.map((x,i)=>[x.tactical_slot||i+1,x])),bench=state.matchPlayers.filter(x=>x.selection_status==='bench'),absent=state.matchPlayers.filter(x=>x.selection_status==='absent');
+ const assigned=new Set([...starters,...bench,...absent].map(x=>x.player_id)),available=state.players.filter(p=>!assigned.has(p.id));
+ const roleBox=p=>`<span class="role-square role-${p.generic_role_manual||'x'}">${p.generic_role_manual||'–'}</span>`;
+ const token=(p,x,cls='')=>`<div class="drag-player ${cls}" draggable="${isStaff()?'true':'false'}" data-drag-player="${p.id}">${roleBox(p)}<div><b>${esc(p.last_name)}</b><small>${labels[p.generic_role_manual]||'Ruolo n/d'}</small></div></div>`;
+ const callupRow=(x,type)=>{const p=player(x.player_id);return `<div class="callup-row ${type}" draggable="${isStaff()?'true':'false'}" data-drag-player="${p.id}"><span class="callup-no">${x.shirt_number||'–'}</span><b>${esc(p.last_name)}</b></div>`};
+ return `<div class="formation-workspace v2">
+ <aside class="squad-panel" data-drop-zone="available"><div class="squad-panel-head"><div><span class="eyebrow">ROSA</span><strong>Disponibili</strong></div><span>${available.length}</span></div><div class="squad-scroll">${available.map(p=>token(p,mp.get(p.id))).join('')||'<small>Tutti assegnati</small>'}</div>
+ <div class="unavailable-block"><div class="squad-panel-head"><div><span class="eyebrow">NON CONVOCATI</span><strong>${absent.length}</strong></div></div><div class="unavailable-list">${absent.map(x=>{const p=player(x.player_id);return `<div class="unavailable-row" draggable="${isStaff()?'true':'false'}" data-drag-player="${p.id}">${roleBox(p)}<div><b>${esc(p.last_name)}</b><small>${unavailabilityLabels[x.unavailability_reason]||'Motivo da indicare'}${x.unavailability_note?' · '+esc(x.unavailability_note):''}</small></div>${isStaff()?'<button class="mini-edit" data-unavailable="'+p.id+'">✎</button>':''}</div>`}).join('')||'<small>Nessuno</small>'}</div>${isStaff()?'<button class="ghost tiny" data-mark-unavailable>+ Non convocato</button>':''}</div></aside>
+ <aside class="callups-panel"><div class="callup-group starter-group" data-drop-zone="starterlist"><div class="callup-title"><span>TITOLARI</span><b>${starters.length}/11</b></div><div class="callup-list">${starters.map(x=>callupRow(x,'starter')).join('')}</div></div><div class="callup-group bench-group" data-drop-zone="bench"><div class="callup-title"><span>PANCHINA</span><b>${bench.length}</b></div><div class="callup-list">${bench.map(x=>callupRow(x,'bench')).join('')||'<small>Trascina qui</small>'}</div></div></aside>
  <main class="formation-center"><div class="formation-bar"><div><span class="eyebrow">FORMAZIONE</span><b>${starters.length}/11</b></div>${isStaff()?`<select id="formation-select">${Object.keys(formationSlots).map(x=>`<option ${formation===x?'selected':''}>${x}</option>`).join('')}</select>`: `<strong>${formation}</strong>`}${isStaff()?'<button class="primary small" data-save-lineup>Salva</button>':''}</div>
- <div class="football-pitch compact-pitch"><div class="pitch-line half"></div><div class="pitch-circle"></div><div class="box top"></div><div class="box bottom"></div>
- ${slots.map((pos,i)=>{const x=bySlot.get(i+1),p=x?player(x.player_id):null;return `<div class="tactical-slot ${p?'filled':''}" style="left:${pos[0]}%;top:${pos[1]}%" data-slot="${i+1}" data-drop-zone="slot">${p?`<div class="pitch-player drag-pitch" draggable="${isStaff()?'true':'false'}" data-drag-player="${p.id}"><span class="kit-number">${x.shirt_number||'—'}</span><b>${esc(p.last_name)}</b></div>`:`<span>+</span>`}</div>`}).join('')}</div></main>
- <aside class="bench-panel" data-drop-zone="bench"><div class="squad-panel-head"><div><span class="eyebrow">PANCHINA</span><strong>${bench.length} giocatori</strong></div></div><div class="bench-list">${bench.map(x=>{const p=player(x.player_id);return token(p,x,'bench-token')}).join('')||'<small>Trascina qui</small>'}</div>
- <div class="quick-edit"><span class="eyebrow">DATI RAPIDI</span><p>Seleziona un giocatore trascinandolo; numero e minuti si modificano dalla riga sotto.</p><div class="compact-fields">${state.matchPlayers.filter(x=>x.selection_status==='starter'||x.selection_status==='bench').map(x=>{const p=player(x.player_id);return `<label><span>${esc(p?.last_name||'')}</span><input type="number" min="1" max="99" value="${x.shirt_number||''}" data-shirt="${x.player_id}" placeholder="#"><input type="number" min="0" max="180" value="${x.minutes_played??''}" data-minutes="${x.player_id}" placeholder="min"></label>`}).join('')}</div></div></aside>
+ <div class="football-pitch compact-pitch light-pitch"><div class="pitch-line half"></div><div class="pitch-circle"></div><div class="box top"></div><div class="box bottom"></div>${slots.map((pos,i)=>{const x=bySlot.get(i+1),p=x?player(x.player_id):null;return `<div class="tactical-slot lite-slot ${p?'filled':''}" style="left:${pos[0]}%;top:${pos[1]}%" data-slot="${i+1}" data-drop-zone="slot">${p?`<div class="pitch-player lite-player" draggable="${isStaff()?'true':'false'}" data-drag-player="${p.id}"><span class="lite-marker">${x.shirt_number||''}</span><b>${esc(p.last_name)}</b></div>`:'<span class="empty-dot"></span>'}</div>`}).join('')}</div></main>
+ <aside class="quick-panel"><span class="eyebrow">DATI</span><div class="compact-fields">${[...starters,...bench].map(x=>{const p=player(x.player_id);return `<label><span>${esc(p?.last_name||'')}</span><input type="number" min="1" max="99" value="${x.shirt_number||''}" data-shirt="${x.player_id}" placeholder="#"><input type="number" min="0" max="180" value="${x.minutes_played??''}" data-minutes="${x.player_id}" placeholder="min"></label>`}).join('')}</div></aside>
  </div>`;
 }
 function pitchTab(m){return formationWorkspace(m)}
+function unavailableDialog(playerId=null){
+ const existing=playerId?state.matchPlayers.find(x=>x.player_id===playerId):null;
+ return `<div class="mini-modal-backdrop" data-close-unavailable><form id="unavailable-form" class="mini-modal" data-player-id="${playerId||''}" onclick="event.stopPropagation()"><h3>Non convocato</h3>${playerId?'':'<label>Giocatore<select name="player_id" required><option value="">Seleziona…</option>'+state.players.filter(p=>!state.matchPlayers.some(x=>x.player_id===p.id&&x.selection_status==='absent')).map(p=>'<option value="'+p.id+'">'+esc(p.last_name)+' '+esc(p.first_name)+'</option>').join('')+'</select></label>'}<label>Motivo<select name="reason" required>${Object.entries(unavailabilityLabels).map(([v,l])=>`<option value="${v}" ${existing?.unavailability_reason===v?'selected':''}>${l}</option>`).join('')}</select></label><label>Nota<input name="note" value="${esc(existing?.unavailability_note||'')}" placeholder="Facoltativa"></label><button class="primary">Salva</button></form></div>`;
+}
+async function saveUnavailable(e){
+ e.preventDefault();const f=new FormData(e.currentTarget),id=e.currentTarget.dataset.playerId||f.get('player_id');let x=state.matchPlayers.find(r=>r.player_id===id);
+ const row={match_id:state.matchDetailId,player_id:id,selection_status:'absent',started:false,tactical_slot:null,shirt_number:x?.shirt_number||null,minutes_played:null,unavailability_reason:f.get('reason'),unavailability_note:f.get('note')||null};
+ const {error}=await supabase.from('app_match_players').upsert(row,{onConflict:'match_id,player_id'});if(error)return toast(error.message,'err');document.querySelector('.mini-modal-backdrop')?.remove();await loadMatchDetail();render();toast('Indisponibilità salvata');
+}
 async function moveFormationPlayer(playerId,target,slot){
  let rows=state.matchPlayers.map(x=>({...x}));let x=rows.find(r=>r.player_id===playerId);
  if(!x){x={match_id:state.matchDetailId,player_id:playerId,selection_status:'available',started:false,shirt_number:null,minutes_played:null,tactical_slot:null};rows.push(x)}
@@ -152,11 +162,12 @@ async function moveFormationPlayer(playerId,target,slot){
  if(target==='slot'){
   const occupied=rows.find(r=>r.tactical_slot===slot&&r.player_id!==playerId);
   if(occupied){occupied.selection_status='available';occupied.started=false;occupied.tactical_slot=null;changed.push(occupied)}
-  x.selection_status='starter';x.started=true;x.tactical_slot=slot;
- }else if(target==='bench'){x.selection_status='bench';x.started=false;x.tactical_slot=null}
- else{x.selection_status='available';x.started=false;x.tactical_slot=null}
+  x.selection_status='starter';x.started=true;x.tactical_slot=slot;x.unavailability_reason=null;x.unavailability_note=null;
+ }else if(target==='bench'){x.selection_status='bench';x.started=false;x.tactical_slot=null;x.unavailability_reason=null;x.unavailability_note=null}
+ else if(target==='starterlist'){const free=Array.from({length:11},(_,i)=>i+1).find(n=>!rows.some(r=>r.player_id!==playerId&&r.tactical_slot===n));if(!free)return toast('Gli 11 slot titolari sono già occupati','err');x.selection_status='starter';x.started=true;x.tactical_slot=free;x.unavailability_reason=null;x.unavailability_note=null}
+ else{x.selection_status='available';x.started=false;x.tactical_slot=null;x.unavailability_reason=null;x.unavailability_note=null}
  state.matchPlayers=rows;render();
- const payload=changed.map(r=>({match_id:state.matchDetailId,player_id:r.player_id,selection_status:r.selection_status,started:r.started,shirt_number:r.shirt_number||null,minutes_played:r.minutes_played??null,tactical_slot:r.tactical_slot||null}));
+ const payload=changed.map(r=>({match_id:state.matchDetailId,player_id:r.player_id,selection_status:r.selection_status,started:r.started,shirt_number:r.shirt_number||null,minutes_played:r.minutes_played??null,tactical_slot:r.tactical_slot||null,unavailability_reason:r.unavailability_reason||null,unavailability_note:r.unavailability_note||null}));
  const {error}=await supabase.from('app_match_players').upsert(payload,{onConflict:'match_id,player_id'});
  if(error){toast('Spostamento non salvato: '+error.message,'err');await loadMatchDetail();render();return}
  toast(target==='slot'?'Titolare aggiornato':target==='bench'?'Panchina aggiornata':'Giocatore rimosso');
@@ -308,6 +319,8 @@ function bind(){
  document.querySelectorAll('[data-match-tab]').forEach(x=>x.onclick=()=>{state.matchTab=x.dataset.matchTab;render()});
  document.querySelectorAll('[data-close-detail]').forEach(x=>x.onclick=()=>{state.matchDetailId=null;render()});
  const sl=document.querySelector('[data-save-lineup]');if(sl)sl.onclick=saveLineup;bindFormationDnD();
+ const mu=document.querySelector('[data-mark-unavailable]');if(mu)mu.onclick=()=>{document.body.insertAdjacentHTML('beforeend',unavailableDialog());bindUnavailable()};
+ document.querySelectorAll('[data-unavailable]').forEach(x=>x.onclick=e=>{e.stopPropagation();document.body.insertAdjacentHTML('beforeend',unavailableDialog(x.dataset.unavailable));bindUnavailable()});
  const ref=document.querySelector('#retro-event-form');if(ref)ref.onsubmit=saveRetroEvent;
  document.querySelectorAll('[data-delete-event]').forEach(x=>x.onclick=()=>deleteEvent(x.dataset.deleteEvent));
  const nm=document.querySelector('[data-new-match]');if(nm)nm.onclick=()=>{state.selectedMatchId=null;state.matchEditorOpen=true;render()};
@@ -332,6 +345,7 @@ function bind(){
  const logout=document.querySelector('#logout');if(logout)logout.onclick=()=>supabase.auth.signOut();
  document.querySelectorAll('[data-close-editor]').forEach(b=>b.onclick=()=>{state.playerEditorOpen=false;state.selectedPlayerId=null;render()});
 }
+function bindUnavailable(){const b=document.querySelector('.mini-modal-backdrop');if(!b)return;b.onclick=()=>b.remove();const f=b.querySelector('#unavailable-form');if(f)f.onsubmit=saveUnavailable;}
 function bindOverlay(){
  document.querySelectorAll('[data-close-sheet]').forEach(x=>x.onclick=()=>{document.querySelector('.sheet-backdrop')?.remove();state.selectedPlayerId=null});
  const e=document.querySelector('[data-edit-player]');if(e)e.onclick=()=>{document.querySelector('.sheet-backdrop')?.remove();state.selectedPlayerId=e.dataset.editPlayer;state.playerEditorOpen=true;render()};
