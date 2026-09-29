@@ -1,13 +1,22 @@
 import React,{useEffect,useState}from'react';
-import{ChevronLeft}from'lucide-react';
+import{ChevronLeft,Undo2}from'lucide-react';
 import{Navigate,useNavigate,useParams}from'react-router-dom';
 import{Surface,MatchTeams,PanelHead,Pill,Empty}from'../components/UI.jsx';
 import{EVENT_LABEL,FORMATIONS,compBy,fmt,isStaff,n,playerBy}from'../lib/ui.js';
 import{supabase}from'../lib/supabase.js';
 
+const sameEvent=(a,b)=>
+  a.match_id===b.match_id &&
+  a.event_type===b.event_type &&
+  n(a.minute)===n(b.minute) &&
+  (a.team_side||'team')===(b.team_side||'team') &&
+  (a.player_id||null)===(b.player_id||null) &&
+  (a.secondary_player_id||null)===(b.secondary_player_id||null);
+
 export default function MatchDetail({d}){
   const{id}=useParams(),nav=useNavigate(),m=d.matches.find(x=>x.id===id);
-  const[tab,setTab]=useState('lineup'),[mp,setMp]=useState([]),[tactical,setTactical]=useState([]),[busy,setBusy]=useState(false);
+  const[tab,setTab]=useState('lineup'),[mp,setMp]=useState([]),[tactical,setTactical]=useState([]);
+  const[localEvents,setLocalEvents]=useState([]),[busy,setBusy]=useState(false),[eventBusy,setEventBusy]=useState(false),[notice,setNotice]=useState('');
 
   async function reload(){
     const[a,b]=await Promise.all([
@@ -18,14 +27,58 @@ export default function MatchDetail({d}){
   }
 
   useEffect(()=>{reload()},[id]);
+  useEffect(()=>{setLocalEvents(d.events.filter(x=>x.match_id===id))},[d.events,id]);
+
   if(!m)return <Navigate to="/partite"/>;
 
-  const events=d.events.filter(x=>x.match_id===id),staff=isStaff(d),formation=m.formation||'4-4-2';
+  const staff=isStaff(d),formation=m.formation||'4-4-2';
   const slots=FORMATIONS[formation]||FORMATIONS['4-4-2'];
   const starters=mp.filter(x=>x.selection_status==='starter'||x.started);
   const bench=mp.filter(x=>x.selection_status==='bench');
   const assigned=new Set(mp.filter(x=>['starter','bench'].includes(x.selection_status)).map(x=>x.player_id));
   const unassigned=d.players.filter(p=>!assigned.has(p.id));
+
+  function flash(message,type='ok'){
+    setNotice(type+':'+message);
+    window.clearTimeout(window.__tmNoticeTimer);
+    window.__tmNoticeTimer=window.setTimeout(()=>setNotice(''),2600);
+  }
+
+  async function insertEvent(row){
+    if(eventBusy)return false;
+    if(localEvents.some(e=>sameEvent(e,row))){
+      flash('Evento identico già presente','warn');
+      return false;
+    }
+
+    setEventBusy(true);
+    const q=await supabase.from('app_match_events').insert(row).select('*').single();
+    setEventBusy(false);
+
+    if(q.error){
+      flash(q.error.message,'error');
+      return false;
+    }
+
+    setLocalEvents(prev=>[...prev,q.data].sort((a,b)=>n(a.minute)-n(b.minute)));
+    flash('Evento salvato');
+    return true;
+  }
+
+  async function deleteEvent(eventId){
+    if(!staff||eventBusy)return;
+    setEventBusy(true);
+    const q=await supabase.from('app_match_events').delete().eq('id',eventId);
+    setEventBusy(false);
+
+    if(q.error){
+      flash(q.error.message,'error');
+      return;
+    }
+
+    setLocalEvents(prev=>prev.filter(e=>e.id!==eventId));
+    flash('Evento annullato');
+  }
 
   async function saveLineup(){
     setBusy(true);
@@ -70,9 +123,11 @@ export default function MatchDetail({d}){
 
     <LiveControls d={d} match={m}/>
 
+    {notice&&<div className={'eventNotice '+notice.split(':')[0]}>{notice.slice(notice.indexOf(':')+1)}</div>}
+
     <div className="segmentedTabs">
       <button className={tab==='lineup'?'active':''} onClick={()=>setTab('lineup')}>Formazione</button>
-      <button className={tab==='events'?'active':''} onClick={()=>setTab('events')}>Eventi <span>{events.length}</span></button>
+      <button className={tab==='events'?'active':''} onClick={()=>setTab('events')}>Eventi <span>{localEvents.length}</span></button>
     </div>
 
     {tab==='lineup'?<div className="lineupLayout">
@@ -102,7 +157,7 @@ export default function MatchDetail({d}){
             <span className="shirtBadge">{x.shirt_number||'—'}</span>
             <Pill tone={'role '+p?.generic_role_manual}>{p?.generic_role_manual}</Pill>
             <strong>{p?.last_name}</strong>
-            {staff&&<QuickEvents d={d} match={m} player={p}/>}
+            {staff&&<QuickEvents d={d} match={m} player={p} onInsert={insertEvent} busy={eventBusy}/>}
           </div>})}
         </div>
         {staff&&<select className="addPlayerSelect" onChange={e=>{if(e.target.value)setStatus(e.target.value,'bench')}} defaultValue="">
@@ -124,7 +179,7 @@ export default function MatchDetail({d}){
           </div>)}
         </div>
       </Surface>
-    </div>:<EventsPanel d={d} match={m} events={events} tactical={tactical}/>}
+    </div>:<EventsPanel d={d} match={m} events={localEvents} tactical={tactical} onInsert={insertEvent} onDelete={deleteEvent} busy={eventBusy}/>}
   </div>;
 }
 
@@ -149,28 +204,43 @@ function PlayerAssign({p,x,staff,onStatus}){
   </div>;
 }
 
-function QuickEvents({d,match,player}){
+function QuickEvents({d,match,player,onInsert,busy}){
   async function add(type){
     if(!d.session)return alert('Accedi per registrare eventi.');
-    const row={match_id:match.id,event_type:type,minute:0,player_id:player?.id||null,team_side:'team',proposed_by:d.session.user.id,validation_status:isStaff(d)?'official':'proposed',officialized_by:isStaff(d)?d.session.user.id:null,officialized_at:isStaff(d)?new Date().toISOString():null};
-    const q=await supabase.from('app_match_events').insert(row);
-    if(q.error)return alert(q.error.message);
-    d.refresh();
+    await onInsert({
+      match_id:match.id,event_type:type,minute:0,player_id:player?.id||null,secondary_player_id:null,
+      team_side:'team',proposed_by:d.session.user.id,
+      validation_status:isStaff(d)?'official':'proposed',
+      officialized_by:isStaff(d)?d.session.user.id:null,
+      officialized_at:isStaff(d)?new Date().toISOString():null
+    });
   }
-  return <div className="quickActions"><button onClick={()=>add('substitution')}>⇄</button><button onClick={()=>add('goal')}>⚽</button><button onClick={()=>add('yellow_card')}><span className="yellowMiniCard"/></button></div>;
+  return <div className="quickActions">
+    <button disabled={busy} onClick={()=>add('substitution')}>⇄</button>
+    <button disabled={busy} onClick={()=>add('goal')}>⚽</button>
+    <button disabled={busy} onClick={()=>add('yellow_card')}><span className="yellowMiniCard"/></button>
+  </div>;
 }
 
-function EventsPanel({d,match,events,tactical}){
+function EventsPanel({d,match,events,tactical,onInsert,onDelete,busy}){
   const[type,setType]=useState('goal');
 
   async function submit(e){
     e.preventDefault();
     if(!d.session)return alert('Accedi per registrare eventi.');
     const f=new FormData(e.currentTarget),side=f.get('team_side');
-    const row={match_id:match.id,event_type:f.get('event_type'),minute:Number(f.get('minute')||0),player_id:side==='team'?(f.get('player_id')||null):null,secondary_player_id:f.get('secondary_player_id')||null,team_side:side,substitution_reason:f.get('event_type')==='substitution'?(f.get('substitution_reason')||null):null,proposed_by:d.session.user.id,validation_status:isStaff(d)?'official':'proposed',officialized_by:isStaff(d)?d.session.user.id:null,officialized_at:isStaff(d)?new Date().toISOString():null};
-    const q=await supabase.from('app_match_events').insert(row);
-    if(q.error)return alert(q.error.message);
-    e.currentTarget.reset();d.refresh();
+    const ok=await onInsert({
+      match_id:match.id,event_type:f.get('event_type'),minute:Number(f.get('minute')||0),
+      player_id:side==='team'?(f.get('player_id')||null):null,
+      secondary_player_id:f.get('secondary_player_id')||null,
+      team_side:side,
+      substitution_reason:f.get('event_type')==='substitution'?(f.get('substitution_reason')||null):null,
+      proposed_by:d.session.user.id,
+      validation_status:isStaff(d)?'official':'proposed',
+      officialized_by:isStaff(d)?d.session.user.id:null,
+      officialized_at:isStaff(d)?new Date().toISOString():null
+    });
+    if(ok)e.currentTarget.reset();
   }
 
   const rows=[...events.map(x=>({...x,_type:'event'})),...tactical.map(x=>({...x,_type:'tactical'}))].sort((a,b)=>n(a.minute)-n(b.minute));
@@ -178,10 +248,10 @@ function EventsPanel({d,match,events,tactical}){
   return <div className="eventsLayout">
     {isStaff(d)&&<Surface className="eventComposer">
       <div className="eventQuickGrid">
-        <button onClick={()=>setType('goal')}>⚽ <span>Gol</span></button>
-        <button onClick={()=>setType('yellow_card')}><span className="eventCard yellow"/> <span>Giallo</span></button>
-        <button onClick={()=>setType('red_card')}><span className="eventCard red"/> <span>Rosso</span></button>
-        <button onClick={()=>setType('substitution')}>⇄ <span>Cambio</span></button>
+        <button disabled={busy} onClick={()=>setType('goal')}>⚽ <span>Gol</span></button>
+        <button disabled={busy} onClick={()=>setType('yellow_card')}><span className="eventCard yellow"/> <span>Giallo</span></button>
+        <button disabled={busy} onClick={()=>setType('red_card')}><span className="eventCard red"/> <span>Rosso</span></button>
+        <button disabled={busy} onClick={()=>setType('substitution')}>⇄ <span>Cambio</span></button>
       </div>
 
       <form onSubmit={submit} className="responsiveForm">
@@ -190,7 +260,7 @@ function EventsPanel({d,match,events,tactical}){
         <label>Squadra<select name="team_side"><option value="team">Calcio Caselle</option><option value="opponent">Avversario</option></select></label>
         <label>Giocatore<select name="player_id"><option value="">—</option>{d.players.map(p=><option value={p.id} key={p.id}>{p.last_name} {p.first_name}</option>)}</select></label>
         {type==='substitution'&&<><label>Secondo giocatore<select name="secondary_player_id"><option value="">—</option>{d.players.map(p=><option value={p.id} key={p.id}>{p.last_name}</option>)}</select></label><label>Motivo<select name="substitution_reason"><option value="">—</option><option value="technical_choice">Scelta tecnica</option><option value="injury">Infortunio</option><option value="injury_prevention">Prevenzione infortunio</option></select></label></>}
-        <button className="primaryAction spanAll">Aggiungi evento</button>
+        <button disabled={busy} className="primaryAction spanAll">{busy?'Salvataggio…':'Aggiungi evento'}</button>
       </form>
     </Surface>}
 
@@ -201,7 +271,7 @@ function EventsPanel({d,match,events,tactical}){
           <time>{n(e.minute)}′</time>
           <span className="timelineIcon">{e._type==='tactical'?'↗':e.event_type==='goal'?'⚽':e.event_type==='substitution'?'⇄':'•'}</span>
           <div><strong>{e._type==='tactical'?('Cambio modulo '+(e.formation_from||'—')+' → '+e.formation_to):(EVENT_LABEL[e.event_type]||e.event_type)}</strong><small>{e.team_side==='opponent'?'Avversario':p?(p.first_name+' '+p.last_name):'Calcio Caselle'}</small></div>
-          <Pill>{e.validation_status||'Tattica'}</Pill>
+          {e._type==='event'&&isStaff(d)?<button disabled={busy} className="undoEvent" onClick={()=>onDelete(e.id)} title="Annulla evento"><Undo2/><span>Annulla</span></button>:<Pill>{e.validation_status||'Tattica'}</Pill>}
         </article>}):<Empty>Nessun evento registrato.</Empty>}
       </div>
     </Surface>
