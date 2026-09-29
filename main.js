@@ -268,14 +268,94 @@ $("#addCompetitionBtn").onclick=()=>openWizard(currentSeason,true);
 
 function renderOpponents(filter=""){
   const f=filter.toLowerCase();const list=opponents.filter(o=>o.name.toLowerCase().includes(f));
-  $("#opponentList").innerHTML=list.map(o=>`<article class="card"><div class="card-head"><div class="card-title">${esc(o.name)}</div><span class="badge">${esc(o.short_name||"")}</span></div><div class="card-actions"><button class="text-btn" data-opp-edit="${o.id}">Modifica</button></div></article>`).join("")||'<div class="muted">Nessuna avversaria.</div>';
+  $("#opponentList").innerHTML=list.map(o=>`<article class="card opponent-card">
+    <div class="card-head">
+      <div class="opponent-brand">
+        <div class="opponent-card-logo">${o.logo_url?`<img src="${esc(o.logo_url)}" alt="">`:(esc(o.short_name||o.name.slice(0,3))).toUpperCase()}</div>
+        <div><div class="card-title">${esc(o.name)}</div><span class="badge">${esc(o.short_name||"")}</span></div>
+      </div>
+      <div class="palette-dots" aria-label="Palette">
+        <i style="--dot:${esc(o.primary_color||"#d0d5dd")}"></i>
+        <i style="--dot:${esc(o.secondary_color||"#e4e7ec")}"></i>
+        <i style="--dot:${esc(o.accent_color||"#98a2b3")}"></i>
+      </div>
+    </div>
+    <div class="card-actions"><button class="text-btn" data-opp-edit="${o.id}">Modifica</button></div>
+  </article>`).join("")||'<div class="muted">Nessuna avversaria.</div>';
   $$("[data-opp-edit]").forEach(b=>b.onclick=()=>openOpponent(opponents.find(o=>o.id===b.dataset.oppEdit)));
 }
 $("#opponentSearch").oninput=e=>renderOpponents(e.target.value);
 $("#addOpponentBtn").onclick=()=>openOpponent();
-function openOpponent(o=null){$("#opponentForm").reset();$("#opponentId").value=o?.id||"";$("#opponentName").value=o?.name||"";$("#opponentShort").value=o?.short_name||"";$("#opponentDialog").showModal()}
+function openOpponent(o=null){
+  $("#opponentForm").reset();
+  $("#opponentMessage").classList.add("hidden");
+  $("#opponentId").value=o?.id||"";
+  $("#opponentName").value=o?.name||"";
+  $("#opponentShort").value=o?.short_name||"";
+  $("#opponentColor1").value=o?.primary_color||"#111827";
+  $("#opponentColor2").value=o?.secondary_color||"#ffffff";
+  $("#opponentColor3").value=o?.accent_color||"#667085";
+  $("#opponentLogoPreview").innerHTML=o?.logo_url?`<img src="${esc(o.logo_url)}" alt="">`:"Logo";
+  $("#opponentDialog").showModal();
+}
 $$("[data-close-opponent]").forEach(b=>b.onclick=()=>$("#opponentDialog").close());
-$("#opponentForm").onsubmit=async e=>{e.preventDefault();const id=$("#opponentId").value,p={name:$("#opponentName").value.trim(),short_name:$("#opponentShort").value.trim()||null};try{const r=id?await db.from("app_opponents").update(p).eq("id",id).select("*").maybeSingle():await db.from("app_opponents").insert(p).select("*").single();assertSaved(r,"Avversaria");$("#opponentDialog").close();const o=await db.from("app_opponents").select("*").order("name");opponents=o.data||[];renderOpponents()}catch(err){alert(err.message||String(err))}};
+$("#opponentLogoFile").onchange=async e=>{
+  const file=e.target.files[0];if(!file)return;
+  const colors=await extractColors(file);
+  if(colors[0])$("#opponentColor1").value=colors[0];
+  if(colors[1])$("#opponentColor2").value=colors[1];
+  if(colors[2])$("#opponentColor3").value=colors[2];
+  $("#opponentLogoPreview").innerHTML=`<img src="${URL.createObjectURL(file)}" alt="">`;
+};
+async function imageToPngBlob(file,maxSize=1200){
+  const img=new Image();
+  await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=URL.createObjectURL(file)});
+  const scale=Math.min(1,maxSize/Math.max(img.width,img.height));
+  const canvas=document.createElement("canvas");
+  canvas.width=Math.max(1,Math.round(img.width*scale));
+  canvas.height=Math.max(1,Math.round(img.height*scale));
+  canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+  return await new Promise(resolve=>canvas.toBlob(resolve,"image/png"));
+}
+function opponentMsg(text,error=false){
+  $("#opponentMessage").textContent=text;
+  $("#opponentMessage").className="form-message"+(error?" form-error":"");
+}
+$("#opponentForm").onsubmit=async e=>{
+  e.preventDefault();
+  try{
+    const id=$("#opponentId").value||crypto.randomUUID();
+    const existing=opponents.find(o=>o.id===id);
+    let logoUrl=existing?.logo_url||null;
+    const file=$("#opponentLogoFile").files[0];
+    if(file){
+      if(!currentSeason?.team_id)throw new Error("Squadra principale non disponibile.");
+      const blob=await imageToPngBlob(file);
+      const path=`${currentSeason.team_id}/opponents/${id}/logo.png`;
+      const up=await db.storage.from("opponent-assets").upload(path,blob,{contentType:"image/png",upsert:true});
+      if(up.error)throw up.error;
+      logoUrl=db.storage.from("opponent-assets").getPublicUrl(path).data.publicUrl;
+    }
+    const payload={
+      id,
+      name:$("#opponentName").value.trim(),
+      short_name:$("#opponentShort").value.trim()||null,
+      logo_url:logoUrl,
+      primary_color:$("#opponentColor1").value,
+      secondary_color:$("#opponentColor2").value,
+      accent_color:$("#opponentColor3").value
+    };
+    const r=existing
+      ?await db.from("app_opponents").update(payload).eq("id",id).select("*").maybeSingle()
+      :await db.from("app_opponents").insert(payload).select("*").single();
+    assertSaved(r,"Avversaria");
+    const fresh=await db.from("app_opponents").select("*").order("name");
+    if(fresh.error)throw fresh.error;
+    opponents=fresh.data||[];
+    renderOpponents();
+    $("#opponentDialog").close();
+  }catch(err){opponentMsg(err.message||String(err),true)}
+};
 
 
 async function openCompetitionEdit(id){
