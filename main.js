@@ -96,7 +96,14 @@ const db={
   }
 };
 
-const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)];
+window.addEventListener("error",e=>{
+  const box=document.querySelector("#connectionState");
+  const auth=document.querySelector("#authState");
+  if(box){box.textContent="Errore JS: "+(e.message||"avvio");box.className="status-pill error"}
+  if(auth){auth.textContent="Errore JS";auth.className="auth-state error"}
+  console.error(e.error||e.message);
+});
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const fmt=d=>d?new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):"—";
 const statusLabel={active:"Attiva",future:"Futura",archived:"Archiviata"};
@@ -304,10 +311,4 @@ async function boot(){
     if($("#authState")&&$("#authState").textContent==="Sessione…"){$("#authState").textContent="Errore avvio";$("#authState").className="auth-state error"}
   }
 }
-window.addEventListener("error",e=>{
-  if($("#connectionState")&&$("#connectionState").textContent==="Connessione…"){
-    $("#connectionState").textContent="Errore JS: "+(e.message||"avvio");
-    $("#connectionState").className="status-pill error";
-  }
-});
 boot();
