@@ -8,7 +8,7 @@ const state={
   view:'home',loading:true,busy:false,session:null,role:null,
   players:[],seasons:[],competitions:[],opponents:[],matches:[],stats:[],scores:[],
   profiles:[],userRoles:[],settings:{community_confirmations_required:3},
-  selectedPlayerId:null,playerEditorOpen:false,matchEditorOpen:false,selectedMatchId:null,adminTab:'competitions'
+  selectedPlayerId:null,playerEditorOpen:false,matchEditorOpen:false,selectedMatchId:null,matchDetailId:null,matchTab:'lineup',matchPlayers:[],matchEvents:[],adminTab:'competitions'
 };
 
 const labels={
@@ -75,7 +75,7 @@ function homeView(){
 function calendarView(){
   return `<div class="toolbar glass"><div><span class="eyebrow">STAGIONE</span><strong>${esc(season()?.name||'—')}</strong></div><div class="toolbar-actions"><span>${state.matches.length} partite</span>${isStaff()?'<button class="primary small" data-new-match>+ Partita</button>':''}</div></div>
   <div class="timeline">${state.matches.map(m=>{const o=opponent(m.opponent_id),home=m.home_away==='home';return `<article class="match-card actionable" data-match="${m.id}"><div class="date-chip"><strong>${m.kickoff_at?new Date(m.kickoff_at).getDate():'—'}</strong><span>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{month:'short'}).format(new Date(m.kickoff_at)):''}</span></div><div class="match-copy"><span class="status ${m.status}">${labels[m.status]}</span><strong>${home?'Caselle – '+esc(o?.name||'Avversario'):esc(o?.name||'Avversario')+' – Caselle'}</strong><small>${esc(competition(m.competition_id)?.name||'Partita')} · ${fmt(m.kickoff_at)}${m.round_label?' · '+esc(m.round_label):''}</small></div><div class="match-side"><div class="mini-score">${m.home_score||0}:${m.away_score||0}</div>${isStaff()?'<span class="edit-hint">Modifica</span>':''}</div></article>`}).join('')||'<div class="empty-card">Nessuna partita. '+(isStaff()?'Creane una con “+ Partita”.':'')+'</div>'}</div>
-  ${state.matchEditorOpen?matchEditor():''}`;
+  ${state.matchEditorOpen?matchEditor():''}${state.matchDetailId?matchDetail():''}`;
 }
 function matchEditor(){
  const m=state.selectedMatchId?state.matches.find(x=>x.id===state.selectedMatchId):null;
@@ -99,6 +99,63 @@ async function saveMatch(e){
  if(error)return toast(error.message,'err');state.matchEditorOpen=false;state.selectedMatchId=null;toast(id?'Partita aggiornata':'Partita creata');await load();
 }
 async function deleteMatch(id){if(!confirm('Eliminare definitivamente questa partita e i dati collegati?'))return;const {error}=await supabase.from('app_matches').delete().eq('id',id);if(error)return toast(error.message,'err');state.matchEditorOpen=false;state.selectedMatchId=null;toast('Partita eliminata');await load();}
+
+async function loadMatchDetail(){
+ if(!state.matchDetailId){state.matchPlayers=[];state.matchEvents=[];return}
+ const [mp,ev]=await Promise.all([
+  supabase.from('app_match_players').select('*').eq('match_id',state.matchDetailId),
+  supabase.from('app_match_events').select('*').eq('match_id',state.matchDetailId).order('minute',{ascending:true})
+ ]);
+ state.matchPlayers=mp.data||[];state.matchEvents=ev.data||[];
+}
+function matchDetail(){
+ const m=state.matches.find(x=>x.id===state.matchDetailId);if(!m)return '';
+ const o=opponent(m.opponent_id),tabs=[['lineup','Formazione'],['pitch','Campo'],['events','Eventi']];
+ return `<div class="sheet-backdrop match-detail-backdrop"><section class="match-detail"><button class="sheet-close" data-close-detail>×</button>
+ <header class="match-detail-head"><div><span class="eyebrow">${esc(competition(m.competition_id)?.name||'PARTITA')} · ${esc(m.round_label||'')}</span><h2>${m.home_away==='home'?'Caselle – '+esc(o?.name||'Avversario'):esc(o?.name||'Avversario')+' – Caselle'}</h2><p>${fmt(m.kickoff_at)} · ${esc(m.venue||'Campo n/d')} · <b>${labels[m.status]}</b></p></div><div class="match-detail-score">${m.home_score||0}<span>:</span>${m.away_score||0}</div></header>
+ <nav class="match-tabs">${tabs.map(([id,l])=>`<button data-match-tab="${id}" class="${state.matchTab===id?'active':''}">${l}</button>`).join('')}</nav>
+ <div class="match-detail-body">${state.matchTab==='lineup'?lineupTab(m):state.matchTab==='pitch'?pitchTab(m):eventsTab(m)}</div>
+ </section></div>`;
+}
+function lineupTab(m){
+ const mp=new Map(state.matchPlayers.map(x=>[x.player_id,x]));
+ return `<div class="detail-toolbar"><div><span class="eyebrow">ASSETTO TATTICO</span><strong>${esc(m.formation||'Non impostato')}</strong></div>${isStaff()?`<label class="formation-select">Modulo<select id="formation-select">${['4-4-2','4-3-3','4-2-3-1','3-5-2','3-4-3','4-3-1-2','4-1-4-1'].map(x=>`<option ${m.formation===x?'selected':''}>${x}</option>`).join('')}</select></label>`:''}</div>
+ <div class="lineup-editor">${state.players.map(p=>{const x=mp.get(p.id)||{};return `<article class="lineup-player"><div class="player-avatar sm">${initials(p.first_name,p.last_name)}</div><div class="grow"><strong>${esc(p.last_name)} ${esc(p.first_name)}</strong><small>${labels[p.generic_role_manual]||'—'}</small></div>${isStaff()?`<input class="shirt-input" type="number" min="1" max="99" placeholder="#" value="${x.shirt_number||''}" data-shirt="${p.id}"><select data-selection="${p.id}"><option value="available" ${(!x.selection_status||x.selection_status==='available')?'selected':''}>Disponibile</option><option value="starter" ${x.selection_status==='starter'?'selected':''}>Titolare</option><option value="bench" ${x.selection_status==='bench'?'selected':''}>Panchina</option><option value="absent" ${x.selection_status==='absent'?'selected':''}>Assente</option></select><input class="minutes-input" type="number" min="0" max="180" placeholder="min" value="${x.minutes_played??''}" data-minutes="${p.id}">`: `<b>#${x.shirt_number||'—'}</b>`}</article>`}).join('')}</div>
+ ${isStaff()?'<button class="primary lineup-save" data-save-lineup>Salva formazione</button>':''}`;
+}
+const formationSlots={
+ '4-4-2':[[50,91],[35,74],[65,74],[18,55],[40,55],[60,55],[82,55],[16,31],[38,25],[62,25],[84,31]],
+ '4-3-3':[[50,91],[22,72],[50,76],[78,72],[14,49],[36,50],[64,50],[86,49],[20,24],[50,18],[80,24]],
+ '4-2-3-1':[[50,91],[35,74],[65,74],[17,56],[83,56],[35,49],[65,49],[18,30],[50,34],[82,30],[50,13]],
+ '3-5-2':[[50,91],[25,72],[50,76],[75,72],[10,47],[30,50],[50,43],[70,50],[90,47],[36,20],[64,20]],
+ '3-4-3':[[50,91],[25,72],[50,76],[75,72],[14,48],[38,50],[62,50],[86,48],[18,22],[50,16],[82,22]],
+ '4-3-1-2':[[50,91],[18,70],[40,76],[60,76],[82,70],[25,49],[50,55],[75,49],[50,33],[34,16],[66,16]],
+ '4-1-4-1':[[50,91],[18,70],[40,76],[60,76],[82,70],[50,58],[14,38],[38,40],[62,40],[86,38],[50,14]]
+};
+function pitchTab(m){
+ const starters=state.matchPlayers.filter(x=>x.selection_status==='starter'||x.started).sort((a,b)=>(a.tactical_slot||99)-(b.tactical_slot||99));
+ const slots=formationSlots[m.formation]||formationSlots['4-4-2'];
+ return `<div class="pitch-wrap"><div class="pitch-head"><div><span class="eyebrow">FORMAZIONE IN CAMPO</span><h3>${esc(m.formation||'4-4-2')}</h3></div><span>${starters.length}/11 titolari</span></div><div class="football-pitch"><div class="pitch-line half"></div><div class="pitch-circle"></div><div class="box top"></div><div class="box bottom"></div>${starters.slice(0,11).map((x,i)=>{const p=player(x.player_id),pos=slots[(x.tactical_slot?x.tactical_slot-1:i)]||slots[i];return `<button class="pitch-player" style="left:${pos[0]}%;top:${pos[1]}%" data-player="${p?.id}"><span class="kit-number">${x.shirt_number||'—'}</span><b>${esc(p?.last_name||'')}</b></button>`}).join('')}</div>
+ <div class="bench-strip"><span>Panchina</span>${state.matchPlayers.filter(x=>x.selection_status==='bench').map(x=>{const p=player(x.player_id);return `<div><i>${x.shirt_number||'—'}</i>${esc(p?.last_name||'')}</div>`}).join('')||'<small>Nessuna panchina impostata</small>'}</div></div>`;
+}
+const eventLabels={goal:'Gol',assist:'Assist',yellow_card:'Giallo',red_card:'Rosso',substitution:'Cambio',own_goal:'Autogol',penalty_scored:'Rigore segnato',penalty_missed:'Rigore sbagliato',other:'Altro'};
+function eventsTab(m){
+ return `${isStaff()?`<section class="card event-admin"><div class="form-title"><strong>Aggiungi evento</strong><span>anche a partita conclusa</span></div><form id="retro-event-form" class="event-grid"><label>Tipo<select name="event_type">${Object.entries(eventLabels).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></label><label>Minuto<input name="minute" type="number" min="0" max="180"></label><label>Giocatore<select name="player_id"><option value="">—</option>${state.players.map(p=>`<option value="${p.id}">${esc(p.last_name)} ${esc(p.first_name)}</option>`).join('')}</select></label><label>Secondo giocatore<select name="secondary_player_id"><option value="">—</option>${state.players.map(p=>`<option value="${p.id}">${esc(p.last_name)} ${esc(p.first_name)}</option>`).join('')}</select></label><label>Squadra<select name="team_side"><option value="team">Caselle</option><option value="opponent">Avversario</option></select></label><button class="primary">Aggiungi</button></form></section>`:''}
+ <div class="event-history">${state.matchEvents.map(e=>{const p=player(e.player_id),p2=player(e.secondary_player_id);return `<article class="history-event"><div class="event-minute">${e.minute??'—'}'</div><div class="grow"><strong>${eventLabels[e.event_type]||e.event_type}</strong><small>${e.team_side==='opponent'?'Avversario':esc(p?.first_name||'')+' '+esc(p?.last_name||'')}${p2?' · '+esc(p2.last_name):''}</small></div><span class="event-status">${e.validation_status}</span>${isStaff()?`<button class="icon-btn danger" data-delete-event="${e.id}">×</button>`:''}</article>`}).join('')||'<div class="empty-card">Nessun evento registrato.</div>'}</div>`;
+}
+async function saveLineup(){
+ const m=state.matches.find(x=>x.id===state.matchDetailId),formation=document.querySelector('#formation-select')?.value||m.formation||'4-4-2';
+ const rows=state.players.map(p=>{const selection=document.querySelector(`[data-selection="${p.id}"]`)?.value||'available';return {match_id:m.id,player_id:p.id,selection_status:selection,started:selection==='starter',shirt_number:Number(document.querySelector(`[data-shirt="${p.id}"]`)?.value)||null,minutes_played:Number(document.querySelector(`[data-minutes="${p.id}"]`)?.value)||null,tactical_slot:null}});
+ let slot=1;rows.filter(x=>x.started).forEach(x=>x.tactical_slot=slot++);
+ const {error}=await supabase.from('app_match_players').upsert(rows,{onConflict:'match_id,player_id'});if(error)return toast(error.message,'err');
+ const {error:me}=await supabase.from('app_matches').update({formation}).eq('id',m.id);if(me)return toast(me.message,'err');toast('Formazione salvata');await load();await loadMatchDetail();render();
+}
+async function saveRetroEvent(e){
+ e.preventDefault();const f=new FormData(e.currentTarget);
+ const row={match_id:state.matchDetailId,event_type:f.get('event_type'),minute:f.get('minute')?Number(f.get('minute')):null,player_id:f.get('player_id')||null,secondary_player_id:f.get('secondary_player_id')||null,team_side:f.get('team_side'),proposed_by:state.session.user.id,validation_status:'official',officialized_by:state.session.user.id,officialized_at:new Date().toISOString()};
+ const {error}=await supabase.from('app_match_events').insert(row);if(error)return toast(error.message,'err');toast('Evento registrato');await loadMatchDetail();render();
+}
+async function deleteEvent(id){if(!confirm('Eliminare questo evento?'))return;const {error}=await supabase.from('app_match_events').delete().eq('id',id);if(error)return toast(error.message,'err');toast('Evento eliminato');await loadMatchDetail();render();}
 function liveView(){return `<div class="empty-card">Il livescore collaborativo resta operativo sulla struttura già predisposta. Le funzioni amministrative sono state spostate fuori da questa sezione.</div>`;}
 
 /* ROSTER */
@@ -210,8 +267,13 @@ function bind(){
  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{state.view=b.dataset.view;state.selectedPlayerId=null;render()});
  document.querySelectorAll('[data-admin-tab]').forEach(b=>b.onclick=()=>{state.adminTab=b.dataset.adminTab;render()});
  document.querySelectorAll('[data-player]').forEach(b=>b.onclick=()=>{state.selectedPlayerId=b.dataset.player;render();document.body.insertAdjacentHTML('beforeend',playerSheet(player(state.selectedPlayerId)));bindOverlay()});
+ document.querySelectorAll('[data-match-tab]').forEach(x=>x.onclick=()=>{state.matchTab=x.dataset.matchTab;render()});
+ document.querySelectorAll('[data-close-detail]').forEach(x=>x.onclick=()=>{state.matchDetailId=null;render()});
+ const sl=document.querySelector('[data-save-lineup]');if(sl)sl.onclick=saveLineup;
+ const ref=document.querySelector('#retro-event-form');if(ref)ref.onsubmit=saveRetroEvent;
+ document.querySelectorAll('[data-delete-event]').forEach(x=>x.onclick=()=>deleteEvent(x.dataset.deleteEvent));
  const nm=document.querySelector('[data-new-match]');if(nm)nm.onclick=()=>{state.selectedMatchId=null;state.matchEditorOpen=true;render()};
- document.querySelectorAll('[data-match]').forEach(x=>x.onclick=()=>{if(!isStaff())return;state.selectedMatchId=x.dataset.match;state.matchEditorOpen=true;render()});
+ document.querySelectorAll('[data-match]').forEach(x=>x.onclick=async()=>{state.matchDetailId=x.dataset.match;state.matchTab='lineup';await loadMatchDetail();render()});
  const mf=document.querySelector('#match-form');if(mf)mf.onsubmit=saveMatch;
  document.querySelectorAll('[data-close-match]').forEach(x=>x.onclick=()=>{state.matchEditorOpen=false;state.selectedMatchId=null;render()});
  document.querySelectorAll('[data-delete-match]').forEach(x=>x.onclick=()=>deleteMatch(x.dataset.deleteMatch));
