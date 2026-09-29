@@ -91,7 +91,7 @@ img{max-width:100%;display:block}
 .teamMark{width:74px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.055);border:1px solid var(--line);overflow:hidden}
 .teamMark img{width:72%;height:72%;object-fit:contain}
 .teamMark b{font-size:18px;color:#ddd}
-.teamMark.calendar{width:36px}
+.teamMark.calendar{width:30px}
 .teamMark.calendar b{font-size:9px}
 .cardEyebrow{color:var(--yellow);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em}
 .heroMatches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(14px,2vw,20px)}
@@ -123,18 +123,18 @@ img{max-width:100%;display:block}
 .upcomingItem{scroll-snap-align:start;min-height:96px;padding:14px;border-radius:16px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);display:grid;text-decoration:none;color:#fff}
 .upcomingDate{color:var(--yellow);font-size:10px;font-weight:900}
 .upcomingItem small{margin-top:auto;color:var(--muted);font-size:9px}
-.calendarPage{height:calc(100dvh - 72px - 46px);min-height:620px;overflow:hidden;grid-template-rows:minmax(0,1.12fr) minmax(190px,.68fr)}.calendarHeroGrid{min-height:0;display:grid;grid-template-columns:minmax(180px,.5fr) minmax(0,1.55fr) minmax(150px,.42fr);gap:14px;align-items:stretch}.calendarIntro{min-height:0;padding:18px 8px 0 8px;overflow:hidden}.pageKicker{display:block;margin-bottom:10px;color:#c8ceca;font-size:10px;letter-spacing:.28em;text-transform:uppercase}.calendarIntro h1{margin:0;font-size:clamp(36px,4.2vw,58px);line-height:.92;letter-spacing:-.055em}.calendarIntro h1 em{display:block;color:var(--yellow);font-style:italic}.calendarIntro p{max-width:18ch;margin:14px 0 0;color:#eef0ef;font-size:clamp(14px,1.35vw,19px);line-height:1.16}.calendarAdd{margin-top:22px}.calendarCard{width:100%;max-width:none;height:100%;min-height:0;justify-self:stretch;padding:14px;display:grid;grid-template-rows:auto auto minmax(0,1fr)}.competitionCard{height:100%;min-height:0;padding:14px;overflow:auto}.competitionLegend.vertical{display:grid;gap:12px;margin:0}.scheduleCard{height:100%;min-height:0;padding:14px;display:flex;flex-direction:column}.scheduleCard .sectionHead{flex:0 0 auto}.scheduleCard .listStack{min-height:0;overflow:auto;padding-right:4px}
-.calendarToolbar{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;margin-bottom:12px}
-.calendarToolbar h2{margin:0;text-align:center;text-transform:capitalize;font-size:clamp(18px,2.5vw,26px)}
+.calendarPage{height:calc(100dvh - 72px - 46px);min-height:620px;overflow:hidden;grid-template-rows:minmax(0,1.03fr) minmax(220px,.97fr)}.calendarHeroGrid{min-height:0;display:grid;grid-template-columns:minmax(220px,.62fr) minmax(520px,1.7fr) minmax(160px,.42fr);gap:14px;align-items:stretch}.calendarIntro{min-height:0;padding:22px 10px 0 14px;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-start}.pageKicker{display:block;margin-bottom:10px;color:#c8ceca;font-size:10px;letter-spacing:.28em;text-transform:uppercase}.calendarIntro h1{margin:0;font-size:clamp(36px,4.2vw,58px);line-height:.92;letter-spacing:-.055em}.calendarIntro h1 em{display:block;color:var(--yellow);font-style:italic}.calendarIntro p{max-width:18ch;margin:14px 0 0;color:#eef0ef;font-size:clamp(14px,1.35vw,19px);line-height:1.16}.calendarAdd{margin-top:22px}.calendarCard{width:100%;max-width:none;height:100%;min-height:0;padding:14px;display:grid;grid-template-rows:auto auto minmax(0,1fr)}.competitionCard{height:100%;min-height:0;padding:14px;overflow:auto}.competitionLegend.vertical{display:grid;gap:13px;margin:0}.scheduleCard{height:100%;min-height:0;padding:14px;display:flex;flex-direction:column}.scheduleCard .sectionHead{flex:0 0 auto}.scheduleCard .listStack{min-height:0;overflow:auto;padding-right:4px}
+.calendarToolbar{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:10px;margin-bottom:8px}
+.calendarToolbar h2{margin:0;text-align:left;text-transform:capitalize;font-size:clamp(20px,2vw,28px);padding-left:8px}
 .calendarToolbar button,.backButton{width:42px;height:42px;border-radius:14px;display:grid;place-items:center}
 .calendarToolbar button svg,.backButton svg{width:18px}
 .competitionLegend{display:flex;flex-wrap:wrap;gap:10px 14px;margin:8px 0 14px}
 .competitionLegend span{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:9px}
 .competitionLegend i{width:8px;height:8px;border-radius:50%}
 .competitionLegend .yellow{background:#ffe500}.competitionLegend .blue{background:#5daeff}.competitionLegend .red{background:#ff5d5d}.competitionLegend .green{background:#4ade80}.competitionLegend .purple{background:#bb79ff}
-.weekdayRow,.calendarGrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.calendarGrid{min-height:0;grid-auto-rows:minmax(0,1fr)}
-.weekdayRow b{text-align:center;color:var(--muted-2);font-size:9px;padding:6px 0}
-.calendarDay{position:relative;min-width:0;min-height:0;aspect-ratio:auto;border:1px solid rgba(255,255,255,.065);border-radius:11px;padding:6px;background:rgba(255,255,255,.02);overflow:hidden}
+.weekdayRow,.calendarGrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.calendarGrid{min-height:0;grid-auto-rows:minmax(0,1fr)}.calendarGrid{min-height:0;grid-auto-rows:minmax(0,1fr)}
+.weekdayRow b{text-align:center;color:var(--muted-2);font-size:9px;padding:4px 0}
+.calendarDay{position:relative;min-width:0;min-height:0;aspect-ratio:auto;border:1px solid rgba(255,255,255,.065);border-radius:10px;padding:6px;background:rgba(255,255,255,.02);overflow:hidden}
 .calendarDay.emptyDay{opacity:.15}
 .dayNumber{font-size:clamp(8px,1vw,11px);font-weight:900}
 .calendarDay.yellow{background:linear-gradient(145deg,rgba(255,229,0,.25),rgba(255,229,0,.035));border-color:rgba(255,229,0,.34)}
@@ -142,7 +142,7 @@ img{max-width:100%;display:block}
 .calendarDay.red{background:linear-gradient(145deg,rgba(255,93,93,.2),rgba(255,93,93,.03));border-color:rgba(255,93,93,.28)}
 .calendarDay.green{background:linear-gradient(145deg,rgba(74,222,128,.2),rgba(74,222,128,.03));border-color:rgba(74,222,128,.28)}
 .calendarDay.purple{background:linear-gradient(145deg,rgba(187,121,255,.2),rgba(187,121,255,.03));border-color:rgba(187,121,255,.28)}
-.dayFixtures{position:absolute;inset:22% 4% 4%;display:flex;align-items:center;justify-content:center;gap:4px}
+.dayFixtures{position:absolute;inset:18% 4% 4%;display:flex;align-items:center;justify-content:center;gap:4px}
 .dayFixtures a{display:grid;place-items:center;gap:2px;text-decoration:none;color:#fff;min-width:0}
 .dayFixtures small{font-size:7px}
 .roleFilter{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
@@ -453,7 +453,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
   .weekdayRow b{padding:3px 0}
   .calendarDay .teamMark.calendar{width:28px}
   .dayFixtures small{font-size:6px}
-  .scheduleCard .resultItem{min-height:42px}
+  
   .matchHeaderCopy h1{margin:4px 0 2px}
   .matchHeaderScore .matchScoreboard.compact .teamMark{width:40px}
   .matchHeaderScore .matchScoreboard.compact .scoreCore span{font-size:18px}
@@ -500,4 +500,99 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
   .statsPage .rankingCard .rankingList{min-height:0;overflow:auto;padding-right:3px}
   .statsPage .goalChart{min-height:0;height:100%;display:flex;flex-direction:column}
   .statsPage .goalBands{min-height:0;flex:1 1 auto;height:auto}
+}
+
+
+.todayButton{width:auto!important;min-width:64px;padding:0 14px!important;font-size:10px;font-weight:800}
+.scheduleCard{height:100%;min-height:0;padding:14px;display:flex;flex-direction:column}
+.scheduleHeader{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:10px;flex:0 0 auto}
+.scheduleHeader h2{margin:0;font-size:clamp(22px,2.5vw,32px);letter-spacing:-.035em}
+.scheduleHeader h2 em{color:var(--yellow);font-style:italic}
+.scheduleViewSwitch{display:flex;gap:6px}
+.scheduleViewSwitch button{min-height:36px;padding:7px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035);color:#fff;display:flex;align-items:center;gap:6px;font-size:9px;font-weight:800}
+.scheduleViewSwitch button svg{width:14px}
+.scheduleViewSwitch button.active{background:var(--yellow);color:#080908;border-color:var(--yellow)}
+.scheduleTable{min-height:0;display:flex;flex-direction:column;flex:1 1 auto}
+.scheduleColumns{display:grid;grid-template-columns:1.1fr 1.25fr 2.25fr 1fr 1.2fr 22px;gap:10px;padding:0 12px 7px;color:var(--muted-2);font-size:8px;text-transform:uppercase;letter-spacing:.08em;flex:0 0 auto}
+.scheduleRows{min-height:0;overflow:auto;padding-right:3px;display:grid;align-content:start}
+.scheduleRow{display:grid;grid-template-columns:1.1fr 1.25fr 2.25fr 1fr 1.2fr 22px;gap:10px;align-items:center;min-height:54px;padding:8px 12px;border-top:1px solid rgba(255,255,255,.07);color:#fff;text-decoration:none}
+.scheduleRow:hover{background:rgba(255,255,255,.025)}
+.scheduleDate,.scheduleCompetition,.scheduleVenue{min-width:0}
+.scheduleDate{display:grid}
+.scheduleDate strong{font-size:10px;font-weight:750;white-space:nowrap}
+.scheduleDate small,.scheduleCompetition small{font-size:8px;color:var(--muted)}
+.scheduleCompetition{display:flex;align-items:center;gap:8px}
+.scheduleCompetition>span{display:grid;min-width:0}
+.scheduleCompetition strong{font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.competitionDot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+.competitionDot.yellow{background:#ffe500}.competitionDot.blue{background:#5daeff}.competitionDot.red{background:#ff5d5d}.competitionDot.green{background:#4ade80}.competitionDot.purple{background:#bb79ff}
+.scheduleMatchup{min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px}
+.clubInline{min-width:0;display:flex;align-items:center;gap:6px}
+.clubInline .teamMark{width:28px;flex:0 0 auto}
+.clubInline strong{font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scheduleScore{color:var(--yellow);font-size:12px;white-space:nowrap}
+.resultBadge{display:inline-flex;align-items:center;justify-content:center;min-width:68px;padding:6px 9px;border-radius:999px;font-size:8px;font-weight:900}
+.resultBadge.next{background:var(--yellow);color:#080908}
+.resultBadge.win{background:#19df7e;color:#07110b}
+.resultBadge.draw{background:#39413d;color:#fff}
+.resultBadge.loss{background:rgba(255,93,93,.16);color:#ff8484}
+.resultBadge.live{background:rgba(74,222,128,.14);color:#7ef0aa}
+.scheduleVenue{display:flex;align-items:center;gap:6px;color:#d8dcda}
+.scheduleVenue svg{width:14px;flex:0 0 auto}
+.scheduleVenue span{font-size:9px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.scheduleArrow{width:16px;color:#cfd4d1}
+.scheduleCalendarHint{flex:1;display:grid;place-items:center;align-content:center;gap:8px;color:var(--muted)}
+.scheduleCalendarHint svg{width:28px;color:var(--yellow)}
+
+@media(max-width:1100px) and (min-width:861px){
+  .calendarHeroGrid{grid-template-columns:minmax(170px,.48fr) minmax(0,1.52fr)}
+  .competitionCard{grid-column:1/-1;height:auto;max-height:82px}
+  .competitionLegend.vertical{display:flex;flex-wrap:wrap;gap:8px 14px}
+  .calendarPage{grid-template-rows:minmax(0,1.08fr) minmax(230px,.92fr)}
+}
+
+@media(max-width:860px){
+  .calendarPage{height:auto;min-height:0;overflow:visible;grid-template-rows:none}
+  .calendarHeroGrid{grid-template-columns:1fr;gap:12px}
+  .calendarIntro{padding:2px 2px 0}
+  .calendarIntro h1{font-size:clamp(30px,9vw,42px)}
+  .calendarIntro h1 em{display:inline}
+  .calendarIntro p{max-width:none;margin-top:8px;font-size:12px}
+  .calendarAdd{margin-top:12px}
+  .calendarCard{height:auto;min-height:0;padding:10px}
+  .calendarToolbar{grid-template-columns:34px minmax(0,1fr) auto;gap:6px}
+  .calendarToolbar button{width:34px;height:34px;border-radius:10px}
+  .calendarToolbar h2{text-align:center;font-size:16px;padding:0}
+  .todayButton{min-width:50px!important;padding:0 9px!important;font-size:8px!important}
+  .weekdayRow,.calendarGrid{gap:2px}
+  .weekdayRow b{font-size:6px;padding:3px 0}
+  .calendarGrid{grid-auto-rows:40px}
+  .calendarDay{border-radius:6px;padding:3px}
+  .dayNumber{font-size:7px}
+  .teamMark.calendar{width:20px}
+  .competitionCard{height:auto;max-height:none;padding:10px}
+  .competitionCard .sectionHead{display:none}
+  .competitionLegend.vertical{display:flex;flex-wrap:wrap;gap:7px 10px}
+  .competitionLegend span{font-size:7px}
+  .scheduleCard{height:auto;min-height:0;padding:10px}
+  .scheduleHeader{margin-bottom:8px}
+  .scheduleHeader h2{font-size:20px}
+  .scheduleViewSwitch button{min-height:32px;padding:5px 8px;font-size:7px}
+  .scheduleViewSwitch button svg{width:12px}
+  .scheduleColumns{display:none}
+  .scheduleRows{overflow:visible;padding:0;gap:7px}
+  .scheduleRow{grid-template-columns:1fr auto;grid-template-areas:"meta status" "match match" "venue venue";gap:6px 10px;min-height:0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025)}
+  .scheduleDate{grid-area:meta;display:flex;align-items:baseline;gap:7px}
+  .scheduleDate strong{font-size:8px}.scheduleDate small{font-size:7px}
+  .scheduleCompetition{grid-area:meta;justify-self:end;margin-right:76px}
+  .scheduleCompetition strong{font-size:7px}.scheduleCompetition small{display:none}
+  .scheduleMatchup{grid-area:match;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
+  .clubInline .teamMark{width:25px}
+  .clubInline strong{font-size:8px}
+  .scheduleScore{font-size:11px}
+  .scheduleRow>div:nth-of-type(4){grid-area:status;justify-self:end}
+  .resultBadge{min-width:58px;padding:5px 7px;font-size:7px}
+  .scheduleVenue{grid-area:venue;justify-content:center}
+  .scheduleVenue span{font-size:7px}
+  .scheduleArrow{display:none}
 }
