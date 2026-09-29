@@ -96,7 +96,7 @@ const db={
   }
 };
 
-const $=s=>document.querySelector(s), $=s=>[...document.querySelectorAll(s)];
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 window.addEventListener("error",e=>{
   const box=document.querySelector("#connectionState");
   const auth=document.querySelector("#authState");
@@ -186,7 +186,7 @@ async function loadCompetitions(){
 }
 function renderCompetitions(){
   $("#competitionList").innerHTML=competitions.map(c=>`<article class="card"><div class="card-head"><div class="card-title">${esc(c.name)}</div><span class="badge">${c.kind==="league"?"Campionato":c.kind==="cup"?"Coppa":"Amichevoli"}</span></div><div class="meta"><span>${esc(c.format||"—")}</span><span>${c.periods}×${c.minutes_per_period}'</span></div><div class="card-actions"><button class="text-btn" data-comp-edit="${c.id}">Modifica</button></div></article>`).join("")||'<div class="muted">Nessuna competizione.</div>';
-  $("[data-comp-edit]").forEach(b=>b.onclick=()=>openCompetitionEdit(b.dataset.compEdit));
+  $$("[data-comp-edit]").forEach(b=>b.onclick=()=>openCompetitionEdit(b.dataset.compEdit));
 }
 $("#addCompetitionBtn").onclick=()=>openWizard(currentSeason,true);
 
@@ -224,7 +224,7 @@ function refreshCompetitionEditFormat(selected=null){
   $("#cKnockoutRules").classList.toggle("hidden",kind==="friendly");
 }
 $("#cKind").onchange=()=>refreshCompetitionEditFormat();
-$("[data-close-competition]").forEach(b=>b.onclick=()=>$("#competitionDialog").close());
+$$("[data-close-competition]").forEach(b=>b.onclick=()=>$("#competitionDialog").close());
 $("#competitionForm").onsubmit=async e=>{
   e.preventDefault();$("#competitionError").classList.add("hidden");
   const id=$("#competitionId").value;
