@@ -71,97 +71,105 @@ Le pagine non devono inventare una propria versione di questi componenti.
 
 ## 2A. Riferimento visivo ufficiale
 
-Lo stile UI di Team Manager deve rifarsi al riferimento visivo approvato del **29/09/2026**, aggiornato con il showcase **“Team Manager Calcio”**: mobile con card verticali compatte e bottom navigation; desktop con sidebar laterale, header operativo e dashboard modulare a card. Palette azzurro-bianco, superfici chiare, bordi sottili, controlli arrotondati e gerarchia visiva essenziale.
+Il riferimento visivo ufficiale corrente è il mockup **“SoccerPro / UI Design System Showcase”** e la tavola di dettaglio **“Gestione Formazione Calcistica in Vetro Blu”**, approvati il **29/09/2026**.
 
 ### Gerarchia delle fonti
 
-La gerarchia da rispettare è:
+1. **Struttura funzionale, dati e flussi di questo vademecum**.
+2. **Design system unico condiviso**.
+3. **Mockup SoccerPro + dettaglio Formazione**, che definiscono disposizione, densità, linguaggio visivo e componenti.
 
-1. **Struttura, flussi e contenuti definiti in questo vademecum**.
-2. **Design system condiviso del progetto**.
-3. **Riferimento visivo approvato**, usato esclusivamente come guida stilistica.
+Quando il mockup mostra dati o sezioni non presenti nel progetto, non vanno inventati. Quando invece mostra una diversa disposizione di funzioni già esistenti, la disposizione del mockup è il riferimento da seguire.
 
-Il riferimento visivo **non deve essere copiato nella sua struttura informativa** quando questa entra in conflitto con il vademecum.
+### Struttura visiva desktop
 
-Esempio: la Gestione partita desktop continua ad avere la struttura **Rosa / Campo / Panchina + Non convocati**, anche se il riferimento visivo mostra una schermata mobile diversa.
+- shell con **sidebar verticale fissa** a sinistra;
+- logo/team identity in alto nella sidebar;
+- voci di navigazione compatte con icona + label;
+- impostazioni/amministrazione separate nella parte bassa;
+- area contenuti su fondo azzurro ghiaccio;
+- **barra riepilogo partita** orizzontale in alto nelle viste sportive;
+- contenuto principale composto da pannelli bianchi/azzurri a bordi arrotondati;
+- tabelle e liste dense, leggibili e senza spazio sprecato;
+- azioni contestuali allineate a destra;
+- statistiche organizzate in KPI + grafici/pannelli;
+- nessuna card decorativa se non serve a una funzione reale.
+
+### Struttura visiva mobile
+
+- stessi componenti del desktop;
+- ridisposizione verticale;
+- bottom navigation compatta;
+- card partita e liste a tutta larghezza;
+- header ridotto;
+- nessun secondo design system mobile.
 
 ### Linguaggio visivo
 
-Il design deve trasmettere:
+- fondo azzurro ghiaccio molto chiaro;
+- superfici bianche e azzurro-latte;
+- glassmorphism leggerissimo, usato solo sui contenitori principali;
+- bordi sottili bianchi/azzurri;
+- ombre minime;
+- blu saturo come primary action;
+- navy scuro per testo e gerarchia;
+- verde per esiti positivi;
+- rosso per errore/pericolo;
+- giallo per ammonizione;
+- pill e badge piccoli;
+- icone lineari;
+- raggi medi, non eccessivamente “bubble”;
+- densità elevata ma leggibile.
 
-- fondo molto chiaro con dominante azzurro ghiaccio;
-- gradienti delicati e poco invasivi;
-- pannelli e card semitrasparenti;
-- effetto vetro leggero, non opaco e non eccessivamente sfocato;
-- bordi bianchi o azzurro chiarissimo a basso contrasto;
-- ombre molto morbide;
-- superfici sovrapposte ma ben leggibili;
-- ampi raggi di curvatura;
-- tipografia pulita e moderna;
-- testo principale scuro e ad alto contrasto;
-- testo secondario attenuato;
-- blu/ciano come colore primario delle azioni;
-- rosso, giallo, verde e altri colori semantici usati solo per stati/eventi;
-- icone semplici, lineari e coerenti;
-- forte ordine visivo e assenza di decorazione superflua.
+### Componenti canonici
 
-### Componenti
+Devono esistere come famiglia unica:
 
-I principali componenti devono rifarsi al riferimento visivo:
+- app shell / sidebar / top navigation;
+- match summary strip;
+- panel/card;
+- table/list row;
+- player row;
+- role badge;
+- status badge;
+- tabs/segmented control;
+- primary/secondary/icon button;
+- input/select;
+- modal/sheet;
+- popover evento;
+- KPI;
+- chart container;
+- pitch player card.
 
-- card con vetro chiaro e bordo sottile;
-- segmented control e tab a pillola;
-- pulsante primario blu/ciano pieno;
-- pulsanti secondari traslucidi;
-- icon button circolari o fortemente arrotondati;
-- badge/stato a pillola;
-- input e select integrati nelle superfici;
-- navigazione mobile inferiore arrotondata e compatta;
-- header puliti con poche azioni;
-- score card e match card con forte gerarchia su squadre, punteggio e stato;
-- statistiche con barre semplici e leggibili;
-- player card sul campo leggere e minimali.
+### Formazione
 
-### Densità e proporzioni
+Il riferimento dettagliato della formazione è **vincolante per la disposizione**, compatibilmente con il vademecum:
 
-Il riferimento è visualmente arioso, ma Team Manager contiene anche schermate operative ad alta densità.
+- sinistra: **Rosa squadra**;
+- centro: **Titolari + campo**;
+- destra: **Panchina**;
+- **Non convocati sotto la Rosa**, come nel nuovo riferimento approvato;
+- toolbar superiore con Formazione/Eventi, modulo e Salva partita;
+- player row molto compatte;
+- evento rapido aperto come popover sovrapposto;
+- il popup non deve spostare il layout;
+- campo largo e leggibile;
+- card giocatore sul campo compatte e non sovrapposte.
 
-Per questo:
+Questa disposizione sostituisce le precedenti indicazioni visive che collocavano i non convocati sotto la panchina.
 
-- l'aspetto generale deve restare leggero;
-- le schermate operative possono usare varianti `compact` dello stesso componente;
-- non si devono aumentare indiscriminatamente padding e altezze solo per imitare la reference mobile;
-- la densità deve adattarsi alla funzione senza cambiare linguaggio visivo;
-- una row compatta e una card ampia devono sembrare appartenere allo stesso sistema.
+### Divieti
 
-### Adattamento desktop
+- niente dark theme come default;
+- niente gradienti saturi;
+- niente ombre pesanti;
+- niente layout “marketing” nella webapp gestionale;
+- niente card enormi dove basta una row;
+- niente override CSS stratificati;
+- niente `!important` usato come strategia;
+- niente componenti visivamente diversi tra pagine equivalenti.
 
-La versione desktop non deve essere un ingrandimento della versione mobile.
-
-Sul desktop:
-
-- sfruttare la larghezza per mostrare più informazioni contemporaneamente;
-- utilizzare panel affiancati e workspace multiple-column quando previsto dal vademecum;
-- mantenere gli stessi token, raggi, colori, bordi, ombre e controlli della versione mobile;
-- limitare le larghezze eccessive dei contenuti testuali;
-- usare lo spazio bianco per separare funzioni, non per gonfiare i componenti;
-- mantenere una gerarchia visiva chiara anche nelle schermate dense.
-
-### Divieti stilistici
-
-Non usare come linguaggio principale:
-
-- tema scuro;
-- nero dominante;
-- gradienti saturi;
-- ombre pesanti;
-- bordi scuri marcati;
-- componenti squadrati;
-- effetti neon;
-- glassmorphism eccessivo che riduce la leggibilità;
-- pannelli indipendenti con stili diversi tra loro.
-
-L'obiettivo è una UI **chiara, sportiva, moderna, morbida e coerente**, non una copia pixel-perfect del riferimento.
+L'obiettivo è una UI **gestionale, sportiva, ordinata, compatta e coerente**, aderente al nuovo mockup.
 
 ---
 
