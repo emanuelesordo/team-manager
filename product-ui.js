@@ -281,4 +281,79 @@
         const s=pstats(p.id);
         return `<button type="button" class="roster-row ${selectedPlayerId===p.id?"active":""}" data-player-id="${p.id}">
           <span class="player-cell">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`<i>${esc((p.first_name[0]||"")+(p.last_name[0]||""))}</i>`}<b>${esc(p.last_name+" "+p.first_name)}</b></span>
-          <span><em class="role-chip">${esc(p.generic_role_manual||"\u2014")}</em></span><span>${age(p.birth_date)}</span><span>${s.apps}</span><span#â
+          <span><em class="role-chip">${esc(p.generic_role_manual||"\u2014")}</em></span><span>${age(p.birth_date)}</span><span>${s.apps}</span><span#âsenze</span></div><div><strong>${s.goals}</strong><span>Gol</span></div><div><strong>${s.yellows}</strong><span>Gialli</span></div><div><strong>${s.reds}</strong><span>Rossi</span></div></div>`;
+  }
+
+  async function loadMatches() {
+    await loadCore();
+    $("#matchesCount").textContent=`${matches.length} partite`;
+    $("#matchesList").innerHTML=matches.map(m=>{
+      const o=opponentById(m.opponent_id), c=competitionById(m.competition_id);
+      return `<button type="button" class="match-list-row ${selectedMatchId===m.id?"active":""}" data-match-id="${m.id}">
+        <time>${shortDate(m.kickoff_at)}</time>${badgeLogo(o?.name,o?.logo_url,o?.short_name)}
+        <span><b>${esc(o?.name||"Avversaria")}</b><small>${esc(c?.name||"")}</small></span>
+        <strong>${m.status==="finished"?m.home_score+"-"+m.away_score:"\u2013"}</strong>
+      </button>`;
+    }).join("");
+    $$("[data-match-id]",$("#matchesList")).forEach(b=>b.onclick=async()=>{selectedMatchId=b.dataset.matchId;await loadMatches();});
+    if (!selectedMatchId && matches[0]) selectedMatchId=matches[0].id;
+    renderMatchWorkspace();
+  }
+
+  function renderMatchWorkspace() {
+    const m=matches.find(x=>x.id===selectedMatchId);
+    if (!m) { $("#matchWorkspace").innerHTML='<div class="empty-state">Seleziona una partita</div>'; return; }
+    const o=opponentById(m.opponent_id);
+    const selected=matchPlayers.filter(x=>x.match_id===m.id);
+    const ev=events.filter(x=>x.match_id===m.id).sort((a,b)=>(a.minute??999)-(b.minute??999));
+    $("#matchWorkspace").innerHTML=`<div class="section-cap"><div><strong>${esc(team()?.short_name||"CAS")} \xb7 ${esc(o?.short_name||o?.name||"AVV")}</strong><small>${TM.localDateTime(m.kickoff_at)}</small></div>
+      <select id="matchFormation"><option>4-4-2</option><option>4-3-3</option><option>3-5-2</option><option>4-2-3-1</option></select></div>
+      <div class="workspace-grid"><section><div class="subcap">Convocati / formazione</div><div id="matchSquadList">${players.map(p=>{const mp=selected.find(x=>x.player_id===p.id);return `<label class="squad-toggle"><input type="checkbox" data-match-player="${p.id}" ${mp?"checked":""}><span>${esc(p.last_name+" "+p.first_name)}</span><button type="button" class="starter-toggle ${mp?.started?"on":""}" data-starter="${p.id}">${mp?.started?"TIT":"P"}</button></label>`}).join("")}</div></section>
+      <section><div class="subcap">Eventi</div><div class="workspace-events">${ev.length?ev.map(e=>`<div><time>${e.minute??"?"}'</time><b>${esc(eventLabel(e.event_type))}</b><span>${esc(playerName(e.player_id)||(e.team_side==="opponent"?"Avversario":""))}</span></div>`).join(""):'<div class="empty-state">Nessun evento</div>'}</div></section></div>
+      <button id="saveMatchSetup" class="primary full-btn" type="button">Salva formazione</button>`;
+    $("#matchFormation").value=m.formation||"4-4-2";
+    $$("[data-starter]",$("#matchWorkspace")).forEach(b=>b.onclick=e=>{e.preventDefault();b.classList.toggle("on");b.textContent=b.classList.contains("on")?"TIT":"P";});
+    $("#saveMatchSetup").onclick=saveMatchSetup;
+  }
+
+  async function saveMatchSetup() {
+    if (!sessionUser()) return alert("Accedi per modificare la formazione.");
+    const m=matches.find(x=>x.id===selectedMatchId); if (!m) return;
+    const checked=$$("[data-match-player]",$("#matchWorkspace")).filter(x=>x.checked);
+    const existing=matchPlayers.filter(x=>x.match_id===m.id);
+    const checkedIds=new Set(checked.map(x=>x.dataset.matchPlayer));
+    for (const row of existing.filter(x=>!checkedIds.has(x.player_id))) {
+      const d=await db.from("app_match_players").delete().eq("id",row.id); if (d.error) throw d.error;
+    }
+    for (const input of checked) {
+      const pid=input.dataset.matchPlayer;
+      const starter=$(`[data-starter="${pid}"]`,$("#matchWorkspace"))?.classList.contains("on")||false;
+      const old=existing.find(x=>x.player_id===pid);
+      if (old) {
+        const u=await db.from("app_match_players").update({started:starter,selection_status:"available"}).eq("id",old.id);
+        if (u.error) throw u.error;
+      } else {
+        const ins=await db.from("app_match_players").insert({match_id:m.id,player_id:pid,started:starter,selection_status:"available"});
+        if (ins.error) throw ins.error;
+      }
+    }
+    const mr=await db.from("app_matches").update({formation:$("#matchFormation").value}).eq("id",m.id).select("*").maybeSingle();
+    TM.assertSaved(mr,"Formazione");
+    await loadCore(); renderMatchWorkspace();
+  }
+
+  async function loadEvents() {
+    await loadCore();
+    const opts=matches.map(m=>`<option value="${m.id}">${esc(matchLabel(m))}</option>`).join("");
+    $("#eventsMatchFilter").innerHTML='<option value="">Tutte le partite</option>'+opts;
+    $("#eventMatchId").innerHTML=opts;
+    $("#eventPlayer").innerHTML=playerOptions("");
+    $("#eventSecondary").innerHTML=playerOptions("");
+    renderEvents();
+  }
+  function playerOptions(selected) {
+    return '<option value="">\u2014</option>'+players.map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.last_name+" "+p.first_name)}</option>`).join("");
+  }
+  function renderEvents() {
+    const matchId=$("#eventsMatchFilter").value;
+    const list=events.filter(e=>
