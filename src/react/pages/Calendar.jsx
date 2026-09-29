@@ -150,7 +150,7 @@ function MatchEditor({d,close}){
 
 
 function CalendarImporter({d,close}){
-  const SOURCE='https://www.tuttocampo.it/Veneto/PD/AmatoriCSI/GironeDCalcioa11SerieBPadova/Calendario';
+  const SOURCE='CSI Padova ufficiale';
   const[busy,setBusy]=useState(false),[preview,setPreview]=useState(null),[error,setError]=useState('');
   const competition=d.competitions.find(x=>/serie b/i.test(x.name))||d.competitions[0];
 
@@ -167,8 +167,8 @@ function CalendarImporter({d,close}){
   return <Modal close={close}>
     <div className="calImportModal">
       <span className="pageKicker">Import calendario</span>
-      <h2>Tuttocampo → Team Manager</h2>
-      <p>Vengono censite tutte le squadre distinte come avversarie, escluso Calcio Caselle. Nel calendario vengono salvate solo le gare del Calcio Caselle.</p>
+      <h2>CSI Padova → Team Manager</h2>
+      <p>La fonte ufficiale CSI viene usata per leggere le gare del Calcio Caselle. Le avversarie distinte vengono censite automaticamente e nel calendario vengono salvate solo le gare del Caselle.</p>
       <div className="calImportSource"><small>Sorgente</small><strong>{SOURCE}</strong></div>
 
       {!preview&&<button disabled={busy} className="primaryAction" onClick={()=>run(true)}>{busy?'Analisi in corso…':'Analizza calendario'}</button>}
