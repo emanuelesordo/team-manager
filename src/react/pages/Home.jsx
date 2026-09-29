@@ -9,6 +9,9 @@ export default function Home({d}){
   const upcoming=[...d.matches].filter(m=>m.status==='live'||(m.status==='scheduled'&&new Date(m.kickoff_at||0)>=now)).sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
   const last=finished[0],next=d.matches.find(m=>m.status==='live')||upcoming[0];
   const scorers=[...d.stats].sort((a,b)=>n(b.goals)-n(a.goals)).slice(0,5);
+  const standings=[...(d.standings||[])]
+    .filter(x=>!d.season||x.season_id===d.season.id)
+    .sort((a,b)=>n(b.points)-n(a.points)||n(b.goal_difference)-n(a.goal_difference)||n(b.goals_for)-n(a.goals_for)||String(a.team).localeCompare(String(b.team),'it'));
 
   return <div className="pageStack homePage">
     <Title title="Team Manager" sub="Stagione, risultati e squadra in un colpo d’occhio."/>
@@ -39,7 +42,14 @@ export default function Home({d}){
 
       <Surface className="contentCard standingsCard">
         <PanelHead title="Classifica"/>
-        <Empty>La classifica verrà mostrata quando sarà disponibile una fonte dati reale.</Empty>
+        <div className="rankingList standingsList">
+          {standings.length?standings.map((s,i)=><div className={'rankingItem standingItem '+(s.team==='Calcio Caselle'?'ourTeam':'')} key={s.team}>
+            <span className="rankBadge">{i+1}</span>
+            <span className="rankName">{s.team}</span>
+            <small>{n(s.played)}G · {n(s.won)}V · {n(s.drawn)}N · {n(s.lost)}P · {n(s.goals_for)}:{n(s.goals_against)}</small>
+            <strong>{n(s.points)}</strong>
+          </div>):<Empty>Nessuna classifica disponibile.</Empty>}
+        </div>
       </Surface>
     </section>
 
