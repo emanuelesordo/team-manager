@@ -6,7 +6,7 @@ import{compBy,fmt}from'../lib/ui.js';
 
 export default function Matches({d}){
   const matches=[...d.matches].sort((a,b)=>new Date(b.kickoff_at)-new Date(a.kickoff_at));
-  return <div className="pageStack">
+  return <div className="pageStack matchesPage">
     <Title title="Partite" sub="Gestione live e ricostruzione post-partita."/>
     <div className="matchCards">
       {matches.map(m=><NavLink to={'/partite/'+m.id} className="surface matchCard" key={m.id}>
