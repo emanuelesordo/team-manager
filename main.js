@@ -800,6 +800,16 @@ function refreshCalendarCompetition(){
 }
 $("#previewCalendarBtn").onclick=async()=>{const f=$("#calendarFile").files[0];if(!f)return;if(f.type==="application/pdf"||f.name.toLowerCase().endsWith(".pdf")){$("#calendarPreview").textContent="PDF selezionato: "+f.name+". Verrà interpretato e poi confermato prima del salvataggio.";return}const txt=await f.text();const rows=txt.split(/\r?\n/).filter(Boolean).slice(0,20).map(r=>r.split(/[;,]/));$("#calendarPreview").innerHTML=`<table>${rows.map(r=>"<tr>"+r.map(c=>"<td>"+esc(c.trim())+"</td>").join("")+"</tr>").join("")}</table>`};
 
+window.TM={
+  db,esc,assertSaved,
+  loadAll,loadCompetitions,loadCompetitionHub,loadCalendarHub,ensureMainTeam,
+  setPanel,localDateTime,isOwnTeamName,teamVisual,linkedMatchForFixture,openMatchDetail,openFixture,
+  getState:()=>({
+    seasons,competitions,opponents,currentSeason,team,sessionUser,
+    competitionHubId,competitionFixtureFilter,calendarRows,teamMatches,calendarCompetitionIds,players
+  })
+};
+
 async function boot(){
   try{
     await Promise.all([loadAuthState(),loadAll()]);
