@@ -1,6 +1,8 @@
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
 const SUPABASE_URL="https://qxblxomcpepwavgvhtuk.supabase.co";
 const SUPABASE_KEY="sb_publishable_mqNXt8rW96jH8JvCm24piA_SyAktT_m";
-const db=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const db=createClient(SUPABASE_URL,SUPABASE_KEY);
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
@@ -199,4 +201,21 @@ function refreshCalendarCompetition(){
 }
 $("#previewCalendarBtn").onclick=async()=>{const f=$("#calendarFile").files[0];if(!f)return;if(f.type==="application/pdf"||f.name.toLowerCase().endsWith(".pdf")){$("#calendarPreview").textContent="PDF selezionato: "+f.name+". Verrà interpretato e poi confermato prima del salvataggio.";return}const txt=await f.text();const rows=txt.split(/\r?\n/).filter(Boolean).slice(0,20).map(r=>r.split(/[;,]/));$("#calendarPreview").innerHTML=`<table>${rows.map(r=>"<tr>"+r.map(c=>"<td>"+esc(c.trim())+"</td>").join("")+"</tr>").join("")}</table>`};
 
-loadAuthState();loadAll().then(loadCompetitions);
+async function boot(){
+  try{
+    await Promise.all([loadAuthState(),loadAll()]);
+    await loadCompetitions();
+  }catch(err){
+    console.error("BOOT ERROR",err);
+    const msg=err?.message||String(err);
+    if($("#connectionState")){$("#connectionState").textContent="Errore: "+msg;$("#connectionState").className="status-pill error"}
+    if($("#authState")&&$("#authState").textContent==="Sessione…"){$("#authState").textContent="Errore avvio";$("#authState").className="auth-state error"}
+  }
+}
+window.addEventListener("error",e=>{
+  if($("#connectionState")&&$("#connectionState").textContent==="Connessione…"){
+    $("#connectionState").textContent="Errore JS: "+(e.message||"avvio");
+    $("#connectionState").className="status-pill error";
+  }
+});
+boot();
