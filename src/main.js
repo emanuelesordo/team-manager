@@ -8,7 +8,7 @@ const state={
   view:'home',loading:true,busy:false,session:null,role:null,
   players:[],seasons:[],competitions:[],opponents:[],matches:[],stats:[],scores:[],
   profiles:[],userRoles:[],settings:{community_confirmations_required:3},
-  selectedPlayerId:null,playerEditorOpen:false,adminTab:'competitions'
+  selectedPlayerId:null,playerEditorOpen:false,matchEditorOpen:false,selectedMatchId:null,adminTab:'competitions'
 };
 
 const labels={
@@ -73,9 +73,32 @@ function homeView(){
 
 /* CALENDAR */
 function calendarView(){
-  return `<div class="toolbar glass"><div><span class="eyebrow">STAGIONE</span><strong>${esc(season()?.name||'—')}</strong></div><span>${state.matches.length} partite</span></div>
-  <div class="timeline">${state.matches.map(m=>`<article class="match-card"><div class="date-chip"><strong>${m.kickoff_at?new Date(m.kickoff_at).getDate():'—'}</strong><span>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{month:'short'}).format(new Date(m.kickoff_at)):''}</span></div><div class="match-copy"><span class="status ${m.status}">${labels[m.status]}</span><strong>Caselle – ${esc(opponent(m.opponent_id)?.name||'Avversario')}</strong><small>${esc(competition(m.competition_id)?.name||'Partita')} · ${fmt(m.kickoff_at)}</small></div><div class="mini-score">${m.home_score||0}:${m.away_score||0}</div></article>`).join('')||'<div class="empty-card">Nessuna partita.</div>'}</div>`;
+  return `<div class="toolbar glass"><div><span class="eyebrow">STAGIONE</span><strong>${esc(season()?.name||'—')}</strong></div><div class="toolbar-actions"><span>${state.matches.length} partite</span>${isStaff()?'<button class="primary small" data-new-match>+ Partita</button>':''}</div></div>
+  <div class="timeline">${state.matches.map(m=>{const o=opponent(m.opponent_id),home=m.home_away==='home';return `<article class="match-card actionable" data-match="${m.id}"><div class="date-chip"><strong>${m.kickoff_at?new Date(m.kickoff_at).getDate():'—'}</strong><span>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{month:'short'}).format(new Date(m.kickoff_at)):''}</span></div><div class="match-copy"><span class="status ${m.status}">${labels[m.status]}</span><strong>${home?'Caselle – '+esc(o?.name||'Avversario'):esc(o?.name||'Avversario')+' – Caselle'}</strong><small>${esc(competition(m.competition_id)?.name||'Partita')} · ${fmt(m.kickoff_at)}${m.round_label?' · '+esc(m.round_label):''}</small></div><div class="match-side"><div class="mini-score">${m.home_score||0}:${m.away_score||0}</div>${isStaff()?'<span class="edit-hint">Modifica</span>':''}</div></article>`}).join('')||'<div class="empty-card">Nessuna partita. '+(isStaff()?'Creane una con “+ Partita”.':'')+'</div>'}</div>
+  ${state.matchEditorOpen?matchEditor():''}`;
 }
+function matchEditor(){
+ const m=state.selectedMatchId?state.matches.find(x=>x.id===state.selectedMatchId):null;
+ const local=m?.kickoff_at?new Date(new Date(m.kickoff_at).getTime()-new Date(m.kickoff_at).getTimezoneOffset()*60000).toISOString().slice(0,16):'';
+ return `<div class="sheet-backdrop"><section class="player-sheet editor"><button class="sheet-close" data-close-match>×</button><span class="eyebrow">CALENDARIO</span><h2>${m?'Modifica partita':'Nuova partita'}</h2><form id="match-form" data-id="${m?.id||''}"><div class="form-grid">
+ <label>Competizione<select name="competition_id"><option value="">Nessuna</option>${state.competitions.map(x=>`<option value="${x.id}" ${m?.competition_id===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>
+ <label>Avversario<select name="opponent_id" required><option value="">Seleziona…</option>${state.opponents.map(x=>`<option value="${x.id}" ${m?.opponent_id===x.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>
+ <label>Data e ora<input type="datetime-local" name="kickoff_at" value="${local}" required></label>
+ <label>Casa / trasferta<select name="home_away"><option value="home" ${m?.home_away!=='away'?'selected':''}>Casa</option><option value="away" ${m?.home_away==='away'?'selected':''}>Trasferta</option></select></label>
+ <label>Campo<input name="venue" value="${esc(m?.venue||'')}" placeholder="Es. Campo Caselle"></label>
+ <label>Giornata / turno<input name="round_label" value="${esc(m?.round_label||'')}" placeholder="Es. 5ª giornata"></label>
+ <label>Stato<select name="status">${['scheduled','live','finished','postponed','cancelled'].map(v=>`<option value="${v}" ${m?.status===v?'selected':''}>${labels[v]}</option>`).join('')}</select></label>
+ <label>Note<input name="notes" value="${esc(m?.notes||'')}"></label></div>
+ <div class="editor-actions"><button class="primary" type="submit">${m?'Salva modifiche':'Crea partita'}</button>${m?'<button class="ghost danger" type="button" data-delete-match="'+m.id+'">Elimina partita</button>':''}</div></form></section></div>`;
+}
+async function saveMatch(e){
+ e.preventDefault();const f=new FormData(e.currentTarget),id=e.currentTarget.dataset.id;
+ const row={season_id:season()?.id,competition_id:f.get('competition_id')||null,opponent_id:f.get('opponent_id'),kickoff_at:new Date(f.get('kickoff_at')).toISOString(),home_away:f.get('home_away'),venue:f.get('venue')||null,round_label:f.get('round_label')||null,status:f.get('status'),notes:f.get('notes')||null};
+ if(!row.season_id)return toast('Crea o attiva prima una stagione','err');
+ const {error}=id?await supabase.from('app_matches').update(row).eq('id',id):await supabase.from('app_matches').insert(row);
+ if(error)return toast(error.message,'err');state.matchEditorOpen=false;state.selectedMatchId=null;toast(id?'Partita aggiornata':'Partita creata');await load();
+}
+async function deleteMatch(id){if(!confirm('Eliminare definitivamente questa partita e i dati collegati?'))return;const {error}=await supabase.from('app_matches').delete().eq('id',id);if(error)return toast(error.message,'err');state.matchEditorOpen=false;state.selectedMatchId=null;toast('Partita eliminata');await load();}
 function liveView(){return `<div class="empty-card">Il livescore collaborativo resta operativo sulla struttura già predisposta. Le funzioni amministrative sono state spostate fuori da questa sezione.</div>`;}
 
 /* ROSTER */
@@ -187,6 +210,11 @@ function bind(){
  document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>{state.view=b.dataset.view;state.selectedPlayerId=null;render()});
  document.querySelectorAll('[data-admin-tab]').forEach(b=>b.onclick=()=>{state.adminTab=b.dataset.adminTab;render()});
  document.querySelectorAll('[data-player]').forEach(b=>b.onclick=()=>{state.selectedPlayerId=b.dataset.player;render();document.body.insertAdjacentHTML('beforeend',playerSheet(player(state.selectedPlayerId)));bindOverlay()});
+ const nm=document.querySelector('[data-new-match]');if(nm)nm.onclick=()=>{state.selectedMatchId=null;state.matchEditorOpen=true;render()};
+ document.querySelectorAll('[data-match]').forEach(x=>x.onclick=()=>{if(!isStaff())return;state.selectedMatchId=x.dataset.match;state.matchEditorOpen=true;render()});
+ const mf=document.querySelector('#match-form');if(mf)mf.onsubmit=saveMatch;
+ document.querySelectorAll('[data-close-match]').forEach(x=>x.onclick=()=>{state.matchEditorOpen=false;state.selectedMatchId=null;render()});
+ document.querySelectorAll('[data-delete-match]').forEach(x=>x.onclick=()=>deleteMatch(x.dataset.deleteMatch);
  const np=document.querySelector('[data-new-player]');if(np)np.onclick=()=>{state.selectedPlayerId=null;state.playerEditorOpen=true;render()};
  document.querySelectorAll('[data-role-filter]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-role-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.player-profile-card').forEach(c=>c.style.display=b.dataset.roleFilter==='all'||c.dataset.role===b.dataset.roleFilter?'':'none')});
  const pf=document.querySelector('#player-form');if(pf)pf.onsubmit=savePlayer;
