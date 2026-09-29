@@ -144,12 +144,13 @@ function matchDetail(){
  const dt=m.kickoff_at?new Date(m.kickoff_at):null;
  const day=dt?String(dt.getDate()).padStart(2,'0'):'—',mon=dt?new Intl.DateTimeFormat('it-IT',{month:'short'}).format(dt).replace('.','').toUpperCase():'';
  const comp=competition(m.competition_id)?.name||'Partita',home=m.home_away==='home';
- const leftTeam=home?'Caselle':(o?.name||'Avversario'),rightTeam=home?(o?.name||'Avversario'):'Caselle';
+ const ownLogo=state.settings.team_logo_url||'',oppLogo=o?.logo_url||'';
+ const leftTeam=home?'Caselle':(o?.name||'Avversario'),rightTeam=home?(o?.name||'Avversario'):'Caselle',leftLogo=home?ownLogo:oppLogo,rightLogo=home?oppLogo:ownLogo;
  return `<div class="sheet-backdrop match-detail-backdrop"><section class="match-detail match-ui">
  <header class="match-hero">
    <div class="match-date-box"><strong>${day}</strong><span>${mon}</span></div>
    <div class="match-title-block"><div class="match-title-line"><h2>${esc(leftTeam)} – ${esc(rightTeam)}</h2><span class="match-status-badge ${m.status}">${labels[m.status]}</span></div><p>${esc(comp)}${m.round_label?' · '+esc(m.round_label):''} · ${fmt(m.kickoff_at)}${m.venue?' · '+esc(m.venue):''}</p></div>
-   <div class="match-scoreboard"><div><small>${esc(leftTeam)}</small></div><strong>${m.home_score||0}<span>:</span>${m.away_score||0}</strong><div><small>${esc(rightTeam)}</small></div></div>
+   <div class="match-scoreboard"><div class="score-team"><span class="score-team-logo">${leftLogo?`<img src="${esc(leftLogo)}" alt="">`:initials(leftTeam,'')}</span><small>${esc(leftTeam)}</small></div><strong>${m.home_score||0}<span>:</span>${m.away_score||0}</strong><div class="score-team"><span class="score-team-logo">${rightLogo?`<img src="${esc(rightLogo)}" alt="">`:initials(rightTeam,'')}</span><small>${esc(rightTeam)}</small></div></div>
    <button class="match-actions-btn" data-close-detail><span>×</span></button>
  </header>
  <div class="match-toolbar-row"><nav class="match-tabs">${tabs.map(([id,l])=>`<button data-match-tab="${id}" class="${state.matchTab===id?'active':''}">${l}</button>`).join('')}</nav>${state.matchTab==='lineup'&&isStaff()?`<div class="match-formation-actions"><select id="formation-select-top">${Object.keys(formationSlots).map(x=>`<option ${(m.formation||'4-4-2')===x?'selected':''}>${x}</option>`).join('')}</select><button class="primary" data-save-lineup>Salva partita</button></div>`:''}</div>
