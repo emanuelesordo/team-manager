@@ -156,7 +156,7 @@ img{max-width:100%;display:block}
 .rosterColumns,.playerRow{display:grid;grid-template-columns:38px minmax(170px,1fr) 64px 52px 52px 52px;gap:8px;align-items:center;padding-inline:14px}
 .rosterColumns{min-height:40px;color:var(--muted-2);font-size:8px;text-transform:uppercase}
 .rosterRows{display:grid}
-.playerRow{width:100%;min-width:0;min-height:60px;border:0;border-top:1px solid rgba(255,255,255,.065);background:transparent;color:#fff;text-align:left}
+.playerRow{width:100%;min-width:0;min-height:60px;border:0;border-top:1px solid rgba(255,255,255,.065);background:transparent;color:#fff;text-align:left}.mobilePlayerStats{display:none}
 .playerRow:hover{background:rgba(255,255,255,.03)}
 .playerIndex{color:var(--muted);font-size:10px}
 .playerIdentity{display:flex;align-items:center;gap:9px;min-width:0}
@@ -377,15 +377,13 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
   .roleFilter strong{font-size:14px}
   .roleFilter small{font-size:7px}
   .rosterColumns{display:none}
-  .playerRow{grid-template-columns:24px minmax(0,1fr) 34px;grid-template-areas:"idx identity role" "idx stats stats";gap:4px 7px;padding:8px 10px;min-height:66px}
+  .playerRow{grid-template-columns:24px minmax(0,1fr) 34px;grid-template-areas:"idx identity role" "idx stats stats";gap:4px 7px;padding:8px 10px;min-height:70px}
   .playerIndex{grid-area:idx}
   .playerIdentity{grid-area:identity}
   .playerRow>.pill{grid-area:role}
-  .playerRow>strong[data-label]{grid-area:stats;display:inline-flex;gap:3px;color:#fff;font-size:9px}
-  .playerRow>strong[data-label]:before{content:attr(data-label) " ";color:var(--muted);font-weight:600}
-  .playerRow>strong[data-label]:nth-of-type(1){justify-self:start}
-  .playerRow>strong[data-label]:nth-of-type(2){margin-left:54px;justify-self:start}
-  .playerRow>strong[data-label]:nth-of-type(3){margin-left:101px;justify-self:start}
+  .desktopStat{display:none}
+  .mobilePlayerStats{grid-area:stats;display:flex;align-items:center;gap:12px;color:var(--muted);font-size:8px}
+  .mobilePlayerStats b{color:#fff;font-size:9px;margin-left:2px}
   .playerIdentity strong{font-size:10px}
   .playerStats{grid-template-columns:repeat(3,minmax(0,1fr))}
   .matchCard{padding:12px;gap:10px}
