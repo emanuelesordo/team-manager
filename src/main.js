@@ -17,7 +17,7 @@ const labels={
   league:'Campionato',cup:'Coppa',friendly:'Amichevole',tournament:'Torneo',other:'Altro',
   scheduled:'Programmata',live:'Live',finished:'Conclusa',postponed:'Rinviata',cancelled:'Annullata'
 };
-const icons={home:'⌂',calendar:'◫',live:'●',roster:'◉',stats:'⌁',profile:'○',admin:'⚙'};
+const icons={"home":"<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M3.5 10.8 12 4l8.5 6.8v8.7a1 1 0 0 1-1 1H15v-6h-6v6H4.5a1 1 0 0 1-1-1z\"/></svg>","calendar":"<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3.5\" y=\"5.5\" width=\"17\" height=\"15\" rx=\"2\"/><path d=\"M7.5 3.5v4M16.5 3.5v4M3.5 9.5h17\"/></svg>","live":"<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"7\"/><path d=\"M8.7 8.7a4.7 4.7 0 0 0 0 6.6M15.3 8.7a4.7 4.7 0 0 1 0 6.6\"/><circle cx=\"12\" cy=\"12\" r=\"1.4\" class=\"fill\"/></svg>","roster":"<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3\"/><path d=\"M3.8 19c.5-3.3 2.1-5.2 5.2-5.2s4.7 1.9 5.2 5.2M16 7.2a2.5 2.5 0 1 1 0 4.9M16 14.2c2.5.2 3.8 1.8 4.2 4.8\"/></svg>","stats":"<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M5 20V11M12 20V4M19 20v-7\"/></svg>","profile":"<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"8\" r=\"3.5\"/><path d=\"M5 20c.6-4 2.8-6 7-6s6.4 2 7 6\"/></svg>","admin":"<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 3.5v2M12 18.5v2M3.5 12h2M18.5 12h2M6 6l1.4 1.4M16.6 16.6 18 18M18 6l-1.4 1.4M7.4 16.6 6 18\"/></svg>"};
 
 const isStaff=()=>['manager','admin'].includes(state.role);
 const isAdmin=()=>state.role==='admin';
@@ -63,49 +63,74 @@ function toast(message,type='ok'){
   const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=message;toastRoot.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('show'));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220)},2500);
 }
-function title(){return ({home:'Squadra',calendar:'Calendario',live:'Livescore',roster:'Rosa',stats:'Statistiche',profile:'Profilo',admin:'Amministrazione'})[state.view]||'Team Manager';}
-function nav(){
-  return [['home','Home'],['calendar','Calendario'],['live','Live'],['roster','Rosa'],['stats','Stats'],['profile','Profilo']];
-}
+function title(){return ({home:'Dashboard',calendar:'Calendario',live:'Partite',roster:'Rosa',stats:'Statistiche',profile:'Profilo',admin:'Amministrazione'})[state.view]||'Team Manager';}
+function subtitle(){return ({home:'Panoramica generale della tua squadra',calendar:'Partite, competizioni e risultati',live:'Gestione live e cronaca partita',roster:'Giocatori, ruoli e dettagli',stats:'Analisi della stagione',profile:'Account e preferenze',admin:'Configurazione del club'})[state.view]||'';}
+function nav(){return [['home','Home'],['calendar','Calendario'],['live','Partite'],['roster','Rosa'],['stats','Statistiche'],['profile','Profilo']];}
 function shell(content){
-  const items=nav();
-  app.innerHTML=`<div class="app-shell">
-    <aside class="sidebar">
-      <div class="brand"><div class="brand-mark">${state.settings.team_logo_url?`<img src="${esc(state.settings.team_logo_url)}" alt="Calcio Caselle">`:'TM'}</div><div><strong>Team Manager</strong><span>Calcio Caselle</span></div></div>
-      <nav class="side-nav">${items.map(([id,l])=>`<button data-view="${id}" class="${state.view===id?'active':''}"><span>${icons[id]}</span>${l}</button>`).join('')}
-      ${isStaff()?'<div class="side-separator"></div><button data-view="admin" class="'+(state.view==='admin'?'active':'')+'"><span>⚙</span>Amministrazione</button>':''}</nav>
-      <div class="side-foot"><span class="role-chip">${esc(labels[state.role]||'Ospite')}</span><small>${esc(season()?.name||'Nessuna stagione')}</small></div>
-    </aside>
-    <main class="main"><header class="topbar"><div><div class="eyebrow">CALCIO CASELLE</div><h1>${title()}</h1></div><button class="avatar" data-view="profile">${state.session?'ME':'TM'}</button></header><section class="content">${content}</section></main>
-    <nav class="bottom-nav">${items.map(([id,l])=>`<button data-view="${id}" class="${state.view===id?'active':''}"><span class="nav-icon">${icons[id]}</span><span>${l}</span></button>`).join('')}</nav>
-    ${state.playerEditorOpen?playerEditor():''}
-  </div>`;
+ const items=nav(),logo=state.settings.team_logo_url?'<img src="'+esc(state.settings.team_logo_url)+'" alt="Calcio Caselle">':'CC';
+ const roleName=esc(labels[state.role]||'Ospite');
+ app.innerHTML=`<div class="app-shell">
+  <aside class="sidebar">
+   <div class="brand"><div class="brand-mark">${logo}</div><div><strong>TEAM MANAGER</strong><span>Calcio Caselle</span></div></div>
+   <nav class="side-nav">${items.map(([id,l])=>`<button data-view="${id}" class="${state.view===id?'active':''}"><span class="nav-glyph">${icons[id]}</span><span>${l}</span></button>`).join('')}
+    ${isStaff()?'<div class="side-separator"></div><button data-view="admin" class="'+(state.view==='admin'?'active':'')+'"><span class="nav-glyph">'+icons.admin+'</span><span>Amministrazione</span></button>':''}
+   </nav>
+   <div class="side-foot"><span class="role-chip">${roleName}</span><small>${esc(season()?.name||'Nessuna stagione')}</small></div>
+  </aside>
+  <main class="main">
+   <header class="topbar">
+    <div class="mobile-greeting"><button class="avatar avatar-small" data-view="profile">${state.session?'ME':'TM'}</button><div><small>Buongiorno</small><strong>${roleName}</strong></div></div>
+    <div class="page-heading"><h1>${title()}</h1><p>${subtitle()}</p></div>
+    <div class="topbar-tools"><label class="desktop-search"><span>⌕</span><input type="search" placeholder="Cerca…"></label><button class="top-icon" type="button" aria-label="Notifiche">♢</button><button class="profile-trigger" data-view="profile"><span class="avatar avatar-small">${state.session?'ME':'TM'}</span><span class="profile-copy"><strong>${roleName}</strong><small>${state.session?'Account':'Ospite'}</small></span></button></div>
+   </header>
+   <section class="content">${content}</section>
+  </main>
+  <nav class="bottom-nav">${items.map(([id,l])=>`<button data-view="${id}" class="${state.view===id?'active':''}"><span class="nav-icon">${icons[id]}</span><span>${l}</span></button>`).join('')}</nav>
+  ${state.playerEditorOpen?playerEditor():''}
+ </div>`;
 }
-function kpi(label,value,sub=''){return `<article class="metric"><span>${label}</span><strong>${value}</strong><small>${sub}</small></article>`;}
+function teamMark(name,url,extra=''){return `<span class="club-mark ${extra}">${url?`<img src="${esc(url)}" alt="">`:`<b>${esc(initials(name,''))}</b>`}</span>`;}
+function kpi(label,value,sub='',icon=''){return `<article class="metric">${icon?`<span class="metric-icon">${icon}</span>`:''}<div><span>${label}</span><strong>${value}</strong><small>${sub}</small></div></article>`;}
 
 /* HOME */
 function homeView(){
  const matches=[...state.matches].sort((a,b)=>new Date(a.kickoff_at||0)-new Date(b.kickoff_at||0));
  const next=matches.find(m=>m.status==='live')||matches.find(m=>m.status==='scheduled');
- const finished=matches.filter(m=>m.status==='finished');const last=finished.at(-1);
+ const live=matches.find(m=>m.status==='live');
+ const finished=matches.filter(m=>m.status==='finished').sort((a,b)=>new Date(b.kickoff_at||0)-new Date(a.kickoff_at||0));
+ const ownLogo=state.settings.team_logo_url||'';
  const score=m=>m?state.scores.find(x=>x.match_id===m.id):null;
+ const record=finished.reduce((r,m)=>{const home=m.home_away==='home',gf=home?num(m.home_score):num(m.away_score),ga=home?num(m.away_score):num(m.home_score);if(gf>ga)r.w++;else if(gf===ga)r.d++;else r.l++;return r},{w:0,d:0,l:0});
  const top=[...state.stats].sort((a,b)=>num(b.goals)-num(a.goals)).slice(0,5);
- const goals=state.stats.reduce((a,s)=>a+num(s.goals),0),assists=state.stats.reduce((a,s)=>a+num(s.assists),0);
- const matchMini=(m,title)=>{if(!m)return `<div class="empty-card">Nessuna partita disponibile.</div>`;const o=opponent(m.opponent_id),s=score(m),home=m.home_away==='home';return `<button class="dashboard-match" data-match="${m.id}"><span class="eyebrow">${title}</span><div class="dash-match-main"><div><strong>${home?'Caselle':esc(o?.name||'Avversario')}</strong><small>${home?'Casa':'Trasferta'}</small></div><div class="dash-score">${s?.team_score_live??m.home_score??0}<span>:</span>${s?.opponent_score_live??m.away_score??0}</div><div class="right"><strong>${home?esc(o?.name||'Avversario'):'Caselle'}</strong><small>${fmt(m.kickoff_at)}</small></div></div></button>`};
- return `<div class="page-summary glass"><div class="page-summary-brand"><div class="summary-logo">${state.settings.team_logo_url?`<img src="${esc(state.settings.team_logo_url)}" alt="">`:'TM'}</div><div><span class="eyebrow">TEAM MANAGER</span><h2>Calcio Caselle</h2><p>${esc(season()?.name||'Stagione')}</p></div></div><div class="summary-actions"><button class="ghost small" data-view="calendar">Calendario</button><button class="primary small" data-view="roster">Rosa</button></div></div>
- <div class="dashboard-kpis">${kpi('Partite',state.matches.length,'stagione')}${kpi('Rosa',state.players.length,'giocatori')}${kpi('Gol',goals,'segnati')}${kpi('Assist',assists,'registrati')}</div>
- <div class="dashboard-grid"><section class="ui-panel"><div class="panel-head"><div><span class="eyebrow">PARTITE</span><h3>Panoramica</h3></div><button class="text-btn" data-view="calendar">Vedi tutte</button></div><div class="dashboard-matches">${matchMini(last,'ULTIMA PARTITA')}${matchMini(next,next?.status==='live'?'IN DIRETTA':'PROSSIMA PARTITA')}</div></section>
- <section class="ui-panel"><div class="panel-head"><div><span class="eyebrow">SQUADRA</span><h3>Top marcatori</h3></div><button class="text-btn" data-view="stats">Statistiche</button></div><div class="compact-ranking">${top.map((x,i)=>`<button data-player="${x.player_id}"><span class="rank-dot">${i+1}</span><span class="grow"><strong>${esc(x.last_name)} ${esc(x.first_name)}</strong><small>${labels[x.position_group]||'—'} · ${num(x.minutes)}'</small></span><b>${num(x.goals)}</b></button>`).join('')||'<div class="empty-card">Nessun dato.</div>'}</div></section></div>`;
+ const activeComp=competition(next?.competition_id)||state.competitions[0];
+ const matchCard=(m,kind)=>{if(!m)return `<div class="match-feature empty-card">Nessuna partita disponibile.</div>`;const o=opponent(m.opponent_id),home=m.home_away==='home',s=score(m),teamScore=s?.team_score_live??(home?m.home_score:m.away_score)??0,oppScore=s?.opponent_score_live??(home?m.away_score:m.home_score)??0;return `<button class="match-feature ${kind}" data-match="${m.id}"><div class="match-feature-head"><span class="match-kicker">${kind==='live'?'● Live':esc(competition(m.competition_id)?.name||'Partita')}</span><span>${fmt(m.kickoff_at)}</span></div><div class="match-versus">${teamMark('Calcio Caselle',ownLogo)}<div><strong>${kind==='live'?teamScore+' - '+oppScore:'VS'}</strong><small>${home?'Casa':'Trasferta'}</small></div>${teamMark(o?.name||'Avversario',o?.logo_url||'')}</div><div class="match-names"><strong>Calcio Caselle</strong><strong>${esc(o?.name||'Avversario')}</strong></div></button>`};
+ return `<section class="club-overview-card mobile-only"><div class="club-overview-main">${teamMark('Calcio Caselle',ownLogo,'large')}<div><strong>Calcio Caselle</strong><span>${esc(activeComp?.name||season()?.name||'Stagione')}</span></div><span class="chevron">›</span></div><div class="club-record"><div><b>${finished.length}</b><span>Partite</span></div><div><b>${record.w}</b><span>Vittorie</span></div><div><b>${record.d}</b><span>Pareggi</span></div><div><b>${record.l}</b><span>Sconfitte</span></div></div></section>
+ <div class="desktop-dashboard-top">
+  <section class="dash-card dash-next"><span class="dash-label">Prossima partita</span>${matchCard(next,'upcoming')}</section>
+  <section class="dash-card dash-summary"><span class="dash-card-icon">🏆</span><div><small>Campionato</small><strong>${esc(activeComp?.name||'Competizione')}</strong><span>${esc(season()?.name||'Stagione')}</span></div></section>
+  <button class="dash-card dash-summary" data-view="roster"><span class="dash-card-icon people">${icons.roster}</span><div><small>Rosa</small><strong>${state.players.length}</strong><span>giocatori attivi</span></div><span class="chevron">›</span></button>
+  <section class="dash-card dash-summary record-card"><span class="dash-card-icon bars">${icons.stats}</span><div><small>Bilancio stagionale</small><strong>${record.w} <i>V</i> · ${record.d} <i>N</i> · ${record.l} <i>P</i></strong><span>${finished.length} partite concluse</span></div></section>
+ </div>
+ <section class="mobile-match-section mobile-only"><div class="mobile-section-head"><h3>Prossima partita</h3><button data-view="calendar">Vedi tutte</button></div>${matchCard(next,'upcoming')}</section>
+ ${live?`<section class="mobile-match-section mobile-only"><div class="mobile-section-head"><h3>Partita in diretta</h3></div>${matchCard(live,'live')}</section>`:''}
+ <div class="mobile-quick mobile-only"><button data-view="roster"><span>${icons.roster}</span><strong>Rosa</strong><small>${state.players.length} giocatori</small></button><button data-view="calendar"><span>${icons.calendar}</span><strong>Calendario</strong><small>Prossime partite</small></button><button data-view="stats"><span>${icons.stats}</span><strong>Statistiche</strong><small>Analisi dettagliata</small></button></div>
+ <div class="desktop-dashboard-bottom">
+  <section class="dash-panel recent-panel"><div class="panel-head"><h3>Ultime partite</h3><button class="text-btn" data-view="calendar">Vedi tutte</button></div><div class="recent-match-list">${finished.slice(0,5).map(m=>{const o=opponent(m.opponent_id),home=m.home_away==='home',gf=home?num(m.home_score):num(m.away_score),ga=home?num(m.away_score):num(m.home_score);return `<button data-match="${m.id}" class="recent-match-row"><span>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'short'}).format(new Date(m.kickoff_at)):'—'}</span>${teamMark(home?'Calcio Caselle':o?.name||'Avversario',home?ownLogo:o?.logo_url||'','tiny')}<strong>${esc(home?'Calcio Caselle':o?.name||'Avversario')}</strong><b>${m.home_score??0} - ${m.away_score??0}</b>${teamMark(home?o?.name||'Avversario':'Calcio Caselle',home?o?.logo_url||'':ownLogo,'tiny')}<strong>${esc(home?o?.name||'Avversario':'Calcio Caselle')}</strong><i class="result-pill ${gf>ga?'win':gf===ga?'draw':'loss'}">${gf>ga?'V':gf===ga?'N':'P'}</i></button>`}).join('')||'<div class="empty-card">Nessuna partita conclusa.</div>'}</div></section>
+  <section class="dash-panel scorers-panel"><div class="panel-head"><h3>Top marcatori</h3><button class="text-btn" data-view="stats">Vedi completa</button></div><div class="scorer-table"><div class="scorer-head"><span>POS</span><span>GIOCATORE</span><span>PG</span><span>GOL</span></div>${top.map((x,i)=>`<button data-player="${x.player_id}" class="scorer-row"><span>${i+1}</span><span><b>${esc(x.last_name)} ${esc(x.first_name)}</b><small>${labels[x.position_group]||'Giocatore'}</small></span><span>${num(x.appearances)}</span><strong>${num(x.goals)}</strong></button>`).join('')||'<div class="empty-card">Nessun dato.</div>'}</div></section>
+ </div>`;
 }
 
 /* CALENDAR */
 function calendarView(){
  const filters=[['all','Tutte'],['league','Campionato'],['cup','Coppa'],['friendly','Amichevoli']];
- return `<div class="page-tools"><div class="segmented compact">${filters.map(([id,l])=>`<button class="${id==='all'?'active':''}">${l}</button>`).join('')}</div><div class="toolbar-actions"><span class="muted-count">${state.matches.length} partite</span>${isStaff()?'<button class="primary small" data-new-match>+ Partita</button>':''}</div></div>
- <section class="ui-panel data-panel"><div class="data-head match-data-head"><span>Data</span><span>Partita</span><span>Competizione</span><span>Risultato</span><span>Stato</span><span></span></div>
- <div class="data-body">${state.matches.map(m=>{const o=opponent(m.opponent_id),home=m.home_away==='home';return `<button class="data-row match-data-row" data-match="${m.id}"><span class="data-date"><b>${m.kickoff_at?new Date(m.kickoff_at).getDate():'—'}</b><small>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{month:'short'}).format(new Date(m.kickoff_at)):''}</small></span><span class="fixture-cell"><strong>${home?'Caselle – '+esc(o?.name||'Avversario'):esc(o?.name||'Avversario')+' – Caselle'}</strong><small>${fmt(m.kickoff_at)}${m.venue?' · '+esc(m.venue):''}</small></span><span>${esc(competition(m.competition_id)?.name||'Partita')}</span><span class="table-score">${m.home_score||0} : ${m.away_score||0}</span><span><i class="status ${m.status}">${labels[m.status]}</i></span><span class="row-menu">⋮</span></button>`}).join('')||'<div class="empty-card">Nessuna partita.</div>'}</div></section>
+ const sorted=[...state.matches].sort((a,b)=>new Date(a.kickoff_at||0)-new Date(b.kickoff_at||0));
+ const groups=new Map();
+ sorted.forEach(m=>{const d=m.kickoff_at?new Date(m.kickoff_at):null,key=d?new Intl.DateTimeFormat('it-IT',{month:'long',year:'numeric'}).format(d):'Da programmare';if(!groups.has(key))groups.set(key,[]);groups.get(key).push(m)});
+ return `<div class="page-tools calendar-tools"><div class="segmented compact">${filters.map(([id,l])=>`<button class="${id==='all'?'active':''}">${l}</button>`).join('')}</div><div class="toolbar-actions"><span class="muted-count">${state.matches.length} partite</span>${isStaff()?'<button class="primary small" data-new-match>+ Partita</button>':''}</div></div>
+ <section class="calendar-board">${[...groups.entries()].map(([month,ms])=>`<section class="calendar-month"><h3>${esc(month)}</h3><div class="calendar-list">${ms.map(m=>{const o=opponent(m.opponent_id),home=m.home_away==='home',d=m.kickoff_at?new Date(m.kickoff_at):null;return `<button class="calendar-match-card" data-match="${m.id}"><div class="calendar-date"><b>${d?new Intl.DateTimeFormat('it-IT',{weekday:'short'}).format(d):'—'}</b><strong>${d?String(d.getDate()).padStart(2,'0'):'—'}</strong><span>${d?new Intl.DateTimeFormat('it-IT',{hour:'2-digit',minute:'2-digit'}).format(d):''}</span></div><div class="calendar-match-copy"><small>${esc(competition(m.competition_id)?.name||'Partita')}${m.round_label?' · '+esc(m.round_label):''}</small><div><span>${teamMark(home?'Calcio Caselle':o?.name||'Avversario',home?state.settings.team_logo_url:o?.logo_url||'','tiny')}<strong>${esc(home?'Calcio Caselle':o?.name||'Avversario')}</strong></span><span>${teamMark(home?o?.name||'Avversario':'Calcio Caselle',home?o?.logo_url||'':state.settings.team_logo_url,'tiny')}<strong>${esc(home?o?.name||'Avversario':'Calcio Caselle')}</strong></span></div></div><div class="calendar-result">${m.status==='finished'?'<b>'+num(m.home_score)+' - '+num(m.away_score)+'</b>':'<span class="status '+m.status+'">'+esc(labels[m.status]||m.status)+'</span>'}<i>›</i></div></button>`}).join('')}</div></section>`).join('')||'<div class="empty-card">Nessuna partita.</div>'}</section>
  ${state.matchEditorOpen?matchEditor():''}${state.matchDetailId?matchDetail():''}`;
 }
+
 function matchEditor(){
  const m=state.selectedMatchId?state.matches.find(x=>x.id===state.selectedMatchId):null;
  const local=m?.kickoff_at?new Date(new Date(m.kickoff_at).getTime()-new Date(m.kickoff_at).getTimezoneOffset()*60000).toISOString().slice(0,16):'';
@@ -141,22 +166,16 @@ async function loadMatchDetail(){
 function matchDetail(){
  const m=state.matches.find(x=>x.id===state.matchDetailId);if(!m)return '';
  const o=opponent(m.opponent_id),tabs=[['lineup','Formazione'],['events','Eventi']];
- const dt=m.kickoff_at?new Date(m.kickoff_at):null;
- const day=dt?String(dt.getDate()).padStart(2,'0'):'—',mon=dt?new Intl.DateTimeFormat('it-IT',{month:'short'}).format(dt).replace('.','').toUpperCase():'';
- const comp=competition(m.competition_id)?.name||'Partita',home=m.home_away==='home';
- const ownLogo=state.settings.team_logo_url||'',oppLogo=o?.logo_url||'';
- const leftTeam=home?'Caselle':(o?.name||'Avversario'),rightTeam=home?(o?.name||'Avversario'):'Caselle',leftLogo=home?ownLogo:oppLogo,rightLogo=home?oppLogo:ownLogo;
+ const comp=competition(m.competition_id)?.name||'Partita',home=m.home_away==='home',ownLogo=state.settings.team_logo_url||'',oppLogo=o?.logo_url||'';
+ const leftTeam=home?'Calcio Caselle':(o?.name||'Avversario'),rightTeam=home?(o?.name||'Avversario'):'Calcio Caselle',leftLogo=home?ownLogo:oppLogo,rightLogo=home?oppLogo:ownLogo;
  return `<div class="sheet-backdrop match-detail-backdrop"><section class="match-detail match-ui">
- <header class="match-hero">
-   <div class="match-date-box"><strong>${day}</strong><span>${mon}</span></div>
-   <div class="match-title-block"><div class="match-title-line"><h2>${esc(leftTeam)} – ${esc(rightTeam)}</h2><span class="match-status-badge ${m.status}">${labels[m.status]}</span></div><p>${esc(comp)}${m.round_label?' · '+esc(m.round_label):''} · ${fmt(m.kickoff_at)}${m.venue?' · '+esc(m.venue):''}</p></div>
-   <div class="match-scoreboard"><div class="score-team"><span class="score-team-logo">${leftLogo?`<img src="${esc(leftLogo)}" alt="">`:initials(leftTeam,'')}</span><small>${esc(leftTeam)}</small></div><strong>${m.home_score||0}<span>:</span>${m.away_score||0}</strong><div class="score-team"><span class="score-team-logo">${rightLogo?`<img src="${esc(rightLogo)}" alt="">`:initials(rightTeam,'')}</span><small>${esc(rightTeam)}</small></div></div>
-   <button class="match-actions-btn" data-close-detail><span>×</span></button>
- </header>
- <div class="match-toolbar-row"><nav class="match-tabs">${tabs.map(([id,l])=>`<button data-match-tab="${id}" class="${state.matchTab===id?'active':''}">${l}</button>`).join('')}</nav>${state.matchTab==='lineup'&&isStaff()?`<div class="match-formation-actions"><select id="formation-select-top">${Object.keys(formationSlots).map(x=>`<option ${(m.formation||'4-4-2')===x?'selected':''}>${x}</option>`).join('')}</select><button class="primary" data-save-lineup>Salva partita</button></div>`:''}</div>
- <div class="match-detail-body">${state.matchTab==='lineup'?lineupTab(m):eventsTab(m)}</div>
+  <header class="match-detail-top"><button class="match-back" data-close-detail>‹</button><div><strong>Dettagli partita</strong><small>${esc(comp)}${m.round_label?' · '+esc(m.round_label):''}</small></div><button class="match-more" type="button">⋮</button></header>
+  <section class="match-summary-card"><div class="match-summary-meta"><span>${esc(comp)}${m.round_label?' · '+esc(m.round_label):''}</span><small>${fmt(m.kickoff_at)}${m.venue?' · '+esc(m.venue):''}</small></div><div class="match-summary-teams"><div>${teamMark(leftTeam,leftLogo,'large')}<strong>${esc(leftTeam)}</strong><small>${home?'Casa':'Trasferta'}</small></div><span class="versus-score">${m.status==='scheduled'?'VS':num(m.home_score)+' - '+num(m.away_score)}</span><div>${teamMark(rightTeam,rightLogo,'large')}<strong>${esc(rightTeam)}</strong><small>${home?'Trasferta':'Casa'}</small></div></div></section>
+  <div class="match-toolbar-row"><nav class="match-tabs">${tabs.map(([id,l])=>`<button data-match-tab="${id}" class="${state.matchTab===id?'active':''}">${l}</button>`).join('')}</nav>${state.matchTab==='lineup'&&isStaff()?`<div class="match-formation-actions"><select id="formation-select-top">${Object.keys(formationSlots).map(x=>`<option ${(m.formation||'4-4-2')===x?'selected':''}>${x}</option>`).join('')}</select><button class="primary small" data-save-lineup>Salva</button></div>`:''}</div>
+  <div class="match-detail-body">${state.matchTab==='lineup'?lineupTab(m):eventsTab(m)}</div>
  </section></div>`;
 }
+
 function lineupTab(m){return formationWorkspace(m)}
 const formationSlots={
  '4-4-2':[[50,89],[12,70],[37,70],[63,70],[88,70],[12,44],[37,44],[63,44],[88,44],[35,18],[65,18]],
@@ -287,11 +306,11 @@ function liveView(){return `<div class="empty-card">Il livescore collaborativo r
 
 /* ROSTER */
 function rosterView(){
- const tabs=[['all','Giocatori'],['P','Portieri'],['D','Difensori'],['C','Centrocampisti'],['A','Attaccanti']];
- return `<div class="page-tools"><div class="segmented compact">${tabs.map(([id,l],i)=>`<button data-role-filter="${id}" class="${i===0?'active':''}">${l}</button>`).join('')}</div><div class="toolbar-actions"><span class="muted-count">${state.players.length} giocatori</span>${isStaff()?'<button class="primary small" data-new-player>+ Giocatore</button>':''}</div></div>
- <section class="ui-panel data-panel roster-table" id="roster-grid"><div class="data-head roster-data-head"><span>#</span><span>Ruolo</span><span>Giocatore</span><span>Nascita</span><span>PG</span><span>Gol</span><span>Assist</span><span></span></div><div class="data-body">
- ${state.players.map((p,i)=>{const s=stat(p.id);return `<button class="data-row roster-data-row player-profile-card" data-player="${p.id}" data-role="${p.generic_role_manual||''}"><span class="row-index">${i+1}</span><span class="role-square role-${p.generic_role_manual||'x'}">${p.generic_role_manual||'–'}</span><span class="player-cell"><span class="player-avatar xs">${initials(p.first_name,p.last_name)}</span><span><strong>${esc(p.last_name)} ${esc(p.first_name)}</strong><small>${esc(p.nationality_code||'')} · ${esc(p.preferred_foot||'piede n/d')}</small></span></span><span>${esc(p.birth_date||'—')}</span><span>${num(s.appearances)}</span><span class="strong-stat">${num(s.goals)}</span><span>${num(s.assists)}</span><span class="row-menu">›</span></button>`}).join('')}</div></section>`;
+ const tabs=[['all','Tutti'],['P','Portieri'],['D','Difensori'],['C','Centrocampisti'],['A','Attaccanti']];
+ return `<div class="page-tools roster-tools"><div class="segmented compact">${tabs.map(([id,l],i)=>`<button data-role-filter="${id}" class="${i===0?'active':''}">${l}</button>`).join('')}</div><div class="toolbar-actions"><span class="muted-count">${state.players.length} giocatori</span>${isStaff()?'<button class="primary small" data-new-player>+ Giocatore</button>':''}</div></div>
+ <section class="roster-list" id="roster-grid">${state.players.map((p,i)=>{const s=stat(p.id),avatar=p.photo_url?`<span class="player-photo"><img src="${esc(p.photo_url)}" alt=""></span>`:`<span class="player-photo fallback">${initials(p.first_name,p.last_name)}</span>`;return `<button class="roster-list-row player-profile-card" data-player="${p.id}" data-role="${p.generic_role_manual||''}">${avatar}<span class="shirt-index">${i+1}</span><span class="roster-person"><strong>${esc(p.first_name)} ${esc(p.last_name)}</strong><small>${labels[p.generic_role_manual]||'Ruolo n/d'}</small></span><span class="nationality-tag">${esc(p.nationality_code||'')}</span><span class="roster-mini-stat"><b>${num(s.appearances)}</b><small>Presenze</small></span><span class="roster-mini-stat"><b>${num(s.goals)}</b><small>Gol</small></span><span class="chevron">›</span></button>`}).join('')||'<div class="empty-card">Nessun giocatore.</div>'}</section>`;
 }
+
 function playerCard(p){
   const s=stat(p.id);
   return `<button class="player-profile-card" data-player="${p.id}" data-role="${p.generic_role_manual||''}"><div class="player-avatar xl">${initials(p.first_name,p.last_name)}</div><div class="player-main"><strong>${esc(p.first_name)} ${esc(p.last_name)}</strong><span>${labels[p.generic_role_manual]||'Ruolo n/d'} · ${esc(p.preferred_foot||'piede n/d')}</span></div><div class="mini-kpis"><span><b>${num(s.appearances)}</b>PG</span><span><b>${num(s.goals)}</b>G</span><span><b>${num(s.assists)}</b>A</span></div></button>`;
@@ -327,10 +346,11 @@ function statsView(){
  const ratings=rows.map(x=>Number(x.avg_rating)).filter(Boolean),topGoals=[...rows].sort((a,b)=>num(b.goals)-num(a.goals)).slice(0,6),topMins=[...rows].sort((a,b)=>num(b.minutes)-num(a.minutes)).slice(0,6);
  const roles=['P','D','C','A'].map(r=>({r,n:state.players.filter(p=>p.generic_role_manual===r).length})),maxG=Math.max(1,...topGoals.map(x=>num(x.goals))),maxM=Math.max(1,...topMins.map(x=>num(x.minutes)));
  return `<div class="page-tools"><div class="segmented compact"><button class="active">Panoramica</button><button>Giocatori</button><button>Squadra</button><button>Competizioni</button></div><span class="season-chip">${esc(season()?.name||'—')}</span></div>
- <div class="dashboard-kpis">${kpi('Gol',goals,'totali')}${kpi('Assist',assists,'totali')}${kpi('Minuti',mins,'registrati')}${kpi('Media voto',ratings.length?avg(ratings).toFixed(2):'—','squadra')}</div>
- <div class="analytics-grid unified"><section class="ui-panel chart-card"><div class="panel-head"><h3>Top marcatori</h3><span>Gol</span></div>${barList(topGoals,'goals',maxG)}</section><section class="ui-panel chart-card"><div class="panel-head"><h3>Più utilizzati</h3><span>Minuti</span></div>${barList(topMins,'minutes',maxM)}</section><section class="ui-panel chart-card"><div class="panel-head"><h3>Composizione rosa</h3><span>Ruoli</span></div><div class="role-bars">${roles.map(x=>`<div><span>${labels[x.r]}</span><div class="role-track"><i style="width:${state.players.length?Math.round(x.n/state.players.length*100):0}%"></i></div><b>${x.n}</b></div>`).join('')}</div></section><section class="ui-panel chart-card"><div class="panel-head"><h3>Disciplina</h3><span>Cartellini</span></div><div class="discipline"><div><strong>${rows.reduce((a,x)=>a+num(x.yellow_cards),0)}</strong><span>Gialli</span></div><div><strong>${rows.reduce((a,x)=>a+num(x.red_cards),0)}</strong><span>Rossi</span></div><div><strong>${rows.filter(x=>num(x.appearances)>0).length}</strong><span>Impiegati</span></div></div></section></div>
- <section class="ui-panel data-panel stats-detail"><div class="panel-head"><h3>Dettaglio giocatori</h3><span>${rows.length} record</span></div><div class="stats-table"><div class="stats-row header"><span>Giocatore</span><span>PG</span><span>MIN</span><span>G</span><span>A</span><span>V</span></div>${rows.sort((a,b)=>num(b.goals)-num(a.goals)).map(x=>`<button class="stats-row" data-player="${x.player_id}"><span class="player-cell"><span class="player-avatar xs">${initials(x.first_name,x.last_name)}</span><span><strong>${esc(x.last_name)} ${esc(x.first_name)}</strong><small>${labels[x.position_group]||'—'}</small></span></span><span>${num(x.appearances)}</span><span>${num(x.minutes)}</span><span class="strong-stat">${num(x.goals)}</span><span>${num(x.assists)}</span><span>${x.avg_rating??'—'}</span></button>`).join('')}</div></section>`;
+ <div class="stats-summary-grid">${kpi('Gol',goals,'totali',icons.live)}${kpi('Assist',assists,'totali',icons.roster)}${kpi('Minuti',mins,'registrati',icons.calendar)}${kpi('Media voto',ratings.length?avg(ratings).toFixed(2):'—','squadra',icons.stats)}</div>
+ <div class="analytics-grid"><section class="dash-panel"><div class="panel-head"><h3>Top marcatori</h3><span>Gol</span></div>${barList(topGoals,'goals',maxG)}</section><section class="dash-panel"><div class="panel-head"><h3>Più utilizzati</h3><span>Minuti</span></div>${barList(topMins,'minutes',maxM)}</section><section class="dash-panel"><div class="panel-head"><h3>Composizione rosa</h3><span>Ruoli</span></div><div class="role-bars">${roles.map(x=>`<div><span>${labels[x.r]}</span><div class="role-track"><i style="width:${state.players.length?Math.round(x.n/state.players.length*100):0}%"></i></div><b>${x.n}</b></div>`).join('')}</div></section><section class="dash-panel"><div class="panel-head"><h3>Disciplina</h3><span>Cartellini</span></div><div class="discipline"><div><strong>${rows.reduce((a,x)=>a+num(x.yellow_cards),0)}</strong><span>Gialli</span></div><div><strong>${rows.reduce((a,x)=>a+num(x.red_cards),0)}</strong><span>Rossi</span></div><div><strong>${rows.filter(x=>num(x.appearances)>0).length}</strong><span>Impiegati</span></div></div></section></div>
+ <section class="dash-panel stats-detail"><div class="panel-head"><h3>Dettaglio giocatori</h3><span>${rows.length} record</span></div><div class="stats-table"><div class="stats-row header"><span>Giocatore</span><span>PG</span><span>MIN</span><span>G</span><span>A</span><span>V</span></div>${rows.sort((a,b)=>num(b.goals)-num(a.goals)).map(x=>`<button class="stats-row" data-player="${x.player_id}"><span class="player-cell"><span class="player-avatar xs">${initials(x.first_name,x.last_name)}</span><span><strong>${esc(x.last_name)} ${esc(x.first_name)}</strong><small>${labels[x.position_group]||'—'}</small></span></span><span>${num(x.appearances)}</span><span>${num(x.minutes)}</span><span class="strong-stat">${num(x.goals)}</span><span>${num(x.assists)}</span><span>${x.avg_rating??'—'}</span></button>`).join('')}</div></section>`;
 }
+
 function barList(rows,key,max){
   return `<div class="bar-list">${rows.map(x=>`<button data-player="${x.player_id}"><span>${esc(x.last_name)} ${esc(x.first_name)}</span><div class="bar-track"><i style="width:${Math.max(4,Math.round(num(x[key])/max*100))}%"></i></div><b>${num(x[key])}</b></button>`).join('')||'<div class="empty-card">Nessun dato.</div>'}</div>`;
 }
