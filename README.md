@@ -76,6 +76,13 @@ La relazione N:N tra competizione e avversarie è salvata in:
 
 La stessa avversaria può quindi partecipare a più competizioni e più stagioni senza duplicazioni.
 
+Ogni avversaria può inoltre avere:
+- logo in `opponent-assets`;
+- `primary_color`, `secondary_color`, `accent_color`;
+- proposta automatica della palette dal logo, sempre modificabile manualmente.
+
+Gli asset sono salvati sotto la cartella della squadra principale, coerentemente con le policy Storage `opponents.manage`.
+
 ### Calendari
 
 Tabella esistente: `public.app_competition_fixtures`.
