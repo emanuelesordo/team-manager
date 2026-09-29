@@ -284,4 +284,7 @@ body{
   .main{padding:10px}
   .metric-grid{grid-template-columns:repeat(2,1fr)}
   .roster-head,.roster-row{grid-template-columns:1fr 60px 40px}
-  .roster-head span
+  .roster-head span:nth-child(n+4),.roster-row>span:nth-child(n+4){display:none}
+  .dashboard-hero-grid{grid-template-columns:1fr}
+  .hero-score{padding:8px}
+}
