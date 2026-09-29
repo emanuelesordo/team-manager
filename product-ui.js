@@ -313,4 +313,74 @@
     const ev=events.filter(x=>x.match_id===m.id).sort((a,b)=>(a.minute??999)-(b.minute??999));
     $("#matchWorkspace").innerHTML=`<div class="section-cap"><div><strong>${esc(team()?.short_name||"CAS")} \xb7 ${esc(o?.short_name||o?.name||"AVV")}</strong><small>${TM.localDateTime(m.kickoff_at)}</small></div>
       <select id="matchFormation"><option>4-4-2</option><option>4-3-3</option><option>3-5-2</option><option>4-2-3-1</option></select></div>
-      <div class="workspace-grid"><section><div class="subcap">Convocati / formazione</div><div id="matchSquadList">${players.map(p=>{const mp=selected.find(x=>x.player_id===p.id);return `<label class="squad-toggle"><input type="checkbox" data-match-player="${p.id}" ${mp?"checked":""}><span>${esc(p.last_name+" "+p.first_name)}</span><button type="button" class="starter-toggle $
+      <div class="workspace-grid"><section><div class="subcap">Convocati / formazione</div><div id="matchSquadList">${players.map(p=>{const mp=selected.find(x=>x.player_id===p.id);return `<label class="squad-toggle"><input type="checkbox" data-match-player="${p.id}" ${mp?"checked":""}><span>${esc(p.last_name+" "+p.first_name)}</span><button type="button" class="starter-toggle ${mp?.started?"on":""}" data-starter="${p.id}">${mp?.started?"TIT":"P"}</button></label>`}).join("")}</div></section>
+      <section><div class="subcap">Eventi</div><div class="workspace-events">${ev.length?ev.map(e=>`<div><time>${e.minute??"?"}'</time><b>${esc(eventLabel(e.event_type))}</b><span>${esc(playerName(e.player_id)||(e.team_side==="opponent"?"Avversario":""))}</span></div>`).join(""):'<div class="empty-state">Nessun evento</div>'}</div></section></div>
+      <button id="saveMatchSetup" class="primary full-btn" type="button">Salva formazione</button>`;
+    $("#matchFormation").value=m.formation||"4-4-2";
+    $$("[data-starter]",$("#matchWorkspace")).forEach(b=>b.onclick=e=>{e.preventDefault();b.classList.toggle("on");b.textContent=b.classList.contains("on")?"TIT":"P";});
+    $("#saveMatchSetup").onclick=saveMatchSetup;
+  }
+
+  async function saveMatchSetup() {
+    if (!sessionUser()) return alert("Accedi per modificare la formazione.");
+    const m=matches.find(x=>x.id===selectedMatchId); if (!m) return;
+    const checked=$$("[data-match-player]",$("#matchWorkspace")).filter(x=>x.checked);
+    const existing=matchPlayers.filter(x=>x.match_id===m.id);
+    const checkedIds=new Set(checked.map(x=>x.dataset.matchPlayer));
+    for (const row of existing.filter(x=>!checkedIds.has(x.player_id))) {
+      const d=await db.from("app_match_players").delete().eq("id",row.id); if (d.error) throw d.error;
+    }
+    for (const input of checked) {
+      const pid=input.dataset.matchPlayer;
+      const starter=$(`[data-starter="${pid}"]`,$("#matchWorkspace"))?.classList.contains("on")||false;
+      const old=existing.find(x=>x.player_id===pid);
+      if (old) {
+        const u=await db.from("app_match_players").update({started:starter,selection_status:"available"}).eq("id",old.id);
+        if (u.error) throw u.error;
+      } else {
+        const ins=await db.from("app_match_players").insert({match_id:m.id,player_id:pid,started:starter,selection_status:"available"});
+        if (ins.error) throw ins.error;
+      }
+    }
+    const mr=await db.from("app_matches").update({formation:$("#matchFormation").value}).eq("id",m.id).select("*").maybeSingle();
+    TM.assertSaved(mr,"Formazione");
+    await loadCore(); renderMatchWorkspace();
+  }
+
+  async function loadEvents() {
+    await loadCore();
+    const opts=matches.map(m=>`<option value="${m.id}">${esc(matchLabel(m))}</option>`).join("");
+    $("#eventsMatchFilter").innerHTML='<option value="">Tutte le partite</option>'+opts;
+    $("#eventMatchId").innerHTML=opts;
+    $("#eventPlayer").innerHTML=playerOptions("");
+    $("#eventSecondary").innerHTML=playerOptions("");
+    renderEvents();
+  }
+  function playerOptions(selected) {
+    return '<option value="">\u2014</option>'+players.map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.last_name+" "+p.first_name)}</option>`).join("");
+  }
+  function renderEvents() {
+    const matchId=$("#eventsMatchFilter").value;
+    const list=events.filter(e=>!matchId||e.match_id===matchId).sort((a,b)=>{
+      const ma=matches.find(m=>m.id===a.match_id), mb=matches.find(m=>m.id===b.match_id);
+      return new Date(mb?.kickoff_at||0)-new Date(ma?.kickoff_at||0) || (a.minute??0)-(b.minute??0);
+    });
+    $("#eventsTimeline").innerHTML=list.map(e=>{
+      const m=matches.find(x=>x.id===e.match_id), o=opponentById(m?.opponent_id);
+      return `<div class="timeline-event"><time>${e.minute??"?"}'</time><span class="event-dot ${esc(e.event_type)}"></span><div><b>${esc(eventLabel(e.event_type))}</b><span>${esc(playerName(e.player_id)||(e.team_side==="opponent"?o?.name||"Avversario":"Caselle"))}</span><small>${esc(m?matchLabel(m):"")}</small></div></div>`;
+    }).join("")||'<div class="empty-state">Nessun evento</div>';
+  }
+
+  async function createEvent(e) {
+    e.preventDefault();
+    $("#eventCreateError").classList.add("hidden");
+    try {
+      if (!sessionUser()) throw new Error("Accedi per aggiungere eventi.");
+      const payload={
+        match_id:$("#eventMatchId").value,event_type:$("#eventType").value,
+        minute:$("#eventMinute").value===""?null:+$("#eventMinute").value,
+        player_id:$("#eventPlayer").value||null,secondary_player_id:$("#eventSecondary").value||null,
+        team_side:$("#eventSide").value,proposed_by:sessionUser().id,
+        validation_status:"official",officialized_by:sessionUser().id,officialized_at:new Date().toISOString(),payload:{}
+      };
+      const r=await db.from("app_match_events").insert
