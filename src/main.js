@@ -206,9 +206,22 @@ function eventsTab(m){
 }
 async function saveLineup(){
  const m=state.matches.find(x=>x.id===state.matchDetailId),formation=document.querySelector('#formation-select')?.value||m.formation||'4-4-2';
- const rows=state.matchPlayers.map(x=>({...x,shirt_number:Number(document.querySelector(`[data-shirt="${x.player_id}"]`)?.value)||x.shirt_number||null,minutes_played:Number(document.querySelector(`[data-minutes="${x.player_id}"]`)?.value)||x.minutes_played||null}));
- if(rows.length){const clean=rows.map(({id,...x})=>x);const {error}=await supabase.from('app_match_players').upsert(clean,{onConflict:'match_id,player_id'});if(error)return toast(error.message,'err')}
- const {error:me}=await supabase.from('app_matches').update({formation}).eq('id',m.id);if(me)return toast(me.message,'err');toast('Formazione salvata');await load();await loadMatchDetail();render();
+ const captainId=document.querySelector('#captain-select')?.value||null;
+ const rows=state.matchPlayers.map(x=>({
+  ...x,
+  shirt_number:x.shirt_number||null,
+  minutes_played:x.minutes_played??null,
+  is_captain:captainId?x.player_id===captainId:false,
+  unused_sub_reason:document.querySelector(`[data-unused-reason="${x.player_id}"]`)?.value||x.unused_sub_reason||null
+ }));
+ if(rows.length){
+  const clean=rows.map(({id,...x})=>x);
+  const {error}=await supabase.from('app_match_players').upsert(clean,{onConflict:'match_id,player_id'});
+  if(error)return toast(error.message,'err')
+ }
+ const {error:me}=await supabase.from('app_matches').update({formation}).eq('id',m.id);
+ if(me)return toast(me.message,'err');
+ toast('Formazione salvata');await load();await loadMatchDetail();render();
 }
 async function saveRetroEvent(e){
  e.preventDefault();const f=new FormData(e.currentTarget);
