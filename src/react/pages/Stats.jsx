@@ -14,7 +14,7 @@ export default function Stats({d}){
 
   const bands=[[0,15],[16,30],[31,45],[46,60],[61,75],[76,999]].map(([a,b])=>{const ev=d.events.filter(e=>['goal','own_goal','penalty_scored'].includes(e.event_type)&&n(e.minute)>=a&&n(e.minute)<=b);return{team:ev.filter(e=>e.team_side==='team').length,opp:ev.filter(e=>e.team_side==='opponent').length}});
 
-  return <div className="pageStack">
+  return <div className="pageStack statsPage">
     <Title title="Statistiche" sub="Prestazioni individuali e andamento dei gol."/>
 
     <div className="statsCards">
