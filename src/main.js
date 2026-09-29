@@ -148,10 +148,18 @@ function pitchTab(m){return formationWorkspace(m)}
 async function moveFormationPlayer(playerId,target,slot){
  let rows=state.matchPlayers.map(x=>({...x}));let x=rows.find(r=>r.player_id===playerId);
  if(!x){x={match_id:state.matchDetailId,player_id:playerId,selection_status:'available',started:false,shirt_number:null,minutes_played:null,tactical_slot:null};rows.push(x)}
- if(target==='slot'){const occupied=rows.find(r=>r.tactical_slot===slot&&r.player_id!==playerId);if(occupied){occupied.selection_status='available';occupied.started=false;occupied.tactical_slot=null}x.selection_status='starter';x.started=true;x.tactical_slot=slot}
- else if(target==='bench'){x.selection_status='bench';x.started=false;x.tactical_slot=null}
+ const changed=[x];
+ if(target==='slot'){
+  const occupied=rows.find(r=>r.tactical_slot===slot&&r.player_id!==playerId);
+  if(occupied){occupied.selection_status='available';occupied.started=false;occupied.tactical_slot=null;changed.push(occupied)}
+  x.selection_status='starter';x.started=true;x.tactical_slot=slot;
+ }else if(target==='bench'){x.selection_status='bench';x.started=false;x.tactical_slot=null}
  else{x.selection_status='available';x.started=false;x.tactical_slot=null}
  state.matchPlayers=rows;render();
+ const payload=changed.map(r=>({match_id:state.matchDetailId,player_id:r.player_id,selection_status:r.selection_status,started:r.started,shirt_number:r.shirt_number||null,minutes_played:r.minutes_played??null,tactical_slot:r.tactical_slot||null}));
+ const {error}=await supabase.from('app_match_players').upsert(payload,{onConflict:'match_id,player_id'});
+ if(error){toast('Spostamento non salvato: '+error.message,'err');await loadMatchDetail();render();return}
+ toast(target==='slot'?'Titolare aggiornato':target==='bench'?'Panchina aggiornata':'Giocatore rimosso');
 }
 function bindFormationDnD(){
  let dragged=null;
