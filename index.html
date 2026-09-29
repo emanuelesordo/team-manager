@@ -21,7 +21,7 @@
     <button class="main-link" disabled>Statistiche</button>
   </nav>
   <select id="seasonSelector" class="season-selector" aria-label="Stagione"></select>
-  <span id="authState" class="auth-state">Sessione…</span>
+  <span id="authState" class="auth-state">Sessione…</span><button id="authButton" class="auth-button" type="button">Accedi</button>
 </header>
 
 <main class="main">
@@ -79,6 +79,16 @@
     </div>
   </section>
 </main>
+
+<dialog id="authDialog">
+  <form id="authForm">
+    <div class="dialog-head"><strong>Accedi</strong><button type="button" class="icon-btn" data-close-auth>×</button></div>
+    <label>Email<input id="authEmail" type="email" autocomplete="username" required></label>
+    <label>Password<input id="authPassword" type="password" autocomplete="current-password" required></label>
+    <p id="authError" class="form-error hidden"></p>
+    <div class="dialog-actions"><button type="button" class="secondary" data-close-auth>Annulla</button><button class="primary" type="submit">Accedi</button></div>
+  </form>
+</dialog>
 
 <dialog id="seasonWizard" class="wizard">
   <form id="wizardForm">
