@@ -11,3 +11,60 @@
 .competition-picker{display:flex;justify-content:flex-start;margin-bottom:10px}.competition-picker select{width:auto;min-width:220px}.competition-split{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}.competition-half{min-width:0}.mini-calendar-tools{display:flex;justify-content:flex-end;margin-bottom:6px}.round-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.mini-round{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px;display:grid;gap:3px}.mini-round-label{font-size:9px;font-weight:900;color:#667085}.mini-fixture{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:4px;min-height:28px}.mini-team{display:flex;align-items:center;gap:4px;min-width:0;font-size:9px}.mini-team:last-child{justify-content:flex-end}.mini-team img,.mini-team i{width:20px;height:20px;border-radius:50%;object-fit:contain;background:#f2f4f7;border:1px solid var(--line);display:grid;place-items:center;font-size:7px;font-style:normal;font-weight:900;flex:0 0 auto}.mini-team b{font-size:9px;white-space:nowrap}.score-link{border:0;background:#f2f4f7;color:#101828;border-radius:6px;padding:4px 6px;font-size:10px;font-weight:900;cursor:pointer;min-width:30px}.score-link:hover{background:#e4e7ec}.competition-filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.competition-filter{display:flex;align-items:center;gap:5px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 8px;margin:0;font-size:10px;cursor:pointer}.competition-filter input{width:auto;margin:0}.team-calendar-row{display:grid;grid-template-columns:120px 150px 1fr auto;gap:10px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:6px}.team-calendar-date{font-size:10px;color:#667085}.team-calendar-competition{font-size:9px;font-weight:800;color:#475467;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.team-calendar-opponent{display:flex;align-items:center;gap:7px;min-width:0}.team-calendar-opponent img,.team-calendar-opponent i{width:26px;height:26px;border-radius:50%;object-fit:contain;background:#f2f4f7;border:1px solid var(--line);display:grid;place-items:center;font-size:8px;font-style:normal;font-weight:900;flex:0 0 auto}.team-calendar-opponent strong{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.home-away{font-size:8px;font-weight:900;color:#667085;width:42px}.calendar-score{font-size:12px;padding:6px 8px}.match-event-section{border-top:1px solid var(--line);margin-top:8px;padding-top:12px}.match-event-label{font-size:11px;font-weight:900;margin-bottom:8px}.event-edit-row{display:grid;grid-template-columns:130px 70px 100px 1fr 1fr auto;gap:6px;align-items:center;margin-bottom:6px}.event-edit-row input,.event-edit-row select{padding:7px;font-size:10px}.event-save{padding:7px 9px;font-size:10px}
 @media(max-width:900px){.competition-split{grid-template-columns:1fr}.round-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.team-calendar-row{grid-template-columns:95px 1fr auto}.team-calendar-competition{display:none}.event-edit-row{grid-template-columns:1fr 70px 100px;}.event-edit-row [data-event-player],.event-edit-row [data-event-secondary]{grid-column:span 1}}
 @media(max-width:600px){.round-grid{grid-template-columns:1fr}.team-calendar-row{grid-template-columns:1fr auto}.team-calendar-date{grid-column:1/-1}.team-calendar-opponent{min-width:0}.event-edit-row{grid-template-columns:1fr 65px}.event-edit-row [data-event-side],.event-edit-row [data-event-player],.event-edit-row [data-event-secondary]{grid-column:span 1}}
+
+/* Competizioni: classifica fissa a sinistra, calendario unico e auto-denso a destra */
+.competition-split{grid-template-columns:minmax(360px,.9fr) minmax(0,1.35fr);gap:10px;align-items:stretch}
+.standings-card,.fixtures-card{background:#fff;border:1px solid var(--line);border-radius:10px;min-width:0}
+.standings-card{position:sticky;top:76px;align-self:start;overflow:hidden}
+.standings-card .standings-wrap{border:0;border-radius:0;overflow:visible}
+.standings-card .standings-table{font-size:10px}
+.standings-card .standings-table th,.standings-card .standings-table td{padding:7px 6px}
+.fixtures-card{padding:8px;overflow:hidden}
+.fixtures-card .mini-calendar-tools{margin:0 0 5px}
+.fixtures-card #competitionFixtures{min-width:0}
+.fixtures-card .round-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:4px;
+  align-items:start;
+}
+.fixtures-card .mini-round{
+  border-radius:6px;
+  padding:4px;
+  gap:1px;
+  min-width:0;
+}
+.fixtures-card .mini-round-label{font-size:8px;line-height:1;font-weight:900;margin-bottom:2px}
+.fixtures-card .mini-fixture{
+  min-height:20px;
+  grid-template-columns:minmax(0,1fr) 24px minmax(0,1fr);
+  gap:2px;
+}
+.fixtures-card .mini-team{gap:2px;min-width:0}
+.fixtures-card .mini-team img,.fixtures-card .mini-team i{
+  width:15px;height:15px;font-size:6px;flex:0 0 15px
+}
+.fixtures-card .mini-team b{
+  font-size:7px;line-height:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.fixtures-card .score-link{
+  min-width:24px;padding:2px 3px;border-radius:4px;font-size:8px;line-height:1.2
+}
+.fixtures-card #competitionFixtures.dense-rounds .round-grid{gap:3px}
+.fixtures-card #competitionFixtures.dense-rounds .mini-round{padding:3px}
+.fixtures-card #competitionFixtures.dense-rounds .mini-fixture{min-height:18px}
+.fixtures-card #competitionFixtures.dense-rounds .mini-team img,
+.fixtures-card #competitionFixtures.dense-rounds .mini-team i{width:13px;height:13px;flex-basis:13px}
+.fixtures-card #competitionFixtures.dense-rounds .mini-team b{font-size:6.5px}
+.fixtures-card #competitionFixtures.dense-rounds .score-link{font-size:7px;padding:2px}
+@media(min-width:1180px){
+  .fixtures-card .round-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:900px){
+  .competition-split{grid-template-columns:1fr}
+  .standings-card{position:static}
+  .fixtures-card .round-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+  .fixtures-card .round-grid{grid-template-columns:1fr}
+}
