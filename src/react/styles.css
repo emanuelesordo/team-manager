@@ -66,7 +66,7 @@ img{max-width:100%;display:block}
 .pageHeader h1{margin:0;font-size:clamp(32px,5vw,56px);line-height:.95;letter-spacing:-.05em}
 .pageHeader p{margin:9px 0 0;color:var(--muted);font-size:clamp(11px,1.4vw,14px)}
 .pageAction{flex:0 0 auto}
-.surface{min-width:0;background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.022));border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),var(--shadow);backdrop-filter:var(--blur)}
+.surface{width:100%;max-width:100%;min-width:0;overflow:hidden;background:linear-gradient(145deg,rgba(255,255,255,.075),rgba(255,255,255,.022));border:1px solid var(--line);border-radius:var(--radius-xl);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),var(--shadow);backdrop-filter:var(--blur)}
 .contentCard{padding:clamp(16px,2vw,22px)}
 .sectionHead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
 .sectionHead>div{display:flex;align-items:baseline;gap:8px;min-width:0}
@@ -123,7 +123,7 @@ img{max-width:100%;display:block}
 .upcomingItem{scroll-snap-align:start;min-height:96px;padding:14px;border-radius:16px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);display:grid;text-decoration:none;color:#fff}
 .upcomingDate{color:var(--yellow);font-size:10px;font-weight:900}
 .upcomingItem small{margin-top:auto;color:var(--muted);font-size:9px}
-.calendarCard{padding:clamp(12px,2vw,22px)}
+.calendarPage{overflow-x:hidden}.calendarHeroGrid{display:grid;grid-template-columns:minmax(190px,.52fr) minmax(0,1.5fr) minmax(150px,.42fr);gap:18px;align-items:start}.calendarIntro{padding:28px 8px 0 12px}.pageKicker{display:block;margin-bottom:10px;color:#c8ceca;font-size:10px;letter-spacing:.28em;text-transform:uppercase}.calendarIntro h1{margin:0;font-size:clamp(42px,5vw,64px);line-height:.92;letter-spacing:-.055em}.calendarIntro h1 em{display:block;color:var(--yellow);font-style:italic}.calendarIntro p{max-width:18ch;margin:18px 0 0;color:#eef0ef;font-size:clamp(16px,1.7vw,22px);line-height:1.16}.calendarAdd{margin-top:22px}.calendarCard{width:100%;max-width:780px;justify-self:center;padding:clamp(12px,1.6vw,18px)}.competitionCard{padding:16px}.competitionLegend.vertical{display:grid;gap:12px;margin:0}.scheduleCard{padding:18px}
 .calendarToolbar{display:grid;grid-template-columns:42px 1fr 42px;align-items:center;margin-bottom:12px}
 .calendarToolbar h2{margin:0;text-align:center;text-transform:capitalize;font-size:clamp(18px,2.5vw,26px)}
 .calendarToolbar button,.backButton{width:42px;height:42px;border-radius:14px;display:grid;place-items:center}
@@ -134,7 +134,7 @@ img{max-width:100%;display:block}
 .competitionLegend .yellow{background:#ffe500}.competitionLegend .blue{background:#5daeff}.competitionLegend .red{background:#ff5d5d}.competitionLegend .green{background:#4ade80}.competitionLegend .purple{background:#bb79ff}
 .weekdayRow,.calendarGrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:clamp(3px,.7vw,8px)}
 .weekdayRow b{text-align:center;color:var(--muted-2);font-size:9px;padding:6px 0}
-.calendarDay{position:relative;min-width:0;aspect-ratio:1.16;border:1px solid rgba(255,255,255,.065);border-radius:clamp(8px,1.3vw,15px);padding:clamp(4px,.8vw,8px);background:rgba(255,255,255,.02);overflow:hidden}
+.calendarDay{position:relative;min-width:0;aspect-ratio:1.42;border:1px solid rgba(255,255,255,.065);border-radius:clamp(8px,1.3vw,15px);padding:clamp(4px,.8vw,8px);background:rgba(255,255,255,.02);overflow:hidden}
 .calendarDay.emptyDay{opacity:.15}
 .dayNumber{font-size:clamp(8px,1vw,11px);font-weight:900}
 .calendarDay.yellow{background:linear-gradient(145deg,rgba(255,229,0,.25),rgba(255,229,0,.035));border-color:rgba(255,229,0,.34)}
@@ -202,7 +202,7 @@ img{max-width:100%;display:block}
 .segmentedTabs button{border:0;border-radius:10px;padding:9px 14px;background:transparent;color:var(--muted);font-weight:850}
 .segmentedTabs button.active{background:var(--yellow);color:#080908}
 .segmentedTabs span{font-size:8px;margin-left:4px}
-.lineupLayout{display:grid;grid-template-columns:minmax(220px,.62fr) minmax(360px,1.15fr) minmax(220px,.62fr);grid-template-areas:"squad pitch bench";gap:12px;align-items:start}
+.lineupLayout{display:grid;grid-template-columns:minmax(210px,.72fr) minmax(0,1.18fr) minmax(210px,.72fr);grid-template-areas:"squad pitch bench";gap:12px;align-items:start;max-width:100%}
 .lineupPitchCard{grid-area:pitch;padding:12px}
 .lineupBenchCard{grid-area:bench;padding:14px}
 .lineupSquadCard{grid-area:squad;padding:14px}
@@ -210,7 +210,7 @@ img{max-width:100%;display:block}
 .lineupCardHead>div{display:flex;align-items:baseline;gap:6px}
 .lineupCardHead h2{margin:0;font-size:16px}
 .lineupCardHead span{color:var(--yellow);font-size:10px;font-weight:900}
-.matchPitch{width:100%;aspect-ratio:.72;border-radius:20px}
+.matchPitch{width:min(100%,560px);max-width:100%;height:min(52dvh,520px);min-height:330px;aspect-ratio:auto;margin-inline:auto;border-radius:20px}
 .pitchPlayer{position:absolute;z-index:3;transform:translate(-50%,-50%);min-width:58px;min-height:38px;padding:8px 6px 5px;border-radius:10px;background:rgba(5,7,6,.88);border:1px solid var(--line-strong);display:grid;place-items:center;text-align:center}
 .pitchPlayer strong{font-size:7px;max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pitchPlayer small{font-size:8px;color:#77907d}
@@ -231,13 +231,13 @@ img{max-width:100%;display:block}
 .subhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
 .subhead h3{margin:0;font-size:11px}
 .subhead span{color:var(--yellow);font-size:10px;font-weight:900}
-.eventsLayout{display:grid;grid-template-columns:minmax(300px,.75fr) minmax(0,1.25fr);gap:14px;align-items:start}
+.eventsLayout{display:grid;grid-template-columns:minmax(280px,.72fr) minmax(0,1.28fr);gap:14px;align-items:start;max-width:100%}
 .eventComposer,.timelineCard{padding:16px}
 .eventQuickGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:12px}
 .eventQuickGrid button{min-height:42px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.04);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;gap:5px}
 .eventCard{display:inline-block;width:9px;height:13px;border-radius:2px}.eventCard.yellow{background:#ffd900}.eventCard.red{background:#ff4b4b}
 .timelineList{display:grid}
-.timelineItem{min-width:0;min-height:58px;display:grid;grid-template-columns:42px 28px minmax(0,1fr) auto;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.06)}
+.timelineItem{min-width:0;min-height:58px;display:grid;grid-template-columns:42px 28px minmax(0,1fr) auto;align-items:center;gap:8px;border-top:1px solid rgba(255,255,255,.06)}.undoEvent{min-height:30px;padding:5px 8px;border:1px solid rgba(255,229,0,.2);border-radius:9px;background:rgba(255,229,0,.07);color:var(--yellow);display:inline-flex;align-items:center;gap:5px;font-size:8px;font-weight:850}.undoEvent svg{width:13px}.eventNotice{position:sticky;top:82px;z-index:20;width:max-content;max-width:100%;margin-left:auto;padding:9px 12px;border-radius:12px;font-size:10px;font-weight:850;backdrop-filter:blur(18px);box-shadow:0 12px 30px rgba(0,0,0,.28)}.eventNotice.ok{background:rgba(74,222,128,.16);border:1px solid rgba(74,222,128,.28);color:#8af0ae}.eventNotice.warn{background:rgba(255,229,0,.14);border:1px solid rgba(255,229,0,.28);color:var(--yellow)}.eventNotice.error{background:rgba(255,93,93,.14);border:1px solid rgba(255,93,93,.28);color:#ff8686}
 .timelineItem time{color:var(--yellow);font-weight:900}
 .timelineIcon{width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.05);display:grid;place-items:center}
 .timelineItem>div{display:grid;min-width:0}
@@ -291,6 +291,9 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
 .standalone{width:min(520px,100%)}
 
 @media(max-width:1100px){
+  .calendarHeroGrid{grid-template-columns:minmax(170px,.48fr) minmax(0,1.52fr)}
+  .competitionCard{grid-column:1/-1}
+  .competitionLegend.vertical{display:flex;flex-wrap:wrap;gap:9px 14px}
   .headerInner{gap:14px}
   .desktopNav a{padding-inline:9px}
   .desktopNav a span{display:none}
@@ -301,6 +304,14 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
   .eventsLayout{grid-template-columns:1fr}
 }
 @media(max-width:860px){
+  .calendarHeroGrid{grid-template-columns:1fr}
+  .calendarIntro{padding:4px 2px 0}
+  .calendarIntro h1 em{display:inline}
+  .calendarIntro p{max-width:none;margin-top:10px}
+  .calendarAdd{margin-top:14px}
+  .competitionCard{grid-column:auto}
+  .competitionLegend.vertical{display:flex}
+  .calendarCard{max-width:100%}
   .shell{width:min(100% - 24px,760px)}
   .desktopNav{display:none}
   .headerInner{grid-template-columns:auto 1fr auto}
@@ -322,7 +333,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
   .lineupPitchCard{order:1;width:100%}
   .lineupBenchCard{order:2;width:100%}
   .lineupSquadCard{order:3;width:100%}
-  .matchPitch{max-width:520px;margin-inline:auto}
+  .matchPitch{width:min(100%,520px);height:min(48dvh,460px);min-height:300px;margin-inline:auto}
   .squadList.scrollable{max-height:none}
   .statsCards{grid-template-columns:1fr}
   .adminGrid{grid-template-columns:1fr}
@@ -366,7 +377,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
   .competitionLegend span{font-size:7px}
   .weekdayRow,.calendarGrid{gap:2px}
   .weekdayRow b{font-size:6px;padding:3px 0}
-  .calendarDay{aspect-ratio:1;border-radius:7px;padding:3px}
+  .calendarDay{aspect-ratio:1.32;border-radius:7px;padding:3px}
   .dayNumber{font-size:7px}
   .dayFixtures{inset:24% 2% 2%}
   .teamMark.calendar{width:22px}
@@ -402,7 +413,7 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
   .lineupCardHead h2{font-size:13px}
   .lineupCardHead select{min-height:34px;font-size:9px}
   .primaryAction.compact{padding-inline:9px;font-size:9px}
-  .matchPitch{border-radius:16px}
+  .matchPitch{width:100%;height:min(43dvh,360px);min-height:260px;border-radius:16px}
   .pitchPlayer{min-width:46px;min-height:31px;padding:7px 4px 4px}
   .pitchPlayer strong{font-size:6px;max-width:52px}
   .captainField{grid-template-columns:1fr}
@@ -413,7 +424,9 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
   .responsiveForm{grid-template-columns:1fr}
   .responsiveForm .spanAll{grid-column:auto}
   .timelineItem{grid-template-columns:34px 24px minmax(0,1fr);gap:6px;padding-block:7px}
-  .timelineItem>.pill{grid-column:3;justify-self:start}
+  .timelineItem>.pill,.timelineItem>.undoEvent{grid-column:3;justify-self:start}
+  .undoEvent span{display:inline}
+  .eventNotice{top:68px;font-size:9px}
   .goalChart{padding:12px}
   .goalBands{height:190px;gap:4px}
   .goalBars{gap:2px}
