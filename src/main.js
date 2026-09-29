@@ -85,24 +85,26 @@ function kpi(label,value,sub=''){return `<article class="metric"><span>${label}<
 
 /* HOME */
 function homeView(){
-  const next=state.matches.find(m=>m.status==='live')||state.matches.find(m=>m.status==='scheduled');
-  const s=next?state.scores.find(x=>x.match_id===next.id):null;
-  const top=[...state.stats].sort((a,b)=>num(b.goals)-num(a.goals)).slice(0,3);
-  return `<div class="hero glass"><div class="hero-copy"><div class="pill">${next?.status==='live'?'<span class="live-dot"></span> LIVE':'PROSSIMA PARTITA'}</div>
-    <h2>${next?esc(opponent(next.opponent_id)?.name||'Avversario'):'Stagione '+esc(season()?.name||'')}</h2>
-    <div class="hero-score">${next?`${s?.team_score_live||0}<span>:</span>${s?.opponent_score_live||0}`:'—'}</div>
-    <p>${next?`${fmt(next.kickoff_at)} · ${esc(next.venue||'Campo da definire')}`:'Crea una partita dal calendario.'}</p>
-    <button class="primary" data-view="${next?.status==='live'?'live':'calendar'}">${next?.status==='live'?'Apri livescore':'Vai al calendario'}</button></div><div class="hero-orb"></div></div>
-    <div class="metric-grid section-gap">${kpi('Rosa',state.players.length,'giocatori')}${kpi('Partite',state.matches.length,'stagione')}${kpi('Gol',state.stats.reduce((a,s)=>a+num(s.goals),0),'confermati')}${kpi('Assist',state.stats.reduce((a,s)=>a+num(s.assists),0),'confermati')}</div>
-    <div class="section-head"><h3>Top marcatori</h3><button class="text-btn" data-view="stats">Analisi completa</button></div>
-    <div class="podium-list">${top.map((x,i)=>`<article><span class="rank">${i+1}</span><div class="player-avatar sm">${initials(x.first_name,x.last_name)}</div><div class="grow"><strong>${esc(x.first_name)} ${esc(x.last_name)}</strong><small>${num(x.assists)} assist · ${num(x.minutes)}'</small></div><b>${num(x.goals)}</b></article>`).join('')||'<div class="empty-card">Nessun dato ancora.</div>'}</div>`;
+ const matches=[...state.matches].sort((a,b)=>new Date(a.kickoff_at||0)-new Date(b.kickoff_at||0));
+ const next=matches.find(m=>m.status==='live')||matches.find(m=>m.status==='scheduled');
+ const finished=matches.filter(m=>m.status==='finished');const last=finished.at(-1);
+ const score=m=>m?state.scores.find(x=>x.match_id===m.id):null;
+ const top=[...state.stats].sort((a,b)=>num(b.goals)-num(a.goals)).slice(0,5);
+ const goals=state.stats.reduce((a,s)=>a+num(s.goals),0),assists=state.stats.reduce((a,s)=>a+num(s.assists),0);
+ const matchMini=(m,title)=>{if(!m)return `<div class="empty-card">Nessuna partita disponibile.</div>`;const o=opponent(m.opponent_id),s=score(m),home=m.home_away==='home';return `<button class="dashboard-match" data-match="${m.id}"><span class="eyebrow">${title}</span><div class="dash-match-main"><div><strong>${home?'Caselle':esc(o?.name||'Avversario')}</strong><small>${home?'Casa':'Trasferta'}</small></div><div class="dash-score">${s?.team_score_live??m.home_score??0}<span>:</span>${s?.opponent_score_live??m.away_score??0}</div><div class="right"><strong>${home?esc(o?.name||'Avversario'):'Caselle'}</strong><small>${fmt(m.kickoff_at)}</small></div></div></button>`};
+ return `<div class="page-summary glass"><div class="page-summary-brand"><div class="summary-logo">${state.settings.team_logo_url?`<img src="${esc(state.settings.team_logo_url)}" alt="">`:'TM'}</div><div><span class="eyebrow">TEAM MANAGER</span><h2>Calcio Caselle</h2><p>${esc(season()?.name||'Stagione')}</p></div></div><div class="summary-actions"><button class="ghost small" data-view="calendar">Calendario</button><button class="primary small" data-view="roster">Rosa</button></div></div>
+ <div class="dashboard-kpis">${kpi('Partite',state.matches.length,'stagione')}${kpi('Rosa',state.players.length,'giocatori')}${kpi('Gol',goals,'segnati')}${kpi('Assist',assists,'registrati')}</div>
+ <div class="dashboard-grid"><section class="ui-panel"><div class="panel-head"><div><span class="eyebrow">PARTITE</span><h3>Panoramica</h3></div><button class="text-btn" data-view="calendar">Vedi tutte</button></div><div class="dashboard-matches">${matchMini(last,'ULTIMA PARTITA')}${matchMini(next,next?.status==='live'?'IN DIRETTA':'PROSSIMA PARTITA')}</div></section>
+ <section class="ui-panel"><div class="panel-head"><div><span class="eyebrow">SQUADRA</span><h3>Top marcatori</h3></div><button class="text-btn" data-view="stats">Statistiche</button></div><div class="compact-ranking">${top.map((x,i)=>`<button data-player="${x.player_id}"><span class="rank-dot">${i+1}</span><span class="grow"><strong>${esc(x.last_name)} ${esc(x.first_name)}</strong><small>${labels[x.position_group]||'—'} · ${num(x.minutes)}'</small></span><b>${num(x.goals)}</b></button>`).join('')||'<div class="empty-card">Nessun dato.</div>'}</div></section></div>`;
 }
 
 /* CALENDAR */
 function calendarView(){
-  return `<div class="toolbar glass"><div><span class="eyebrow">STAGIONE</span><strong>${esc(season()?.name||'—')}</strong></div><div class="toolbar-actions"><span>${state.matches.length} partite</span>${isStaff()?'<button class="primary small" data-new-match>+ Partita</button>':''}</div></div>
-  <div class="timeline">${state.matches.map(m=>{const o=opponent(m.opponent_id),home=m.home_away==='home';return `<article class="match-card actionable" data-match="${m.id}"><div class="date-chip"><strong>${m.kickoff_at?new Date(m.kickoff_at).getDate():'—'}</strong><span>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{month:'short'}).format(new Date(m.kickoff_at)):''}</span></div><div class="match-copy"><span class="status ${m.status}">${labels[m.status]}</span><strong>${home?'Caselle – '+esc(o?.name||'Avversario'):esc(o?.name||'Avversario')+' – Caselle'}</strong><small>${esc(competition(m.competition_id)?.name||'Partita')} · ${fmt(m.kickoff_at)}${m.round_label?' · '+esc(m.round_label):''}</small></div><div class="match-side"><div class="mini-score">${m.home_score||0}:${m.away_score||0}</div>${isStaff()?'<span class="edit-hint">Modifica</span>':''}</div></article>`}).join('')||'<div class="empty-card">Nessuna partita. '+(isStaff()?'Creane una con “+ Partita”.':'')+'</div>'}</div>
-  ${state.matchEditorOpen?matchEditor():''}${state.matchDetailId?matchDetail():''}`;
+ const filters=[['all','Tutte'],['league','Campionato'],['cup','Coppa'],['friendly','Amichevoli']];
+ return `<div class="page-tools"><div class="segmented compact">${filters.map(([id,l])=>`<button class="${id==='all'?'active':''}">${l}</button>`).join('')}</div><div class="toolbar-actions"><span class="muted-count">${state.matches.length} partite</span>${isStaff()?'<button class="primary small" data-new-match>+ Partita</button>':''}</div></div>
+ <section class="ui-panel data-panel"><div class="data-head match-data-head"><span>Data</span><span>Partita</span><span>Competizione</span><span>Risultato</span><span>Stato</span><span></span></div>
+ <div class="data-body">${state.matches.map(m=>{const o=opponent(m.opponent_id),home=m.home_away==='home';return `<button class="data-row match-data-row" data-match="${m.id}"><span class="data-date"><b>${m.kickoff_at?new Date(m.kickoff_at).getDate():'—'}</b><small>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{month:'short'}).format(new Date(m.kickoff_at)):''}</small></span><span class="fixture-cell"><strong>${home?'Caselle – '+esc(o?.name||'Avversario'):esc(o?.name||'Avversario')+' – Caselle'}</strong><small>${fmt(m.kickoff_at)}${m.venue?' · '+esc(m.venue):''}</small></span><span>${esc(competition(m.competition_id)?.name||'Partita')}</span><span class="table-score">${m.home_score||0} : ${m.away_score||0}</span><span><i class="status ${m.status}">${labels[m.status]}</i></span><span class="row-menu">⋮</span></button>`}).join('')||'<div class="empty-card">Nessuna partita.</div>'}</div></section>
+ ${state.matchEditorOpen?matchEditor():''}${state.matchDetailId?matchDetail():''}`;
 }
 function matchEditor(){
  const m=state.selectedMatchId?state.matches.find(x=>x.id===state.selectedMatchId):null;
@@ -266,9 +268,10 @@ function liveView(){return `<div class="empty-card">Il livescore collaborativo r
 
 /* ROSTER */
 function rosterView(){
-  return `<div class="roster-hero glass"><div><span class="eyebrow">ROSA ${esc(season()?.name||'')}</span><h2>${state.players.length} giocatori</h2><p>Anagrafica sportiva, profilo e statistiche individuali.</p></div>${isStaff()?'<button class="primary" data-new-player>+ Giocatore</button>':''}</div>
-  <div class="role-filter"><button data-role-filter="all" class="active">Tutti</button>${['P','D','C','A'].map(r=>`<button data-role-filter="${r}">${labels[r]}</button>`).join('')}</div>
-  <div class="roster-grid" id="roster-grid">${state.players.map(playerCard).join('')}</div>`;
+ const tabs=[['all','Giocatori'],['P','Portieri'],['D','Difensori'],['C','Centrocampisti'],['A','Attaccanti']];
+ return `<div class="page-tools"><div class="segmented compact">${tabs.map(([id,l],i)=>`<button data-role-filter="${id}" class="${i===0?'active':''}">${l}</button>`).join('')}</div><div class="toolbar-actions"><span class="muted-count">${state.players.length} giocatori</span>${isStaff()?'<button class="primary small" data-new-player>+ Giocatore</button>':''}</div></div>
+ <section class="ui-panel data-panel roster-table" id="roster-grid"><div class="data-head roster-data-head"><span>#</span><span>Ruolo</span><span>Giocatore</span><span>Nascita</span><span>PG</span><span>Gol</span><span>Assist</span><span></span></div><div class="data-body">
+ ${state.players.map((p,i)=>{const s=stat(p.id);return `<button class="data-row roster-data-row player-profile-card" data-player="${p.id}" data-role="${p.generic_role_manual||''}"><span class="row-index">${i+1}</span><span class="role-square role-${p.generic_role_manual||'x'}">${p.generic_role_manual||'–'}</span><span class="player-cell"><span class="player-avatar xs">${initials(p.first_name,p.last_name)}</span><span><strong>${esc(p.last_name)} ${esc(p.first_name)}</strong><small>${esc(p.nationality_code||'')} · ${esc(p.preferred_foot||'piede n/d')}</small></span></span><span>${esc(p.birth_date||'—')}</span><span>${num(s.appearances)}</span><span class="strong-stat">${num(s.goals)}</span><span>${num(s.assists)}</span><span class="row-menu">›</span></button>`}).join('')}</div></section>`;
 }
 function playerCard(p){
   const s=stat(p.id);
@@ -301,23 +304,13 @@ function playerEditor(){
 
 /* ANALYTICS */
 function statsView(){
-  const rows=[...state.stats];
-  const goals=rows.reduce((a,x)=>a+num(x.goals),0), assists=rows.reduce((a,x)=>a+num(x.assists),0), mins=rows.reduce((a,x)=>a+num(x.minutes),0);
-  const ratings=rows.map(x=>Number(x.avg_rating)).filter(Boolean);
-  const topGoals=[...rows].sort((a,b)=>num(b.goals)-num(a.goals)).slice(0,6);
-  const topMins=[...rows].sort((a,b)=>num(b.minutes)-num(a.minutes)).slice(0,6);
-  const roles=['P','D','C','A'].map(r=>({r,n:state.players.filter(p=>p.generic_role_manual===r).length}));
-  const maxG=Math.max(1,...topGoals.map(x=>num(x.goals))), maxM=Math.max(1,...topMins.map(x=>num(x.minutes)));
-  return `<div class="analytics-hero glass"><div><span class="eyebrow">ANALISI STAGIONE</span><h2>${esc(season()?.name||'')}</h2><p>Performance, utilizzo rosa e produzione offensiva.</p></div><div class="donut" style="--p:${Math.min(100,Math.round((avg(ratings)/10)*100))}"><span>${ratings.length?avg(ratings).toFixed(1):'—'}</span><small>rating</small></div></div>
-  <div class="metric-grid section-gap">${kpi('Gol',goals,'totali')}${kpi('Assist',assists,'totali')}${kpi('Minuti',mins,'registrati')}${kpi('Media voto',ratings.length?avg(ratings).toFixed(2):'—','squadra')}</div>
-  <div class="analytics-grid">
-    <section class="chart-card"><div class="section-head"><h3>Top marcatori</h3><span>gol</span></div>${barList(topGoals,'goals',maxG)}</section>
-    <section class="chart-card"><div class="section-head"><h3>Più utilizzati</h3><span>minuti</span></div>${barList(topMins,'minutes',maxM)}</section>
-    <section class="chart-card"><div class="section-head"><h3>Composizione rosa</h3><span>ruoli</span></div><div class="role-bars">${roles.map(x=>`<div><span>${labels[x.r]}</span><div class="role-track"><i style="width:${state.players.length?Math.round(x.n/state.players.length*100):0}%"></i></div><b>${x.n}</b></div>`).join('')}</div></section>
-    <section class="chart-card"><div class="section-head"><h3>Disciplina</h3><span>cartellini</span></div><div class="discipline"><div><strong>${rows.reduce((a,x)=>a+num(x.yellow_cards),0)}</strong><span>Gialli</span></div><div><strong>${rows.reduce((a,x)=>a+num(x.red_cards),0)}</strong><span>Rossi</span></div><div><strong>${rows.filter(x=>num(x.appearances)>0).length}</strong><span>Impiegati</span></div></div></section>
-  </div>
-  <div class="section-head"><h3>Dettaglio giocatori</h3><span>ordinabile in futuro</span></div>
-  <div class="stats-table"><div class="stats-row header"><span>Giocatore</span><span>PG</span><span>MIN</span><span>G</span><span>A</span><span>V</span></div>${rows.sort((a,b)=>num(b.goals)-num(a.goals)).map(x=>`<button class="stats-row" data-player="${x.player_id}"><span class="player-cell"><span class="player-avatar xs">${initials(x.first_name,x.last_name)}</span><span><strong>${esc(x.last_name)} ${esc(x.first_name)}</strong><small>${labels[x.position_group]||'—'}</small></span></span><span>${num(x.appearances)}</span><span>${num(x.minutes)}</span><span class="strong-stat">${num(x.goals)}</span><span>${num(x.assists)}</span><span>${x.avg_rating??'—'}</span></button>`).join('')}</div>`;
+ const rows=[...state.stats],goals=rows.reduce((a,x)=>a+num(x.goals),0),assists=rows.reduce((a,x)=>a+num(x.assists),0),mins=rows.reduce((a,x)=>a+num(x.minutes),0);
+ const ratings=rows.map(x=>Number(x.avg_rating)).filter(Boolean),topGoals=[...rows].sort((a,b)=>num(b.goals)-num(a.goals)).slice(0,6),topMins=[...rows].sort((a,b)=>num(b.minutes)-num(a.minutes)).slice(0,6);
+ const roles=['P','D','C','A'].map(r=>({r,n:state.players.filter(p=>p.generic_role_manual===r).length})),maxG=Math.max(1,...topGoals.map(x=>num(x.goals))),maxM=Math.max(1,...topMins.map(x=>num(x.minutes)));
+ return `<div class="page-tools"><div class="segmented compact"><button class="active">Panoramica</button><button>Giocatori</button><button>Squadra</button><button>Competizioni</button></div><span class="season-chip">${esc(season()?.name||'—')}</span></div>
+ <div class="dashboard-kpis">${kpi('Gol',goals,'totali')}${kpi('Assist',assists,'totali')}${kpi('Minuti',mins,'registrati')}${kpi('Media voto',ratings.length?avg(ratings).toFixed(2):'—','squadra')}</div>
+ <div class="analytics-grid unified"><section class="ui-panel chart-card"><div class="panel-head"><h3>Top marcatori</h3><span>Gol</span></div>${barList(topGoals,'goals',maxG)}</section><section class="ui-panel chart-card"><div class="panel-head"><h3>Più utilizzati</h3><span>Minuti</span></div>${barList(topMins,'minutes',maxM)}</section><section class="ui-panel chart-card"><div class="panel-head"><h3>Composizione rosa</h3><span>Ruoli</span></div><div class="role-bars">${roles.map(x=>`<div><span>${labels[x.r]}</span><div class="role-track"><i style="width:${state.players.length?Math.round(x.n/state.players.length*100):0}%"></i></div><b>${x.n}</b></div>`).join('')}</div></section><section class="ui-panel chart-card"><div class="panel-head"><h3>Disciplina</h3><span>Cartellini</span></div><div class="discipline"><div><strong>${rows.reduce((a,x)=>a+num(x.yellow_cards),0)}</strong><span>Gialli</span></div><div><strong>${rows.reduce((a,x)=>a+num(x.red_cards),0)}</strong><span>Rossi</span></div><div><strong>${rows.filter(x=>num(x.appearances)>0).length}</strong><span>Impiegati</span></div></div></section></div>
+ <section class="ui-panel data-panel stats-detail"><div class="panel-head"><h3>Dettaglio giocatori</h3><span>${rows.length} record</span></div><div class="stats-table"><div class="stats-row header"><span>Giocatore</span><span>PG</span><span>MIN</span><span>G</span><span>A</span><span>V</span></div>${rows.sort((a,b)=>num(b.goals)-num(a.goals)).map(x=>`<button class="stats-row" data-player="${x.player_id}"><span class="player-cell"><span class="player-avatar xs">${initials(x.first_name,x.last_name)}</span><span><strong>${esc(x.last_name)} ${esc(x.first_name)}</strong><small>${labels[x.position_group]||'—'}</small></span></span><span>${num(x.appearances)}</span><span>${num(x.minutes)}</span><span class="strong-stat">${num(x.goals)}</span><span>${num(x.assists)}</span><span>${x.avg_rating??'—'}</span></button>`).join('')}</div></section>`;
 }
 function barList(rows,key,max){
   return `<div class="bar-list">${rows.map(x=>`<button data-player="${x.player_id}"><span>${esc(x.last_name)} ${esc(x.first_name)}</span><div class="bar-track"><i style="width:${Math.max(4,Math.round(num(x[key])/max*100))}%"></i></div><b>${num(x[key])}</b></button>`).join('')||'<div class="empty-card">Nessun dato.</div>'}</div>`;
