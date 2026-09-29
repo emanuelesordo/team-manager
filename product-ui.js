@@ -262,4 +262,55 @@
 
   async function loadRoster() {
     await loadCore();
-    renderRoster($
+    renderRoster($("#rosterSearch")?.value||"");
+  }
+  function renderRoster(filter="") {
+    const q=filter.trim().toLowerCase();
+    const list=players.filter(p=>!q||(`${p.first_name} ${p.last_name}`).toLowerCase().includes(q));
+    $("#rosterCount").textContent=`${list.length} giocatori`;
+    $("#rosterTable").innerHTML=`<div class="roster-head"><span>Giocatore</span><span>Ruolo</span><span>Et\xe0</span><span>Pres.</span><span>Gol</span></div>`+
+      list.map(p=>{
+        const s=pstats(p.id);
+        return `<button type="button" class="roster-row ${selectedPlayerId===p.id?"active":""}" data-player-id="${p.id}">
+          <span class="player-cell">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`<i>${esc((p.first_name[0]||"")+(p.last_name[0]||""))}</i>`}<b>${esc(p.last_name+" "+p.first_name)}</b></span>
+          <span><em class="role-chip">${esc(p.generic_role_manual||"\u2014")}</em></span><span>${age(p.birth_date)}</span><span>${s.apps}</span><span>${s.goals}</span>
+        </button>`;
+      }).join("");
+    $$("[data-player-id]",$("#rosterTable")).forEach(b=>b.onclick=()=>{selectedPlayerId=b.dataset.playerId;renderRoster($("#rosterSearch").value);renderPlayerDetail();});
+    if (!selectedPlayerId && list[0]) selectedPlayerId=list[0].id;
+    renderPlayerDetail();
+  }
+  function renderPlayerDetail() {
+    const p=players.find(x=>x.id===selectedPlayerId);
+    if (!p) { $("#playerDetail").innerHTML='<div class="empty-state">Seleziona un giocatore</div>'; return; }
+    const s=pstats(p.id);
+    $("#playerDetail").innerHTML=`<div class="player-hero">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`<div class="player-placeholder">${esc((p.first_name[0]||"")+(p.last_name[0]||""))}</div>`}<div><strong>${esc(p.first_name+" "+p.last_name)}</strong><span>${esc(p.generic_role_manual||"Ruolo non impostato")}</span></div></div>
+      <div class="player-meta"><div><span>Et\xe0</span><b>${age(p.birth_date)}</b></div><div><span>Altezza</span><b>${p.height_cm?esc(p.height_cm)+" cm":"\u2014"}</b></div><div><span>Piede</span><b>${esc(p.preferred_foot||"\u2014")}</b></div><div><span>Nazionalit\xe0</span><b>${esc(p.nationality_code||"\u2014")}</b></div></div>
+      <div class="player-kpis"><div><strong>${s.apps}</strong><span>Presenze</span></div><div><strong>${s.goals}</strong><span>Gol</span></div><div><strong>${s.yellows}</strong><span>Gialli</span></div><div><strong>${s.reds}</strong><span>Rossi</span></div></div>`;
+  }
+
+  async function loadMatches() {
+    await loadCore();
+    $("#matchesCount").textContent=`${matches.length} partite`;
+    $("#matchesList").innerHTML=matches.map(m=>{
+      const o=opponentById(m.opponent_id), c=competitionById(m.competition_id);
+      return `<button type="button" class="match-list-row ${selectedMatchId===m.id?"active":""}" data-match-id="${m.id}">
+        <time>${shortDate(m.kickoff_at)}</time>${badgeLogo(o?.name,o?.logo_url,o?.short_name)}
+        <span><b>${esc(o?.name||"Avversaria")}</b><small>${esc(c?.name||"")}</small></span>
+        <strong>${m.status==="finished"?m.home_score+"-"+m.away_score:"\u2013"}</strong>
+      </button>`;
+    }).join("");
+    $$("[data-match-id]",$("#matchesList")).forEach(b=>b.onclick=async()=>{selectedMatchId=b.dataset.matchId;await loadMatches();});
+    if (!selectedMatchId && matches[0]) selectedMatchId=matches[0].id;
+    renderMatchWorkspace();
+  }
+
+  function renderMatchWorkspace() {
+    const m=matches.find(x=>x.id===selectedMatchId);
+    if (!m) { $("#matchWorkspace").innerHTML='<div class="empty-state">Seleziona una partita</div>'; return; }
+    const o=opponentById(m.opponent_id);
+    const selected=matchPlayers.filter(x=>x.match_id===m.id);
+    const ev=events.filter(x=>x.match_id===m.id).sort((a,b)=>(a.minute??999)-(b.minute??999));
+    $("#matchWorkspace").innerHTML=`<div class="section-cap"><div><strong>${esc(team()?.short_name||"CAS")} \xb7 ${esc(o?.short_name||o?.name||"AVV")}</strong><small>${TM.localDateTime(m.kickoff_at)}</small></div>
+      <select id="matchFormation"><option>4-4-2</option><option>4-3-3</option><option>3-5-2</option><option>4-2-3-1</option></select></div>
+      <div class="workspace-grid"><section><div class="subcap">Convocati / formazione</div><div id="matchSquadList">${players.map(p=>{const mp=selected.find(x=>x.player_id===p.id);return `<label class="squad-toggle"><input type="checkbox" data-match-player="${p.id}" ${mp?"checked":""}><span>${esc(p.last_name+" "+p.first_name)}</span><button type="button" class="starter-toggle $
