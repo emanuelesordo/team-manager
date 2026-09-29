@@ -1,8 +1,100 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
-
 const SUPABASE_URL="https://qxblxomcpepwavgvhtuk.supabase.co";
 const SUPABASE_KEY="sb_publishable_mqNXt8rW96jH8JvCm24piA_SyAktT_m";
-const db=createClient(SUPABASE_URL,SUPABASE_KEY);
+const PROJECT_REF="qxblxomcpepwavgvhtuk";
+const AUTH_KEY="sb-"+PROJECT_REF+"-auth-token";
+
+function readStoredSession(){
+  try{
+    const raw=localStorage.getItem(AUTH_KEY);
+    if(!raw)return null;
+    const parsed=JSON.parse(raw);
+    return parsed?.currentSession||parsed?.session||parsed;
+  }catch{return null}
+}
+function writeStoredSession(session){
+  try{localStorage.setItem(AUTH_KEY,JSON.stringify(session))}catch{}
+}
+async function getValidSession(){
+  let session=readStoredSession();
+  if(!session?.access_token)return null;
+  const now=Math.floor(Date.now()/1000);
+  if(session.expires_at && session.expires_at-now<60 && session.refresh_token){
+    try{
+      const res=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=refresh_token",{
+        method:"POST",
+        headers:{"apikey":SUPABASE_KEY,"Content-Type":"application/json"},
+        body:JSON.stringify({refresh_token:session.refresh_token})
+      });
+      if(res.ok){
+        session=await res.json();
+        if(session.expires_in&&!session.expires_at)session.expires_at=now+session.expires_in;
+        writeStoredSession(session);
+      }
+    }catch{}
+  }
+  return session;
+}
+async function apiHeaders(extra={}){
+  const session=await getValidSession();
+  return {"apikey":SUPABASE_KEY,"Authorization":"Bearer "+(session?.access_token||SUPABASE_KEY),...extra};
+}
+class Query{
+  constructor(table){this.table=table;this.action="select";this.columns="*";this.filters=[];this.orderBy=null;this.body=null;this.singleMode=null}
+  select(cols="*"){this.columns=cols;return this}
+  insert(body){this.action="insert";this.body=body;return this}
+  update(body){this.action="update";this.body=body;return this}
+  delete(){this.action="delete";return this}
+  eq(col,val){this.filters.push([col,val]);return this}
+  order(col,{ascending=true}={}){this.orderBy=[col,ascending];return this}
+  maybeSingle(){this.singleMode="maybe";return this}
+  single(){this.singleMode="single";return this}
+  then(resolve,reject){return this.execute().then(resolve,reject)}
+  async execute(){
+    const qs=new URLSearchParams();
+    if(this.action==="select"||this.action==="insert"||this.action==="update")qs.set("select",this.columns||"*");
+    for(const [c,v] of this.filters)qs.append(c,"eq."+v);
+    if(this.orderBy)qs.set("order",this.orderBy[0]+"."+(this.orderBy[1]?"asc":"desc"));
+    const url=SUPABASE_URL+"/rest/v1/"+this.table+(qs.toString()?"?"+qs.toString():"");
+    const method=this.action==="select"?"GET":this.action==="insert"?"POST":this.action==="update"?"PATCH":"DELETE";
+    const headers=await apiHeaders({"Content-Type":"application/json","Prefer":"return=representation"});
+    const opts={method,headers};
+    if(this.body!==null)opts.body=JSON.stringify(this.body);
+    try{
+      const res=await fetch(url,opts);
+      const text=await res.text();
+      let data=text?JSON.parse(text):[];
+      if(!res.ok)return {data:null,error:new Error(data?.message||data?.error_description||("HTTP "+res.status))};
+      if(this.singleMode){
+        const row=Array.isArray(data)?data[0]:data;
+        if(this.singleMode==="single"&&!row)return {data:null,error:new Error("Nessuna riga restituita")};
+        return {data:row||null,error:null};
+      }
+      return {data,error:null};
+    }catch(error){return {data:null,error}}
+  }
+}
+const db={
+  from:(table)=>new Query(table),
+  auth:{
+    async getSession(){
+      const session=await getValidSession();
+      return {data:{session},error:null};
+    }
+  },
+  storage:{
+    from(bucket){return {
+      async upload(path,blob,{contentType="application/octet-stream",upsert=false}={}){
+        try{
+          const headers=await apiHeaders({"Content-Type":contentType,"x-upsert":upsert?"true":"false"});
+          const res=await fetch(SUPABASE_URL+"/storage/v1/object/"+bucket+"/"+path,{method:"POST",headers,body:blob});
+          if(!res.ok){let d={};try{d=await res.json()}catch{};return {data:null,error:new Error(d.message||("Upload HTTP "+res.status))}}
+          return {data:await res.json(),error:null};
+        }catch(error){return {data:null,error}}
+      },
+      getPublicUrl(path){return {data:{publicUrl:SUPABASE_URL+"/storage/v1/object/public/"+bucket+"/"+path}}}
+    }}
+  }
+};
 
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
