@@ -95,39 +95,19 @@ function kpi(label,value,sub='',icon=''){return `<article class="metric">${icon?
 /* HOME */
 function homeView(){
  const matches=[...state.matches].sort((a,b)=>new Date(a.kickoff_at||0)-new Date(b.kickoff_at||0));
- const next=matches.find(m=>m.status==='live')||matches.find(m=>m.status==='scheduled');
  const live=matches.find(m=>m.status==='live');
- const finished=matches.filter(m=>m.status==='finished').sort((a,b)=>new Date(b.kickoff_at||0)-new Date(a.kickoff_at||0));
- const ownLogo=state.settings.team_logo_url||'';
- const record=finished.reduce((r,m)=>{const home=m.home_away==='home',gf=home?num(m.home_score):num(m.away_score),ga=home?num(m.away_score):num(m.home_score);if(gf>ga)r.w++;else if(gf===ga)r.d++;else r.l++;return r},{w:0,d:0,l:0});
- const goals=state.stats.reduce((a,s)=>a+num(s.goals),0),against=finished.reduce((a,m)=>a+(m.home_away==='home'?num(m.away_score):num(m.home_score)),0);
+ const next=live||matches.find(m=>m.status==='scheduled')||[...matches].reverse().find(m=>m.status==='finished');
+ const upcoming=matches.filter(m=>m.status==='scheduled').slice(0,4),ownLogo=state.settings.team_logo_url||'';
+ const featured=next,o=featured?opponent(featured.opponent_id):null,home=featured?.home_away==='home';
+ const ownScore=featured?num(home?featured.home_score:featured.away_score):0,oppScore=featured?num(home?featured.away_score:featured.home_score):0;
  const top=[...state.stats].sort((a,b)=>num(b.goals)-num(a.goals)).slice(0,5);
- const hero=next||finished[0];
- const heroOpponent=hero?opponent(hero.opponent_id):null,heroHome=hero?.home_away==='home';
- const heroTeamScore=hero?num(heroHome?hero.home_score:hero.away_score):0,heroOppScore=hero?num(heroHome?hero.away_score:hero.home_score):0;
- return `<section class="home-hero glass-card" ${hero?`data-match="${hero.id}"`:''}>
-   <div class="home-hero-visual">
-     <div class="home-hero-shine"></div>
-     <div class="home-hero-top"><span>${hero?.status==='live'?'● LIVE':esc(competition(hero?.competition_id)?.name||'PROSSIMA PARTITA')}</span><small>${hero?fmt(hero.kickoff_at):'Da programmare'}</small></div>
-     <div class="home-hero-versus">
-       <div>${teamMark('Calcio Caselle',ownLogo,'hero')}<strong>Calcio Caselle</strong></div>
-       <span class="hero-score">${hero?.status==='live'||hero?.status==='finished'?heroTeamScore+' : '+heroOppScore:'VS'}</span>
-       <div>${teamMark(heroOpponent?.name||'Avversario',heroOpponent?.logo_url||'','hero')}<strong>${esc(heroOpponent?.name||'Avversario')}</strong></div>
-     </div>
-     <div class="home-hero-bottom"><span>${heroHome?'Casa':'Trasferta'}</span><b>${esc(hero?.venue||season()?.name||'Stagione')}</b></div>
-   </div>
- </section>
- <div class="home-quick-grid mobile-only"><button data-view="roster"><span>${icons.roster}</span><b>Rosa</b></button><button data-view="calendar"><span>${icons.calendar}</span><b>Calendario</b></button><button data-view="stats"><span>${icons.stats}</span><b>Statistiche</b></button><button data-view="profile"><span>•••</span><b>Altro</b></button></div>
- <div class="dashboard-kpis desktop-only">
-   ${kpi('Partite',finished.length,'stagione',icons.calendar)}
-   ${kpi('Vittorie',record.w,finished.length?Math.round(record.w/finished.length*100)+'%':'stagione',icons.live)}
-   ${kpi('Gol fatti',goals,'media '+(finished.length?(goals/finished.length).toFixed(1):'0'),icons.stats)}
-   ${kpi('Gol subiti',against,'media '+(finished.length?(against/finished.length).toFixed(1):'0'),icons.live)}
- </div>
- ${live&&hero?.id!==live.id?`<section class="mobile-live-section mobile-only"><div class="mobile-section-head"><h3>Live ora</h3><button data-match="${live.id}">Vedi</button></div><button class="live-match-card glass-card" data-match="${live.id}"><div>${teamMark('Calcio Caselle',ownLogo)}<strong>Calcio Caselle</strong></div><span><small>● Live</small><b>${num(live.home_score)} : ${num(live.away_score)}</b></span><div>${teamMark(opponent(live.opponent_id)?.name||'Avversario',opponent(live.opponent_id)?.logo_url||'')}<strong>${esc(opponent(live.opponent_id)?.name||'Avversario')}</strong></div></button></section>`:''}
- <div class="home-lower-grid">
-  <section class="ui-panel"><div class="panel-head"><h3>Ultime partite</h3><button class="text-btn" data-view="calendar">Vedi tutte</button></div><div class="compact-results">${finished.slice(0,6).map(m=>{const o=opponent(m.opponent_id),home=m.home_away==='home';return `<button data-match="${m.id}"><span>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'short'}).format(new Date(m.kickoff_at)):'—'}</span><strong>${esc(home?'Calcio Caselle':o?.name||'Avversario')}</strong><b>${num(m.home_score)} - ${num(m.away_score)}</b><strong>${esc(home?o?.name||'Avversario':'Calcio Caselle')}</strong></button>`}).join('')||'<div class="empty-card">Nessun risultato.</div>'}</div></section>
-  <section class="ui-panel"><div class="panel-head"><h3>Top marcatori</h3><button class="text-btn" data-view="stats">Statistiche</button></div><div class="compact-ranking">${top.map((x,i)=>`<button data-player="${x.player_id}"><span class="rank-dot">${i+1}</span><span class="grow"><strong>${esc(x.last_name)} ${esc(x.first_name)}</strong><small>${labels[x.position_group]||'Giocatore'}</small></span><b>${num(x.goals)}</b></button>`).join('')||'<div class="empty-card">Nessun dato.</div>'}</div></section>
+ const matchCard=m=>{const op=opponent(m.opponent_id),hm=m.home_away==='home';return `<button class="league-match-card" data-match="${m.id}"><div class="league-venue"><small>${esc(m.venue||competition(m.competition_id)?.name||'Partita')}</small><b>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{hour:'2-digit',minute:'2-digit'}).format(new Date(m.kickoff_at)):'—'}</b></div><div class="league-teams"><span>${teamMark(hm?'Calcio Caselle':op?.name||'Avversario',hm?ownLogo:op?.logo_url||'','large')}<strong>${esc(hm?'Calcio Caselle':op?.name||'Avversario')}</strong></span><i>VS</i><span>${teamMark(hm?op?.name||'Avversario':'Calcio Caselle',hm?op?.logo_url||'':ownLogo,'large')}<strong>${esc(hm?op?.name||'Avversario':'Calcio Caselle')}</strong></span></div></button>`};
+ return `<div class="mock-home-layout">
+ <section class="feature-match"><div class="feature-match-art"><div class="feature-glow"></div><div class="feature-meta"><span>${featured?.status==='live'?'● Live':esc(competition(featured?.competition_id)?.name||'Prossima partita')}</span><small>${featured?fmt(featured.kickoff_at):'Da programmare'}</small></div><div class="feature-clubs"><div>${teamMark('Calcio Caselle',ownLogo,'feature')}<strong>Calcio Caselle</strong></div><span class="feature-vs">${featured?.status==='live'||featured?.status==='finished'?ownScore+' : '+oppScore:'VS'}</span><div>${teamMark(o?.name||'Avversario',o?.logo_url||'','feature')}<strong>${esc(o?.name||'Avversario')}</strong></div></div><div class="feature-pager"><i class="active"></i><i></i><i></i></div></div></section>
+ <section class="sport-switch mobile-only"><button class="active">⚽ <span>Football</span></button><button>●</button><button>●</button><button>●</button></section>
+ <section class="home-feed"><div class="feed-title"><h2>${live?'Live Games':'Prossime partite'}</h2><button data-view="calendar">Vedi tutte</button></div><div class="match-feed">${(live?[live,...upcoming.filter(x=>x.id!==live.id)]:upcoming).slice(0,4).map(m=>{const op=opponent(m.opponent_id),hm=m.home_away==='home';return `<button class="score-match-card" data-match="${m.id}"><div class="score-live">${m.status==='live'?'● Live':esc(competition(m.competition_id)?.name||'Partita')}</div><div class="score-clubs"><span>${teamMark(hm?'Calcio Caselle':op?.name||'Avversario',hm?ownLogo:op?.logo_url||'','large')}<b>${esc(hm?'Calcio Caselle':op?.name||'Avversario')}</b></span><strong>${m.status==='scheduled'?'VS':num(m.home_score)+' : '+num(m.away_score)}</strong><span>${teamMark(hm?op?.name||'Avversario':'Calcio Caselle',hm?op?.logo_url||'':ownLogo,'large')}<b>${esc(hm?op?.name||'Avversario':'Calcio Caselle')}</b></span></div><div class="score-footer"><span>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{weekday:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(m.kickoff_at)):'—'}</span><span>›</span></div></button>`}).join('')||'<div class="empty-card">Nessuna partita programmata.</div>'}</div></section>
+ <aside class="desktop-league"><div class="feed-title"><h2>League Center</h2><button data-view="calendar">Calendario</button></div><div class="week-strip">${[-3,-2,-1,0,1,2,3].map((d,i)=>{const x=new Date();x.setDate(x.getDate()+d);return `<span class="${i===3?'active':''}"><b>${x.getDate()}</b><small>${new Intl.DateTimeFormat('it-IT',{weekday:'short'}).format(x)}</small></span>`}).join('')}</div><div class="league-stack">${upcoming.slice(0,3).map(matchCard).join('')||'<div class="empty-card">Nessuna partita futura.</div>'}</div></aside>
+ <section class="desktop-summary"><div class="summary-card"><span>Rosa</span><strong>${state.players.length}</strong><small>giocatori</small></div><div class="summary-card"><span>Partite</span><strong>${state.matches.length}</strong><small>stagione</small></div><div class="summary-card"><span>Gol</span><strong>${state.stats.reduce((a,x)=>a+num(x.goals),0)}</strong><small>segnati</small></div><div class="summary-card"><span>Top scorer</span><strong>${esc(top[0]?.last_name||'—')}</strong><small>${num(top[0]?.goals)} gol</small></div></section>
  </div>`;
 }
 
