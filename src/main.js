@@ -119,13 +119,13 @@ function matchDetail(){
 }
 function lineupTab(m){return formationWorkspace(m)}
 const formationSlots={
- '4-4-2':[[50,9],[35,26],[65,26],[18,45],[40,45],[60,45],[82,45],[16,69],[38,75],[62,75],[84,69]],
- '4-3-3':[[50,9],[22,28],[50,24],[78,28],[14,51],[36,50],[64,50],[86,51],[20,76],[50,82],[80,76]],
- '4-2-3-1':[[50,9],[35,26],[65,26],[17,44],[83,44],[35,51],[65,51],[18,70],[50,66],[82,70],[50,87]],
- '3-5-2':[[50,9],[25,28],[50,24],[75,28],[10,53],[30,50],[50,57],[70,50],[90,53],[36,80],[64,80]],
- '3-4-3':[[50,9],[25,28],[50,24],[75,28],[14,52],[38,50],[62,50],[86,52],[18,78],[50,84],[82,78]],
- '4-3-1-2':[[50,9],[18,30],[40,24],[60,24],[82,30],[25,51],[50,45],[75,51],[50,67],[34,84],[66,84]],
- '4-1-4-1':[[50,9],[18,30],[40,24],[60,24],[82,30],[50,42],[14,62],[38,60],[62,60],[86,62],[50,86]]
+ '4-4-2':[[50,91],[18,70],[40,76],[60,76],[82,70],[16,47],[38,52],[62,52],[84,47],[36,20],[64,20]],
+ '4-3-3':[[50,91],[18,70],[40,76],[60,76],[82,70],[25,50],[50,56],[75,50],[18,22],[50,16],[82,22]],
+ '4-2-3-1':[[50,91],[18,70],[40,76],[60,76],[82,70],[35,55],[65,55],[18,33],[50,37],[82,33],[50,14]],
+ '3-5-2':[[50,91],[25,72],[50,77],[75,72],[10,48],[30,52],[50,44],[70,52],[90,48],[36,19],[64,19]],
+ '3-4-3':[[50,91],[25,72],[50,77],[75,72],[14,49],[38,53],[62,53],[86,49],[18,22],[50,16],[82,22]],
+ '4-3-1-2':[[50,91],[18,70],[40,76],[60,76],[82,70],[25,51],[50,56],[75,51],[50,34],[34,17],[66,17]],
+ '4-1-4-1':[[50,91],[18,70],[40,76],[60,76],[82,70],[50,58],[14,38],[38,42],[62,42],[86,38],[50,15]]
 };
 function formationWorkspace(m){
  const mp=new Map(state.matchPlayers.map(x=>[x.player_id,x])),formation=m.formation||'4-4-2',slots=formationSlots[formation]||formationSlots['4-4-2'];
@@ -138,7 +138,7 @@ function formationWorkspace(m){
  return `<div class="formation-workspace">
  <aside class="squad-panel"><div class="squad-panel-head"><div><span class="eyebrow">ROSA</span><strong>Trascina i giocatori</strong></div><span>${available.length}</span></div><div class="squad-scroll">${available.map(p=>token(p,mp.get(p.id))).join('')||'<small>Tutti assegnati</small>'}</div></aside>
  <main class="formation-center"><div class="formation-bar"><div><span class="eyebrow">FORMAZIONE</span><b>${starters.length}/11</b></div>${isStaff()?`<select id="formation-select">${Object.keys(formationSlots).map(x=>`<option ${formation===x?'selected':''}>${x}</option>`).join('')}</select>`: `<strong>${formation}</strong>`}${isStaff()?'<button class="primary small" data-save-lineup>Salva</button>':''}</div>
- <div class="football-pitch compact-pitch" data-drop-zone="pitch"><div class="pitch-line half"></div><div class="pitch-circle"></div><div class="box top"></div><div class="box bottom"></div>
+ <div class="football-pitch compact-pitch"><div class="pitch-line half"></div><div class="pitch-circle"></div><div class="box top"></div><div class="box bottom"></div>
  ${slots.map((pos,i)=>{const x=bySlot.get(i+1),p=x?player(x.player_id):null;return `<div class="tactical-slot ${p?'filled':''}" style="left:${pos[0]}%;top:${pos[1]}%" data-slot="${i+1}" data-drop-zone="slot">${p?`<div class="pitch-player drag-pitch" draggable="${isStaff()?'true':'false'}" data-drag-player="${p.id}"><span class="kit-number">${x.shirt_number||'—'}</span><b>${esc(p.last_name)}</b></div>`:`<span>+</span>`}</div>`}).join('')}</div></main>
  <aside class="bench-panel" data-drop-zone="bench"><div class="squad-panel-head"><div><span class="eyebrow">PANCHINA</span><strong>${bench.length} giocatori</strong></div></div><div class="bench-list">${bench.map(x=>{const p=player(x.player_id);return token(p,x,'bench-token')}).join('')||'<small>Trascina qui</small>'}</div>
  <div class="quick-edit"><span class="eyebrow">DATI RAPIDI</span><p>Seleziona un giocatore trascinandolo; numero e minuti si modificano dalla riga sotto.</p><div class="compact-fields">${state.matchPlayers.filter(x=>x.selection_status==='starter'||x.selection_status==='bench').map(x=>{const p=player(x.player_id);return `<label><span>${esc(p?.last_name||'')}</span><input type="number" min="1" max="99" value="${x.shirt_number||''}" data-shirt="${x.player_id}" placeholder="#"><input type="number" min="0" max="180" value="${x.minutes_played??''}" data-minutes="${x.player_id}" placeholder="min"></label>`}).join('')}</div></div></aside>
@@ -163,7 +163,7 @@ async function moveFormationPlayer(playerId,target,slot){
 }
 function bindFormationDnD(){
  let dragged=null;
- const getId=e=>e.dataTransfer?.getData('text/plain')||dragged;
+ const getId=e=>{try{return e.dataTransfer.getData('text/plain')||dragged}catch(_){return dragged}};
  document.querySelectorAll('[data-drag-player]').forEach(el=>{
   el.ondragstart=e=>{dragged=el.dataset.dragPlayer;el.classList.add('dragging');e.dataTransfer.setData('text/plain',dragged);e.dataTransfer.effectAllowed='move'};
   el.ondragend=()=>{el.classList.remove('dragging');document.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'));dragged=null};
