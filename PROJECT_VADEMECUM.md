@@ -71,107 +71,104 @@ Le pagine non devono inventare una propria versione di questi componenti.
 
 ## 2A. Riferimento visivo ufficiale
 
-Il riferimento visivo ufficiale corrente è il mockup **“SoccerPro / UI Design System Showcase”** e la tavola di dettaglio **“Gestione Formazione Calcistica in Vetro Blu”**, approvati il **29/09/2026**.
+Il riferimento visivo ufficiale corrente è costituito dai mockup approvati il **29/09/2026** per Home, Calendario, Rosa, Gestione Partita e Statistiche.
 
 ### Gerarchia delle fonti
 
 1. **Struttura funzionale, dati e flussi di questo vademecum**.
 2. **Design system unico condiviso**.
-3. **Mockup SoccerPro + dettaglio Formazione**, che definiscono disposizione, densità, linguaggio visivo e componenti.
+3. **Mockup approvati 29/09/2026**, che definiscono disposizione, densità, navigazione e linguaggio visivo.
 
-Quando il mockup mostra dati o sezioni non presenti nel progetto, non vanno inventati. Quando invece mostra una diversa disposizione di funzioni già esistenti, la disposizione del mockup è il riferimento da seguire.
+Quando un mockup mostra dati non disponibili nel database, la UI deve mantenere la struttura prevista senza inventare valori.
 
-### Struttura visiva desktop
+### Linguaggio visivo ufficiale
 
-- shell con **sidebar verticale fissa** a sinistra;
-- logo/team identity in alto nella sidebar;
-- voci di navigazione compatte con icona + label;
-- impostazioni/amministrazione separate nella parte bassa;
-- area contenuti su fondo azzurro ghiaccio;
-- **barra riepilogo partita** orizzontale in alto nelle viste sportive;
-- contenuto principale composto da pannelli bianchi/azzurri a bordi arrotondati;
-- tabelle e liste dense, leggibili e senza spazio sprecato;
-- azioni contestuali allineate a destra;
-- statistiche organizzate in KPI + grafici/pannelli;
-- nessuna card decorativa se non serve a una funzione reale.
+- tema prevalentemente **nero / charcoal**;
+- testo bianco e accenti **giallo acceso**;
+- glassmorphism marcato, con superfici traslucide e blur evidente;
+- bordi sottili chiari e highlight riflettenti;
+- glow giallo discreto;
+- card arrotondate con profondità e leggere micro-interazioni 3D/scroll;
+- nessuna fotografia decorativa come background o dentro le card;
+- stemmi squadra/avversari ammessi;
+- nessuna dashboard enterprise chiara/azzurra come riferimento;
+- niente KPI decorativi nella Home pubblica.
 
-### Struttura visiva mobile
+### Navigazione
 
-- stessi componenti del desktop;
-- ridisposizione verticale;
-- bottom navigation compatta;
-- card partita e liste a tutta larghezza;
+Desktop:
+- top navigation orizzontale;
+- identità squadra a sinistra;
+- profilo/azioni a destra;
+- nessuna sidebar fissa.
+
+Mobile:
 - header ridotto;
-- nessun secondo design system mobile.
+- bottom navigation;
+- stessi componenti e stesso design system del desktop.
 
-### Linguaggio visivo
+### Home
 
-- fondo azzurro ghiaccio molto chiaro;
-- superfici bianche e azzurro-latte;
-- glassmorphism leggerissimo, usato solo sui contenitori principali;
-- bordi sottili bianchi/azzurri;
-- ombre minime;
-- blu saturo come primary action;
-- navy scuro per testo e gerarchia;
-- verde per esiti positivi;
-- rosso per errore/pericolo;
-- giallo per ammonizione;
-- pill e badge piccoli;
-- icone lineari;
-- raggi medi, non eccessivamente “bubble”;
-- densità elevata ma leggibile.
+La Home è una vetrina pubblica della squadra e deve mostrare in priorità:
+- ultimo risultato;
+- prossima partita;
+- ultimi risultati;
+- classifica, solo se esiste una fonte dati reale;
+- migliori marcatori;
+- prossimi incontri.
 
-### Componenti canonici
+Non usare KPI amministrativi come contenuto principale.
 
-Devono esistere come famiglia unica:
+### Calendario
 
-- app shell / sidebar / top navigation;
-- match summary strip;
-- panel/card;
-- table/list row;
-- player row;
-- role badge;
-- status badge;
-- tabs/segmented control;
-- primary/secondary/icon button;
-- input/select;
-- modal/sheet;
-- popover evento;
-- KPI;
-- chart container;
-- pitch player card.
+- calendario mensile in alto;
+- i giorni con partita sono evidenziati con colore legato alla competizione;
+- lo stemma avversario appare nel giorno della partita;
+- i colori competizione sono una legenda, non filtri duplicati;
+- sotto il calendario appare l'intero programma stagionale, non soltanto il mese visualizzato.
 
-### Formazione
+### Rosa
 
-Il riferimento dettagliato della formazione è **vincolante per la disposizione**, compatibilmente con il vademecum:
+- elenco giocatori compatto e leggibile;
+- riepilogo per ruoli;
+- dati di presenze, gol e assist dove disponibili;
+- formazione tipo/campo come visualizzazione secondaria;
+- stessa UI su desktop/mobile con adattamento responsive.
 
-- sinistra: **Rosa squadra**;
-- centro: **Titolari + campo**;
-- destra: **Panchina**;
-- **Non convocati sotto la Rosa**, come nel nuovo riferimento approvato;
-- toolbar superiore con Formazione/Eventi, modulo e Salva partita;
-- player row molto compatte;
-- evento rapido aperto come popover sovrapposto;
-- il popup non deve spostare il layout;
-- campo largo e leggibile;
-- card giocatore sul campo compatte e non sovrapposte.
+### Gestione Partita
 
-Questa disposizione sostituisce le precedenti indicazioni visive che collocavano i non convocati sotto la panchina.
+- nessuna gestione della rosa avversaria;
+- avversario usato soltanto come contesto, punteggio ed eventi generici;
+- formazione Team Manager + campo + panchina;
+- eventi registrabili anche da mobile;
+- stessa schermata utilizzabile live e a posteriori;
+- nessuna raccolta di possesso, tiri, corner o altre statistiche match non previste.
+
+### Statistiche
+
+Devono essere presenti:
+- classifica ratings;
+- classifica presenze con **presenze e minuti nella stessa vista**;
+- classifica gol con Gol, Gol/partita e Gol/90';
+- classifica assist con Assist, Assist/partita e Assist/90';
+- distribuzione gol fatti/subiti per fasce:
+  - 0–15'
+  - 16–30'
+  - 31–45+'
+  - 46–60'
+  - 61–75'
+  - 76–90+'
 
 ### Divieti
 
-- niente dark theme come default;
-- niente gradienti saturi;
-- niente ombre pesanti;
-- niente layout “marketing” nella webapp gestionale;
-- niente card enormi dove basta una row;
-- niente override CSS stratificati;
-- niente `!important` usato come strategia;
-- niente componenti visivamente diversi tra pagine equivalenti.
-
-L'obiettivo è una UI **gestionale, sportiva, ordinata, compatta e coerente**, aderente al nuovo mockup.
-
----
+- niente sidebar desktop;
+- niente tema chiaro/azzurro come default;
+- niente immagini decorative di background;
+- niente layout enterprise generico per le pagine pubbliche;
+- niente KPI Home non richiesti;
+- niente override CSS stratificati come strategia;
+- niente `!important` come soluzione di layout;
+- niente dati inventati per riempire componenti grafici.
 
 ## 3. Struttura dell'app
 
