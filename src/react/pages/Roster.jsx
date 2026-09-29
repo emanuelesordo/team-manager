@@ -10,7 +10,7 @@ export default function Roster({d}){
   const players=role==='all'?d.players:d.players.filter(p=>p.generic_role_manual===role);
   const counts=Object.fromEntries(['P','D','C','A'].map(r=>[r,d.players.filter(p=>p.generic_role_manual===r).length]));
 
-  return <div className="pageStack">
+  return <div className="pageStack rosterPage">
     <Title title="La nostra squadra" sub="Rosa attuale, ruoli e rendimento." action={isStaff(d)&&<button className="primaryAction" onClick={()=>setEdit(true)}><Plus/><span>Giocatore</span></button>}/>
 
     <div className="roleFilter">
