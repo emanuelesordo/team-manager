@@ -1,8 +1,8 @@
 import React,{useState}from'react';
 import{NavLink}from'react-router-dom';
-import{ChevronLeft,ChevronRight,Plus}from'lucide-react';
-import{Surface,Title,Mark,PanelHead,ResultRow,Modal,Empty}from'../components/UI.jsx';
-import{fmt,isStaff,oppBy}from'../lib/ui.js';
+import{CalendarDays,ChevronLeft,ChevronRight,List,MapPin,Plus}from'lucide-react';
+import{Surface,Mark,PanelHead,Modal,Empty}from'../components/UI.jsx';
+import{compBy,fmt,isStaff,oppBy,sideScore}from'../lib/ui.js';
 import{supabase}from'../lib/supabase.js';
 
 export default function CalendarPage({d}){
@@ -10,16 +10,23 @@ export default function CalendarPage({d}){
   const base=seed?new Date(seed):new Date();
   const[cur,setCur]=useState(new Date(base.getFullYear(),base.getMonth(),1));
   const[edit,setEdit]=useState(false);
+  const[view,setView]=useState('list');
   const y=cur.getFullYear(),mo=cur.getMonth();
   const days=new Date(y,mo+1,0).getDate();
   const offset=(new Date(y,mo,1).getDay()+6)%7;
   const dayMap={};
 
-  d.matches.filter(m=>{const x=new Date(m.kickoff_at);return x.getFullYear()===y&&x.getMonth()===mo})
+  d.matches
+    .filter(m=>{const x=new Date(m.kickoff_at);return x.getFullYear()===y&&x.getMonth()===mo})
     .forEach(m=>{const day=new Date(m.kickoff_at).getDate();(dayMap[day]??=[]).push(m)});
 
   const colors=['yellow','blue','red','green','purple'];
   const tone=id=>colors[Math.max(0,d.competitions.findIndex(x=>x.id===id))%colors.length];
+
+  function goToday(){
+    const t=new Date();
+    setCur(new Date(t.getFullYear(),t.getMonth(),1));
+  }
 
   return <div className="pageStack calendarPage">
     <div className="calendarHeroGrid">
@@ -34,7 +41,7 @@ export default function CalendarPage({d}){
         <div className="calendarToolbar">
           <button onClick={()=>setCur(new Date(y,mo-1,1))} aria-label="Mese precedente"><ChevronLeft/></button>
           <h2>{fmt(cur,{month:'long',year:'numeric'})}</h2>
-          <button onClick={()=>setCur(new Date(y,mo+1,1))} aria-label="Mese successivo"><ChevronRight/></button>
+          <button className="todayButton" onClick={goToday}>Oggi</button>
         </div>
 
         <div className="weekdayRow">{['Lun','Mar','Mer','Gio','Ven','Sab','Dom'].map(x=><b key={x}>{x}</b>)}</div>
@@ -47,7 +54,6 @@ export default function CalendarPage({d}){
               <div className="dayFixtures">
                 {items.slice(0,2).map(m=>{const o=oppBy(d,m.opponent_id);return <NavLink to={'/partite/'+m.id} key={m.id} aria-label={o?.name||'Partita'}>
                   <Mark name={o?.name||'AVV'} url={o?.logo_url} size="calendar"/>
-                  <small>{fmt(m.kickoff_at,{hour:'2-digit',minute:'2-digit'})}</small>
                 </NavLink>})}
               </div>
             </div>
@@ -63,13 +69,71 @@ export default function CalendarPage({d}){
       </Surface>
     </div>
 
-    <Surface className="contentCard scheduleCard">
-      <PanelHead title="Tutte le partite" meta={d.matches.length+' incontri'}/>
-      <div className="listStack">{d.matches.length?d.matches.map(m=><ResultRow key={m.id} d={d} m={m}/>):<Empty>Nessuna partita.</Empty>}</div>
+    <Surface className="scheduleCard">
+      <div className="scheduleHeader">
+        <h2>Tutte le <em>partite</em></h2>
+        <div className="scheduleViewSwitch">
+          <button className={view==='list'?'active':''} onClick={()=>setView('list')}><List/>Lista</button>
+          <button className={view==='calendar'?'active':''} onClick={()=>setView('calendar')}><CalendarDays/>Calendario</button>
+        </div>
+      </div>
+
+      {view==='list'
+        ?<div className="scheduleTable">
+          <div className="scheduleColumns">
+            <span>Data</span><span>Competizione</span><span>Partita</span><span>Risultato</span><span>Luogo</span><span/>
+          </div>
+          <div className="scheduleRows">
+            {d.matches.length?d.matches.map(m=><ScheduleRow key={m.id} d={d} m={m} tone={tone(m.competition_id)}/>):<Empty>Nessuna partita.</Empty>}
+          </div>
+        </div>
+        :<div className="scheduleCalendarHint"><CalendarDays/><span>La griglia mensile è già disponibile sopra.</span></div>
+      }
     </Surface>
 
     {edit&&<MatchEditor d={d} close={()=>setEdit(false)}/>}
   </div>;
+}
+
+function ScheduleRow({d,m,tone}){
+  const o=oppBy(d,m.opponent_id),c=compBy(d,m.competition_id),ss=sideScore(d,m);
+  const home=m.home_away!=='away';
+  const team=['Calcio Caselle',d.settings.team_logo_url];
+  const opp=[o?.name||'Avversario',o?.logo_url];
+  const left=home?team:opp,right=home?opp:team;
+  const result=m.status==='scheduled'?'VS':ss[0]+' - '+ss[1];
+  const status=m.status==='scheduled'?'Prossima':m.status==='finished'?resultStatus(ss):m.status==='live'?'In corso':m.status;
+  const statusTone=m.status==='scheduled'?'next':m.status==='live'?'live':status==='Vittoria'?'win':status==='Pareggio'?'draw':'loss';
+
+  return <NavLink className="scheduleRow" to={'/partite/'+m.id}>
+    <div className="scheduleDate">
+      <strong>{fmt(m.kickoff_at,{weekday:'short',day:'2-digit',month:'short',year:'numeric'})}</strong>
+      <small>{fmt(m.kickoff_at,{hour:'2-digit',minute:'2-digit'})}</small>
+    </div>
+
+    <div className="scheduleCompetition">
+      <i className={'competitionDot '+tone}/>
+      <span><strong>{c?.name||'Partita'}</strong><small>{m.round_label||'—'}</small></span>
+    </div>
+
+    <div className="scheduleMatchup">
+      <span className="clubInline"><Mark name={left[0]} url={left[1]}/><strong>{left[0]}</strong></span>
+      <b className="scheduleScore">{result}</b>
+      <span className="clubInline"><Mark name={right[0]} url={right[1]}/><strong>{right[0]}</strong></span>
+    </div>
+
+    <div><span className={'resultBadge '+statusTone}>{status}</span></div>
+
+    <div className="scheduleVenue"><MapPin/><span>{m.venue||'—'}</span></div>
+    <ChevronRight className="scheduleArrow"/>
+  </NavLink>;
+}
+
+function resultStatus(ss){
+  const a=Number(ss[0]),b=Number(ss[1]);
+  if(a>b)return'Vittoria';
+  if(a<b)return'Sconfitta';
+  return'Pareggio';
 }
 
 function MatchEditor({d,close}){
