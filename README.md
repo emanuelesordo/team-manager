@@ -20,7 +20,13 @@ Design allineato al mockup "Gestione Squadra":
 
 ## Moduli
 ### Home
-Prossima/ultima partita, KPI reali, prossime partite e top classifica.
+Dashboard progettata per occupare l'intero viewport desktop senza scroll verticale:
+- ultima partita a sinistra e prossima partita a destra;
+- 6 KPI principali;
+- 3 ultime partite;
+- 3 prossime partite;
+- classifica con numero di righe calcolato dinamicamente in base allo spazio realmente disponibile nella card.
+Su mobile il layout torna fluido e impilato.
 
 ### Competizioni
 Classifica a sinistra e calendario compatto completo a destra. Toggle Tutte/Caselle e click sul punteggio.
