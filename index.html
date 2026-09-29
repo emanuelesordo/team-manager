@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>Team Manager</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">TM</span><div><strong>Team Manager</strong><small>Livescore & statistics</small></div></div>
+      <nav class="nav">
+        <button class="nav-item active" data-view="seasons">Configurazione</button>
+        <button class="nav-item" disabled>Competizioni</button>
+        <button class="nav-item" disabled>Calendario</button>
+        <button class="nav-item" disabled>Giocatori</button>
+        <button class="nav-item" disabled>Rosa</button>
+        <button class="nav-item" disabled>Partite</button>
+        <button class="nav-item" disabled>Livescore</button>
+        <button class="nav-item" disabled>Eventi</button>
+        <button class="nav-item" disabled>Statistiche</button>
+      </nav>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><span class="eyebrow">CONFIGURAZIONE</span><h1>Stagioni</h1></div>
+        <button class="primary" id="newSeasonBtn">+ Nuova stagione</button>
+      </header>
+
+      <section class="intro">
+        <div><h2>Annate sportive</h2><p>Ogni dato operativo dell'app appartiene a una stagione. La stagione attiva determina competizioni, rosa, calendario e statistiche correnti.</p></div>
+        <div class="status-pill" id="connectionState">Connessione…</div>
+      </section>
+
+      <section id="seasonGrid" class="season-grid" aria-live="polite"></section>
+      <div id="emptyState" class="empty hidden"><strong>Nessuna stagione configurata</strong><span>Crea la prima annata per iniziare.</span></div>
+    </main>
+  </div>
+
+  <dialog id="seasonDialog">
+    <form id="seasonForm" method="dialog">
+      <div class="dialog-head"><div><span class="eyebrow">CONFIGURAZIONE</span><h2 id="dialogTitle">Nuova stagione</h2></div><button type="button" class="icon-btn" id="closeDialog">×</button></div>
+      <input type="hidden" id="seasonId">
+      <label>Nome stagione<input id="seasonName" required placeholder="2026/27" maxlength="30"></label>
+      <div class="form-row">
+        <label>Data inizio<input id="startDate" type="date" required></label>
+        <label>Data fine<input id="endDate" type="date" required></label>
+      </div>
+      <label>Stato<select id="seasonStatus"><option value="future">Futura</option><option value="active">Attiva</option><option value="archived">Archiviata</option></select></label>
+      <p class="form-error hidden" id="formError"></p>
+      <div class="dialog-actions"><button type="button" class="secondary" id="cancelDialog">Annulla</button><button class="primary" type="submit">Salva stagione</button></div>
+    </form>
+  </dialog>
+
+  <script src="./app.js"></script>
+</body>
+</html>
