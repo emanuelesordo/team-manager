@@ -99,6 +99,12 @@ Creata `app_competition_opponents` con RLS:
 - lettura pubblica coerente con le anagrafiche già esposte;
 - scrittura solo utenti autenticati che soddisfano `private.is_staff()`.
 
+### Persistenza Setup
+
+Le modifiche di Squadra, Avversarie e Competizioni verificano ora esplicitamente che Supabase restituisca la riga modificata. Un'operazione bloccata da RLS/sessione non viene più mostrata come salvata. L'header mostra inoltre lo stato della sessione (`Admin / Autenticato / Non autenticato`).
+
+Le competizioni sono modificabili integralmente dal Setup, incluse formula, durata, punteggio, playoff/playout, A/R, supplementari, rigori, diffide e avversarie associate.
+
 ## Roadmap
 
 1. Setup e creazione guidata — in sviluppo
