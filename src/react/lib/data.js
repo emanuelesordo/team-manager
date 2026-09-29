@@ -17,19 +17,20 @@ export function useTeamData(){
   ]);
   const err=[players,seasons,competitions,opponents,matches,scores,settings].find(x=>x.error)?.error;
   const season=(seasons.data||[]).find(x=>x.status==='active')||(seasons.data||[])[0]||null;
-  const [stats,roster,ratings,teamStats]=season?await Promise.all([
+  const [stats,roster,ratings,teamStats,seasonEvents]=season?await Promise.all([
    supabase.from('app_player_season_stats').select('*').eq('season_id',season.id),
    supabase.from('app_roster').select('*').eq('season_id',season.id),
    supabase.from('v_player_rating_stats').select('*').eq('team_id',TEAM_ID).eq('season_id',season.id),
-   supabase.from('v_team_season_stats').select('*').eq('team_id',TEAM_ID).eq('season_id',season.id).maybeSingle()
-  ]):[{data:[]},{data:[]},{data:[]},{data:null}];
+   supabase.from('v_team_season_stats').select('*').eq('team_id',TEAM_ID).eq('season_id',season.id).maybeSingle(),
+   supabase.from('app_match_events').select('*').in('match_id',(matches.data||[]).filter(m=>m.season_id===season.id).map(m=>m.id).length?(matches.data||[]).filter(m=>m.season_id===season.id).map(m=>m.id):['00000000-0000-0000-0000-000000000000'])
+  ]):[{data:[]},{data:[]},{data:[]},{data:null},{data:[]}];
   let role=null;if(session){const r=await supabase.from('app_user_roles').select('role').eq('user_id',session.user.id).maybeSingle();role=r.data?.role||'fan'}
-  setData({loading:false,error:err?.message||stats.error?.message||null,session,role,players:players.data||[],seasons:seasons.data||[],competitions:competitions.data||[],opponents:opponents.data||[],matches:matches.data||[],scores:scores.data||[],settings:settings.data||{},stats:stats.data||[],roster:roster.data||[],ratings:ratings.data||[],teamStats:teamStats.data||null});
+  setData({loading:false,error:err?.message||stats.error?.message||null,session,role,players:players.data||[],seasons:seasons.data||[],competitions:competitions.data||[],opponents:opponents.data||[],matches:matches.data||[],scores:scores.data||[],settings:settings.data||{},stats:stats.data||[],roster:roster.data||[],ratings:ratings.data||[],teamStats:teamStats.data||null,seasonEvents:seasonEvents.data||[]});
  },[]);
  useEffect(()=>{load();const{data:l}=supabase.auth.onAuthStateChange(()=>setTimeout(load,0));return()=>l.subscription.unsubscribe()},[load]);
  return{...data,reload:load};
 }
-export async function signIn(email,password){return supabase.auth.signInWithPassword({email,password})}
+export async function signIn(username,password){const{data,error}=await supabase.functions.invoke('auth-login',{body:{username,password}});if(error||!data?.session)return{error:error||new Error(data?.error||'Accesso fallito')};const set=await supabase.auth.setSession({access_token:data.session.access_token,refresh_token:data.session.refresh_token});return{data:set.data,error:set.error}}
 export async function signOut(){return supabase.auth.signOut()}
 export async function getMatchDetail(matchId){
  const[players,events,tactical]=await Promise.all([
