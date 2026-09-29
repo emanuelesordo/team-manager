@@ -79,6 +79,33 @@ const db={
     async getSession(){
       const session=await getValidSession();
       return {data:{session},error:null};
+    },
+    async signInWithPassword({email,password}){
+      try{
+        const res=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{
+          method:"POST",
+          headers:{"apikey":SUPABASE_KEY,"Content-Type":"application/json"},
+          body:JSON.stringify({email,password})
+        });
+        const data=await res.json();
+        if(!res.ok)return {data:null,error:new Error(data?.msg||data?.error_description||data?.message||"Login non riuscito")};
+        if(data.expires_in&&!data.expires_at)data.expires_at=Math.floor(Date.now()/1000)+data.expires_in;
+        writeStoredSession(data);
+        return {data:{session:data,user:data.user},error:null};
+      }catch(error){return {data:null,error}}
+    },
+    async signOut(){
+      const session=readStoredSession();
+      try{
+        if(session?.access_token){
+          await fetch(SUPABASE_URL+"/auth/v1/logout",{
+            method:"POST",
+            headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+session.access_token}
+          });
+        }
+      }catch{}
+      try{localStorage.removeItem(AUTH_KEY)}catch{}
+      return {error:null};
     }
   },
   storage:{
@@ -112,16 +139,55 @@ let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardS
 async function loadAuthState(){
   const {data:{session}}=await db.auth.getSession();
   sessionUser=session?.user||null;
-  if(!sessionUser){$("#authState").textContent="Non autenticato";$("#authState").className="auth-state error";return}
+  if(!sessionUser){
+    $("#authState").textContent="Non autenticato";
+    $("#authState").className="auth-state error";
+    $("#authButton").textContent="Accedi";
+    return;
+  }
   const role=await db.from("app_user_roles").select("role").eq("user_id",sessionUser.id).maybeSingle();
   $("#authState").textContent=role.data?.role==="admin"?"Admin":"Autenticato";
   $("#authState").className="auth-state ok";
+  $("#authButton").textContent="Esci";
 }
 function assertSaved(result,label){
   if(result.error) throw result.error;
   if(!result.data) throw new Error(label+" non salvato: la sessione non ha permessi di modifica o non è più valida.");
   return result.data;
 }
+
+function openAuth(){
+  $("#authForm").reset();
+  $("#authError").classList.add("hidden");
+  $("#authDialog").showModal();
+}
+function closeAuth(){ $("#authDialog").close(); }
+
+$("#authButton").onclick=async()=>{
+  if(sessionUser){
+    await db.auth.signOut();
+    sessionUser=null;
+    await loadAuthState();
+    return;
+  }
+  openAuth();
+};
+$("[data-close-auth]").forEach(b=>b.onclick=closeAuth);
+$("#authForm").onsubmit=async e=>{
+  e.preventDefault();
+  $("#authError").classList.add("hidden");
+  const result=await db.auth.signInWithPassword({
+    email:$("#authEmail").value.trim(),
+    password:$("#authPassword").value
+  });
+  if(result.error){
+    $("#authError").textContent=result.error.message||String(result.error);
+    $("#authError").classList.remove("hidden");
+    return;
+  }
+  closeAuth();
+  await loadAuthState();
+};
 
 function setPanel(name){
   $$(".setup-link").forEach(b=>b.classList.toggle("active",b.dataset.section===name));
