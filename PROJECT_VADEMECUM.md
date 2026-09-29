@@ -71,7 +71,7 @@ Le pagine non devono inventare una propria versione di questi componenti.
 
 ## 2A. Riferimento visivo ufficiale
 
-Lo stile UI di Team Manager deve rifarsi al riferimento visivo approvato del **29/09/2026**: interfaccia football mobile chiara, ariosa e glassmorphic, con superfici azzurro-bianco, pannelli traslucidi, bordi chiari, controlli arrotondati e gerarchia visiva essenziale.
+Lo stile UI di Team Manager deve rifarsi al riferimento visivo approvato del **29/09/2026**, aggiornato con il showcase **“Team Manager Calcio”**: mobile con card verticali compatte e bottom navigation; desktop con sidebar laterale, header operativo e dashboard modulare a card. Palette azzurro-bianco, superfici chiare, bordi sottili, controlli arrotondati e gerarchia visiva essenziale.
 
 ### Gerarchia delle fonti
 
