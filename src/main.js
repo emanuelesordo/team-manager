@@ -214,7 +214,7 @@ function bind(){
  document.querySelectorAll('[data-match]').forEach(x=>x.onclick=()=>{if(!isStaff())return;state.selectedMatchId=x.dataset.match;state.matchEditorOpen=true;render()});
  const mf=document.querySelector('#match-form');if(mf)mf.onsubmit=saveMatch;
  document.querySelectorAll('[data-close-match]').forEach(x=>x.onclick=()=>{state.matchEditorOpen=false;state.selectedMatchId=null;render()});
- document.querySelectorAll('[data-delete-match]').forEach(x=>x.onclick=()=>deleteMatch(x.dataset.deleteMatch);
+ document.querySelectorAll('[data-delete-match]').forEach(x=>x.onclick=()=>deleteMatch(x.dataset.deleteMatch));
  const np=document.querySelector('[data-new-player]');if(np)np.onclick=()=>{state.selectedPlayerId=null;state.playerEditorOpen=true;render()};
  document.querySelectorAll('[data-role-filter]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-role-filter]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.player-profile-card').forEach(c=>c.style.display=b.dataset.roleFilter==='all'||c.dataset.role===b.dataset.roleFilter?'':'none')});
  const pf=document.querySelector('#player-form');if(pf)pf.onsubmit=savePlayer;
