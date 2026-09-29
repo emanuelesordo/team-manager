@@ -1,0 +1,10 @@
+import React from'react';import{NavLink}from'react-router-dom';import{X}from'lucide-react';import{fmt,oppBy,sideScore}from'../lib/ui.js';
+export function Glass({className='',children}){return <section className={'glass '+className}>{children}</section>}
+export function Title({title,sub,action}){return <div className="pageTitle"><div><h1>{title}</h1>{sub&&<p>{sub}</p>}</div>{action}</div>}
+export function Empty({children}){return <div className="empty">{children}</div>}
+export function Pill({children,tone=''}){return <span className={'pill '+tone}>{children}</span>}
+export function Mark({name='TM',url,size=''}){return <span className={'mark '+size}>{url?<img src={url} alt=""/>:<b>{name.split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase()}</b>}</span>}
+export function PanelHead({title,link}){return <div className="panelHead"><h2>{title}</h2>{link&&<NavLink to={link}>Vedi tutto</NavLink>}</div>}
+export function MatchTeams({d,m,compact=false}){const o=oppBy(d,m.opponent_id),home=m.home_away!=='away',ss=sideScore(d,m),left=home?['Calcio Caselle',d.settings.team_logo_url]:[o?.name||'Avversario',o?.logo_url],right=home?[o?.name||'Avversario',o?.logo_url]:['Calcio Caselle',d.settings.team_logo_url];return <div className={'matchTeams '+(compact?'compact':'')}><div><Mark name={left[0]} url={left[1]}/><b>{left[0]}</b></div><strong>{m.status==='scheduled'?'VS':ss[0]+' : '+ss[1]}</strong><div><Mark name={right[0]} url={right[1]}/><b>{right[0]}</b></div></div>}
+export function ResultRow({d,m}){const o=oppBy(d,m.opponent_id),ss=sideScore(d,m);return <NavLink className="resultRow" to={'/partite/'+m.id}><time>{fmt(m.kickoff_at,{day:'2-digit',month:'short'})}</time><span>{o?.name||'Avversario'}</span><b>{m.status==='scheduled'?'VS':ss[0]+' – '+ss[1]}</b></NavLink>}
+export function Modal({children,close}){return <div className="modalBackdrop" onMouseDown={close}><div className="modal glass" onMouseDown={e=>e.stopPropagation()}><button className="modalClose" onClick={close}><X/></button>{children}</div></div>}
