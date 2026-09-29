@@ -286,7 +286,7 @@ La densità dei componenti deve essere progettata a monte per questo vincolo.
 
 La struttura desktop è:
 
-**Rosa / Campo / Panchina + Non convocati**
+**Rosa + Non convocati / Campo / Panchina**
 
 ### Sinistra — Rosa
 
@@ -295,6 +295,8 @@ La rosa parte dalla squadra disponibile.
 L'elenco sinistro mantiene visibili i titolari e li ordina **per primi**.
 
 Dopo gli 11 titolari vengono gli eventuali giocatori ancora da assegnare.
+
+Sotto la Rosa vengono mostrati i **Non convocati**, con relativa motivazione.
 
 Quando un giocatore viene assegnato alla panchina, viene mostrato nell'area destra.
 
@@ -306,9 +308,9 @@ Non è una seconda lista testuale.
 
 ### Destra — Panchina
 
-Contiene i panchinari.
+Contiene esclusivamente i panchinari.
 
-Sotto la panchina si trovano i **Non convocati**.
+I **Non convocati** appartengono alla colonna sinistra, sotto la Rosa.
 
 Non deve esistere una quarta colonna.
 
@@ -473,7 +475,7 @@ Questi valori sono strutturati, non testo libero.
 
 ## 17. Non convocati
 
-I non convocati sono mostrati **sotto la Panchina**, nella colonna destra.
+I non convocati sono mostrati **sotto la Rosa**, nella colonna sinistra.
 
 Per ogni giocatore deve essere registrabile una motivazione strutturata.
 
