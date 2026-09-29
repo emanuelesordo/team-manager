@@ -1,1 +1,0 @@
-import {createClient} from 'https://esm.sh/@supabase/supabase-js@2';export const SUPABASE_URL='https://qxblxomcpepwavgvhtuk.supabase.co';export const SUPABASE_KEY='sb_publishable_mqNXt8rW96jH8JvCm24piA_SyAktT_m';export const supabase=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
