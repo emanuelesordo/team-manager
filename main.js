@@ -136,7 +136,7 @@ window.addEventListener("error",e=>{
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const fmt=d=>d?new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):"—";
 const statusLabel={active:"Attiva",future:"Futura",archived:"Archiviata"};
-let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,competitionHubId=null,competitionFixtureFilter="all",calendarRows=[],teamMatches=[],calendarCompetitionIds=new Set(),players=[],rosterRows=[],playerStats=[],selectedPlayerId=null,selectedMatchId=null,rosterRole="ALL";
+let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,competitionHubId=null,competitionFixtureFilter="all",calendarRows=[],teamMatches=[],calendarCompetitionIds=new Set(),players=[],rosterRows=[],playerStats=[],selectedPlayerId=null,selectedMatchId=null,rosterRole="ALL",dashboardStandingRows=[];
 
 async function loadAuthState(){
   const {data:{session}}=await db.auth.getSession();
@@ -847,53 +847,58 @@ function fixtureOutcome(f){if(f.status!=="finished")return null;const ownHome=is
 function fixtureLogo(name){const v=teamVisual(name);return v.logo?`<img src="${esc(v.logo)}" alt="">`:`<span>${esc(v.short)}</span>`}
 async function loadDashboard(){
   await loadCoreSeasonData();await loadCompetitions();
-  const fixtures=await ownFixtures(),now=new Date(),next=fixtures.find(f=>new Date(f.kickoff_at)>=now&&f.status!=="finished"),finished=fixtures.filter(f=>f.status==="finished"&&new Date(f.kickoff_at)<=now),last=finished[finished.length-1];
+  const fixtures=await ownFixtures(),now=new Date();
+  const upcoming=fixtures.filter(f=>new Date(f.kickoff_at)>=now&&f.status!=="finished").sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
+  const finished=fixtures.filter(f=>f.status==="finished"&&new Date(f.kickoff_at)<=now).sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
+  const next=upcoming[0],last=finished[finished.length-1];
   const s=finished.reduce((a,f)=>{const o=fixtureOutcome(f);if(!o)return a;a.played++;a.gf+=o.gf;a.ga+=o.ga;if(o.result==="W")a.w++;else if(o.result==="D")a.d++;else a.l++;return a},{played:0,w:0,d:0,l:0,gf:0,ga:0});
-  $("#dashboardHero").innerHTML=`<section class="ui-card featured-match"><div class="card-section-head"><strong>Prossima partita</strong></div>${next?dashboardMatchCard(next,false):'<div class="empty-state">Nessuna partita programmata</div>'}</section><section class="ui-card featured-match"><div class="card-section-head"><strong>Ultima partita</strong></div>${last?dashboardMatchCard(last,true):'<div class="empty-state">Nessuna partita conclusa</div>'}</section>`;
+  $("#dashboardHero").innerHTML=`
+    <section class="ui-card featured-match"><div class="card-section-head"><strong>Ultima partita</strong>${last?'<span class="match-status-pill done">Conclusa</span>':""}</div>${last?dashboardMatchCard(last,true):'<div class="empty-state">Nessuna partita conclusa</div>'}</section>
+    <section class="ui-card featured-match"><div class="card-section-head"><strong>Prossima partita</strong></div>${next?dashboardMatchCard(next,false):'<div class="empty-state">Nessuna partita programmata</div>'}</section>`;
   $("#dashboardKpis").innerHTML=[["Partite giocate",s.played],["Vittorie",s.w],["Pareggi",s.d],["Sconfitte",s.l],["Gol fatti",s.gf],["Gol subiti",s.ga]].map(([l,v])=>`<div class="kpi-card"><strong>${v}</strong><span>${l}</span></div>`).join("");
-  $("#dashboardUpcoming").innerHTML=fixtures.filter(f=>new Date(f.kickoff_at)>=now).slice(0,4).map(dashboardUpcomingRow).join("")||'<div class="empty-state">Nessuna partita</div>';
+  $("#dashboardRecent").innerHTML=finished.slice(-3).reverse().map(dashboardCompactMatchRow).join("")||'<div class="empty-state">Nessuna partita</div>';
+  $("#dashboardUpcoming").innerHTML=upcoming.slice(0,3).map(dashboardCompactMatchRow).join("")||'<div class="empty-state">Nessuna partita</div>';
   const league=competitions.find(c=>c.kind==="league")||competitions[0];
-  if(league){const st=await db.from("app_competition_standings").select("*").eq("season_id",currentSeason.id).eq("competition_id",league.id);const rows=(st.data||[]).sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference).slice(0,5);$("#dashboardStandings").innerHTML=rows.map((r,i)=>`<div class="stand-row ${isOwnTeamName(r.team)?"own":""}"><span>${i+1}</span><strong>${esc(r.team)}</strong><small>${r.played}</small><b>${r.points}</b></div>`).join("")}else $("#dashboardStandings").innerHTML='<div class="empty-state">Nessuna classifica</div>'
-}
-function dashboardMatchCard(f,showScore){const h=teamVisual(f.home_team),a=teamVisual(f.away_team),comp=competitions.find(c=>c.id===f.competition_id);return `<div class="featured-meta">${esc(comp?.name||"")} · Giornata ${f.round_no}</div><div class="featured-teams"><div>${fixtureLogo(f.home_team)}<strong>${esc(h.name)}</strong></div><b>${showScore?esc(f.home_score)+" - "+esc(f.away_score):"–"}</b><div>${fixtureLogo(f.away_team)}<strong>${esc(a.name)}</strong></div></div><div class="featured-foot">${localDateTime(f.kickoff_at)}</div>`}
-function dashboardUpcomingRow(f){const opp=isOwnTeamName(f.home_team)?teamVisual(f.away_team):teamVisual(f.home_team),comp=competitions.find(c=>c.id===f.competition_id);return `<div class="upcoming-row"><span>${new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short"}).format(new Date(f.kickoff_at))}</span>${opp.logo?`<img src="${esc(opp.logo)}" alt="">`:`<i>${esc(opp.short)}</i>`}<strong>${esc(opp.name)}</strong><small>${esc(comp?.name||"")}</small></div>`}
-$$("[data-go-calendar]").forEach(b=>b.onclick=()=>setAppView("calendar"));
-$$("[data-go-competition]").forEach(b=>b.onclick=()=>setAppView("competitions"));
-async function loadRosterView(){await loadCoreSeasonData();renderRosterTabs();renderRosterTable();renderPlayerDetail()}
-function renderRosterTabs(){const roles=[["ALL","Tutti"],["P","Portieri"],["D","Difensori"],["C","Centrocampisti"],["A","Attaccanti"]];$("#rosterRoleTabs").innerHTML=roles.map(([v,l])=>`<button class="${rosterRole===v?"active":""}" data-roster-role="${v}">${l}</button>`).join("");$$("[data-roster-role]").forEach(b=>b.onclick=()=>{rosterRole=b.dataset.rosterRole;renderRosterTabs();renderRosterTable()})}
-function rosterStat(id){return playerStats.find(x=>x.player_id===id)||{}}
-function renderRosterTable(){const q=$("#rosterSearch").value.trim().toLowerCase();const rows=rosterRows.filter(p=>(rosterRole==="ALL"||p.generic_role_manual===rosterRole)&&(!q||(p.first_name+" "+p.last_name).toLowerCase().includes(q)));$("#rosterTable").innerHTML=`<table class="data-table"><thead><tr><th>#</th><th>Giocatore</th><th>Ruolo</th><th>Età</th><th>Pres.</th><th>Gol</th><th>Stato</th></tr></thead><tbody>${rows.map(p=>{const s=rosterStat(p.player_id);return `<tr class="${selectedPlayerId===p.player_id?"selected":""}" data-player-row="${p.player_id}"><td>${p.shirt_number??"–"}</td><td><div class="player-cell"><span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`${esc(p.first_name[0]||"")}${esc(p.last_name[0]||"")}`}</span><strong>${esc(p.last_name+" "+p.first_name)}</strong></div></td><td><span class="role-badge ${roleClass(p.generic_role_manual)}">${roleLabel(p.generic_role_manual)}</span></td><td>${ageFromBirth(p.birth_date)}</td><td>${s.appearances??0}</td><td>${s.goals??0}</td><td><span class="status-dot active"></span></td></tr>`}).join("")}</tbody></table>`;$$("[data-player-row]").forEach(r=>r.onclick=()=>{selectedPlayerId=r.dataset.playerRow;renderRosterTable();renderPlayerDetail()})}
-$("#rosterSearch").oninput=renderRosterTable;
-function renderPlayerDetail(){const p=rosterRows.find(x=>x.player_id===selectedPlayerId);if(!p){$("#playerDetail").innerHTML='<div class="empty-state">Seleziona un giocatore</div>';return}const s=rosterStat(p.player_id);$("#playerDetail").innerHTML=`<div class="detail-profile"><div class="detail-avatar">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`${esc(p.first_name[0]||"")}${esc(p.last_name[0]||"")}`}</div><div><strong>${esc(p.first_name+" "+p.last_name)}</strong><span>${roleLabel(p.generic_role_manual)}</span></div><b>${p.shirt_number??"–"}</b></div><div class="detail-tabs"><span class="active">Dettagli</span><span>Statistiche</span><span>Stagioni</span></div><dl class="detail-list"><div><dt>Data di nascita</dt><dd>${p.birth_date?fmt(p.birth_date):"—"}</dd></div><div><dt>Nazionalità</dt><dd>${esc(p.nationality_code||"—")}</dd></div><div><dt>Altezza</dt><dd>${p.height_cm?p.height_cm+" cm":"—"}</dd></div><div><dt>Piede</dt><dd>${esc(p.preferred_foot||"—")}</dd></div></dl><div class="mini-stat-grid"><div><strong>${s.appearances??0}</strong><span>Presenze</span></div><div><strong>${s.goals??0}</strong><span>Gol</span></div><div><strong>${s.assists??0}</strong><span>Assist</span></div></div>`}
-$("#addPlayerBtn").onclick=()=>{$("#playerForm").reset();$("#playerFormError").classList.add("hidden");$("#playerDialog").showModal()};
-$$("[data-close-player]").forEach(b=>b.onclick=()=>$("#playerDialog").close());
-$("#playerForm").onsubmit=async e=>{e.preventDefault();try{if(!sessionUser)throw new Error("Accedi per aggiungere un giocatore.");const p={team_id:currentSeason.team_id,first_name:$("#newPlayerFirst").value.trim(),last_name:$("#newPlayerLast").value.trim(),generic_role_manual:$("#newPlayerRole").value};const pr=await db.from("players").insert(p).select("*").single();assertSaved(pr,"Giocatore");const rr=await db.from("app_roster").insert({season_id:currentSeason.id,player_id:pr.data.id,shirt_number:$("#newPlayerNumber").value?+$("#newPlayerNumber").value:null,active:true}).select("*").single();assertSaved(rr,"Rosa");$("#playerDialog").close();await loadRosterView()}catch(err){$("#playerFormError").textContent=err.message||String(err);$("#playerFormError").classList.remove("hidden")}};
-async function loadMatchesView(){await loadCoreSeasonData();if(!selectedMatchId&&teamMatches[0])selectedMatchId=teamMatches[0].id;const match=teamMatches.find(x=>x.id===selectedMatchId);if(!match){$("#matchManagerTop").innerHTML='<div class="empty-state">Nessuna partita</div>';return}renderMatchManagerTop(match);const mp=await db.from("app_match_players").select("*").eq("match_id",match.id);renderMatchSelection(match,mp.data||[])}
-function renderMatchManagerTop(match){const o=opponentVisualById(match.opponent_id);$("#matchManagerTop").innerHTML=`<div class="match-select-wrap"><select id="matchManagerSelect">${teamMatches.map(m=>`<option value="${m.id}" ${m.id===match.id?"selected":""}>${localDateTime(m.kickoff_at)} · ${esc(matchLabel(m))}</option>`).join("")}</select></div><div class="match-score-head"><strong>${esc(team?.short_name||"CAS")}</strong><b>${match.home_score} : ${match.away_score}</b><strong>${esc(o?.short_name||o?.name||"AVV")}</strong></div>`;$("#matchManagerSelect").onchange=e=>{selectedMatchId=e.target.value;loadMatchesView()};$("#matchFormation").value=match.formation||"4-4-2"}
-function renderMatchSelection(match,rows){const map=new Map(rows.map(x=>[x.player_id,x])),starters=rows.filter(x=>x.started).sort((a,b)=>(a.tactical_slot||99)-(b.tactical_slot||99)),bench=rows.filter(x=>x.selection_status==="bench");$("#matchRosterList").innerHTML=rosterRows.map(p=>{const x=map.get(p.player_id),state=x?.started?"starter":x?.selection_status==="bench"?"bench":"available";return `<div class="match-roster-row"><span class="num">${x?.shirt_number??p.shirt_number??"–"}</span><strong>${esc(p.last_name)}</strong><span class="role-badge ${roleClass(p.generic_role_manual)}">${roleLabel(p.generic_role_manual)}</span><div class="select-actions"><button data-set-selection="${p.player_id}:starter" class="${state==="starter"?"on":""}">T</button><button data-set-selection="${p.player_id}:bench" class="${state==="bench"?"on":""}">P</button><button data-set-selection="${p.player_id}:available" class="${state==="available"?"on":""}">F</button></div></div>`}).join("");$$("[data-set-selection]").forEach(b=>b.onclick=()=>setMatchSelection(match.id,b.dataset.setSelection,map));const positions=[[50,90],[25,72],[42,72],[58,72],[75,72],[18,50],[39,50],[61,50],[82,50],[38,26],[62,26]];$("#matchPitch").innerHTML=starters.slice(0,11).map((x,i)=>{const p=rosterRows.find(r=>r.player_id===x.player_id),pos=positions[i]||[50,50];return `<div class="pitch-player" style="left:${pos[0]}%;top:${pos[1]}%"><span>${x.shirt_number??p?.shirt_number??"–"}</span><strong>${esc(p?.last_name||playerNameById(x.player_id))}</strong></div>`}).join("");$("#matchBench").innerHTML=bench.map(x=>{const p=rosterRows.find(r=>r.player_id===x.player_id);return `<div class="bench-row"><span>${x.shirt_number??p?.shirt_number??"–"}</span><strong>${esc(p?.last_name||playerNameById(x.player_id))}</strong><small>${roleLabel(p?.generic_role_manual)}</small></div>`}).join("")||'<div class="empty-state">Panchina vuota</div>'}
-async function setMatchSelection(matchId,spec,map){try{if(!sessionUser)throw new Error("Accedi per modificare la formazione.");const [playerId,state]=spec.split(":"),existing=map.get(playerId),payload={selection_status:state,started:state==="starter"};let r;if(existing)r=await db.from("app_match_players").update(payload).eq("id",existing.id).select("*").maybeSingle();else r=await db.from("app_match_players").insert({match_id:matchId,player_id:playerId,...payload}).select("*").single();assertSaved(r,"Convocazione");await loadMatchesView()}catch(err){alert(err.message||String(err))}}
-$("#saveFormationBtn").onclick=async()=>{try{if(!sessionUser)throw new Error("Accedi per salvare il modulo.");const r=await db.from("app_matches").update({formation:$("#matchFormation").value}).eq("id",selectedMatchId).select("*").maybeSingle();assertSaved(r,"Modulo");await loadMatchesView()}catch(err){alert(err.message||String(err))}};
-async function loadEventsView(){await loadCoreSeasonData();const match=teamMatches.find(x=>x.id===selectedMatchId)||teamMatches[0];if(!match){$("#eventsMatchTop").innerHTML='<div class="empty-state">Nessuna partita</div>';return}selectedMatchId=match.id;const o=opponentVisualById(match.opponent_id);$("#eventsMatchTop").innerHTML=`<div class="match-select-wrap"><select id="eventsMatchSelect">${teamMatches.map(m=>`<option value="${m.id}" ${m.id===match.id?"selected":""}>${localDateTime(m.kickoff_at)} · ${esc(matchLabel(m))}</option>`).join("")}</select></div><div class="match-score-head"><strong>${esc(team?.short_name||"CAS")}</strong><b>${match.home_score} : ${match.away_score}</b><strong>${esc(o?.short_name||o?.name||"AVV")}</strong></div>`;$("#eventsMatchSelect").onchange=e=>{selectedMatchId=e.target.value;loadEventsView()};const ev=await db.from("app_match_events").select("*").eq("match_id",match.id).order("minute",{ascending:true});renderEventsTimeline(ev.data||[]);const opts='<option value="">—</option>'+rosterRows.map(p=>`<option value="${p.player_id}">${esc(p.last_name+" "+p.first_name)}</option>`).join("");$("#newEventPlayer").innerHTML=opts;$("#newEventSecondary").innerHTML=opts;toggleNewEventSecondary()}
-function renderEventsTimeline(events){$("#eventsTimeline").innerHTML=events.length?events.map(e=>`<div class="timeline-row"><time>${e.minute??"–"}'</time><span class="event-icon ${esc(e.event_type)}">${eventIcon(e.event_type)}</span><div><strong>${eventLabel(e.event_type)}</strong><small>${esc(playerNameById(e.player_id))}${e.secondary_player_id?" → "+esc(playerNameById(e.secondary_player_id)):""} · ${e.team_side==="team"?"Caselle":"Avversario"}</small></div></div>`).join(""):'<div class="empty-state">Nessun evento</div>'}
-function eventIcon(t){return t==="goal"?"⚽":t==="yellow_card"?"▮":t==="red_card"?"▮":t==="substitution"?"↔":"•"}
-function eventLabel(t){return t==="goal"?"Gol":t==="yellow_card"?"Cartellino giallo":t==="red_card"?"Cartellino rosso":t==="substitution"?"Sostituzione":t}
-function toggleNewEventSecondary(){const t=document.querySelector('input[name="newEventType"]:checked')?.value;$("#newEventSecondaryWrap").classList.toggle("hidden",t!=="substitution")}
-$$('input[name="newEventType"]').forEach(x=>x.onchange=toggleNewEventSecondary);
-$("#eventComposeForm").onsubmit=async e=>{e.preventDefault();$("#eventComposeError").classList.add("hidden");try{if(!sessionUser)throw new Error("Accedi per aggiungere eventi.");const type=document.querySelector('input[name="newEventType"]:checked').value,p={match_id:selectedMatchId,event_type:type,minute:+$("#newEventMinute").value,player_id:$("#newEventPlayer").value||null,secondary_player_id:type==="substitution"?($("#newEventSecondary").value||null):null,payload:{},proposed_by:sessionUser.id,validation_status:"proposed",team_side:$("#newEventSide").value};const r=await db.from("app_match_events").insert(p).select("*").single();assertSaved(r,"Evento");$("#eventComposeForm").reset();await loadEventsView()}catch(err){$("#eventComposeError").textContent=err.message||String(err);$("#eventComposeError").classList.remove("hidden")}};
-async function loadStatsView(){await loadCoreSeasonData();const fixtures=await ownFixtures(),finished=fixtures.filter(f=>f.status==="finished"),t=finished.reduce((a,f)=>{const o=fixtureOutcome(f);if(!o)return a;a.m++;a.gf+=o.gf;a.ga+=o.ga;if(o.result==="W")a.w++;else if(o.result==="D")a.d++;else a.l++;return a},{m:0,w:0,d:0,l:0,gf:0,ga:0});$("#statsKpis").innerHTML=[["Partite",t.m],["Vittorie",t.w],["Gol fatti",t.gf],["Gol subiti",t.ga]].map(([l,v])=>`<div class="kpi-card"><strong>${v}</strong><span>${l}</span></div>`).join("");const sorted=[...playerStats].sort((a,b)=>(b.appearances||0)-(a.appearances||0)||(b.goals||0)-(a.goals||0));$("#statsPlayers").innerHTML=`<table class="data-table"><thead><tr><th>Giocatore</th><th>Pres.</th><th>Tit.</th><th>Gol</th><th>Assist</th><th>Gialli</th><th>Rossi</th></tr></thead><tbody>${sorted.map(p=>`<tr><td><strong>${esc(p.last_name+" "+p.first_name)}</strong></td><td>${p.appearances||0}</td><td>${p.starts||0}</td><td>${p.goals||0}</td><td>${p.assists||0}</td><td>${p.yellow_cards||0}</td><td>${p.red_cards||0}</td></tr>`).join("")}</tbody></table>`;$("#statsScorers").innerHTML=[...playerStats].sort((a,b)=>(b.goals||0)-(a.goals||0)).slice(0,8).map((p,i)=>`<div class="scorer-row"><span>${i+1}</span><strong>${esc(p.last_name+" "+p.first_name)}</strong><b>${p.goals||0}</b></div>`).join("")}
-$("#globalSearch").oninput=e=>{if(!$("#rosterView").classList.contains("hidden")){$("#rosterSearch").value=e.target.value;renderRosterTable()}};
-
-async function boot(){
-  try{
-    await Promise.all([loadAuthState(),loadAll()]);
-    await loadCompetitions();
-    await ensureMainTeam();
-    setAppView("home");
-  }catch(err){
-    console.error("BOOT ERROR",err);
-    const msg=err?.message||String(err);
-    if($("#connectionState")){$("#connectionState").textContent="Errore: "+msg;$("#connectionState").className="status-pill error"}
-    if($("#authState")&&$("#authState").textContent==="Sessione…"){$("#authState").textContent="Errore avvio";$("#authState").className="auth-state error"}
+  dashboardStandingRows=[];
+  if(league){
+    const st=await db.from("app_competition_standings").select("*").eq("season_id",currentSeason.id).eq("competition_id",league.id);
+    dashboardStandingRows=(st.data||[]).sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference||b.goals_for-a.goals_for);
   }
+  fitDashboardStandings();
+  requestAnimationFrame(fitDashboardStandings);
 }
+function dashboardMatchCard(f,showScore){
+  const h=teamVisual(f.home_team),a=teamVisual(f.away_team),comp=competitions.find(c=>c.id===f.competition_id);
+  return `<div class="featured-meta">${esc(comp?.name||"")} · Giornata ${f.round_no}</div>
+    <div class="featured-teams">
+      <div>${fixtureLogo(f.home_team)}<strong>${esc(h.name)}</strong></div>
+      <b>${showScore?esc(f.home_score)+" - "+esc(f.away_score):"–"}</b>
+      <div>${fixtureLogo(f.away_team)}<strong>${esc(a.name)}</strong></div>
+    </div>
+    <div class="featured-foot">${localDateTime(f.kickoff_at)}</div>`;
+}
+function dashboardCompactMatchRow(f){
+  const opp=isOwnTeamName(f.home_team)?teamVisual(f.away_team):teamVisual(f.home_team);
+  const comp=competitions.find(c=>c.id===f.competition_id);
+  const done=f.status==="finished";
+  const ownHome=isOwnTeamName(f.home_team);
+  const score=done?`${f.home_score}-${f.away_score}`:new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(new Date(f.kickoff_at));
+  return `<div class="dashboard-match-row">
+    <span class="dash-date"><b>${new Intl.DateTimeFormat("it-IT",{day:"2-digit"}).format(new Date(f.kickoff_at))}</b><small>${new Intl.DateTimeFormat("it-IT",{month:"short"}).format(new Date(f.kickoff_at)).replace(".","")}</small></span>
+    ${opp.logo?`<img src="${esc(opp.logo)}" alt="">`:`<i>${esc(opp.short)}</i>`}
+    <span class="dash-match-copy"><strong>${esc(ownHome?(team?.short_name||"CAS")+" - "+opp.short:opp.short+" - "+(team?.short_name||"CAS"))}</strong><small>${esc(comp?.name||"")} · G${f.round_no}</small></span>
+    <b class="dash-score">${esc(score)}</b>
+  </div>`;
+}
+function fitDashboardStandings(){
+  const card=$("#dashboardStandingsCard"),box=$("#dashboardStandings");
+  if(!card||!box)return;
+  const head=card.querySelector(".card-section-head");
+  const usable=Math.max(72,card.clientHeight-(head?.offsetHeight||0)-16);
+  const rowHeight=27;
+  const count=Math.max(3,Math.min(dashboardStandingRows.length,Math.floor(usable/rowHeight)));
+  const rows=dashboardStandingRows.slice(0,count);
+  box.innerHTML=rows.length?rows.map((r,i)=>`<div class="stand-row ${isOwnTeamName(r.team)?"own":""}"><span>${i+1}</span><strong>${esc(r.team)}</strong><small>${r.played}</small><b>${r.points}</b></div>`).join(""):'<div class="empty-state">Nessuna classifica</div>';
+}
+
 boot();
