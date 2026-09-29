@@ -80,18 +80,20 @@ const db={
       const session=await getValidSession();
       return {data:{session},error:null};
     },
-    async signInWithPassword({email,password}){
+    async signInWithPassword({username,password}){
       try{
-        const res=await fetch(SUPABASE_URL+"/auth/v1/token?grant_type=password",{
+        const res=await fetch(SUPABASE_URL+"/functions/v1/auth-login",{
           method:"POST",
           headers:{"apikey":SUPABASE_KEY,"Content-Type":"application/json"},
-          body:JSON.stringify({email,password})
+          body:JSON.stringify({username,password})
         });
-        const data=await res.json();
-        if(!res.ok)return {data:null,error:new Error(data?.msg||data?.error_description||data?.message||"Login non riuscito")};
-        if(data.expires_in&&!data.expires_at)data.expires_at=Math.floor(Date.now()/1000)+data.expires_in;
-        writeStoredSession(data);
-        return {data:{session:data,user:data.user},error:null};
+        const payload=await res.json();
+        if(!res.ok||!payload?.ok||!payload?.session){
+          return {data:null,error:new Error(payload?.error||"Login non riuscito")};
+        }
+        const session={...payload.session,user:{id:payload.profile?.id}};
+        writeStoredSession(session);
+        return {data:{session,user:session.user,profile:payload.profile},error:null};
       }catch(error){return {data:null,error}}
     },
     async signOut(){
@@ -172,12 +174,12 @@ $("#authButton").onclick=async()=>{
   }
   openAuth();
 };
-$("[data-close-auth]").forEach(b=>b.onclick=closeAuth);
+$$("[data-close-auth]").forEach(b=>b.onclick=closeAuth);
 $("#authForm").onsubmit=async e=>{
   e.preventDefault();
   $("#authError").classList.add("hidden");
   const result=await db.auth.signInWithPassword({
-    email:$("#authEmail").value.trim(),
+    username:$("#authUsername").value.trim(),
     password:$("#authPassword").value
   });
   if(result.error){
