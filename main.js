@@ -136,7 +136,7 @@ window.addEventListener("error",e=>{
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const fmt=d=>d?new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):"—";
 const statusLabel={active:"Attiva",future:"Futura",archived:"Archiviata"};
-let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,competitionHubId=null;
+let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,competitionHubId=null,calendarHubId=null,calendarRows=[],calendarFilter="all";
 
 async function loadAuthState(){
   const {data:{session}}=await db.auth.getSession();
@@ -194,8 +194,10 @@ $("#authForm").onsubmit=async e=>{
 function setAppView(name){
   $("#setupView").classList.toggle("hidden",name!=="setup");
   $("#competitionsView").classList.toggle("hidden",name!=="competitions");
+  $("#calendarView").classList.toggle("hidden",name!=="calendar");
   $$(".main-link[data-app-view]").forEach(b=>b.classList.toggle("active",b.dataset.appView===name));
   if(name==="competitions") loadCompetitionHub();
+  if(name==="calendar") loadCalendarHub();
 }
 $$(".main-link[data-app-view]").forEach(b=>b.onclick=()=>setAppView(b.dataset.appView));
 
@@ -223,7 +225,7 @@ async function loadAll(){
 function renderSeasonSelector(){
   $("#seasonSelector").innerHTML=seasons.map(s=>`<option value="${s.id}" ${s.id===currentSeason?.id?"selected":""}>${esc(s.name)}</option>`).join("");
 }
-$("#seasonSelector").onchange=e=>{currentSeason=seasons.find(s=>s.id===e.target.value)||null;loadCompetitions();refreshCalendarCompetition();if(!$("#competitionsView").classList.contains("hidden"))loadCompetitionHub()};
+$("#seasonSelector").onchange=e=>{currentSeason=seasons.find(s=>s.id===e.target.value)||null;loadCompetitions();refreshCalendarCompetition();if(!$("#competitionsView").classList.contains("hidden"))loadCompetitionHub();if(!$("#calendarView").classList.contains("hidden"))loadCalendarHub()};
 function renderSeasons(){
   $("#seasonGrid").innerHTML=seasons.map(s=>`<article class="card ${s.id===currentSeason?.id?"active":""}">
     <div class="card-head"><div class="card-title">${esc(s.name)}</div><span class="badge ${s.status}">${statusLabel[s.status]||s.status}</span></div>
@@ -538,6 +540,144 @@ function renderFixtures(rows){
       </div>
     </section>`).join("")||'<div class="muted">Calendario non disponibile.</div>';
 }
+
+function toLocalInputValue(value){
+  if(!value)return "";
+  const d=new Date(value);
+  const pad=n=>String(n).padStart(2,"0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function fixtureStatusLabel(status){
+  return status==="finished"?"Conclusa":status==="postponed"?"Rinviata":status==="cancelled"?"Annullata":"Programmata";
+}
+function currentFixtureTeamNames(){
+  const set=new Set();
+  calendarRows.forEach(r=>{set.add(r.home_team);set.add(r.away_team)});
+  if(team?.name)set.add(team.name);
+  opponents.forEach(o=>set.add(o.name));
+  return [...set].filter(Boolean).sort((a,b)=>a.localeCompare(b,"it"));
+}
+function officialOwnFixtureName(){
+  const found=calendarRows.flatMap(r=>[r.home_team,r.away_team]).find(isOwnTeamName);
+  return found||team?.name||"Calcio Caselle";
+}
+async function loadCalendarHub(){
+  await loadCompetitions();
+  await ensureMainTeam();
+  const select=$("#calendarHubSelect");
+  select.innerHTML=competitions.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  if(!competitions.length){
+    $("#calendarHubMeta").textContent="Nessuna competizione per questa stagione.";
+    $("#calendarHubList").innerHTML="";
+    return;
+  }
+  calendarHubId=competitions.some(c=>c.id===calendarHubId)?calendarHubId:competitions[0].id;
+  select.value=calendarHubId;
+  await loadCalendarRows();
+}
+$("#calendarHubSelect").onchange=async e=>{calendarHubId=e.target.value;await loadCalendarRows()};
+$$("[data-calendar-filter]").forEach(b=>b.onclick=()=>{
+  calendarFilter=b.dataset.calendarFilter;
+  $$("[data-calendar-filter]").forEach(x=>x.classList.toggle("active",x===b));
+  renderCalendarRows();
+});
+$("#addFixtureBtn").onclick=()=>openFixture();
+$$("[data-close-fixture]").forEach(b=>b.onclick=()=>$("#fixtureDialog").close());
+
+async function loadCalendarRows(){
+  if(!currentSeason||!calendarHubId)return;
+  const r=await db.from("app_competition_fixtures").select("*").eq("season_id",currentSeason.id).eq("competition_id",calendarHubId).order("kickoff_at",{ascending:true});
+  if(r.error){
+    $("#calendarHubMeta").textContent="Calendario non disponibile.";
+    $("#calendarHubList").innerHTML="";
+    return;
+  }
+  calendarRows=r.data||[];
+  const rounds=new Set(calendarRows.map(x=>x.round_no)).size;
+  const done=calendarRows.filter(x=>x.status==="finished").length;
+  $("#calendarHubMeta").textContent=`${calendarRows.length} partite · ${rounds} giornate · ${done} concluse`;
+  renderCalendarRows();
+}
+function renderCalendarRows(){
+  const source=calendarFilter==="mine"?calendarRows.filter(r=>isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)):calendarRows;
+  const grouped=new Map();
+  source.forEach(r=>{if(!grouped.has(r.round_no))grouped.set(r.round_no,[]);grouped.get(r.round_no).push(r)});
+  $("#calendarHubList").innerHTML=[...grouped.entries()].sort((a,b)=>a[0]-b[0]).map(([round,list])=>`
+    <section class="round-block">
+      <div class="round-label">Giornata ${round}</div>
+      <div class="fixture-list">
+        ${list.map(r=>`<div class="fixture-row calendar-edit-row ${isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)?"own-fixture":""}">
+          <div class="fixture-time"><strong>${localDateTime(r.kickoff_at)}</strong><span class="fixture-status ${esc(r.status)}">${fixtureStatusLabel(r.status)}</span></div>
+          <div class="fixture-teams"><span>${esc(r.home_team)}</span><strong>${r.status==="finished"?esc(r.home_score)+" – "+esc(r.away_score):"–"}</strong><span>${esc(r.away_team)}</span></div>
+          <div class="fixture-venue">${esc(r.venue||"")}</div>
+          <button type="button" class="text-btn fixture-edit-btn" data-fixture-edit="${r.id}">Modifica</button>
+        </div>`).join("")}
+      </div>
+    </section>`).join("")||'<div class="muted">Nessuna partita.</div>';
+  $$("[data-fixture-edit]").forEach(b=>b.onclick=()=>openFixture(calendarRows.find(r=>r.id===b.dataset.fixtureEdit)));
+}
+function openFixture(f=null){
+  $("#fixtureForm").reset();
+  $("#fixtureError").classList.add("hidden");
+  $("#fixtureId").value=f?.id||"";
+  $("#fixtureDialogTitle").textContent=f?"Modifica partita":"Nuova partita";
+  $("#fixtureRound").value=f?.round_no||Math.max(1,...calendarRows.map(x=>x.round_no||1));
+  $("#fixtureKickoff").value=toLocalInputValue(f?.kickoff_at);
+  $("#fixtureStatus").value=f?.status||"scheduled";
+  $("#fixtureHome").value=f?.home_team||officialOwnFixtureName();
+  $("#fixtureAway").value=f?.away_team||"";
+  $("#fixtureVenue").value=f?.venue||"";
+  $("#fixtureCode").value=f?.match_code||"";
+  $("#fixtureHomeScore").value=f?.home_score??"";
+  $("#fixtureAwayScore").value=f?.away_score??"";
+  $("#fixtureSource").value=f?.source||"manual";
+  $("#fixtureTeamNames").innerHTML=currentFixtureTeamNames().map(n=>`<option value="${esc(n)}"></option>`).join("");
+  $("#fixtureDialog").showModal();
+}
+$("#fixtureStatus").onchange=()=>{
+  const finished=$("#fixtureStatus").value==="finished";
+  if(!finished){
+    $("#fixtureHomeScore").value="";
+    $("#fixtureAwayScore").value="";
+  }
+};
+$("#fixtureForm").onsubmit=async e=>{
+  e.preventDefault();
+  $("#fixtureError").classList.add("hidden");
+  try{
+    if(!sessionUser)throw new Error("Accedi per modificare il calendario.");
+    const id=$("#fixtureId").value;
+    const status=$("#fixtureStatus").value;
+    const homeScore=$("#fixtureHomeScore").value;
+    const awayScore=$("#fixtureAwayScore").value;
+    if(status==="finished"&&(homeScore===""||awayScore===""))throw new Error("Inserisci il risultato per una partita conclusa.");
+    if($("#fixtureHome").value.trim()===$("#fixtureAway").value.trim())throw new Error("Casa e trasferta devono essere diverse.");
+    const payload={
+      season_id:currentSeason.id,
+      competition_id:calendarHubId,
+      round_no:+$("#fixtureRound").value,
+      kickoff_at:new Date($("#fixtureKickoff").value).toISOString(),
+      home_team:$("#fixtureHome").value.trim(),
+      away_team:$("#fixtureAway").value.trim(),
+      venue:$("#fixtureVenue").value.trim()||null,
+      match_code:$("#fixtureCode").value.trim()||null,
+      status,
+      home_score:status==="finished"?+homeScore:null,
+      away_score:status==="finished"?+awayScore:null,
+      source:$("#fixtureSource").value.trim()||"manual"
+    };
+    const result=id
+      ?await db.from("app_competition_fixtures").update(payload).eq("id",id).select("*").maybeSingle()
+      :await db.from("app_competition_fixtures").insert(payload).select("*").single();
+    assertSaved(result,"Partita");
+    $("#fixtureDialog").close();
+    await loadCalendarRows();
+    if(!$("#competitionsView").classList.contains("hidden"))await renderCompetitionHub();
+  }catch(err){
+    $("#fixtureError").textContent=err.message||String(err);
+    $("#fixtureError").classList.remove("hidden");
+  }
+};
 
 function refreshCalendarCompetition(){
   $("#calendarCompetition").innerHTML=competitions.filter(c=>!currentSeason||c.season_id===currentSeason.id).map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
