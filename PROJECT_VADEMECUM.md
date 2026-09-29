@@ -69,6 +69,102 @@ Le pagine non devono inventare una propria versione di questi componenti.
 
 ---
 
+## 2A. Riferimento visivo ufficiale
+
+Lo stile UI di Team Manager deve rifarsi al riferimento visivo approvato del **29/09/2026**: interfaccia football mobile chiara, ariosa e glassmorphic, con superfici azzurro-bianco, pannelli traslucidi, bordi chiari, controlli arrotondati e gerarchia visiva essenziale.
+
+### Gerarchia delle fonti
+
+La gerarchia da rispettare è:
+
+1. **Struttura, flussi e contenuti definiti in questo vademecum**.
+2. **Design system condiviso del progetto**.
+3. **Riferimento visivo approvato**, usato esclusivamente come guida stilistica.
+
+Il riferimento visivo **non deve essere copiato nella sua struttura informativa** quando questa entra in conflitto con il vademecum.
+
+Esempio: la Gestione partita desktop continua ad avere la struttura **Rosa / Campo / Panchina + Non convocati**, anche se il riferimento visivo mostra una schermata mobile diversa.
+
+### Linguaggio visivo
+
+Il design deve trasmettere:
+
+- fondo molto chiaro con dominante azzurro ghiaccio;
+- gradienti delicati e poco invasivi;
+- pannelli e card semitrasparenti;
+- effetto vetro leggero, non opaco e non eccessivamente sfocato;
+- bordi bianchi o azzurro chiarissimo a basso contrasto;
+- ombre molto morbide;
+- superfici sovrapposte ma ben leggibili;
+- ampi raggi di curvatura;
+- tipografia pulita e moderna;
+- testo principale scuro e ad alto contrasto;
+- testo secondario attenuato;
+- blu/ciano come colore primario delle azioni;
+- rosso, giallo, verde e altri colori semantici usati solo per stati/eventi;
+- icone semplici, lineari e coerenti;
+- forte ordine visivo e assenza di decorazione superflua.
+
+### Componenti
+
+I principali componenti devono rifarsi al riferimento visivo:
+
+- card con vetro chiaro e bordo sottile;
+- segmented control e tab a pillola;
+- pulsante primario blu/ciano pieno;
+- pulsanti secondari traslucidi;
+- icon button circolari o fortemente arrotondati;
+- badge/stato a pillola;
+- input e select integrati nelle superfici;
+- navigazione mobile inferiore arrotondata e compatta;
+- header puliti con poche azioni;
+- score card e match card con forte gerarchia su squadre, punteggio e stato;
+- statistiche con barre semplici e leggibili;
+- player card sul campo leggere e minimali.
+
+### Densità e proporzioni
+
+Il riferimento è visualmente arioso, ma Team Manager contiene anche schermate operative ad alta densità.
+
+Per questo:
+
+- l'aspetto generale deve restare leggero;
+- le schermate operative possono usare varianti `compact` dello stesso componente;
+- non si devono aumentare indiscriminatamente padding e altezze solo per imitare la reference mobile;
+- la densità deve adattarsi alla funzione senza cambiare linguaggio visivo;
+- una row compatta e una card ampia devono sembrare appartenere allo stesso sistema.
+
+### Adattamento desktop
+
+La versione desktop non deve essere un ingrandimento della versione mobile.
+
+Sul desktop:
+
+- sfruttare la larghezza per mostrare più informazioni contemporaneamente;
+- utilizzare panel affiancati e workspace multiple-column quando previsto dal vademecum;
+- mantenere gli stessi token, raggi, colori, bordi, ombre e controlli della versione mobile;
+- limitare le larghezze eccessive dei contenuti testuali;
+- usare lo spazio bianco per separare funzioni, non per gonfiare i componenti;
+- mantenere una gerarchia visiva chiara anche nelle schermate dense.
+
+### Divieti stilistici
+
+Non usare come linguaggio principale:
+
+- tema scuro;
+- nero dominante;
+- gradienti saturi;
+- ombre pesanti;
+- bordi scuri marcati;
+- componenti squadrati;
+- effetti neon;
+- glassmorphism eccessivo che riduce la leggibilità;
+- pannelli indipendenti con stili diversi tra loro.
+
+L'obiettivo è una UI **chiara, sportiva, moderna, morbida e coerente**, non una copia pixel-perfect del riferimento.
+
+---
+
 ## 3. Struttura dell'app
 
 La navigazione funzionale è organizzata in:
