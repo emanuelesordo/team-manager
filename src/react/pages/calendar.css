@@ -522,3 +522,33 @@
   .calVenue span{font-size:7px}
   .calArrow{display:none}
 }
+
+.calAdminActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.calAdminActions .calPrimary{margin-top:0}
+.calImportButton{min-height:42px;padding:9px 13px;border:1px solid var(--line);border-radius:13px;background:rgba(255,255,255,.045);color:#fff;display:inline-flex;align-items:center;gap:7px;font-weight:850}
+.calImportButton svg{width:16px}
+.calImportModal{display:grid;gap:14px}
+.calImportModal h2{margin:0;font-size:24px}
+.calImportModal p{margin:0;color:var(--muted);font-size:11px;line-height:1.45}
+.calImportSource{display:grid;gap:4px;padding:11px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.035)}
+.calImportSource small{color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+.calImportSource strong{font-size:9px;overflow-wrap:anywhere}
+.calImportError{padding:10px 12px;border-radius:11px;background:rgba(255,93,93,.1);border:1px solid rgba(255,93,93,.24);color:#ff8585;font-size:10px}
+.calImportPreview{display:grid;gap:12px}
+.calImportStats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.calImportStats span{padding:11px;border-radius:12px;background:rgba(255,255,255,.04);display:grid}
+.calImportStats small{font-size:7px;color:var(--muted)}
+.calImportStats strong{margin-top:3px;font-size:18px;color:var(--yellow)}
+.calImportTeams{display:grid;gap:7px}
+.calImportTeams>small{color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+.calImportTeams>div{display:flex;flex-wrap:wrap;gap:6px;max-height:150px;overflow:auto}
+.calImportTeams span{padding:5px 8px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--line);font-size:8px}
+.calImportActions{display:flex;justify-content:flex-end;gap:8px}
+.calImportSuccess{padding:12px;border-radius:12px;background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.22);display:grid;gap:4px}
+.calImportSuccess strong{color:#81ecaa}
+.calImportSuccess span{font-size:9px;color:#b9c5be}
+@media(max-width:640px){
+  .calAdminActions{margin-top:11px}
+  .calImportStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .calImportActions{display:grid;grid-template-columns:1fr 1fr}
+}
