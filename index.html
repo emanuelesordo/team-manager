@@ -7,36 +7,140 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-  <header class="app-header">
-    <a class="brand" href="#"><span class="brand-mark">TM</span><strong>Team Manager</strong></a>
-    <nav class="nav" aria-label="Navigazione principale">
-      <button class="nav-item active" data-view="seasons">Config</button>
-      <button class="nav-item" disabled>Competizioni</button><button class="nav-item" disabled>Calendario</button>
-      <button class="nav-item" disabled>Giocatori</button><button class="nav-item" disabled>Rosa</button>
-      <button class="nav-item" disabled>Partite</button><button class="nav-item" disabled>Livescore</button>
-      <button class="nav-item" disabled>Eventi</button><button class="nav-item" disabled>Statistiche</button>
-    </nav>
-  </header>
+<header class="app-header">
+  <a class="brand" href="#"><span class="brand-mark">TM</span><strong>Team Manager</strong></a>
+  <nav class="main-nav">
+    <button class="main-link active">Setup</button>
+    <button class="main-link" disabled>Competizioni</button><button class="main-link" disabled>Calendario</button>
+    <button class="main-link" disabled>Giocatori</button><button class="main-link" disabled>Rosa</button>
+    <button class="main-link" disabled>Partite</button><button class="main-link" disabled>Livescore</button>
+    <button class="main-link" disabled>Statistiche</button>
+  </nav>
+  <select id="seasonSelector" class="season-selector" aria-label="Stagione"></select>
+</header>
 
-  <main class="main">
-    <div class="actions-row">
-      <div class="status-pill" id="connectionState">Connessione…</div>
-      <button class="primary" id="newSeasonBtn">+ Stagione</button>
-    </div>
-    <section id="seasonGrid" class="season-grid" aria-live="polite"></section>
-    <div id="emptyState" class="empty hidden"><strong>Nessuna stagione</strong><span>Crea la prima annata.</span></div>
-  </main>
+<main class="main">
+  <nav class="setup-nav">
+    <button class="setup-link active" data-section="seasons">Stagioni</button>
+    <button class="setup-link" data-section="team">Squadra</button>
+    <button class="setup-link" data-section="competitions">Competizioni</button>
+    <button class="setup-link" data-section="opponents">Avversarie</button>
+    <button class="setup-link" data-section="calendars">Calendari</button>
+  </nav>
 
-  <dialog id="seasonDialog">
-    <form id="seasonForm" method="dialog">
-      <div class="dialog-head"><h2 id="dialogTitle">Nuova stagione</h2><button type="button" class="icon-btn" id="closeDialog">×</button></div>
-      <input type="hidden" id="seasonId">
-      <label>Nome stagione<input id="seasonName" required placeholder="2026/27" maxlength="30"></label>
-      <div class="form-row"><label>Inizio<input id="startDate" type="date" required></label><label>Fine<input id="endDate" type="date" required></label></div>
-      <label>Stato<select id="seasonStatus"><option value="future">Futura</option><option value="active">Attiva</option><option value="archived">Archiviata</option></select></label>
-      <p class="form-error hidden" id="formError"></p>
-      <div class="dialog-actions"><button type="button" class="secondary" id="cancelDialog">Annulla</button><button class="primary" type="submit">Salva</button></div>
+  <section class="panel" data-panel="seasons">
+    <div class="toolbar"><span id="connectionState" class="status-pill">Connessione…</span><button class="primary" id="newSeasonBtn">+ Nuova stagione</button></div>
+    <div id="seasonGrid" class="cards"></div>
+  </section>
+
+  <section class="panel hidden" data-panel="team">
+    <form id="teamForm" class="sheet">
+      <div class="compact-grid">
+        <label>Nome<input id="teamName" required></label>
+        <label>Sigla (3)<input id="teamShort" maxlength="3" required></label>
+      </div>
+      <div class="logo-row">
+        <div id="teamLogoPreview" class="logo-preview">Logo</div>
+        <label class="upload">Logo<input id="teamLogoFile" type="file" accept="image/*"></label>
+      </div>
+      <div class="compact-grid colors">
+        <label>Colore 1<input id="teamColor1" type="color"></label>
+        <label>Colore 2<input id="teamColor2" type="color"></label>
+        <label>Colore 3<input id="teamColor3" type="color"></label>
+      </div>
+      <div class="toolbar end"><button class="primary" type="submit">Salva</button></div>
+      <p id="teamMessage" class="form-message hidden"></p>
     </form>
-  </dialog>
-  <script src="./app.js"></script>
+  </section>
+
+  <section class="panel hidden" data-panel="competitions">
+    <div class="toolbar"><span class="muted">Stagione selezionata</span><button class="primary" id="addCompetitionBtn">+ Competizione</button></div>
+    <div id="competitionList" class="cards"></div>
+  </section>
+
+  <section class="panel hidden" data-panel="opponents">
+    <div class="toolbar"><input id="opponentSearch" class="search" placeholder="Cerca avversaria"><button class="primary" id="addOpponentBtn">+ Avversaria</button></div>
+    <div id="opponentList" class="cards"></div>
+  </section>
+
+  <section class="panel hidden" data-panel="calendars">
+    <div class="sheet">
+      <div class="compact-grid">
+        <label>Competizione<select id="calendarCompetition"></select></label>
+        <label>Importa<input id="calendarFile" type="file" accept=".csv,.pdf,text/csv,application/pdf"></label>
+      </div>
+      <div class="toolbar end"><button class="secondary" id="previewCalendarBtn" type="button">Anteprima import</button></div>
+      <div id="calendarPreview" class="table-wrap muted">CSV e PDF possono essere importati e confermati prima del salvataggio.</div>
+    </div>
+  </section>
+</main>
+
+<dialog id="seasonWizard" class="wizard">
+  <form id="wizardForm">
+    <div class="dialog-head"><div><strong id="wizardTitle">Nuova stagione</strong><small id="wizardStepLabel">1/5 · Annata</small></div><button type="button" class="icon-btn" data-close-wizard>×</button></div>
+    <div class="steps"><i class="on"></i><i></i><i></i><i></i><i></i></div>
+
+    <div class="wizard-step" data-step="1">
+      <div class="compact-grid">
+        <label>Nome<input id="wSeasonName" placeholder="2026/27" required></label>
+        <label>Stato<select id="wSeasonStatus"><option value="active">Attiva</option><option value="future">Futura</option><option value="archived">Archiviata</option></select></label>
+        <label>Inizio<input id="wSeasonStart" type="date" required></label>
+        <label>Fine<input id="wSeasonEnd" type="date" required></label>
+      </div>
+    </div>
+
+    <div class="wizard-step hidden" data-step="2">
+      <div class="compact-grid">
+        <label>Nome competizione<input id="wCompetitionName" placeholder="Campionato CSI"></label>
+        <label>Tipo<select id="wCompetitionKind"><option value="league">Campionato</option><option value="cup">Coppa</option><option value="friendly">Amichevoli</option></select></label>
+        <label>Formula<select id="wCompetitionFormat"></select></label>
+        <label>Tempi<input id="wPeriods" type="number" min="1" max="6" value="2"></label>
+        <label>Minuti per tempo<input id="wMinutes" type="number" min="1" max="120" value="35"></label>
+      </div>
+      <div id="leagueRules" class="rule-box">
+        <div class="compact-grid three"><label>Vittoria<input id="wWinPts" type="number" value="3"></label><label>Pareggio<input id="wDrawPts" type="number" value="1"></label><label>Sconfitta<input id="wLossPts" type="number" value="0"></label></div>
+        <label class="check"><input id="wPlayoff" type="checkbox"> Prevede playoff/playout</label>
+      </div>
+      <div id="knockoutRules" class="rule-box hidden">
+        <label class="check"><input id="wTwoLegged" type="checkbox"> Eliminazione A/R</label>
+        <label class="check"><input id="wExtraTime" type="checkbox"> Supplementari</label>
+        <label class="check"><input id="wPenalties" type="checkbox"> Rigori</label>
+      </div>
+      <div class="rule-box">
+        <label>Soglie diffida progressive<input id="wYellowThresholds" value="5,4,3,2" placeholder="5,4,3,2"></label>
+      </div>
+      <div class="toolbar end"><button type="button" class="secondary" id="addDraftCompetition">+ Aggiungi competizione</button></div>
+      <div id="draftCompetitionList" class="draft-list"></div>
+    </div>
+
+    <div class="wizard-step hidden" data-step="3">
+      <div class="toolbar"><span class="muted">Seleziona avversarie esistenti o creane una.</span><button type="button" class="secondary" id="quickOpponentBtn">+ Nuova</button></div>
+      <div id="wizardOpponents" class="choice-grid"></div>
+    </div>
+
+    <div class="wizard-step hidden" data-step="4">
+      <label>Calendario<input id="wCalendarFile" type="file" accept=".csv,.pdf,text/csv,application/pdf"></label>
+      <p class="muted">Puoi importare CSV/PDF ora oppure farlo successivamente da Setup → Calendari.</p>
+    </div>
+
+    <div class="wizard-step hidden" data-step="5">
+      <div id="wizardSummary" class="summary"></div>
+    </div>
+
+    <p id="wizardError" class="form-error hidden"></p>
+    <div class="dialog-actions"><button type="button" class="secondary" id="wizardBack">Indietro</button><button type="button" class="primary" id="wizardNext">Avanti</button></div>
+  </form>
+</dialog>
+
+<dialog id="opponentDialog">
+<form id="opponentForm">
+  <div class="dialog-head"><strong>Avversaria</strong><button type="button" class="icon-btn" data-close-opponent>×</button></div>
+  <input type="hidden" id="opponentId">
+  <label>Nome<input id="opponentName" required></label>
+  <label>Nome breve<input id="opponentShort"></label>
+  <div class="dialog-actions"><button type="button" class="secondary" data-close-opponent>Annulla</button><button class="primary" type="submit">Salva</button></div>
+</form>
+</dialog>
+
+<script src="./app.js"></script>
 </body></html>
