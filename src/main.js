@@ -7,7 +7,7 @@ const toastRoot=document.querySelector('#toast-root');
 const state={
   view:'home',loading:true,busy:false,session:null,role:null,
   players:[],seasons:[],competitions:[],opponents:[],matches:[],stats:[],scores:[],
-  profiles:[],userRoles:[],settings:{community_confirmations_required:3},
+  profiles:[],userRoles:[],settings:{community_confirmations_required:3,team_logo_url:null,theme_mode:'auto',theme_primary:'#2f96c8',theme_secondary:'#153b5b',theme_accent:'#78c8e8',theme_surface_tint:'#dceff8'},
   selectedPlayerId:null,playerEditorOpen:false,matchEditorOpen:false,selectedMatchId:null,matchDetailId:null,matchTab:'lineup',matchPlayers:[],matchEvents:[],tacticalChanges:[],adminTab:'competitions'
 };
 
@@ -32,6 +32,33 @@ const fmt=v=>v?new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'short',year
 const num=v=>Number(v||0);
 const avg=arr=>arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;
 
+function hexRgb(hex){const h=String(hex||'').replace('#','');if(!/^[0-9a-f]{6}$/i.test(h))return [47,150,200];return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)]}
+function rgbHex(r,g,b){return '#'+[r,g,b].map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('')}
+function mixHex(a,b,t){const A=hexRgb(a),B=hexRgb(b);return rgbHex(A[0]+(B[0]-A[0])*t,A[1]+(B[1]-A[1])*t,A[2]+(B[2]-A[2])*t)}
+function applyTheme(){
+ const s=state.settings||{},root=document.documentElement;
+ const primary=s.theme_primary||'#2f96c8',secondary=s.theme_secondary||'#153b5b',accent=s.theme_accent||mixHex(primary,'#ffffff',.38),surface=s.theme_surface_tint||mixHex(primary,'#ffffff',.84);
+ root.style.setProperty('--brand-primary',primary);root.style.setProperty('--brand-secondary',secondary);root.style.setProperty('--brand-accent',accent);root.style.setProperty('--brand-surface',surface);
+ root.style.setProperty('--brand-primary-rgb',hexRgb(primary).join(','));root.style.setProperty('--brand-secondary-rgb',hexRgb(secondary).join(','));root.style.setProperty('--brand-accent-rgb',hexRgb(accent).join(','));
+ root.style.setProperty('--accent',primary);root.style.setProperty('--accent2',secondary);
+}
+async function extractLogoPalette(file){
+ const url=URL.createObjectURL(file);
+ try{
+  const img=await new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=rej;im.src=url});
+  const cv=document.createElement('canvas'),ctx=cv.getContext('2d',{willReadFrequently:true});cv.width=cv.height=72;ctx.clearRect(0,0,72,72);ctx.drawImage(img,0,0,72,72);
+  const d=ctx.getImageData(0,0,72,72).data,map=new Map();
+  for(let i=0;i<d.length;i+=4){if(d[i+3]<180)continue;const r=d[i],g=d[i+1],b=d[i+2],max=Math.max(r,g,b),min=Math.min(r,g,b),sat=max-min,light=(max+min)/2;if(light>242||light<18||sat<18)continue;const q=[r,g,b].map(v=>Math.round(v/24)*24);const k=q.join(',');map.set(k,(map.get(k)||0)+1+(sat/255))}
+  const colors=[...map.entries()].sort((a,b)=>b[1]-a[1]).map(([k])=>k.split(',').map(Number));
+  const primary=colors[0]||[47,150,200];let secondary=colors.find(x=>Math.hypot(x[0]-primary[0],x[1]-primary[1],x[2]-primary[2])>105);
+  if(!secondary)secondary=primary.map(v=>Math.round(v*.42));
+  let accent=colors.find(x=>x!==secondary&&Math.hypot(x[0]-primary[0],x[1]-primary[1],x[2]-primary[2])>55);
+  if(!accent)accent=primary.map(v=>Math.min(255,Math.round(v+(255-v)*.38)));
+  const p=rgbHex(...primary),s=rgbHex(...secondary),a=rgbHex(...accent);
+  return {primary:p,secondary:s,accent:a,surface:mixHex(p,'#ffffff',.84)};
+ }finally{URL.revokeObjectURL(url)}
+}
+
 function toast(message,type='ok'){
   const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=message;toastRoot.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('show'));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220)},2500);
@@ -44,7 +71,7 @@ function shell(content){
   const items=nav();
   app.innerHTML=`<div class="app-shell">
     <aside class="sidebar">
-      <div class="brand"><div class="brand-mark">TM</div><div><strong>Team Manager</strong><span>Calcio Caselle</span></div></div>
+      <div class="brand"><div class="brand-mark">${state.settings.team_logo_url?`<img src="${esc(state.settings.team_logo_url)}" alt="Calcio Caselle">`:'TM'}</div><div><strong>Team Manager</strong><span>Calcio Caselle</span></div></div>
       <nav class="side-nav">${items.map(([id,l])=>`<button data-view="${id}" class="${state.view===id?'active':''}"><span>${icons[id]}</span>${l}</button>`).join('')}
       ${isStaff()?'<div class="side-separator"></div><button data-view="admin" class="'+(state.view==='admin'?'active':'')+'"><span>⚙</span>Amministrazione</button>':''}</nav>
       <div class="side-foot"><span class="role-chip">${esc(labels[state.role]||'Ospite')}</span><small>${esc(season()?.name||'Nessuna stagione')}</small></div>
@@ -314,7 +341,22 @@ function adminUsers(){
   return `<div class="admin-split"><section class="card"><h3>Nuovo utente</h3><form id="user-form" class="form-grid"><label>Username<input name="username" required></label><label>Nome visualizzato<input name="display_name" required></label><label>Password iniziale<input name="password" type="password" minlength="8" required></label><label>Ruolo<select name="role">${['fan','player','coach','manager','admin'].map(v=>`<option value="${v}">${labels[v]}</option>`).join('')}</select></label><button class="primary">Crea account</button></form></section><section class="compact-list">${state.profiles.map(p=>{const r=state.userRoles.find(x=>x.user_id===p.id);return `<article class="crud-row"><div><strong>${esc(p.display_name||p.username)}</strong><span>@${esc(p.username)} · ${p.is_active===false?'disattivo':'attivo'}</span></div><div><select data-user-role="${p.id}">${['fan','player','coach','manager','admin'].map(v=>`<option value="${v}" ${r?.role===v?'selected':''}>${labels[v]}</option>`).join('')}</select><button class="icon-btn danger" data-disable-user="${p.id}">×</button></div></article>`}).join('')}</section></div>`;
 }
 function adminSettings(){
- return `<section class="card settings-card"><h3>Livescore collaborativo</h3><form id="settings-form"><label>Conferme necessarie<input type="number" min="1" max="20" name="threshold" value="${state.settings.community_confirmations_required}"></label><button class="primary">Salva</button></form></section>`;
+ const s=state.settings;
+ return `<div class="settings-layout">
+ <section class="card branding-card"><div class="settings-title"><div><span class="eyebrow">IDENTITÀ VISIVA</span><h3>Branding</h3><p>Carica il logo: la palette viene proposta automaticamente e applicata a tutta l'app.</p></div><div class="brand-preview" id="brand-preview">${s.team_logo_url?`<img src="${esc(s.team_logo_url)}" alt="Logo">`:'TM'}</div></div>
+ <form id="branding-form">
+   <label class="logo-upload"><input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml"><span>Carica logo</span><small>PNG, JPG, WebP o SVG</small></label>
+   <div class="theme-mode"><label><input type="radio" name="theme_mode" value="auto" ${s.theme_mode!=='manual'?'checked':''}> Auto dal logo</label><label><input type="radio" name="theme_mode" value="manual" ${s.theme_mode==='manual'?'checked':''}> Manuale</label></div>
+   <div class="palette-editor">
+    <label><span>Primario</span><input type="color" name="theme_primary" value="${esc(s.theme_primary||'#2f96c8')}"><b data-color-value="theme_primary">${esc(s.theme_primary||'#2f96c8')}</b></label>
+    <label><span>Secondario</span><input type="color" name="theme_secondary" value="${esc(s.theme_secondary||'#153b5b')}"><b data-color-value="theme_secondary">${esc(s.theme_secondary||'#153b5b')}</b></label>
+    <label><span>Accento</span><input type="color" name="theme_accent" value="${esc(s.theme_accent||'#78c8e8')}"><b data-color-value="theme_accent">${esc(s.theme_accent||'#78c8e8')}</b></label>
+    <label><span>Superficie</span><input type="color" name="theme_surface_tint" value="${esc(s.theme_surface_tint||'#dceff8')}"><b data-color-value="theme_surface_tint">${esc(s.theme_surface_tint||'#dceff8')}</b></label>
+   </div>
+   <div class="branding-actions"><button type="button" class="ghost" data-regenerate-palette ${s.team_logo_url?'':'disabled'}>Rigenera palette</button><button class="primary">Salva branding</button></div>
+ </form></section>
+ <section class="card settings-card"><span class="eyebrow">LIVE</span><h3>Livescore collaborativo</h3><form id="settings-form"><label>Conferme necessarie<input type="number" min="1" max="20" name="threshold" value="${s.community_confirmations_required}"></label><button class="primary">Salva</button></form></section>
+ </div>`;
 }
 
 /* CRUD */
@@ -336,6 +378,25 @@ async function createUser(e){
 async function changeRole(id,role){const {error}=await supabase.from('app_user_roles').upsert({user_id:id,role},{onConflict:'user_id'});if(error)return toast(error.message,'err');toast('Ruolo aggiornato');await load();}
 async function disableUser(id){if(!confirm('Eliminare definitivamente questo account? Il giocatore eventualmente collegato resterà in rosa.'))return;const {data,error}=await supabase.functions.invoke('admin-delete-user',{body:{user_id:id}});if(error||data?.ok===false)return toast(data?.error||error?.message||'Errore eliminazione','err');toast('Account eliminato');await load();}
 async function saveSettings(e){e.preventDefault();const n=Number(new FormData(e.currentTarget).get('threshold'));const {error}=await supabase.from('app_settings').update({community_confirmations_required:n}).eq('id',true);if(error)return toast(error.message,'err');toast('Impostazioni salvate');await load();}
+async function saveBranding(e){
+ e.preventDefault();const form=e.currentTarget,f=new FormData(form),file=document.querySelector('#logo-file')?.files?.[0];let logoUrl=state.settings.team_logo_url||null;
+ if(file){
+  const ext=(file.name.split('.').pop()||'png').toLowerCase(),path=`${TEAM_ID}/branding/logo-${Date.now()}.${ext}`;
+  const {error:upErr}=await supabase.storage.from('team-assets').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type||undefined});if(upErr)return toast(upErr.message,'err');
+  logoUrl=supabase.storage.from('team-assets').getPublicUrl(path).data.publicUrl;
+ }
+ const row={team_logo_url:logoUrl,theme_mode:f.get('theme_mode')||'auto',theme_primary:f.get('theme_primary'),theme_secondary:f.get('theme_secondary'),theme_accent:f.get('theme_accent'),theme_surface_tint:f.get('theme_surface_tint')};
+ const {error}=await supabase.from('app_settings').update(row).eq('id',true);if(error)return toast(error.message,'err');
+ state.settings={...state.settings,...row};applyTheme();toast('Branding aggiornato');await load();
+}
+function bindBranding(){
+ const form=document.querySelector('#branding-form'),file=document.querySelector('#logo-file');if(!form)return;form.onsubmit=saveBranding;
+ const paint=()=>{const row={theme_primary:form.theme_primary.value,theme_secondary:form.theme_secondary.value,theme_accent:form.theme_accent.value,theme_surface_tint:form.theme_surface_tint.value};state.settings={...state.settings,...row};applyTheme();Object.entries(row).forEach(([k,v])=>{const b=form.querySelector(`[data-color-value="${k}"]`);if(b)b.textContent=v})};
+ form.querySelectorAll('input[type="color"]').forEach(x=>x.oninput=()=>{const manual=form.querySelector('input[name="theme_mode"][value="manual"]');if(manual)manual.checked=true;paint()});
+ const usePalette=async selected=>{const pal=await extractLogoPalette(selected);form.theme_primary.value=pal.primary;form.theme_secondary.value=pal.secondary;form.theme_accent.value=pal.accent;form.theme_surface_tint.value=pal.surface;const auto=form.querySelector('input[name="theme_mode"][value="auto"]');if(auto)auto.checked=true;paint()};
+ if(file)file.onchange=async()=>{const selected=file.files?.[0];if(!selected)return;const preview=document.querySelector('#brand-preview');if(preview){const u=URL.createObjectURL(selected);preview.innerHTML=`<img src="${u}" alt="Logo">`;preview.querySelector('img').onload=()=>URL.revokeObjectURL(u)}try{await usePalette(selected)}catch(err){toast('Logo caricato, palette automatica non disponibile','err')}};
+ const regen=document.querySelector('[data-regenerate-palette]');if(regen)regen.onclick=async()=>{const selected=file?.files?.[0];if(selected)return usePalette(selected);toast('Seleziona nuovamente il logo per rigenerare la palette','err')};
+}
 
 /* BIND */
 function bind(){
@@ -361,7 +422,7 @@ function bind(){
  const cf=document.querySelector('#competition-form');if(cf)cf.onsubmit=saveCompetition;
  const of=document.querySelector('#opponent-form');if(of)of.onsubmit=saveOpponent;
  const uf=document.querySelector('#user-form');if(uf)uf.onsubmit=createUser;
- const sf=document.querySelector('#settings-form');if(sf)sf.onsubmit=saveSettings;
+ const sf=document.querySelector('#settings-form');if(sf)sf.onsubmit=saveSettings;bindBranding();
  document.querySelectorAll('[data-edit-comp]').forEach(b=>b.onclick=()=>{const c=competition(b.dataset.editComp),f=document.querySelector('#competition-form');f.id.value=c.id;f.name.value=c.name;f.kind.value=c.kind});
  document.querySelectorAll('[data-delete-comp]').forEach(b=>b.onclick=async()=>{if(confirm('Eliminare la competizione?')){const {error}=await supabase.from('app_competitions').delete().eq('id',b.dataset.deleteComp);if(error)toast(error.message,'err');else{toast('Competizione eliminata');await load()}}});
  document.querySelectorAll('[data-edit-opp]').forEach(b=>b.onclick=()=>{const o=opponent(b.dataset.editOpp),f=document.querySelector('#opponent-form');f.id.value=o.id;f.name.value=o.name;f.short_name.value=o.short_name||'';f.logo_url.value=o.logo_url||''});
@@ -386,6 +447,7 @@ function bindOverlay(){
 }
 
 function render(){
+ applyTheme();
  if(state.loading){shell('<div class="loading"><div class="spinner"></div><span>Caricamento…</span></div>');bind();return;}
  const fn={home:homeView,calendar:calendarView,live:liveView,roster:rosterView,stats:statsView,profile:profileView,admin:adminView}[state.view]||homeView;
  shell(fn());bind();
