@@ -118,26 +118,26 @@ Le competizioni sono modificabili integralmente dal Setup, incluse formula, dura
 
 ## Modulo Competizioni operative
 
-La navigazione principale espone la sezione Competizioni per la stagione selezionata. La sezione legge:
-- configurazione da `app_competitions`;
-- classifica derivata da `app_competition_standings`;
-- calendario e risultati da `app_competition_fixtures`.
-
-Il calendario importato mantiene i nomi ufficiali originari. L'anagrafica `app_opponents` resta separata e modificabile senza riscrivere retroattivamente i fixture storici.
-
-Nota di congruenza corrente: nei fixture la squadra principale è registrata come `Calcio Caselle`, mentre l'anagrafica principale è `Calcio Caselle '08`. Il frontend la riconosce per evidenziazione tramite normalizzazione del nome; il dato storico non viene modificato automaticamente.
+La sezione Competizioni è solo consultazione:
+- selettore della competizione;
+- classifica a sinistra;
+- calendario completo compatto a destra;
+- ogni giornata è un blocco;
+- squadre mostrate con sigla e logo quando disponibili;
+- nessuna data o campo nel calendario compatto;
+- toggle Tutte/Caselle sopra il calendario;
+- click sul punteggio apre la modifica del fixture.
 
 ## Modulo Calendario operativo
 
-Il menu principale Calendario legge direttamente `app_competition_fixtures` per stagione e competizione. Supporta:
-- vista per giornate;
-- filtro tutte le partite / sole partite del Caselle;
-- inserimento manuale;
-- modifica di giornata, data/ora, casa/trasferta, campo, codice gara, stato e risultato.
+Il menu principale Calendario mostra esclusivamente le partite del Caselle, in ordine cronologico, attraversando tutte le competizioni della stagione. I filtri permettono di includere/escludere le competizioni.
 
-Le scritture restano protette dalla policy esistente `private.is_staff()`. Non è prevista cancellazione dal modulo operativo in questa fase. L'import CSV/PDF resta separato nel Setup e non viene considerato affidabile finché non sarà ripreso esplicitamente.
+La lista usa i fixture come fonte di verità per data e risultato; `app_matches` viene associata solo quando coincide in modo univoco per competizione, kickoff e avversaria. Questo consente di aprire dal punteggio:
+- dettagli della partita;
+- modifica di data, campo, stato e risultato;
+- visualizzazione e modifica degli eventi già registrati in `app_match_events`.
 
-Verifica dati corrente: 78 fixture, 13 giornate, 6 risultati conclusi e nessun fixture collegato a una stagione diversa da quella della propria competizione.
+Quando una partita del Caselle viene modificata, fixture e `app_matches` collegate vengono sincronizzate. Codice gara e fonte non sono più esposti nell'interfaccia.
 
 ## Roadmap
 
