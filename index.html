@@ -155,8 +155,20 @@
   <form id="opponentForm">
     <div class="dialog-head"><strong>Avversaria</strong><button type="button" class="icon-btn" data-close-opponent>×</button></div>
     <input type="hidden" id="opponentId">
-    <label>Nome<input id="opponentName" required></label>
-    <label>Nome breve<input id="opponentShort"></label>
+    <div class="compact-grid">
+      <label>Nome<input id="opponentName" required></label>
+      <label>Nome breve<input id="opponentShort"></label>
+    </div>
+    <div class="logo-row">
+      <div id="opponentLogoPreview" class="logo-preview">Logo</div>
+      <label class="upload">Logo<input id="opponentLogoFile" type="file" accept="image/*"></label>
+    </div>
+    <div class="compact-grid three colors">
+      <label>Colore 1<input id="opponentColor1" type="color" value="#111827"></label>
+      <label>Colore 2<input id="opponentColor2" type="color" value="#ffffff"></label>
+      <label>Colore 3<input id="opponentColor3" type="color" value="#667085"></label>
+    </div>
+    <p id="opponentMessage" class="form-message hidden"></p>
     <div class="dialog-actions"><button type="button" class="secondary" data-close-opponent>Annulla</button><button class="primary" type="submit">Salva</button></div>
   </form>
 </dialog>
