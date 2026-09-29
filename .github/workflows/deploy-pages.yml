@@ -4,7 +4,7 @@ on:
     branches: [main]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 concurrency:
@@ -20,6 +20,21 @@ jobs:
           node-version: 20
       - run: npm install
       - run: npm run build
+      - name: Prepare Pages output
+        run: |
+          mv dist/app.html dist/index.html
+      - name: Mirror compiled build to main
+        run: |
+          rm -rf assets
+          cp -r dist/assets ./assets
+          cp dist/index.html ./index.html
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html assets
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish compiled frontend [skip ci]"
+            git push
+          fi
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
