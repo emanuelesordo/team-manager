@@ -158,7 +158,7 @@ function CalendarImporter({d,close}){
     setBusy(true);setError('');
     const{data,error}=await supabase.functions.invoke('calendar-import',{body:{source_url:SOURCE,dry_run:dryRun,competition_id:competition?.id||null}});
     setBusy(false);
-    if(error||!data?.ok){setError(data?.error||error?.message||'Import non riuscito');return}
+    if(error||!data?.ok){const diag=data?.diagnostics;setError((data?.error||error?.message||'Import non riuscito')+(diag?.title?' · '+diag.title:'')+(diag?.squad_links?.length?' · Squadre rilevate: '+diag.squad_links.join(', '):''));return}
     if(dryRun){setPreview(data);return}
     d.refresh();
     setPreview({...data,imported:true});
