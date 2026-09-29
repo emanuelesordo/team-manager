@@ -127,11 +127,23 @@ Il calendario importato mantiene i nomi ufficiali originari. L'anagrafica `app_o
 
 Nota di congruenza corrente: nei fixture la squadra principale è registrata come `Calcio Caselle`, mentre l'anagrafica principale è `Calcio Caselle '08`. Il frontend la riconosce per evidenziazione tramite normalizzazione del nome; il dato storico non viene modificato automaticamente.
 
+## Modulo Calendario operativo
+
+Il menu principale Calendario legge direttamente `app_competition_fixtures` per stagione e competizione. Supporta:
+- vista per giornate;
+- filtro tutte le partite / sole partite del Caselle;
+- inserimento manuale;
+- modifica di giornata, data/ora, casa/trasferta, campo, codice gara, stato e risultato.
+
+Le scritture restano protette dalla policy esistente `private.is_staff()`. Non è prevista cancellazione dal modulo operativo in questa fase. L'import CSV/PDF resta separato nel Setup e non viene considerato affidabile finché non sarà ripreso esplicitamente.
+
+Verifica dati corrente: 78 fixture, 13 giornate, 6 risultati conclusi e nessun fixture collegato a una stagione diversa da quella della propria competizione.
+
 ## Roadmap
 
 1. Setup e creazione guidata — in sviluppo
-2. Competizioni operative
-3. Calendario
+2. Competizioni operative — operativo
+3. Calendario — operativo
 4. Giocatori
 5. Rosa
 6. Partite
