@@ -120,8 +120,8 @@ Le competizioni sono modificabili integralmente dal Setup, incluse formula, dura
 
 La sezione Competizioni è solo consultazione:
 - selettore della competizione;
-- classifica a sinistra;
-- calendario completo compatto a destra;
+- classifica in una card fissa a sinistra;
+- calendario completo in un unico contenitore a destra, con densità adattiva per mantenere contemporaneamente visibili tutte le giornate disponibili sul desktop;
 - ogni giornata è un blocco;
 - squadre mostrate con sigla e logo quando disponibili;
 - nessuna data o campo nel calendario compatto;
