@@ -697,3 +697,26 @@ body{
  .reference-pitch .ref-slot{width:70px!important;height:54px!important}
  .reference-pitch .ref-player{min-width:68px!important;min-height:47px!important}
 }
+
+/* list behavior: starters stay left, bench + non-called right, all visible */
+.match-roster-scroll{overflow:hidden!important;gap:2px!important}
+.match-bench-panel{display:grid!important;grid-template-rows:auto minmax(0,1fr) auto!important}
+.bench-scroll{overflow:hidden!important;gap:3px!important}
+.squad-row{min-height:31px!important;height:31px!important;padding:2px 5px!important;grid-template-columns:30px 32px minmax(0,1fr) 56px!important}
+.squad-row.is-starter{background:rgba(222,246,255,.62)!important}
+.squad-row .shirt-btn.compact{width:29px!important;height:25px!important}
+.squad-row .role-pill{height:20px!important;min-width:29px!important}
+.squad-row .squad-person strong{font-size:7.5px!important}.squad-row .squad-person small{font-size:5.5px!important}
+.squad-row .quick-assign{width:24px!important;height:24px!important}
+.bench-row{min-height:40px!important;height:40px!important;grid-template-columns:34px 31px minmax(0,1fr) 27px minmax(86px,108px)!important;padding:3px 5px!important}
+.bench-row .bench-reason{min-height:27px!important;height:27px!important;padding:3px 20px 3px 5px!important;font-size:6px!important;border-radius:8px!important}
+.bench-row .event-shortcut{width:26px!important;height:26px!important}
+.bench-noncalled{max-height:none!important;margin-top:6px!important;padding-top:6px!important}
+.bench-noncalled .workspace-head{min-height:25px!important;padding-bottom:4px!important}
+.bench-noncalled .noncalled-list{gap:3px!important;overflow:hidden!important}
+.bench-noncalled .noncalled-row{min-height:33px!important;height:33px!important;padding:3px 5px!important;grid-template-columns:30px minmax(0,1fr) 22px minmax(78px,100px)!important}
+.bench-noncalled .ghost.tiny{margin-top:4px!important;min-height:27px!important;padding:4px 7px!important;font-size:6px!important}
+@media(max-width:1250px) and (min-width:901px){
+ .squad-row{height:29px!important;min-height:29px!important}
+ .bench-row{height:37px!important;min-height:37px!important;grid-template-columns:30px 28px minmax(0,1fr) 24px 88px!important}
+}
