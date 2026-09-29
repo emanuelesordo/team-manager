@@ -106,4 +106,179 @@
     const nav = $(".main-nav");
     if (nav) {
       nav.innerHTML = `
-    
+    "glass-card span-2"><div class="section-cap"><strong>Risultati per partita</strong></div><div id="statsResults"></div></section>
+          </div>
+        </section>`);
+    }
+
+    const nav = $(".main-nav");
+    if (nav) {
+      nav.innerHTML = `
+        <button class="main-link active" data-product-view="home">Home</button>
+        <button class="main-link" data-product-view="competitions">Competizioni</button>
+        <button class="main-link" data-product-view="calendar">Calendario</button>
+        <button class="main-link" data-product-view="roster">Rosa</button>
+        <button class="main-link" data-product-view="matches">Partite</button>
+        <button class="main-link" data-product-view="events">Eventi</button>
+        <button class="main-link" data-product-view="stats">Statistiche</button>
+        <button class="main-link" data-product-view="setup">Amministrazione</button>`;
+    }
+
+    $$("[data-product-view]").forEach(b => b.onclick = () => showView(b.dataset.productView));
+    $$("[data-jump-view]").forEach(b => b.onclick = () => showView(b.dataset.jumpView));
+
+    $("#rosterSearch")?.addEventListener("input", e => renderRoster(e.target.value));
+    $("#eventsMatchFilter")?.addEventListener("change", renderEvents);
+    $("#eventCreateForm")?.addEventListener("submit", createEvent);
+  }
+
+  function visibleIds() {
+    return ["homeView","competitionsView","calendarView","rosterView","matchesView","eventsView","statsView","setupView"];
+  }
+
+  async function showView(name) {
+    const map = {
+      home:"homeView", competitions:"competitionsView", calendar:"calendarView",
+      roster:"rosterView", matches:"matchesView", events:"eventsView",
+      stats:"statsView", setup:"setupView"
+    };
+    visibleIds().forEach(id => $("#"+id)?.classList.toggle("hidden", id !== map[name]));
+    $$("[data-product-view]").forEach(b => b.classList.toggle("active", b.dataset.productView === name));
+
+    if (name === "home") await loadHome();
+    if (name === "competitions") await TM.loadCompetitionHub();
+    if (name === "calendar") await TM.loadCalendarHub();
+    if (name === "roster") await loadRoster();
+    if (name === "matches") await loadMatches();
+    if (name === "events") await loadEvents();
+    if (name === "stats") await loadStats();
+    if (name === "setup") TM.setPanel?.("seasons");
+  }
+
+  async function loadCore() {
+    const s = currentSeason();
+    if (!s) return;
+    await TM.ensureMainTeam();
+    const [pr,mr,mpr,er,rr] = await Promise.all([
+      db.from("players").select("*").eq("team_id",s.team_id).order("last_name",{ascending:true}),
+      db.from("app_matches").select("*").eq("season_id",s.id).order("kickoff_at",{ascending:true}),
+      db.from("app_match_players").select("*"),
+      db.from("app_match_events").select("*").order("minute",{ascending:true}),
+      db.from("app_match_ratings").select("*")
+    ]);
+    players = pr.data || [];
+    matches = mr.data || [];
+    const ids = new Set(matches.map(m=>m.id));
+    matchPlayers = (mpr.data || []).filter(x=>ids.has(x.match_id));
+    events = (er.data || []).filter(x=>ids.has(x.match_id) && x.validation_status !== "rejected");
+    ratings = (rr.data || []).filter(x=>ids.has(x.match_id));
+  }
+
+  function opponentById(id) { return opponents().find(o=>o.id===id) || null; }
+  function competitionById(id) { return competitions().find(c=>c.id===id) || null; }
+  function shortDate(v) {
+    if (!v) return "\u2014";
+    return new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short"}).format(new Date(v));
+  }
+  function timeOnly(v) {
+    if (!v) return "";
+    return new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(new Date(v));
+  }
+  function badgeLogo(name,logo,short) {
+    return logo
+      ? `<img class="club-badge" src="${esc(logo)}" alt="">`
+      : `<span class="club-badge fallback">${esc((short||name||"---").slice(0,3).toUpperCase())}</span>`;
+  }
+  function eventLabel(v) {
+    return {goal:"Gol",substitution:"Sostituzione",yellow_card:"Giallo",red_card:"Rosso",own_goal:"Autogol"}[v] || v;
+  }
+  function playerName(id) {
+    const p = players.find(x=>x.id===id);
+    return p ? `${p.first_name} ${p.last_name}` : "";
+  }
+  function matchLabel(m) {
+    const o = opponentById(m.opponent_id);
+    return `${shortDate(m.kickoff_at)} \u00b7 ${m.home_away==="home"?"vs":"@"} ${o?.name||"Avversaria"}`;
+  }
+  function age(date) {
+    if (!date) return "\u2014";
+    const d = new Date(date+"T12:00:00"), n = new Date();
+    let a = n.getFullYear()-d.getFullYear();
+    if (n < new Date(n.getFullYear(),d.getMonth(),d.getDate())) a--;
+    return a;
+  }
+
+  async function ownFixtures() {
+    const s = currentSeason();
+    if (!s) return [];
+    await TM.loadCalendarHub();
+    const st = state();
+    return (st.calendarRows || []).slice().sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
+  }
+
+  async function loadHome() {
+    await TM.loadCompetitions();
+    const fixtures = await ownFixtures();
+    const now = Date.now();
+    const next = fixtures.find(x=>new Date(x.kickoff_at).getTime()>=now) || fixtures.find(x=>x.status!=="finished") || null;
+    const last = [...fixtures].reverse().find(x=>x.status==="finished") || null;
+    const finished = fixtures.filter(x=>x.status==="finished");
+    let wins=0,draws=0,losses=0,gf=0,ga=0;
+    finished.forEach(x=>{
+      const home=TM.isOwnTeamName(x.home_team);
+      const ours=home?+x.home_score:+x.away_score;
+      const theirs=home?+x.away_score:+x.home_score;
+      gf+=ours;ga+=theirs;
+      if (ours>theirs) wins++; else if (ours===theirs) draws++; else losses++;
+    });
+
+    const card = (f,title) => {
+      if (!f) return `<article class="glass-card hero-match-card"><div class="section-cap"><strong>${title}</strong></div><div class="empty-state">Nessuna partita</div></article>`;
+      const h=TM.teamVisual(f.home_team), a=TM.teamVisual(f.away_team);
+      const score=f.status==="finished"?`${f.home_score} - ${f.away_score}`:"\u2013";
+      return `<article class="glass-card hero-match-card">
+        <div class="section-cap"><strong>${title}</strong><span class="soft-badge">${esc(competitionById(f.competition_id)?.name||"")}</span></div>
+        <div class="hero-score"><div>${badgeLogo(h.name,h.logo,h.short)}<b>${esc(h.short)}</b></div><strong>${score}</strong><div>${badgeLogo(a.name,a.logo,a.short)}<b>${esc(a.short)}</b></div></div>
+        <div class="hero-date">${TM.localDateTime(f.kickoff_at)}</div>
+      </article>`;
+    };
+    $("#homeHeroGrid").innerHTML = card(next,"Prossima partita")+card(last,"Ultima partita");
+    $("#homeMetricGrid").innerHTML = [
+      ["Partite",finished.length],["Vittorie",wins],["Pareggi",draws],["Sconfitte",losses],["Gol fatti",gf],["Gol subiti",ga]
+    ].map(x=>`<article class="metric-card"><strong>${x[1]}</strong><span>${x[0]}</span></article>`).join("");
+
+    $("#homeUpcoming").innerHTML = fixtures.filter(x=>x.status!=="finished").slice(0,4).map(f=>{
+      const opp=TM.teamVisual(TM.isOwnTeamName(f.home_team)?f.away_team:f.home_team);
+      return `<div class="compact-match-row"><time>${shortDate(f.kickoff_at)}</time>${badgeLogo(opp.name,opp.logo,opp.short)}<strong>${esc(opp.name)}</strong><span>${timeOnly(f.kickoff_at)}</span></div>`;
+    }).join("") || '<div class="empty-state">Nessuna prossima partita</div>';
+
+    const c=competitions()[0];
+    if (c) {
+      const sr=await db.from("app_competition_standings").select("*").eq("season_id",currentSeason().id).eq("competition_id",c.id);
+      const rows=[...(sr.data||[])].sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference).slice(0,5);
+      $("#homeStandings").innerHTML=`<table class="mini-table"><tbody>${rows.map((r,i)=>`<tr class="${TM.isOwnTeamName(r.team)?"own-team":""}"><td>${i+1}</td><td>${esc(r.team)}</td><td>${r.played}</td><td><strong>${r.points}</strong></td></tr>`).join("")}</tbody></table>`;
+    } else $("#homeStandings").innerHTML='<div class="empty-state">Nessuna classifica</div>';
+  }
+
+  function pstats(id) {
+    const apps=matchPlayers.filter(x=>x.player_id===id&&(x.started||(+x.minutes_played||0)>0)).length;
+    const goals=events.filter(x=>x.player_id===id&&x.team_side==="team"&&x.event_type==="goal").length;
+    const yellows=events.filter(x=>x.player_id===id&&x.event_type==="yellow_card").length;
+    const reds=events.filter(x=>x.player_id===id&&x.event_type==="red_card").length;
+    return {apps,goals,yellows,reds};
+  }
+
+  async function loadRoster() {
+    await loadCore();
+    renderRoster($("#rosterSearch")?.value||"");
+  }
+  function renderRoster(filter="") {
+    const q=filter.trim().toLowerCase();
+    const list=players.filter(p=>!q||(`${p.first_name} ${p.last_name}`).toLowerCase().includes(q));
+    $("#rosterCount").textContent=`${list.length} giocatori`;
+    $("#rosterTable").innerHTML=`<div class="roster-head"><span>Giocatore</span><span>Ruolo</span><span>Et\xe0</span><span Pres.</span><span Gol</span></div>`+
+      list.map(p=>{
+        const s=pstats(p.id);
+        return `<button type="button" class="roster-row ${selectedPlayerId===p.id?"active":""}" data-player-id="${p.id}">
+          <span class="player-cell">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`<i>${esc((p.first_name[0]||"")+(p.last_name[0]||""))}</i>`}<b>${esc(p.last_name+" "+p.first_name)}</b></span>
+          <span><em class="role-chip">${esc(p.generic_role_manual||"\u2014")}</em></span><span>${age(p.birth_date)}</span><span>${s.apps}</span><span#â
