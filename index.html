@@ -9,24 +9,41 @@
   <link rel="stylesheet" href="./product-ui.css">
 </head>
 <body>
-<header class="app-header">
-  <a class="brand" href="#"><span class="brand-mark">TM</span><strong>Team Manager</strong></a>
-  <nav class="main-nav">
-    <button class="main-link active" data-app-view="setup">Setup</button>
-    <button class="main-link" data-app-view="competitions">Competizioni</button>
-    <button class="main-link" data-app-view="calendar">Calendario</button>
-    <button class="main-link" disabled>Giocatori</button>
-    <button class="main-link" disabled>Rosa</button>
-    <button class="main-link" disabled>Partite</button>
-    <button class="main-link" disabled>Livescore</button>
-    <button class="main-link" disabled>Statistiche</button>
-  </nav>
-  <select id="seasonSelector" class="season-selector" aria-label="Stagione"></select>
-  <span id="authState" class="auth-state">Sessione…</span><button id="authButton" class="auth-button" type="button">Accedi</button>
-</header>
-
+<div class="app-shell">
+  <aside class="side-nav">
+    <div class="side-brand"><span id="sideTeamLogo" class="side-logo">TM</span><strong id="sideTeamName">Squadra</strong></div>
+    <nav class="side-menu">
+      <button class="side-link active" data-app-view="home"><span>⌂</span>Home</button>
+      <button class="side-link" data-app-view="competitions"><span>▦</span>Competizioni</button>
+      <button class="side-link" data-app-view="calendar"><span>▤</span>Calendario</button>
+      <button class="side-link" data-app-view="roster"><span>♙</span>Rosa</button>
+      <button class="side-link" data-app-view="matches"><span>⚽</span>Partite</button>
+      <button class="side-link" data-app-view="events"><span>✦</span>Eventi</button>
+      <button class="side-link" data-app-view="stats"><span>▥</span>Statistiche</button>
+      <button class="side-link side-setup" data-app-view="setup"><span>⚙</span>Setup</button>
+    </nav>
+  </aside>
+  <section class="workspace">
+    <header class="topbar">
+      <div class="topbar-copy"><strong id="topbarTitle">Dashboard</strong><small id="topbarSubtitle"></small></div>
+      <div class="topbar-actions">
+        <input id="globalSearch" class="top-search" placeholder="Cerca...">
+        <select id="seasonSelector" class="season-selector" aria-label="Stagione"></select>
+        <span id="authState" class="auth-state">Sessione…</span>
+        <button id="authButton" class="auth-button" type="button">Accedi</button>
+      </div>
+    </header>
 <main class="main">
-  <div id="setupView">
+  <section id="homeView">
+    <div id="dashboardHero" class="dashboard-hero"></div>
+    <div id="dashboardKpis" class="kpi-grid"></div>
+    <div class="dashboard-bottom">
+      <section class="ui-card"><div class="card-section-head"><strong>Prossime partite</strong><button class="ghost-link" type="button" data-go-calendar>Vedi calendario</button></div><div id="dashboardUpcoming"></div></section>
+      <section class="ui-card"><div class="card-section-head"><strong>Classifica</strong><button class="ghost-link" type="button" data-go-competition>Completa</button></div><div id="dashboardStandings"></div></section>
+    </div>
+  </section>
+
+  <div id="setupView" class="hidden">
   <nav class="setup-nav">
     <button class="setup-link active" data-section="seasons">Stagioni</button>
     <button class="setup-link" data-section="team">Squadra</button>
@@ -97,12 +114,68 @@
     </div>
   </section>
 
+  <section id="rosterView" class="hidden">
+    <div class="view-toolbar">
+      <div id="rosterRoleTabs" class="pill-tabs"></div>
+      <div class="view-actions"><input id="rosterSearch" class="compact-search" placeholder="Cerca giocatore"><button id="addPlayerBtn" class="primary" type="button">+ Giocatore</button></div>
+    </div>
+    <div class="roster-layout">
+      <section class="ui-card roster-table-card"><div id="rosterTable"></div></section>
+      <aside class="ui-card player-detail-card"><div id="playerDetail"></div></aside>
+    </div>
+  </section>
+
+  <section id="matchesView" class="hidden">
+    <div id="matchManagerTop" class="match-manager-top"></div>
+    <div class="match-manager-layout">
+      <section class="ui-card"><div class="card-section-head"><strong>Rosa squadra</strong></div><div id="matchRosterList" class="match-roster-list"></div></section>
+      <section class="ui-card pitch-card"><div class="pitch-tools"><select id="matchFormation"><option>4-4-2</option><option>4-3-3</option><option>3-5-2</option></select><button id="saveFormationBtn" class="primary" type="button">Salva</button></div><div id="matchPitch" class="football-pitch"></div></section>
+      <section class="ui-card"><div class="card-section-head"><strong>Panchina</strong></div><div id="matchBench" class="match-bench"></div></section>
+    </div>
+  </section>
+
+  <section id="eventsView" class="hidden">
+    <div id="eventsMatchTop" class="match-manager-top"></div>
+    <div class="events-layout">
+      <section class="ui-card"><div class="card-section-head"><strong>Cronologia eventi</strong></div><div id="eventsTimeline"></div></section>
+      <section class="ui-card event-compose-card">
+        <div class="card-section-head"><strong>Aggiungi evento</strong></div>
+        <form id="eventComposeForm">
+          <div class="event-type-tabs">
+            <label><input type="radio" name="newEventType" value="substitution">Cambio</label>
+            <label><input type="radio" name="newEventType" value="goal" checked>Gol</label>
+            <label><input type="radio" name="newEventType" value="yellow_card">Giallo</label>
+            <label><input type="radio" name="newEventType" value="red_card">Rosso</label>
+          </div>
+          <div class="compact-grid">
+            <label>Minuto<input id="newEventMinute" type="number" min="0" required></label>
+            <label>Squadra<select id="newEventSide"><option value="team">Caselle</option><option value="opponent">Avversario</option></select></label>
+          </div>
+          <label>Giocatore<select id="newEventPlayer"></select></label>
+          <label id="newEventSecondaryWrap">Secondo giocatore<select id="newEventSecondary"></select></label>
+          <button class="primary wide" type="submit">Salva evento</button>
+          <p id="eventComposeError" class="form-error hidden"></p>
+        </form>
+      </section>
+    </div>
+  </section>
+
+  <section id="statsView" class="hidden">
+    <div id="statsKpis" class="kpi-grid stats-kpis"></div>
+    <div class="stats-layout">
+      <section class="ui-card"><div class="card-section-head"><strong>Giocatori</strong></div><div id="statsPlayers"></div></section>
+      <section class="ui-card"><div class="card-section-head"><strong>Marcatori</strong></div><div id="statsScorers"></div></section>
+    </div>
+  </section>
+
   <section id="calendarView" class="hidden">
     <div id="calendarCompetitionFilters" class="competition-filter-row"></div>
     <div id="calendarHubMeta" class="muted"></div>
     <div id="calendarHubList"></div>
   </section>
 </main>
+  </section>
+</div>
 
 <dialog id="authDialog">
   <form id="authForm">
@@ -180,6 +253,20 @@
     </div>
     <p id="opponentMessage" class="form-message hidden"></p>
     <div class="dialog-actions"><button type="button" class="secondary" data-close-opponent>Annulla</button><button class="primary" type="submit">Salva</button></div>
+  </form>
+</dialog>
+
+<dialog id="playerDialog">
+  <form id="playerForm">
+    <div class="dialog-head"><strong>Nuovo giocatore</strong><button type="button" class="icon-btn" data-close-player>×</button></div>
+    <div class="compact-grid">
+      <label>Nome<input id="newPlayerFirst" required></label>
+      <label>Cognome<input id="newPlayerLast" required></label>
+      <label>Ruolo<select id="newPlayerRole"><option value="P">Portiere</option><option value="D">Difensore</option><option value="C">Centrocampista</option><option value="A">Attaccante</option></select></label>
+      <label>Numero<input id="newPlayerNumber" type="number" min="1" max="99"></label>
+    </div>
+    <p id="playerFormError" class="form-error hidden"></p>
+    <div class="dialog-actions"><button type="button" class="secondary" data-close-player>Annulla</button><button class="primary" type="submit">Salva</button></div>
   </form>
 </dialog>
 
