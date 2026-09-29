@@ -720,3 +720,93 @@ body{
  .squad-row{height:29px!important;min-height:29px!important}
  .bench-row{height:37px!important;min-height:37px!important;grid-template-columns:30px 28px minmax(0,1fr) 24px 88px!important}
 }
+
+/* compact scrollable lineup lists v19 */
+.match-roster-panel{
+ display:grid!important;
+ grid-template-rows:30px minmax(0,1fr)!important;
+ min-height:0!important;
+ overflow:hidden!important;
+}
+.match-roster-scroll{
+ min-height:0!important;
+ overflow-y:auto!important;
+ overflow-x:hidden!important;
+ overscroll-behavior:contain;
+ scrollbar-width:thin;
+ padding-right:2px!important;
+}
+.match-bench-panel{
+ display:grid!important;
+ grid-template-rows:30px minmax(150px,1fr) auto!important;
+ min-height:0!important;
+ overflow:hidden!important;
+}
+.bench-scroll{
+ min-height:0!important;
+ overflow-y:auto!important;
+ overflow-x:hidden!important;
+ overscroll-behavior:contain;
+ scrollbar-width:thin;
+ padding-right:2px!important;
+}
+.match-roster-scroll::-webkit-scrollbar,.bench-scroll::-webkit-scrollbar,.noncalled-list::-webkit-scrollbar{width:4px}
+.match-roster-scroll::-webkit-scrollbar-thumb,.bench-scroll::-webkit-scrollbar-thumb,.noncalled-list::-webkit-scrollbar-thumb{background:rgba(38,112,153,.24);border-radius:99px}
+
+/* same density on left and right */
+.squad-row,.bench-row{
+ min-height:28px!important;
+ height:28px!important;
+ border-radius:8px!important;
+ padding:2px 4px!important;
+ gap:4px!important;
+}
+.squad-row{grid-template-columns:27px 28px minmax(0,1fr) 50px!important}
+.bench-row{grid-template-columns:27px 28px minmax(0,1fr) 76px 76px!important}
+.squad-number,.shirt-btn,.shirt-btn.compact{
+ width:27px!important;height:24px!important;min-height:24px!important;border-radius:7px!important;
+}
+.role-pill,.squad-row .role-pill,.bench-row .role-pill{
+ min-width:27px!important;width:27px!important;height:20px!important;font-size:6px!important;border-radius:6px!important;
+}
+.squad-person strong,.squad-row .squad-person strong,.bench-row .squad-person strong{font-size:7px!important;line-height:1!important}
+.squad-person small,.squad-row .squad-person small,.bench-row .squad-person small{font-size:5.2px!important;line-height:1!important;margin-top:2px!important}
+.quick-assign{width:22px!important;height:22px!important;border-radius:7px!important}
+.bench-actions{display:flex!important;gap:2px!important;align-items:center!important;justify-content:flex-end!important}
+.bench-row .event-shortcut{
+ width:23px!important;height:23px!important;min-width:23px!important;min-height:23px!important;
+ border-radius:7px!important;padding:0!important;font-size:9px!important;
+}
+.bench-row .goal-icon{font-size:10px!important;color:#173d60!important}
+.bench-row .card-icon:before{width:7px!important;height:11px!important}
+.bench-row .bench-reason{
+ width:76px!important;min-width:0!important;height:23px!important;min-height:23px!important;
+ border-radius:7px!important;padding:2px 16px 2px 4px!important;font-size:5.5px!important;
+}
+
+/* non-called stays below bench */
+.bench-noncalled{
+ display:grid!important;
+ grid-template-rows:26px minmax(0,auto) auto!important;
+ max-height:38%!important;
+ min-height:78px!important;
+ overflow:hidden!important;
+ margin-top:5px!important;padding-top:5px!important;
+ border-top:1px solid rgba(79,128,156,.16)!important;
+}
+.bench-noncalled .noncalled-list{
+ min-height:0!important;
+ max-height:110px!important;
+ overflow-y:auto!important;
+ overflow-x:hidden!important;
+ display:grid!important;
+ gap:2px!important;
+}
+.bench-noncalled .noncalled-row{
+ min-height:27px!important;height:27px!important;
+ grid-template-columns:27px minmax(0,1fr) 21px minmax(68px,92px)!important;
+ padding:2px 4px!important;gap:4px!important;border-radius:8px!important;
+}
+.bench-noncalled .workspace-head{min-height:24px!important;height:24px!important;padding:0 2px 3px!important}
+.bench-noncalled .workspace-head h3{font-size:10px!important}
+.bench-noncalled .ghost.tiny{height:24px!important;min-height:24px!important;margin-top:3px!important}
