@@ -459,3 +459,45 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
   .matchHeaderScore .matchScoreboard.compact .scoreCore span{font-size:18px}
   .lineupBenchCard .sectionHead,.lineupSquadCard .sectionHead{margin-bottom:6px}
 }
+
+@media(min-width:861px){
+  .homePage,.rosterPage,.matchesPage,.statsPage{
+    height:calc(100dvh - 72px - 46px);
+    min-height:620px;
+    overflow:hidden;
+  }
+
+  .homePage{
+    grid-template-rows:auto minmax(0,1.08fr) minmax(0,.92fr) minmax(110px,.42fr);
+  }
+  .homePage .heroMatches,
+  .homePage .dashboardGrid,
+  .homePage .upcomingCard{min-height:0}
+  .homePage .matchHero{height:100%;min-height:0}
+  .homePage .dashboardGrid{align-items:stretch}
+  .homePage .contentCard{height:100%;min-height:0;display:flex;flex-direction:column}
+  .homePage .contentCard .rankingList,
+  .homePage .contentCard .listStack{min-height:0;overflow:auto;padding-right:3px}
+  .homePage .upcomingScroller{min-height:0;overflow-x:auto;overflow-y:hidden}
+  .homePage .upcomingItem{min-height:82px}
+
+  .rosterPage{grid-template-rows:auto auto minmax(0,1fr)}
+  .rosterPage .rosterGrid{min-height:0;height:100%;align-items:stretch}
+  .rosterPage .rosterListCard,
+  .rosterPage .formationCard{height:100%;min-height:0}
+  .rosterPage .rosterListCard{display:flex;flex-direction:column}
+  .rosterPage .rosterColumns{flex:0 0 auto}
+  .rosterPage .rosterRows{min-height:0;overflow:auto;flex:1 1 auto}
+  .rosterPage .formationCard{position:static;display:flex;flex-direction:column}
+  .rosterPage .pitchPreview{flex:1 1 auto;min-height:0;aspect-ratio:auto}
+
+  .matchesPage{grid-template-rows:auto minmax(0,1fr)}
+  .matchesPage .matchCards{min-height:0;overflow:auto;padding-right:3px}
+
+  .statsPage{grid-template-rows:auto minmax(0,1fr) minmax(180px,.65fr)}
+  .statsPage .statsCards{min-height:0;align-items:stretch}
+  .statsPage .rankingCard{height:100%;min-height:0;display:flex;flex-direction:column}
+  .statsPage .rankingCard .rankingList{min-height:0;overflow:auto;padding-right:3px}
+  .statsPage .goalChart{min-height:0;height:100%;display:flex;flex-direction:column}
+  .statsPage .goalBands{min-height:0;flex:1 1 auto;height:auto}
+}
