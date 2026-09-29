@@ -356,4 +356,78 @@
   }
   function renderEvents() {
     const matchId=$("#eventsMatchFilter").value;
-    const list=events.filter(e=>
+    const list=events.filter(e=>!matchId||e.match_id===matchId).sort((a,b)=>{
+      const ma=matches.find(m=>m.id===a.match_id), mb=matches.find(m=>m.id===b.match_id);
+      return new Date(mb?.kickoff_at||0)-new Date(ma?.kickoff_at||0) || (a.minute??0)-(b.minute??0);
+    });
+    $("#eventsTimeline").innerHTML=list.map(e=>{
+      const m=matches.find(x=>x.id===e.match_id), o=opponentById(m?.opponent_id);
+      return `<div class="timeline-event"><time>${e.minute??"?"}'</time><span class="event-dot ${esc(e.event_type)}"></span><div><b>${esc(eventLabel(e.event_type))}</b><span>${esc(playerName(e.player_id)||(e.team_side==="opponent"?o?.name||"Avversario":"Caselle"))}</span><small>${esc(m?matchLabel(m):"")}</small></div></div>`;
+    }).join("")||'<div class="empty-state">Nessun evento</div>';
+  }
+
+  async function createEvent(e) {
+    e.preventDefault();
+    $("#eventCreateError").classList.add("hidden");
+    try {
+      if (!sessionUser()) throw new Error("Accedi per aggiungere eventi.");
+      const payload={
+        match_id:$("#eventMatchId").value,event_type:$("#eventType").value,
+        minute:$("#eventMinute").value===""?null:+$("#eventMinute").value,
+        player_id:$("#eventPlayer").value||null,secondary_player_id:$("#eventSecondary").value||null,
+        team_side:$("#eventSide").value,proposed_by:sessionUser().id,
+        validation_status:"official",officialized_by:sessionUser().id,officialized_at:new Date().toISOString(),payload:{}
+      };
+      const r=await db.from("app_match_events").insert(payload).select("*").single();
+      TM.assertSaved(r,"Evento");
+      $("#eventCreateForm").reset();
+      await loadEvents();
+    } catch(err) {
+      $("#eventCreateError").textContent=err.message||String(err);
+      $("#eventCreateError").classList.remove("hidden");
+    }
+  }
+
+  async function loadStats() {
+    await loadCore();
+    const fixtures=await ownFixtures();
+    const finished=fixtures.filter(x=>x.status==="finished");
+    let wins=0,draws=0,losses=0,gf=0,ga=0;
+    finished.forEach(x=>{
+      const home=TM.isOwnTeamName(x.home_team), ours=home?+x.home_score:+x.away_score, theirs=home?+x.away_score:+x.home_score;
+      gf+=ours;ga+=theirs;if(ours>theirs)wins++;else if(ours===theirs)draws++;else losses++;
+    });
+    $("#statsMetricGrid").innerHTML=[["Partite",finished.length],["Vittorie",wins],["Pareggi",draws],["Sconfitte",losses],["Gol fatti",gf],["Gol subiti",ga]]
+      .map(x=>`<article class="metric-card"><strong>${x[1]}</strong><span>${x[0]}</span></article>`).join("");
+
+    const scorer=new Map(), yellow=new Map(), red=new Map();
+    events.forEach(e=>{
+      if(e.player_id&&e.team_side==="team"&&e.event_type==="goal")scorer.set(e.player_id,(scorer.get(e.player_id)||0)+1);
+      if(e.player_id&&e.event_type==="yellow_card")yellow.set(e.player_id,(yellow.get(e.player_id)||0)+1);
+      if(e.player_id&&e.event_type==="red_card")red.set(e.player_id,(red.get(e.player_id)||0)+1);
+    });
+    $("#statsScorers").innerHTML=[...scorer].sort((a,b)=>b[1]-a[1]).slice(0,10)
+      .map(([id,n],i)=>`<div class="rank-row"><span>${i+1}</span><b>${esc(playerName(id))}</b><strong>${n}</strong></div>`).join("")||'<div class="empty-state">Nessun gol registrato</div>';
+    const discIds=new Set([...yellow.keys(),...red.keys()]);
+    $("#statsDiscipline").innerHTML=[...discIds].map(id=>`<div class="rank-row"><b>${esc(playerName(id))}</b><span class="yellow-pill">${yellow.get(id)||0} G</span><span class="red-pill">${red.get(id)||0} R</span></div>`).join("")||'<div class="empty-state">Nessun cartellino registrato</div>';
+    $("#statsResults").innerHTML=`<div class="results-bars">${finished.map(f=>{
+      const opp=TM.teamVisual(TM.isOwnTeamName(f.home_team)?f.away_team:f.home_team);
+      const home=TM.isOwnTeamName(f.home_team), ours=home?+f.home_score:+f.away_score, theirs=home?+f.away_score:+f.home_score;
+      return `<div><span>${esc(opp.short)}</span><b style="--value:${Math.max(8,Math.min(100,(ours+theirs)*12+20))}%"></b><strong>${ours}-${theirs}</strong></div>`;
+    }).join("")}</div>`;
+  }
+
+  async function init() {
+    injectViews();
+    await TM.loadAll();
+    await TM.loadCompetitions();
+    await TM.ensureMainTeam();
+    showView("home");
+  }
+
+  init().catch(err=>{
+    console.error("PRODUCT UI",err);
+    const box=$("#connectionState");
+    if(box){box.textContent="Errore UI: "+(err.message||String(err));box.className="status-pill error";}
+  });
+})();
