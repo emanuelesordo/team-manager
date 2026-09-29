@@ -12,6 +12,14 @@ Webapp **one-team based** per livescore e trasformazione degli eventi di gara in
 - Supabase esistente viene mantenuto come scheletro dati.
 - Lo sviluppo procede una sezione alla volta; questo README viene aggiornato insieme al codice.
 
+## Regole UI / UX
+
+- Navigazione principale orizzontale in alto; niente sidebar.
+- Header di pagina, breadcrumb, eyebrow, titoli e descrizioni vanno eliminati quando il contesto è già evidente.
+- Titoli indispensabili devono essere brevi e poco invasivi.
+- Privilegiare spazio utile, dati e azioni rispetto a elementi introduttivi o decorativi.
+- La stessa regola vale per tutti i moduli desktop e mobile.
+
 ## Roadmap funzionale
 
 1. Configurazione / Stagioni — in sviluppo
