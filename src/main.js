@@ -63,44 +63,31 @@ function toast(message,type='ok'){
   const el=document.createElement('div');el.className=`toast ${type}`;el.textContent=message;toastRoot.appendChild(el);
   requestAnimationFrame(()=>el.classList.add('show'));setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),220)},2500);
 }
-function title(){return ({home:'Dashboard / Home',calendar:'Calendario partite',live:'Partite',roster:'Rosa squadra',stats:'Statistiche',profile:'Profilo',admin:'Amministrazione'})[state.view]||'Team Manager';}
-function subtitle(){return ({home:'Panoramica rapida della squadra e delle prossime partite',calendar:'Tutte le partite della stagione',live:'Gestione operativa delle partite',roster:'Gestione completa della rosa',stats:'Statistiche, report e andamento stagionale',profile:'Account e preferenze',admin:'Configurazione e gestione del club'})[state.view]||'';}
-function nav(){return [['home','Home'],['calendar','Calendario'],['roster','Rosa squadra'],['live','Partite'],['stats','Statistiche']];}
+function title(){return ({home:'Home',calendar:'Calendario',live:'Partite',roster:'Rosa',stats:'Statistiche',profile:'Profilo',admin:'Amministrazione'})[state.view]||'Team Manager';}
+function subtitle(){return ({home:'Panoramica della squadra',calendar:'Partite, competizioni e risultati',live:'Gestione operativa delle partite',roster:'Giocatori, ruoli e dettagli',stats:'Rendimento della squadra e dei giocatori',profile:'Gestione account e preferenze',admin:'Configurazione del club'})[state.view]||'';}
+function nav(){return [['home','Home'],['calendar','Calendario'],['roster','Rosa'],['live','Partite'],['stats','Statistiche']];}
 function teamMark(name,url,extra=''){return `<span class="club-mark ${extra}">${url?`<img src="${esc(url)}" alt="">`:`<b>${esc(initials(name,''))}</b>`}</span>`;}
-function matchStrip(){
- const matches=[...state.matches].sort((a,b)=>new Date(a.kickoff_at||0)-new Date(b.kickoff_at||0));
- const m=matches.find(x=>x.status==='live')||matches.find(x=>x.status==='scheduled')||[...matches].reverse().find(x=>x.status==='finished');
- if(!m)return '';
- const o=opponent(m.opponent_id),home=m.home_away==='home',ownLogo=state.settings.team_logo_url||'',oppLogo=o?.logo_url||'',dt=m.kickoff_at?new Date(m.kickoff_at):null;
- const day=dt?String(dt.getDate()).padStart(2,'0'):'—',mon=dt?new Intl.DateTimeFormat('it-IT',{month:'short'}).format(dt).replace('.','').toUpperCase():'';
- const left=home?'Calcio Caselle':o?.name||'Avversario',right=home?o?.name||'Avversario':'Calcio Caselle';
- const leftLogo=home?ownLogo:oppLogo,rightLogo=home?oppLogo:ownLogo;
- return `<section class="global-match-strip" data-match="${m.id}">
-   <div class="strip-date"><strong>${day}</strong><span>${mon}</span></div>
-   <div class="strip-main"><div class="strip-title"><strong>${esc(left)} – ${esc(right)}</strong><span class="status ${m.status}">${esc(labels[m.status]||m.status)}</span></div><small>${esc(competition(m.competition_id)?.name||'Partita')}${m.round_label?' · '+esc(m.round_label):''}${m.kickoff_at?' · '+fmt(m.kickoff_at):''}${m.venue?' · '+esc(m.venue):''}</small></div>
-   <div class="strip-score">${teamMark(left,leftLogo,'tiny')}<span><b>${m.status==='scheduled'?'–':num(m.home_score)}</b><i>:</i><b>${m.status==='scheduled'?'–':num(m.away_score)}</b></span>${teamMark(right,rightLogo,'tiny')}</div>
-   <button type="button" class="strip-action" data-match="${m.id}">⋮ <span>Azioni</span></button>
- </section>`;
-}
 function shell(content){
  const items=nav(),logo=state.settings.team_logo_url?'<img src="'+esc(state.settings.team_logo_url)+'" alt="Calcio Caselle">':'CC';
  const roleName=esc(labels[state.role]||'Ospite');
- const showStrip=!['profile'].includes(state.view);
  app.innerHTML=`<div class="app-shell view-${state.view}">
-  <aside class="sidebar">
-   <div class="brand"><div class="brand-mark">${logo}</div><div><strong>TEAM MANAGER</strong><span>Calcio Caselle</span></div></div>
-   <nav class="side-nav">${items.map(([id,l])=>`<button data-view="${id}" class="${state.view===id?'active':''}"><span class="nav-glyph">${icons[id]}</span><span>${l}</span></button>`).join('')}
-    ${isStaff()?'<button data-view="admin" class="'+(state.view==='admin'?'active':'')+'"><span class="nav-glyph">'+icons.admin+'</span><span>Amministrazione</span></button>':''}
-   </nav>
-   <button class="side-settings" data-view="${isStaff()?'admin':'profile'}"><span class="nav-glyph">${icons.admin}</span><span>Impostazioni</span></button>
-  </aside>
-  <main class="main">
-   <header class="topbar"><div class="page-heading"><h1>${title()}</h1><p>${subtitle()}</p></div><button class="profile-trigger" data-view="profile"><span class="avatar avatar-small">${state.session?'ME':'TM'}</span><span class="profile-copy"><strong>${roleName}</strong><small>${esc(season()?.name||'Stagione')}</small></span></button></header>
-   ${showStrip?matchStrip():''}
-   <section class="content">${content}</section>
-  </main>
-  <nav class="bottom-nav">${items.map(([id,l])=>`<button data-view="${id}" class="${state.view===id?'active':''}"><span class="nav-icon">${icons[id]}</span><span>${l}</span></button>`).join('')}<button data-view="profile" class="${state.view==='profile'?'active':''}"><span class="nav-icon">${icons.profile}</span><span>Altro</span></button></nav>
-  ${state.playerEditorOpen?playerEditor():''}
+   <aside class="sidebar">
+     <div class="brand"><div class="brand-mark">${logo}</div><div><strong>TEAM MANAGER</strong><span>CALCIO CASELLE</span></div></div>
+     <nav class="side-nav">${items.map(([id,l])=>`<button data-view="${id}" class="${state.view===id?'active':''}"><span class="nav-glyph">${icons[id]}</span><span>${l}</span></button>`).join('')}
+       ${isStaff()?'<button data-view="admin" class="'+(state.view==='admin'?'active':'')+'"><span class="nav-glyph">'+icons.admin+'</span><span>Amministrazione</span></button>':''}
+     </nav>
+     <button class="side-settings" data-view="${isStaff()?'admin':'profile'}"><span class="nav-glyph">${icons.admin}</span><span>Impostazioni</span></button>
+   </aside>
+   <main class="main">
+     <header class="topbar">
+       <div class="mobile-greeting"><button class="avatar avatar-small" data-view="profile">${state.session?'ME':'TM'}</button><div><small>Buongiorno</small><strong>${roleName}</strong></div></div>
+       <div class="page-heading"><h1>${title()}</h1><p>${subtitle()}</p></div>
+       <div class="topbar-tools"><label class="desktop-search"><span>⌕</span><input type="search" placeholder="Cerca…"></label><button class="top-icon" type="button" aria-label="Notifiche">♢</button><button class="profile-trigger" data-view="profile"><span class="avatar avatar-small">${state.session?'ME':'TM'}</span><span class="profile-copy"><strong>${roleName}</strong><small>${esc(season()?.name||'Stagione')}</small></span></button></div>
+     </header>
+     <section class="content">${content}</section>
+   </main>
+   <nav class="bottom-nav">${items.map(([id,l])=>`<button data-view="${id}" class="${state.view===id?'active':''}"><span class="nav-icon">${icons[id]}</span><span>${l}</span></button>`).join('')}<button data-view="profile" class="${state.view==='profile'?'active':''}"><span class="nav-icon">${icons.profile}</span><span>Altro</span></button></nav>
+   ${state.playerEditorOpen?playerEditor():''}
  </div>`;
 }
 function kpi(label,value,sub='',icon=''){return `<article class="metric">${icon?`<span class="metric-icon">${icon}</span>`:''}<div><span>${label}</span><strong>${value}</strong><small>${sub}</small></div></article>`;}
@@ -109,21 +96,37 @@ function kpi(label,value,sub='',icon=''){return `<article class="metric">${icon?
 function homeView(){
  const matches=[...state.matches].sort((a,b)=>new Date(a.kickoff_at||0)-new Date(b.kickoff_at||0));
  const next=matches.find(m=>m.status==='live')||matches.find(m=>m.status==='scheduled');
+ const live=matches.find(m=>m.status==='live');
  const finished=matches.filter(m=>m.status==='finished').sort((a,b)=>new Date(b.kickoff_at||0)-new Date(a.kickoff_at||0));
- const last=finished[0],ownLogo=state.settings.team_logo_url||'';
+ const ownLogo=state.settings.team_logo_url||'';
  const record=finished.reduce((r,m)=>{const home=m.home_away==='home',gf=home?num(m.home_score):num(m.away_score),ga=home?num(m.away_score):num(m.home_score);if(gf>ga)r.w++;else if(gf===ga)r.d++;else r.l++;return r},{w:0,d:0,l:0});
  const goals=state.stats.reduce((a,s)=>a+num(s.goals),0),against=finished.reduce((a,m)=>a+(m.home_away==='home'?num(m.away_score):num(m.home_score)),0);
  const top=[...state.stats].sort((a,b)=>num(b.goals)-num(a.goals)).slice(0,5);
- const matchBox=(m,label)=>{if(!m)return '<div class="empty-card">Nessuna partita.</div>';const o=opponent(m.opponent_id),home=m.home_away==='home';return `<button class="home-match-card" data-match="${m.id}"><div class="panel-head"><h3>${label}</h3><span>${fmt(m.kickoff_at)}</span></div><div class="home-versus"><div>${teamMark('Calcio Caselle',ownLogo)}<strong>Calcio Caselle</strong></div><b>${m.status==='scheduled'?'VS':num(m.home_score)+' - '+num(m.away_score)}</b><div>${teamMark(o?.name||'Avversario',o?.logo_url||'')}<strong>${esc(o?.name||'Avversario')}</strong></div></div><span class="status ${m.status}">${esc(labels[m.status]||m.status)}</span></button>`};
- return `<div class="dashboard-kpis">
-   ${kpi('Prossima partita',next?new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'short'}).format(new Date(next.kickoff_at)):'—','calendario',icons.calendar)}
+ const hero=next||finished[0];
+ const heroOpponent=hero?opponent(hero.opponent_id):null,heroHome=hero?.home_away==='home';
+ const heroTeamScore=hero?num(heroHome?hero.home_score:hero.away_score):0,heroOppScore=hero?num(heroHome?hero.away_score:hero.home_score):0;
+ return `<section class="home-hero glass-card" ${hero?`data-match="${hero.id}"`:''}>
+   <div class="home-hero-visual">
+     <div class="home-hero-shine"></div>
+     <div class="home-hero-top"><span>${hero?.status==='live'?'● LIVE':esc(competition(hero?.competition_id)?.name||'PROSSIMA PARTITA')}</span><small>${hero?fmt(hero.kickoff_at):'Da programmare'}</small></div>
+     <div class="home-hero-versus">
+       <div>${teamMark('Calcio Caselle',ownLogo,'hero')}<strong>Calcio Caselle</strong></div>
+       <span class="hero-score">${hero?.status==='live'||hero?.status==='finished'?heroTeamScore+' : '+heroOppScore:'VS'}</span>
+       <div>${teamMark(heroOpponent?.name||'Avversario',heroOpponent?.logo_url||'','hero')}<strong>${esc(heroOpponent?.name||'Avversario')}</strong></div>
+     </div>
+     <div class="home-hero-bottom"><span>${heroHome?'Casa':'Trasferta'}</span><b>${esc(hero?.venue||season()?.name||'Stagione')}</b></div>
+   </div>
+ </section>
+ <div class="home-quick-grid mobile-only"><button data-view="roster"><span>${icons.roster}</span><b>Rosa</b></button><button data-view="calendar"><span>${icons.calendar}</span><b>Calendario</b></button><button data-view="stats"><span>${icons.stats}</span><b>Statistiche</b></button><button data-view="profile"><span>•••</span><b>Altro</b></button></div>
+ <div class="dashboard-kpis desktop-only">
+   ${kpi('Partite',finished.length,'stagione',icons.calendar)}
    ${kpi('Vittorie',record.w,finished.length?Math.round(record.w/finished.length*100)+'%':'stagione',icons.live)}
    ${kpi('Gol fatti',goals,'media '+(finished.length?(goals/finished.length).toFixed(1):'0'),icons.stats)}
    ${kpi('Gol subiti',against,'media '+(finished.length?(against/finished.length).toFixed(1):'0'),icons.live)}
  </div>
- <div class="home-match-grid">${matchBox(last,'Ultima partita')}${matchBox(next,'Prossima partita')}</div>
+ ${live&&hero?.id!==live.id?`<section class="mobile-live-section mobile-only"><div class="mobile-section-head"><h3>Live ora</h3><button data-match="${live.id}">Vedi</button></div><button class="live-match-card glass-card" data-match="${live.id}"><div>${teamMark('Calcio Caselle',ownLogo)}<strong>Calcio Caselle</strong></div><span><small>● Live</small><b>${num(live.home_score)} : ${num(live.away_score)}</b></span><div>${teamMark(opponent(live.opponent_id)?.name||'Avversario',opponent(live.opponent_id)?.logo_url||'')}<strong>${esc(opponent(live.opponent_id)?.name||'Avversario')}</strong></div></button></section>`:''}
  <div class="home-lower-grid">
-  <section class="ui-panel"><div class="panel-head"><h3>Ultimi risultati</h3><button class="text-btn" data-view="calendar">Vedi tutti</button></div><div class="compact-results">${finished.slice(0,6).map(m=>{const o=opponent(m.opponent_id),home=m.home_away==='home';return `<button data-match="${m.id}"><span>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'short'}).format(new Date(m.kickoff_at)):'—'}</span><strong>${esc(home?'Calcio Caselle':o?.name||'Avversario')}</strong><b>${num(m.home_score)} - ${num(m.away_score)}</b><strong>${esc(home?o?.name||'Avversario':'Calcio Caselle')}</strong></button>`}).join('')||'<div class="empty-card">Nessun risultato.</div>'}</div></section>
+  <section class="ui-panel"><div class="panel-head"><h3>Ultime partite</h3><button class="text-btn" data-view="calendar">Vedi tutte</button></div><div class="compact-results">${finished.slice(0,6).map(m=>{const o=opponent(m.opponent_id),home=m.home_away==='home';return `<button data-match="${m.id}"><span>${m.kickoff_at?new Intl.DateTimeFormat('it-IT',{day:'2-digit',month:'short'}).format(new Date(m.kickoff_at)):'—'}</span><strong>${esc(home?'Calcio Caselle':o?.name||'Avversario')}</strong><b>${num(m.home_score)} - ${num(m.away_score)}</b><strong>${esc(home?o?.name||'Avversario':'Calcio Caselle')}</strong></button>`}).join('')||'<div class="empty-card">Nessun risultato.</div>'}</div></section>
   <section class="ui-panel"><div class="panel-head"><h3>Top marcatori</h3><button class="text-btn" data-view="stats">Statistiche</button></div><div class="compact-ranking">${top.map((x,i)=>`<button data-player="${x.player_id}"><span class="rank-dot">${i+1}</span><span class="grow"><strong>${esc(x.last_name)} ${esc(x.first_name)}</strong><small>${labels[x.position_group]||'Giocatore'}</small></span><b>${num(x.goals)}</b></button>`).join('')||'<div class="empty-card">Nessun dato.</div>'}</div></section>
  </div>`;
 }
