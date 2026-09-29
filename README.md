@@ -1,154 +1,169 @@
 # Team Manager
 
-Webapp **one-team based** per livescore e trasformazione degli eventi di gara in statistiche.
+Webapp **one-team based** per gestione sportiva, calendario, formazione, eventi partita e statistiche derivate.
 
-## Principi architetturali
+## Design system
 
-- Una sola squadra principale è gestita in dettaglio.
-- Le avversarie sono anagrafiche globali riutilizzabili tra stagioni e competizioni.
-- La stagione è il contenitore principale: `Stagione → Competizioni → Calendario/Partite → Eventi → Statistiche`.
-- La stagione mostrata di default è quella in cui ricade la data corrente; le altre restano consultabili dal selettore.
-- Le statistiche derivabili non vanno duplicate nel database.
+Il riferimento visuale corrente è il mockup “Gestione Squadra” fornito nel progetto. La UI applica in modo coerente:
+- palette chiara azzurro/bianco;
+- card leggere e rounded;
+- navigazione compatta;
+- controlli coerenti tra i moduli;
+- alta densità informativa su desktop e adattamento responsive.
 
-## Regole UI / UX
+La navigazione principale è:
+**Home · Competizioni · Calendario · Rosa · Partite · Eventi · Statistiche · Amministrazione**.
 
-- Navigazione principale orizzontale in alto.
-- Setup raccolto in un'area dedicata con sotto-sezioni compatte.
-- Header, titoli e descrizioni ridondanti vanno evitati.
-- Privilegiare dati e azioni rispetto a elementi introduttivi.
+## Architettura
 
-## Setup
+L'app resta basata su una sola squadra principale. La gerarchia logica è:
 
-Sezioni previste: **Squadra · Stagioni · Competizioni · Avversarie · Calendari**.
+`Stagione → Competizioni → Fixture/Partite → Convocazioni/Eventi → Statistiche`
 
-### Squadra
+Fonti dati principali:
+- `teams`: squadra principale e branding;
+- `app_seasons`: stagioni;
+- `app_competitions`: competizioni e regole;
+- `app_opponents`: avversarie, logo e palette;
+- `app_competition_opponents`: relazione competizioni/avversarie;
+- `app_competition_fixtures`: calendario ufficiale completo;
+- `app_competition_standings`: classifica derivata;
+- `app_matches`: partite operative del Caselle;
+- `players`: anagrafica giocatori;
+- `app_match_players`: convocazioni, titolarità e minuti;
+- `app_match_events`: gol, cartellini, sostituzioni e altri eventi;
+- `app_match_ratings`: valutazioni;
+- `app_match_tactical_changes`: cambi tattici.
 
-Dati globali e modificabili:
-- nome;
-- sigla di 3 lettere;
-- logo;
-- 3 colori sociali.
+Le statistiche derivabili non vengono duplicate nel database.
 
-Il caricamento del logo usa il bucket Supabase `team-assets`. I tre colori vengono proposti automaticamente dall'immagine tramite campionamento client-side, ma restano sempre modificabili.
+## Moduli
 
-### Stagioni
+### Home
 
-Tabella: `public.app_seasons`.
+Dashboard sintetica con:
+- prossima partita;
+- ultima partita;
+- partite giocate;
+- vittorie, pareggi e sconfitte;
+- gol fatti e subiti;
+- prossime partite;
+- prime posizioni della classifica.
 
-Campi usati:
-- `id`, `team_id`, `name`;
-- `start_date`, `end_date`;
-- `status`.
-
-Il wizard di creazione segue:
-`Annata → Competizioni → Avversarie → Calendario/import → Riepilogo`.
+Tutti i valori sono calcolati dai dati reali della stagione.
 
 ### Competizioni
 
-Tabella: `public.app_competitions`.
+Sezione di consultazione:
+- selettore competizione;
+- classifica in card fissa a sinistra;
+- calendario completo compatto a destra;
+- giornate mostrate contemporaneamente quando lo spazio desktop lo consente;
+- sigla/logo delle squadre;
+- toggle `Tutte / Caselle`;
+- click sul punteggio per modifica fixture.
 
-Tipi supportati:
-- `league` = Campionato;
-- `cup` = Coppa;
-- `friendly` = Amichevoli.
+### Calendario
 
-Configurazione salvata:
-- formula;
-- numero tempi e minuti per tempo;
-- punti vittoria/pareggio/sconfitta;
-- eventuali playoff/playout;
-- gara secca o A/R;
-- supplementari;
-- rigori;
-- regole progressive di diffida.
+Mostra esclusivamente le partite del Caselle, in ordine cronologico, attraversando tutte le competizioni selezionate.
 
-Formule iniziali:
-- Campionato: girone unico A/R, solo andata, girone + playoff/playout;
-- Coppa: girone + eliminazione, eliminazione diretta, solo girone;
-- Amichevoli: partite singole, con possibilità futura di override regole sulla singola partita.
+`app_competition_fixtures` resta la fonte di verità per calendario e risultati ufficiali.
+`app_matches` è l'entità operativa della squadra e viene collegata solo quando competizione, kickoff e avversaria coincidono in modo univoco.
 
-### Avversarie
+### Rosa
 
-Tabella globale: `public.app_opponents`.
+Vista ispirata al mockup:
+- tabella giocatori;
+- ricerca;
+- ruolo;
+- età;
+- presenze;
+- gol;
+- dettaglio laterale;
+- informazioni anagrafiche disponibili;
+- cartellini derivati dagli eventi.
 
-La relazione N:N tra competizione e avversarie è salvata in:
-`public.app_competition_opponents`.
+### Partite
 
-La stessa avversaria può quindi partecipare a più competizioni e più stagioni senza duplicazioni.
+Workspace operativo per la singola gara:
+- elenco partite;
+- convocati;
+- titolari/panchina;
+- modulo;
+- eventi già registrati;
+- salvataggio su `app_match_players` e `app_matches.formation`.
 
-Ogni avversaria può inoltre avere:
-- logo in `opponent-assets`;
-- `primary_color`, `secondary_color`, `accent_color`;
-- proposta automatica della palette dal logo, sempre modificabile manualmente.
+La formazione grafica su campo resta un raffinamento successivo; la prima versione operativa usa la struttura dati reale già esistente.
 
-Gli asset sono salvati sotto la cartella della squadra principale, coerentemente con le policy Storage `opponents.manage`.
+### Eventi
 
-### Calendari
+Cronologia degli eventi della stagione con filtro per partita.
 
-Tabella esistente: `public.app_competition_fixtures`.
+Inserimento autenticato di:
+- gol;
+- sostituzioni;
+- cartellini gialli;
+- cartellini rossi;
+- autogol.
 
-Il Setup prevede:
-- inserimento/modifica manuale;
-- import CSV;
-- import PDF con fase di interpretazione e conferma prima del salvataggio.
+I nuovi eventi vengono salvati in `app_match_events`.
 
-## Supabase
+### Statistiche
 
-Progetto: `team-manager` (`qxblxomcpepwavgvhtuk`).
+Sono mostrate **solo statistiche realmente derivabili dai dati presenti**:
+- partite;
+- W/D/L;
+- gol fatti/subiti;
+- marcatori;
+- disciplina;
+- risultati partita per partita.
 
-Il frontend usa solo la publishable key. Le scritture di Setup restano protette dalle policy staff già esistenti; non vengono aperte scritture anonime.
+Le statistiche puramente illustrative del mockup, come possesso palla, tiri, passaggi riusciti o altri valori non presenti nel DB, vengono ignorate e non inventate.
 
-### Estensioni schema introdotte
+### Amministrazione
 
-`app_competitions` è stato esteso con configurazione di formula, durata gara, punteggi, playoff/playout, A/R, supplementari, rigori e regole disciplina.
+Mantiene il Setup:
+**Stagioni · Squadra · Competizioni · Avversarie · Calendari**.
 
-Creata `app_competition_opponents` con RLS:
-- lettura pubblica coerente con le anagrafiche già esposte;
-- scrittura solo utenti autenticati che soddisfano `private.is_staff()`.
+Squadra e avversarie supportano logo e palette. Gli asset della squadra usano `team-assets`; quelli delle avversarie `opponent-assets`.
 
-### Autenticazione
+## Autenticazione
 
-L'header integra login/logout usando il modello utenti già esistente: `profiles.username` + `auth_aliases` + Edge Function `auth-login`. L'utente inserisce username e password; la funzione risolve l'alias interno e restituisce la sessione Supabase. Dopo il login viene letto `app_user_roles` per mostrare lo stato `Admin` quando applicabile.
+Il modello utenti esistente non viene modificato:
 
-### Persistenza Setup
+`profiles.username → auth_aliases → Edge Function auth-login → sessione Supabase`
 
-Le modifiche di Squadra, Avversarie e Competizioni verificano ora esplicitamente che Supabase restituisca la riga modificata. Un'operazione bloccata da RLS/sessione non viene più mostrata come salvata. L'header mostra inoltre lo stato della sessione (`Admin / Autenticato / Non autenticato`).
+L'accesso usa username e password. Le scritture restano protette dalle policy RLS esistenti.
 
-Le competizioni sono modificabili integralmente dal Setup, incluse formula, durata, punteggio, playoff/playout, A/R, supplementari, rigori, diffide e avversarie associate.
+## Coerenza fixture / partite
 
-## Modulo Competizioni operative
+`app_competition_fixtures` contiene il calendario ufficiale completo.
+`app_matches` contiene le partite operative del Caselle.
 
-La sezione Competizioni è solo consultazione:
-- selettore della competizione;
-- classifica in una card fissa a sinistra;
-- calendario completo in un unico contenitore a destra, con densità adattiva per mantenere contemporaneamente visibili tutte le giornate disponibili sul desktop;
-- ogni giornata è un blocco;
-- squadre mostrate con sigla e logo quando disponibili;
-- nessuna data o campo nel calendario compatto;
-- toggle Tutte/Caselle sopra il calendario;
-- click sul punteggio apre la modifica del fixture.
+Il frontend evita collegamenti permanenti basati solo sul nome: usa l'associazione quando competizione, kickoff e avversaria permettono un match univoco.
 
-## Modulo Calendario operativo
+## Frontend
 
-Il menu principale Calendario mostra esclusivamente le partite del Caselle, in ordine cronologico, attraversando tutte le competizioni della stagione. I filtri permettono di includere/escludere le competizioni.
+File principali:
+- `index.html`: struttura e bootstrap;
+- `main.js`: core, autenticazione, Supabase wrapper, Setup, Competizioni e Calendario;
+- `styles.css`: stile base;
+- `product-ui.js`: Home, Rosa, Partite, Eventi, Statistiche e routing unificato;
+- `product-ui.css`: design system ispirato al mockup.
 
-La lista usa i fixture come fonte di verità per data e risultato; `app_matches` viene associata solo quando coincide in modo univoco per competizione, kickoff e avversaria. Questo consente di aprire dal punteggio:
-- dettagli della partita;
-- modifica di data, campo, stato e risultato;
-- visualizzazione e modifica degli eventi già registrati in `app_match_events`.
-
-Quando una partita del Caselle viene modificata, fixture e `app_matches` collegate vengono sincronizzate. Codice gara e fonte non sono più esposti nell'interfaccia.
+Il bootstrap carica `main.js` e solo dopo `product-ui.js`, entrambi con `cache: "no-store"`.
 
 ## Roadmap
 
-1. Setup e creazione guidata — in sviluppo
-2. Competizioni operative — operativo
+1. Amministrazione / Setup — operativo
+2. Competizioni — operativo
 3. Calendario — operativo
-4. Giocatori
-5. Rosa
-6. Partite
-7. Livescore
-8. Eventi
-9. Statistiche
-10. Classifica
-11. Home / dashboard finale
+4. Home — prima versione operativa
+5. Rosa — prima versione operativa
+6. Partite / formazione — prima versione operativa
+7. Eventi — prima versione operativa
+8. Statistiche derivate — prima versione operativa
+9. Formazione grafica su campo — da rifinire
+10. Cambi tattici avanzati — da rifinire
+11. Livescore avanzato — da rifinire
+12. Import CSV/PDF calendario — da riprendere
