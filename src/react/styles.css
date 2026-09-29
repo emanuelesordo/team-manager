@@ -581,10 +581,10 @@ input:focus,select:focus,textarea:focus{border-color:rgba(255,229,0,.4);box-shad
   .scheduleViewSwitch button svg{width:12px}
   .scheduleColumns{display:none}
   .scheduleRows{overflow:visible;padding:0;gap:7px}
-  .scheduleRow{grid-template-columns:1fr auto;grid-template-areas:"meta status" "match match" "venue venue";gap:6px 10px;min-height:0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025)}
-  .scheduleDate{grid-area:meta;display:flex;align-items:baseline;gap:7px}
+  .scheduleRow{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"date status" "comp status" "match match" "venue venue";gap:5px 10px;min-height:0;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.025)}
+  .scheduleDate{grid-area:date;display:flex;align-items:baseline;gap:7px}
   .scheduleDate strong{font-size:8px}.scheduleDate small{font-size:7px}
-  .scheduleCompetition{grid-area:meta;justify-self:end;margin-right:76px}
+  .scheduleCompetition{grid-area:comp;justify-self:start;margin:0}
   .scheduleCompetition strong{font-size:7px}.scheduleCompetition small{display:none}
   .scheduleMatchup{grid-area:match;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)}
   .clubInline .teamMark{width:25px}
