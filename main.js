@@ -136,7 +136,7 @@ window.addEventListener("error",e=>{
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const fmt=d=>d?new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):"—";
 const statusLabel={active:"Attiva",future:"Futura",archived:"Archiviata"};
-let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null;
+let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,competitionHubId=null;
 
 async function loadAuthState(){
   const {data:{session}}=await db.auth.getSession();
@@ -191,6 +191,14 @@ $("#authForm").onsubmit=async e=>{
   await loadAuthState();
 };
 
+function setAppView(name){
+  $("#setupView").classList.toggle("hidden",name!=="setup");
+  $("#competitionsView").classList.toggle("hidden",name!=="competitions");
+  $$(".main-link[data-app-view]").forEach(b=>b.classList.toggle("active",b.dataset.appView===name));
+  if(name==="competitions") loadCompetitionHub();
+}
+$$(".main-link[data-app-view]").forEach(b=>b.onclick=()=>setAppView(b.dataset.appView));
+
 function setPanel(name){
   $$(".setup-link").forEach(b=>b.classList.toggle("active",b.dataset.section===name));
   $$("[data-panel]").forEach(p=>p.classList.toggle("hidden",p.dataset.panel!==name));
@@ -215,7 +223,7 @@ async function loadAll(){
 function renderSeasonSelector(){
   $("#seasonSelector").innerHTML=seasons.map(s=>`<option value="${s.id}" ${s.id===currentSeason?.id?"selected":""}>${esc(s.name)}</option>`).join("");
 }
-$("#seasonSelector").onchange=e=>{currentSeason=seasons.find(s=>s.id===e.target.value)||null;loadCompetitions();refreshCalendarCompetition()};
+$("#seasonSelector").onchange=e=>{currentSeason=seasons.find(s=>s.id===e.target.value)||null;loadCompetitions();refreshCalendarCompetition();if(!$("#competitionsView").classList.contains("hidden"))loadCompetitionHub()};
 function renderSeasons(){
   $("#seasonGrid").innerHTML=seasons.map(s=>`<article class="card ${s.id===currentSeason?.id?"active":""}">
     <div class="card-head"><div class="card-title">${esc(s.name)}</div><span class="badge ${s.status}">${statusLabel[s.status]||s.status}</span></div>
@@ -361,6 +369,94 @@ async function saveWizard(){
     $("#seasonWizard").close();await loadAll();await loadCompetitions();
   }catch(e){wErr(e.message||String(e))}
   finally{$("#wizardNext").disabled=false}
+}
+
+function compKindLabel(kind){return kind==="league"?"Campionato":kind==="cup"?"Coppa":"Amichevoli"}
+function compFormatLabel(format){
+  const all=[...competitionFormats("league"),...competitionFormats("cup"),...competitionFormats("friendly")];
+  return all.find(x=>x[0]===format)?.[1]||format||"—";
+}
+function localDateTime(v){
+  if(!v)return "—";
+  return new Intl.DateTimeFormat("it-IT",{weekday:"short",day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}).format(new Date(v));
+}
+function isOwnTeamName(name){
+  const n=String(name||"").toLowerCase().replace(/['’._-]/g," ").replace(/\s+/g," ").trim();
+  const t=String(team?.name||"calcio caselle").toLowerCase().replace(/['’._-]/g," ").replace(/\s+/g," ").trim();
+  return n.includes("calcio caselle")||t.includes(n)||n.includes(t);
+}
+async function ensureMainTeam(){
+  if(team||!currentSeason)return;
+  const r=await db.from("teams").select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color").eq("id",currentSeason.team_id).maybeSingle();
+  if(!r.error)team=r.data;
+}
+async function loadCompetitionHub(){
+  await loadCompetitions();
+  await ensureMainTeam();
+  const select=$("#competitionHubSelect");
+  select.innerHTML=competitions.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  if(!competitions.length){
+    $("#competitionSummary").innerHTML='<div class="muted">Nessuna competizione per questa stagione.</div>';
+    $("#competitionStandings").innerHTML="";$("#competitionFixtures").innerHTML="";
+    return;
+  }
+  competitionHubId=competitions.some(c=>c.id===competitionHubId)?competitionHubId:competitions[0].id;
+  select.value=competitionHubId;
+  await renderCompetitionHub();
+}
+$("#competitionHubSelect").onchange=async e=>{competitionHubId=e.target.value;await renderCompetitionHub()};
+$$("[data-comp-tab]").forEach(b=>b.onclick=()=>{
+  $$("[data-comp-tab]").forEach(x=>x.classList.toggle("active",x===b));
+  $("#competitionStandings").classList.toggle("hidden",b.dataset.compTab!=="standings");
+  $("#competitionFixtures").classList.toggle("hidden",b.dataset.compTab!=="fixtures");
+});
+async function renderCompetitionHub(){
+  const c=competitions.find(x=>x.id===competitionHubId);if(!c)return;
+  const thresholds=c.discipline_rules?.yellow_thresholds?.join(" → ")||"—";
+  $("#competitionSummary").innerHTML=`
+    <div class="competition-name">${esc(c.name)}</div>
+    <div class="rule-chips">
+      <span>${compKindLabel(c.kind)}</span>
+      <span>${esc(compFormatLabel(c.format))}</span>
+      <span>${c.periods}×${c.minutes_per_period}'</span>
+      ${c.kind==="league"?`<span>${c.win_points}/${c.draw_points}/${c.loss_points} pt</span>`:""}
+      ${c.playoff_playout_enabled?'<span>Playoff/playout</span>':""}
+      ${c.knockout_two_legged?'<span>A/R</span>':""}
+      ${c.extra_time_enabled?'<span>Supplementari</span>':""}
+      ${c.penalties_enabled?'<span>Rigori</span>':""}
+      <span>Diffide ${esc(thresholds)}</span>
+    </div>`;
+
+  const [st,fx]=await Promise.all([
+    db.from("app_competition_standings").select("*").eq("season_id",currentSeason.id).eq("competition_id",c.id),
+    db.from("app_competition_fixtures").select("*").eq("season_id",currentSeason.id).eq("competition_id",c.id).order("kickoff_at",{ascending:true})
+  ]);
+  if(st.error)$("#competitionStandings").innerHTML='<div class="form-error">Classifica non disponibile.</div>';
+  else renderStandings(st.data||[]);
+  if(fx.error)$("#competitionFixtures").innerHTML='<div class="form-error">Calendario non disponibile.</div>';
+  else renderFixtures(fx.data||[]);
+}
+function renderStandings(rows){
+  const sorted=[...rows].sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference||b.goals_for-a.goals_for||String(a.team).localeCompare(String(b.team),"it"));
+  $("#competitionStandings").innerHTML=sorted.length?`<div class="standings-wrap"><table class="standings-table">
+    <thead><tr><th>#</th><th>Squadra</th><th>G</th><th>V</th><th>N</th><th>P</th><th>GF</th><th>GS</th><th>DR</th><th>Pt</th></tr></thead>
+    <tbody>${sorted.map((r,i)=>`<tr class="${isOwnTeamName(r.team)?"own-team":""}"><td>${i+1}</td><td>${esc(r.team)}</td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td>${r.goals_for}</td><td>${r.goals_against}</td><td>${r.goal_difference>0?"+":""}${r.goal_difference}</td><td><strong>${r.points}</strong></td></tr>`).join("")}</tbody>
+  </table></div>`:'<div class="muted">Classifica non ancora disponibile.</div>';
+}
+function renderFixtures(rows){
+  const grouped=new Map();
+  rows.forEach(r=>{if(!grouped.has(r.round_no))grouped.set(r.round_no,[]);grouped.get(r.round_no).push(r)});
+  $("#competitionFixtures").innerHTML=[...grouped.entries()].map(([round,list])=>`
+    <section class="round-block">
+      <div class="round-label">Giornata ${round}</div>
+      <div class="fixture-list">
+        ${list.map(r=>`<div class="fixture-row ${isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)?"own-fixture":""}">
+          <div class="fixture-time">${localDateTime(r.kickoff_at)}</div>
+          <div class="fixture-teams"><span>${esc(r.home_team)}</span><strong>${r.status==="finished"?esc(r.home_score)+" – "+esc(r.away_score):"–"}</strong><span>${esc(r.away_team)}</span></div>
+          ${r.venue?`<div class="fixture-venue">${esc(r.venue)}</div>`:""}
+        </div>`).join("")}
+      </div>
+    </section>`).join("")||'<div class="muted">Calendario non disponibile.</div>';
 }
 
 function refreshCalendarCompetition(){
