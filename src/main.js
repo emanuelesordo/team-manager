@@ -163,10 +163,19 @@ async function moveFormationPlayer(playerId,target,slot){
 }
 function bindFormationDnD(){
  let dragged=null;
- document.querySelectorAll('[data-drag-player]').forEach(el=>{el.ondragstart=e=>{dragged=el.dataset.dragPlayer;e.dataTransfer.setData('text/plain',dragged);e.dataTransfer.effectAllowed='move'}});
- document.querySelectorAll('[data-drop-zone]').forEach(z=>{z.ondragover=e=>{e.preventDefault();z.classList.add('drag-over')};z.ondragleave=()=>z.classList.remove('drag-over');z.ondrop=e=>{e.preventDefault();z.classList.remove('drag-over');const id=e.dataTransfer.getData('text/plain')||dragged;if(!id)return;moveFormationPlayer(id,z.dataset.dropZone,Number(z.dataset.slot)||null)}});
- document.querySelector('.squad-panel')?.addEventListener('dragover',e=>e.preventDefault());
- document.querySelector('.squad-panel')?.addEventListener('drop',e=>{e.preventDefault();const id=e.dataTransfer.getData('text/plain')||dragged;if(id)moveFormationPlayer(id,'available',null)});
+ const getId=e=>e.dataTransfer?.getData('text/plain')||dragged;
+ document.querySelectorAll('[data-drag-player]').forEach(el=>{
+  el.ondragstart=e=>{dragged=el.dataset.dragPlayer;el.classList.add('dragging');e.dataTransfer.setData('text/plain',dragged);e.dataTransfer.effectAllowed='move'};
+  el.ondragend=()=>{el.classList.remove('dragging');document.querySelectorAll('.drag-over').forEach(x=>x.classList.remove('drag-over'));dragged=null};
+ });
+ document.querySelectorAll('[data-drop-zone]').forEach(z=>{
+  z.ondragenter=e=>{e.preventDefault();z.classList.add('drag-over')};
+  z.ondragover=e=>{e.preventDefault();e.dataTransfer.dropEffect='move'};
+  z.ondragleave=e=>{if(!z.contains(e.relatedTarget))z.classList.remove('drag-over')};
+  z.ondrop=e=>{e.preventDefault();e.stopPropagation();z.classList.remove('drag-over');const id=getId(e);if(id)moveFormationPlayer(id,z.dataset.dropZone,Number(z.dataset.slot)||null)};
+ });
+ const squad=document.querySelector('.squad-panel');
+ if(squad){squad.ondragover=e=>e.preventDefault();squad.ondrop=e=>{e.preventDefault();const id=getId(e);if(id)moveFormationPlayer(id,'available',null)}}
 }
 const eventLabels={goal:'Gol',assist:'Assist',yellow_card:'Giallo',red_card:'Rosso',substitution:'Cambio',own_goal:'Autogol',penalty_scored:'Rigore segnato',penalty_missed:'Rigore sbagliato',other:'Altro'};
 function eventsTab(m){
