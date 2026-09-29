@@ -16,7 +16,7 @@
     <button class="main-link" disabled>Partite</button><button class="main-link" disabled>Livescore</button>
     <button class="main-link" disabled>Statistiche</button>
   </nav>
-  <select id="seasonSelector" class="season-selector" aria-label="Stagione"></select>
+  <select id="seasonSelector" class="season-selector" aria-label="Stagione"></select><span id="authState" class="auth-state">Sessione…</span>
 </header>
 
 <main class="main">
@@ -139,6 +139,33 @@
   <label>Nome<input id="opponentName" required></label>
   <label>Nome breve<input id="opponentShort"></label>
   <div class="dialog-actions"><button type="button" class="secondary" data-close-opponent>Annulla</button><button class="primary" type="submit">Salva</button></div>
+</form>
+</dialog>
+
+<dialog id="competitionDialog" class="wizard">
+<form id="competitionForm">
+  <div class="dialog-head"><strong>Modifica competizione</strong><button type="button" class="icon-btn" data-close-competition>×</button></div>
+  <input type="hidden" id="competitionId">
+  <div class="compact-grid">
+    <label>Nome<input id="cName" required></label>
+    <label>Tipo<select id="cKind"><option value="league">Campionato</option><option value="cup">Coppa</option><option value="friendly">Amichevoli</option></select></label>
+    <label>Formula<select id="cFormat"></select></label>
+    <label>Tempi<input id="cPeriods" type="number" min="1" max="6"></label>
+    <label>Minuti per tempo<input id="cMinutes" type="number" min="1" max="120"></label>
+  </div>
+  <div id="cLeagueRules" class="rule-box">
+    <div class="compact-grid three"><label>Vittoria<input id="cWinPts" type="number"></label><label>Pareggio<input id="cDrawPts" type="number"></label><label>Sconfitta<input id="cLossPts" type="number"></label></div>
+    <label class="check"><input id="cPlayoff" type="checkbox"> Prevede playoff/playout</label>
+  </div>
+  <div id="cKnockoutRules" class="rule-box">
+    <label class="check"><input id="cTwoLegged" type="checkbox"> Eliminazione A/R</label>
+    <label class="check"><input id="cExtraTime" type="checkbox"> Supplementari</label>
+    <label class="check"><input id="cPenalties" type="checkbox"> Rigori</label>
+  </div>
+  <div class="rule-box"><label>Soglie diffida progressive<input id="cYellowThresholds" placeholder="5,4,3,2"></label></div>
+  <div class="rule-box"><span class="muted">Avversarie</span><div id="cOpponents" class="choice-grid"></div></div>
+  <p id="competitionError" class="form-error hidden"></p>
+  <div class="dialog-actions"><button type="button" class="secondary" data-close-competition>Annulla</button><button class="primary" type="submit">Salva</button></div>
 </form>
 </dialog>
 
