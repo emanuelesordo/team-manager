@@ -1,6 +1,6 @@
 import React,{useMemo,useState}from'react';
 import{NavLink}from'react-router-dom';
-import{CalendarDays,ChevronLeft,ChevronRight,List,MapPin,Plus}from'lucide-react';
+import{CalendarDays,ChevronLeft,ChevronRight,Download,List,MapPin,Plus}from'lucide-react';
 import{Surface,Mark,Modal,Empty}from'../components/UI.jsx';
 import{compBy,fmt,isStaff,oppBy,sideScore}from'../lib/ui.js';
 import{supabase}from'../lib/supabase.js';
@@ -10,7 +10,7 @@ export default function CalendarPage({d}){
   const seed=d.matches.find(x=>x.kickoff_at)?.kickoff_at;
   const base=seed?new Date(seed):new Date();
   const[cur,setCur]=useState(new Date(base.getFullYear(),base.getMonth(),1));
-  const[edit,setEdit]=useState(false);
+  const[edit,setEdit]=useState(false),[importer,setImporter]=useState(false);
   const[view,setView]=useState('list');
 
   const y=cur.getFullYear(),mo=cur.getMonth();
@@ -37,7 +37,7 @@ export default function CalendarPage({d}){
         <span>Calendario</span>
         <h1>Il nostro <em>percorso</em></h1>
         <p>Partite, risultati e prossimi impegni.</p>
-        {isStaff(d)&&<button className="calPrimary" onClick={()=>setEdit(true)}><Plus/>Nuova partita</button>}
+        {isStaff(d)&&<div className="calAdminActions"><button className="calPrimary" onClick={()=>setEdit(true)}><Plus/>Nuova partita</button><button className="calImportButton" onClick={()=>setImporter(true)}><Download/>Importa calendario</button></div>}
       </section>
 
       <Surface className="calMonth">
@@ -88,6 +88,7 @@ export default function CalendarPage({d}){
     </Surface>
 
     {edit&&<MatchEditor d={d} close={()=>setEdit(false)}/>}
+    {importer&&<CalendarImporter d={d} close={()=>setImporter(false)}/>}
   </div>;
 }
 
@@ -142,4 +143,51 @@ function MatchEditor({d,close}){
     <label className="spanAll">Note<textarea name="notes"/></label>
     <button className="primaryAction spanAll">Salva partita</button>
   </form></Modal>;
+}
+
+
+function CalendarImporter({d,close}){
+  const SOURCE='https://www.tuttocampo.it/Veneto/PD/AmatoriCSI/GironeDCalcioa11SerieBPadova/Calendario';
+  const[busy,setBusy]=useState(false),[preview,setPreview]=useState(null),[error,setError]=useState('');
+  const competition=d.competitions.find(x=>/serie b/i.test(x.name))||d.competitions[0];
+
+  async function run(dryRun){
+    setBusy(true);setError('');
+    const{data,error}=await supabase.functions.invoke('calendar-import',{body:{source_url:SOURCE,dry_run:dryRun,competition_id:competition?.id||null}});
+    setBusy(false);
+    if(error||!data?.ok){setError(data?.error||error?.message||'Import non riuscito');return}
+    if(dryRun){setPreview(data);return}
+    d.refresh();
+    setPreview({...data,imported:true});
+  }
+
+  return <Modal close={close}>
+    <div className="calImportModal">
+      <span className="pageKicker">Import calendario</span>
+      <h2>Tuttocampo → Team Manager</h2>
+      <p>Vengono censite tutte le squadre distinte come avversarie, escluso Calcio Caselle. Nel calendario vengono salvate solo le gare del Calcio Caselle.</p>
+      <div className="calImportSource"><small>Sorgente</small><strong>{SOURCE}</strong></div>
+
+      {!preview&&<button disabled={busy} className="primaryAction" onClick={()=>run(true)}>{busy?'Analisi in corso…':'Analizza calendario'}</button>}
+
+      {error&&<div className="calImportError">{error}</div>}
+
+      {preview&&<div className="calImportPreview">
+        <div className="calImportStats">
+          <span><small>Gare girone</small><strong>{preview.total_fixtures||0}</strong></span>
+          <span><small>Squadre</small><strong>{preview.teams?.length||0}</strong></span>
+          <span><small>Avversarie</small><strong>{preview.opponents?.length||0}</strong></span>
+          <span><small>Gare Caselle</small><strong>{preview.caselle_fixtures?.length||0}</strong></span>
+        </div>
+
+        {preview.imported?<div className="calImportSuccess">
+          <strong>Import completato</strong>
+          <span>{preview.created_opponents||0} nuove avversarie · {preview.inserted_matches||0} nuove partite · {preview.updated_matches||0} aggiornate</span>
+        </div>:<>
+          <div className="calImportTeams"><small>Avversarie trovate</small><div>{(preview.opponents||[]).map(x=><span key={x}>{x}</span>)}</div></div>
+          <div className="calImportActions"><button className="calImportButton" onClick={()=>setPreview(null)}>Rianalizza</button><button disabled={busy} className="primaryAction" onClick={()=>run(false)}>{busy?'Importazione…':'Conferma import'}</button></div>
+        </>}
+      </div>}
+    </div>
+  </Modal>;
 }
