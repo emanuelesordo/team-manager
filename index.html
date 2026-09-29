@@ -11,8 +11,8 @@
 <header class="app-header">
   <a class="brand" href="#"><span class="brand-mark">TM</span><strong>Team Manager</strong></a>
   <nav class="main-nav">
-    <button class="main-link active">Setup</button>
-    <button class="main-link" disabled>Competizioni</button>
+    <button class="main-link active" data-app-view="setup">Setup</button>
+    <button class="main-link" data-app-view="competitions">Competizioni</button>
     <button class="main-link" disabled>Calendario</button>
     <button class="main-link" disabled>Giocatori</button>
     <button class="main-link" disabled>Rosa</button>
@@ -25,6 +25,7 @@
 </header>
 
 <main class="main">
+  <div id="setupView">
   <nav class="setup-nav">
     <button class="setup-link active" data-section="seasons">Stagioni</button>
     <button class="setup-link" data-section="team">Squadra</button>
@@ -77,6 +78,19 @@
       <div class="toolbar end"><button class="secondary" id="previewCalendarBtn" type="button">Anteprima import</button></div>
       <div id="calendarPreview" class="table-wrap muted">CSV e PDF possono essere importati e confermati prima del salvataggio.</div>
     </div>
+  </section>
+  </div>
+  <section id="competitionsView" class="hidden">
+    <div class="toolbar competition-toolbar">
+      <select id="competitionHubSelect" aria-label="Competizione"></select>
+      <div class="segmented">
+        <button class="segment active" type="button" data-comp-tab="standings">Classifica</button>
+        <button class="segment" type="button" data-comp-tab="fixtures">Calendario</button>
+      </div>
+    </div>
+    <div id="competitionSummary" class="competition-summary"></div>
+    <section id="competitionStandings"></section>
+    <section id="competitionFixtures" class="hidden"></section>
   </section>
 </main>
 
