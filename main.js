@@ -536,7 +536,14 @@ function renderCompetitionFixtures(rows){
   const source=competitionFixtureFilter==="mine"?rows.filter(r=>isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)):rows;
   const grouped=new Map();
   source.forEach(r=>{if(!grouped.has(r.round_no))grouped.set(r.round_no,[]);grouped.get(r.round_no).push(r)});
-  $("#competitionFixtures").innerHTML=`<div class="round-grid">${[...grouped.entries()].sort((a,b)=>a[0]-b[0]).map(([round,list])=>`
+  const rounds=[...grouped.entries()].sort((a,b)=>a[0]-b[0]);
+  const roundCount=Math.max(1,rounds.length);
+  const maxMatches=Math.max(1,...rounds.map(([,list])=>list.length));
+  const grid=$("#competitionFixtures");
+  grid.style.setProperty("--round-count",roundCount);
+  grid.style.setProperty("--max-matches",maxMatches);
+  grid.classList.toggle("dense-rounds",roundCount>10||maxMatches>6);
+  $("#competitionFixtures").innerHTML=`<div class="round-grid">${rounds.map(([round,list])=>`
     <section class="mini-round">
       <div class="mini-round-label">${round}</div>
       ${list.map(r=>`<div class="mini-fixture ${isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)?"own-fixture":""}">
