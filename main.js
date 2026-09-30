@@ -1400,7 +1400,7 @@ function mcRenderRating(){
     };
     input.onblur=()=>save(false);
     paint(mcParseRatingInput(input.value));
-  });;
+  });
 }
 async function mcSaveRating(playerId,value,control){
   try{
