@@ -2635,3 +2635,26 @@ dialog form{padding:16px}
   .csi-map-row{grid-template-columns:1fr}
   .mc-card-head-actions .small{padding:4px 6px}
 }
+
+/* Roster enhancements */
+.roster-data-table th{white-space:nowrap}
+.table-sort{appearance:none;border:0;background:transparent;padding:0;color:inherit;font:inherit;font-weight:800;cursor:pointer}
+.table-sort.active{color:#111}
+.status-dot.inactive{background:#b8bdc2}
+.player-admin-actions{display:flex;gap:6px;margin:9px 0}
+.player-admin-actions .secondary{flex:1}
+.mini-stat-grid.four{grid-template-columns:repeat(4,1fr)}
+.injury-history{margin-top:12px;border-top:1px solid var(--line);padding-top:8px}
+.injury-history .card-section-head{margin-bottom:4px}
+.injury-history .card-section-head span{font-size:8px;color:var(--muted)}
+.injury-history-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(15,20,23,.06)}
+.injury-history-row strong,.injury-history-row small{display:block}
+.injury-history-row strong{font-size:9px;color:#222}
+.injury-history-row small{margin-top:2px;font-size:7px;color:var(--muted)}
+.injury-edit{width:28px;height:28px}
+.empty-state.compact{padding:10px 0}
+@media(max-width:760px){
+  .roster-table-card{overflow:auto}
+  .roster-data-table{min-width:650px}
+  .mini-stat-grid.four{grid-template-columns:repeat(2,1fr)}
+}
