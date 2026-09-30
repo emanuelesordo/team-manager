@@ -810,20 +810,16 @@ function renderCompetitionFixtures(rows){
   const roundCount=Math.max(1,rounds.length);
   const maxMatches=Math.max(1,...rounds.map(([,list])=>list.length));
   const grid=$("#competitionFixtures");
-  grid.style.setProperty("--round-count",roundCount);
-  grid.style.setProperty("--max-matches",maxMatches);
-  grid.classList.toggle("dense-rounds",roundCount>10||maxMatches>6);
-  grid.classList.toggle("overflow-rounds",roundCount>16);
-  $("#competitionFixtures").innerHTML=`<div class="round-grid">${rounds.map(([round,list])=>`
-    <section class="mini-round">
-      <div class="mini-round-label">${round}</div>
-      ${list.map(r=>`<div class="mini-fixture ${isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)?"own-fixture":""}">
-        ${compactTeamHtml(r.home_team)}
-        <button type="button" class="score-link" data-fixture-score="${r.id}">${r.status==="finished"?esc(r.home_score)+"-"+esc(r.away_score):"–"}</button>
-        ${compactTeamHtml(r.away_team)}
-      </div>`).join("")}
-    </section>`).join("")}</div>`||'<div class="muted">Calendario non disponibile.</div>';
+  grid.style.setProperty("--round-count",roundCount);grid.style.setProperty("--max-matches",maxMatches);
+  grid.classList.toggle("dense-rounds",roundCount>10||maxMatches>6);grid.classList.toggle("overflow-rounds",roundCount>16);
+  grid.innerHTML=`<div class="round-grid">${rounds.map(([round,list])=>`<section class="mini-round"><div class="mini-round-label">${round}</div>${list.map(r=>{
+    const own=isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team);
+    const score=r.status==="finished"?esc(r.home_score)+"-"+esc(r.away_score):"–";
+    return `<div class="mini-fixture ${own?"own-fixture mc-openable":""}" ${own?`data-match-center="${r.id}"`:""}>${compactTeamHtml(r.home_team)}<button type="button" class="score-link" ${own?`data-match-center-score="${r.id}"`:`data-fixture-score="${r.id}"`}>${score}</button>${compactTeamHtml(r.away_team)}</div>`;
+  }).join("")}</section>`).join("")}</div>`||'<div class="muted">Calendario non disponibile.</div>';
   $$("[data-fixture-score]").forEach(b=>b.onclick=()=>openFixture(rows.find(r=>r.id===b.dataset.fixtureScore)));
+  $$("[data-match-center-score]").forEach(b=>b.onclick=e=>{e.stopPropagation();openMatchDetail(rows.find(r=>r.id===b.dataset.matchCenterScore))});
+  $$("[data-match-center]").forEach(row=>row.onclick=e=>{if(e.target.closest("button"))return;openMatchDetail(rows.find(r=>r.id===row.dataset.matchCenter))});
 }
 
 function toLocalInputValue(value){
@@ -890,7 +886,7 @@ function renderCalendarRows(){
       ?`<img src="${esc(away.logo)}" alt="">`
       :`<i>${esc(away.short)}</i>`;
 
-    return `<article class="team-calendar-row">
+    return `<article class="team-calendar-row mc-openable" data-match-center="${r.id}">
       <div class="team-calendar-meta">
         <span class="team-calendar-date">${localDateTime(r.kickoff_at)}</span>
         <span class="team-calendar-competition">${esc(competition?.name||"")}</span>
@@ -908,7 +904,8 @@ function renderCalendarRows(){
     </article>`;
   }).join("")||'<div class="muted">Nessuna partita con i filtri selezionati.</div>';
 
-  $$("[data-match-score]").forEach(b=>b.onclick=()=>openMatchDetail(calendarRows.find(r=>r.id===b.dataset.matchScore)));
+  $("[data-match-score]").forEach(b=>b.onclick=e=>{e.stopPropagation();openMatchDetail(calendarRows.find(r=>r.id===b.dataset.matchScore))});
+  $("#calendarHubList [data-match-center]").forEach(row=>row.onclick=e=>{if(e.target.closest("button"))return;openMatchDetail(calendarRows.find(r=>r.id===row.dataset.matchCenter))});
 }
 
 function playerOptions(selected){
