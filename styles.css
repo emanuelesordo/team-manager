@@ -1132,8 +1132,8 @@ dialog form{padding:16px}
   display:block;
 }
 .score-crest-fallback{
-  width:24px;
-  height:24px;
+  width:17px;
+  height:17px;
   display:grid;
   place-items:center;
   border-radius:50%;
@@ -1824,7 +1824,7 @@ dialog form{padding:16px}
   height:100%;
   min-height:0;
   display:grid;
-  grid-template-columns:minmax(310px,.92fr) minmax(520px,1.5fr) minmax(235px,.72fr);
+  grid-template-columns:minmax(360px,1.05fr) minmax(500px,1.38fr) minmax(230px,.70fr);
   gap:10px;
 }
 .mc-general-left,
@@ -1970,11 +1970,11 @@ dialog form{padding:16px}
 
 .mc-event-row{
   display:grid;
-  grid-template-columns:minmax(0,1fr) 42px minmax(0,1fr);
-  gap:6px;
+  grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);
+  gap:4px;
   align-items:center;
-  min-height:46px;
-  padding:5px 7px;
+  min-height:34px;
+  padding:2px 4px;
   border:0;
   border-radius:8px;
   background:transparent;
@@ -2008,7 +2008,7 @@ dialog form{padding:16px}
   min-width:0;
   display:flex;
   align-items:center;
-  gap:7px;
+  gap:4px;
 }
 .mc-event-half-home .mc-event-content{
   flex-direction:row-reverse;
@@ -2022,11 +2022,11 @@ dialog form{padding:16px}
 
 .mc-event-symbol{
   flex:0 0 auto;
-  width:23px;
-  height:23px;
+  width:16px;
+  height:16px;
   display:grid;
   place-items:center;
-  font-size:17px;
+  font-size:11px;
   line-height:1;
 }
 .mc-event-symbol.goal{
@@ -2044,7 +2044,7 @@ dialog form{padding:16px}
   left:1px;
   font-family:Arial,sans-serif;
   font-style:normal;
-  font-size:18px;
+  font-size:12px;
   font-weight:950;
   line-height:1;
 }
@@ -2060,8 +2060,8 @@ dialog form{padding:16px}
 .mc-event-half-away .mc-event-symbol.substitution .sub-in{transform:scaleX(-1)}
 
 .mc-event-symbol.card{
-  width:11px;
-  height:20px;
+  width:8px;
+  height:14px;
   border-radius:1px;
 }
 .mc-event-symbol.card.yellow{background:#e4b800}
@@ -2069,10 +2069,10 @@ dialog form{padding:16px}
 
 .mc-goal-score{
   flex:0 0 auto;
-  min-width:36px;
-  height:20px;
-  padding:0 6px;
-  border:2px solid #5267ff;
+  min-width:32px;
+  height:18px;
+  padding:0 5px;
+  border:1.25px solid #5267ff;
   border-radius:999px;
   display:grid;
   place-items:center;
@@ -2090,44 +2090,42 @@ dialog form{padding:16px}
   display:flex;
   align-items:baseline;
   gap:5px;
-  overflow:hidden;
+  overflow:visible;
 }
 .mc-event-half-home .mc-event-names{justify-content:flex-end}
 .mc-event-half-away .mc-event-names{justify-content:flex-start}
 .mc-event-names strong,
 .mc-event-names small{
-  overflow:hidden;
-  text-overflow:ellipsis;
   white-space:nowrap;
   line-height:1.08;
 }
 .mc-event-names strong{
   color:#25282a;
-  font-size:7px;
-  font-weight:800;
+  font-size:8px;
+  font-weight:850;
 }
 .mc-event-names small{
   color:#a0a3a6;
-  font-size:10px;
-  font-weight:500;
+  font-size:7px;
+  font-weight:800;
 }
 
 @media(max-width:700px){
   .mc-event-row{
     grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);
     gap:3px;
-    min-height:38px;
-    padding:4px 2px;
+    min-height:32px;
+    padding:2px 1px;
   }
   .mc-event-row>time{font-size:8px}
   .mc-event-names strong{font-size:8px}
   .mc-event-names small{font-size:7px}
   .mc-goal-score{min-width:34px;height:19px;padding-inline:5px;font-size:8px;border-width:1.25px}
-  .mc-event-symbol{width:19px;height:19px;font-size:14px}
-  .mc-event-symbol.substitution{width:20px;height:20px}
+  .mc-event-symbol{width:15px;height:15px;font-size:10px}
+  .mc-event-symbol.substitution{width:16px;height:16px}
   .mc-event-symbol.substitution i,
-  .mc-event-symbol.substitution b{font-size:15px}
-  .mc-event-symbol.card{width:9px;height:16px}
+  .mc-event-symbol.substitution b{font-size:11px}
+  .mc-event-symbol.card{width:7px;height:13px}
 }
 
 /* Field */
