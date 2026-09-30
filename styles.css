@@ -1984,7 +1984,7 @@ dialog form{padding:16px}
   justify-self:center;
   text-align:center;
   color:#25282a;
-  font-size:12px;
+  font-size:9px;
   line-height:1;
   font-weight:900;
   font-variant-numeric:tabular-nums;
@@ -2068,16 +2068,16 @@ dialog form{padding:16px}
 
 .mc-goal-score{
   flex:0 0 auto;
-  min-width:52px;
-  height:28px;
-  padding:0 10px;
+  min-width:44px;
+  height:24px;
+  padding:0 8px;
   border:2px solid #5267ff;
   border-radius:999px;
   display:grid;
   place-items:center;
   background:#fbfbff;
   color:#202326;
-  font-size:15px;
+  font-size:11px;
   line-height:1;
   font-weight:950;
   font-variant-numeric:tabular-nums;
@@ -2102,12 +2102,12 @@ dialog form{padding:16px}
 }
 .mc-event-names strong{
   color:#25282a;
-  font-size:13px;
+  font-size:10px;
   font-weight:900;
 }
 .mc-event-names small{
   color:#a0a3a6;
-  font-size:13px;
+  font-size:10px;
   font-weight:500;
 }
 
