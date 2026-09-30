@@ -3978,3 +3978,168 @@ dialog form{padding:16px}
 .mc-event-half-away .mc-timeline-card-stack.is-accumulation{
   margin-left:4px!important;
 }
+
+
+/* Match Center final timeline rhythm */
+#mcGeneralEvents.mc-general-timeline{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+}
+#mcGeneralEvents.mc-general-timeline > *{
+  flex:0 0 auto;
+}
+#mcGeneralEvents.mc-general-timeline > .mc-minute-group{
+  margin:0!important;
+}
+#mcGeneralEvents .mc-minute-stack{
+  gap:1px!important;
+}
+#mcGeneralEvents .mc-minute-event,
+#mcGeneralEvents .mc-substitution-pair{
+  min-height:16px!important;
+}
+#mcGeneralEvents .mc-minute-event .mc-event-content{
+  gap:7px!important;
+}
+
+/* Card stack reserves its own width: never collides with #/name */
+#mcGeneralEvents .mc-timeline-card-stack{
+  position:relative!important;
+  flex:0 0 8px!important;
+  width:8px!important;
+  height:12px!important;
+  margin:0!important;
+  overflow:visible!important;
+}
+#mcGeneralEvents .mc-timeline-card-stack.is-accumulation{
+  flex-basis:14px!important;
+  width:14px!important;
+}
+#mcGeneralEvents .mc-timeline-card-stack i{
+  top:0!important;
+  left:0!important;
+  width:8px!important;
+  height:12px!important;
+  min-width:8px!important;
+  min-height:12px!important;
+  max-width:8px!important;
+  max-height:12px!important;
+  border-radius:1px!important;
+}
+#mcGeneralEvents .mc-timeline-card-stack.is-accumulation i:nth-child(1){left:0!important;z-index:1!important}
+#mcGeneralEvents .mc-timeline-card-stack.is-accumulation i:nth-child(2){left:3px!important;z-index:2!important}
+#mcGeneralEvents .mc-timeline-card-stack.is-accumulation i:nth-child(3){left:6px!important;z-index:3!important}
+
+/* Match Center event bubble: content-fit, no internal scrolling */
+#mcPlayerQuickPopover.mc-player-event-popover{
+  position:fixed!important;
+  left:var(--mc-pop-left,10px)!important;
+  top:var(--mc-pop-top,10px)!important;
+  right:auto!important;
+  bottom:auto!important;
+  width:var(--mc-pop-width,430px)!important;
+  max-width:none!important;
+  max-height:none!important;
+  overflow:visible!important;
+  overscroll-behavior:auto!important;
+  transform:scale(var(--mc-pop-scale,1))!important;
+  transform-origin:top left!important;
+  box-sizing:border-box!important;
+  padding:10px!important;
+}
+#mcPlayerQuickPopover .mc-player-event-head{
+  margin-bottom:6px!important;
+}
+#mcPlayerQuickPopover .mc-player-event-tabs{
+  margin-bottom:7px!important;
+}
+#mcPlayerQuickPopover .mc-player-event-tabs button{
+  min-height:32px!important;
+}
+#mcPlayerQuickPopover #mcPlayerQuickFields{
+  gap:6px!important;
+}
+#mcPlayerQuickPopover .mc-side-choice{
+  margin-bottom:6px!important;
+}
+#mcPlayerQuickPopover .mc-side-choice button{
+  min-height:28px!important;
+}
+#mcPlayerQuickPopover .mc-player-event-grid{
+  gap:6px!important;
+}
+#mcPlayerQuickPopover #mcPlayerQuickFields select,
+#mcPlayerQuickPopover #mcPlayerQuickFields input{
+  min-height:31px!important;
+  padding:5px 8px!important;
+}
+#mcPlayerQuickPopover .mc-card-choice{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:4px!important;
+}
+#mcPlayerQuickPopover .mc-card-choice button{
+  min-height:30px!important;
+  padding:4px 5px!important;
+  font-size:7px!important;
+}
+#mcPlayerQuickPopover .mc-card-choice .accumulation{
+  grid-column:auto!important;
+}
+#mcPlayerQuickPopover .mc-player-event-actions{
+  margin-top:7px!important;
+  gap:6px!important;
+}
+#mcPlayerQuickPopover .mc-player-event-actions button{
+  min-height:32px!important;
+}
+#mcPlayerQuickPopover.compact{
+  padding:8px!important;
+}
+#mcPlayerQuickPopover.compact .mc-player-event-head{
+  margin-bottom:4px!important;
+}
+#mcPlayerQuickPopover.compact .mc-player-event-head strong{
+  font-size:11px!important;
+}
+#mcPlayerQuickPopover.compact .mc-player-event-tabs{
+  margin-bottom:5px!important;
+}
+#mcPlayerQuickPopover.compact .mc-player-event-tabs button{
+  width:36px!important;
+  flex-basis:36px!important;
+  min-height:28px!important;
+}
+#mcPlayerQuickPopover.compact #mcPlayerQuickFields{
+  gap:4px!important;
+}
+#mcPlayerQuickPopover.compact .mc-player-event-grid{
+  gap:4px!important;
+}
+#mcPlayerQuickPopover.compact #mcPlayerQuickFields select,
+#mcPlayerQuickPopover.compact #mcPlayerQuickFields input{
+  min-height:28px!important;
+  padding:4px 7px!important;
+}
+#mcPlayerQuickPopover.compact .mc-card-choice button{
+  min-height:27px!important;
+}
+#mcPlayerQuickPopover.compact .mc-player-event-actions{
+  margin-top:5px!important;
+}
+#mcPlayerQuickPopover.compact .mc-player-event-actions button{
+  min-height:29px!important;
+}
+
+@media(max-width:700px){
+  #mcPlayerQuickPopover.mc-player-event-popover{
+    left:var(--mc-pop-left,8px)!important;
+    top:var(--mc-pop-top,8px)!important;
+    right:auto!important;
+    bottom:auto!important;
+    width:var(--mc-pop-width,calc(100vw - 16px))!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+}
