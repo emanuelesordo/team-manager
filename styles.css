@@ -5316,3 +5316,88 @@ dialog form{padding:16px}
     padding-inline:3px!important;
   }
 }
+
+
+/* Match Center RATING: vertically centered compact values */
+.mc-rating-column-list>.mc-rating-row{
+  align-items:center!important;
+}
+.mc-rating-column-list>.mc-rating-row>*{
+  align-self:center!important;
+  min-height:0!important;
+}
+.mc-rating-player,
+.mc-rating-average,
+.mc-rating-vote{
+  align-self:center!important;
+  margin:0!important;
+}
+.mc-rating-average{
+  height:auto!important;
+  place-items:center!important;
+}
+.mc-rating-average-value{
+  min-width:32px!important;
+  height:18px!important;
+  padding:0 5px!important;
+  border:1.25px solid #5267ff!important;
+  border-radius:999px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:var(--rating-bg,#fbfbff)!important;
+  color:var(--rating-fg,#202326)!important;
+  font-size:8px!important;
+  line-height:1!important;
+  font-weight:950!important;
+  box-shadow:none!important;
+}
+.mc-rating-average-value.empty{
+  border-color:#5267ff!important;
+  background:#fbfbff!important;
+  color:#7e8589!important;
+}
+.mc-rating-average small{
+  margin-top:1px!important;
+  line-height:1!important;
+}
+
+.mc-rating-vote{
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+}
+.mc-rating-vote input[type="text"]{
+  width:min(72px,100%)!important;
+  height:20px!important;
+  min-height:20px!important;
+  padding:0 6px!important;
+  border:1.25px solid #5267ff!important;
+  border-radius:999px!important;
+  background:#fbfbff!important;
+  color:#202326!important;
+  box-shadow:none!important;
+  font-size:8px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+.mc-rating-vote input[type="text"].valid{
+  background:#fbfbff!important;
+  color:#202326!important;
+  box-shadow:none!important;
+}
+.mc-rating-vote input[type="text"]:focus{
+  border-color:#5267ff!important;
+  outline:none!important;
+  box-shadow:0 0 0 2px rgba(82,103,255,.12)!important;
+}
+.mc-rating-vote input[type="text"].invalid{
+  border-color:#b51f3d!important;
+  box-shadow:none!important;
+}
