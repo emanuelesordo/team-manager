@@ -31,8 +31,8 @@ La dashboard segue la nuova composizione editoriale:
 - ultima partita e forma recente integrate nella card squadra;
 - Player Stats del giocatore associato all'utente autenticato tramite `app_user_roles.player_id`;
 - Schedule mensile con matchday e prossima partita;
-- classifica compatta centrata sul Caselle;
-- Scores limitato esclusivamente alle partite della squadra principale.
+- classifica compatta centrata sul Caselle, con G/V/N/P, GF/GS, differenza reti e punti;
+- Scores limitato esclusivamente alle partite della squadra principale, con contenuto match centrato e stato separato.
 
 Se l'utente autenticato non è associato a un giocatore, la card Player Stats mostra un fallback neutro senza inventare dati.
 
