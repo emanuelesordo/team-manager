@@ -339,15 +339,39 @@
 
 <dialog id="playerDialog">
   <form id="playerForm">
-    <div class="dialog-head"><strong>Nuovo giocatore</strong><button type="button" class="icon-btn" data-close-player>×</button></div>
+    <div class="dialog-head"><strong id="playerDialogTitle">Nuovo giocatore</strong><button type="button" class="icon-btn" data-close-player>×</button></div>
+    <input type="hidden" id="playerEditId">
     <div class="compact-grid">
       <label>Nome<input id="newPlayerFirst" required></label>
       <label>Cognome<input id="newPlayerLast" required></label>
       <label>Ruolo<select id="newPlayerRole"><option value="P">Portiere</option><option value="D">Difensore</option><option value="C">Centrocampista</option><option value="A">Attaccante</option></select></label>
-      <label>Numero<input id="newPlayerNumber" type="number" min="1" max="99"></label>
+      <label>Numero rosa<input id="newPlayerNumber" type="number" min="1" max="99"></label>
+      <label>Data di nascita<input id="newPlayerBirth" type="date"></label>
+      <label>Nazionalità<input id="newPlayerNationality" maxlength="3" placeholder="ITA"></label>
+      <label>Altezza (cm)<input id="newPlayerHeight" type="number" min="120" max="230"></label>
+      <label>Piede<select id="newPlayerFoot"><option value="">—</option><option value="right">Destro</option><option value="left">Sinistro</option><option value="both">Entrambi</option></select></label>
     </div>
+    <label>Foto URL<input id="newPlayerPhoto" type="url"></label>
+    <label>Note pubbliche<textarea id="newPlayerNotes" rows="3"></textarea></label>
     <p id="playerFormError" class="form-error hidden"></p>
     <div class="dialog-actions"><button type="button" class="secondary" data-close-player>Annulla</button><button class="primary" type="submit">Salva</button></div>
+  </form>
+</dialog>
+
+<dialog id="injuryDialog">
+  <form id="injuryForm">
+    <div class="dialog-head"><strong id="injuryDialogTitle">Nuovo infortunio</strong><button type="button" class="icon-btn" data-close-injury>×</button></div>
+    <input type="hidden" id="injuryEditId">
+    <input type="hidden" id="injuryPlayerId">
+    <div class="compact-grid">
+      <label>Data infortunio<input id="injuryDate" type="date" required></label>
+      <label>Stato<select id="injuryStatus"><option value="active">Attivo</option><option value="recovering">Recupero</option><option value="recovered">Recuperato</option><option value="closed">Chiuso</option></select></label>
+      <label>Rientro previsto<input id="injuryExpectedReturn" type="date"></label>
+      <label>Rientro effettivo<input id="injuryActualReturn" type="date"></label>
+    </div>
+    <label>Descrizione<input id="injurySummary" placeholder="Es. distorsione caviglia"></label>
+    <p id="injuryFormError" class="form-error hidden"></p>
+    <div class="dialog-actions"><button type="button" class="secondary" data-close-injury>Annulla</button><button class="primary" type="submit">Salva</button></div>
   </form>
 </dialog>
 
