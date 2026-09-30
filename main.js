@@ -2702,7 +2702,22 @@ async function csiImportOwn(fixture){
 async function csiImportOtherFixture(fixture){
   const preview=csiImportState.preview,old=await db.from("app_fixture_events").select("source_event_key").eq("fixture_id",fixture.id).eq("source","csi");
   const keys=new Set((old.data||[]).map(x=>x.source_event_key));
-  const rows=(preview.events||[]).filter(e=>e.type==="goal"&&!keys.has(e.source_event_key)).map(e=>({fixture_id:fixture.id,event_type:"goal",minute:e.minute,stoppage_minute:null,side:e.side,home_score:e.score?.home??null,away_score:e.score?.away??null,source:"csi",source_event_key:e.source_event_key,source_raw:{period:e.period,minute:e.minute,score:e.score,raw_text:e.raw_text},created_by:sessionUser.id}));
+  const allowed=new Set(["goal","yellow_card","blue_card","red_card"]);
+  const rows=(preview.events||[])
+    .filter(e=>allowed.has(e.type)&&!keys.has(e.source_event_key))
+    .map(e=>({
+      fixture_id:fixture.id,
+      event_type:e.type,
+      minute:e.minute,
+      stoppage_minute:null,
+      side:e.side,
+      home_score:e.type==="goal"?(e.score?.home??null):null,
+      away_score:e.type==="goal"?(e.score?.away??null):null,
+      source:"csi",
+      source_event_key:e.source_event_key,
+      source_raw:{period:e.period,minute:e.minute,score:e.score,raw_text:e.raw_text},
+      created_by:sessionUser.id
+    }));
   if(rows.length){const r=await db.from("app_fixture_events").insert(rows).select("*");if(r.error)throw r.error}
 }
 $("#csiConfirmImportBtn").onclick=async()=>{
@@ -2797,7 +2812,10 @@ function fixtureRenderResultCheck(){
     box.innerHTML='<span>Inserisci il punteggio per poter confermare definitivamente.</span>';
     return;
   }
-  if(!hasGoalEvents){
+  if(!hasGoalEvents&&Number(h)===0&&Number(a)===0){
+    box.className="fixture-result-check ok";
+    box.innerHTML='<span>✓ Nessun gol richiesto: risultato 0–0 coerente.</span>';
+  }else if(!hasGoalEvents){
     box.className="fixture-result-check warning";
     box.innerHTML=`<span>Eventi gol non ancora registrati · risultato ${esc(h)}–${esc(a)}</span><button type="button" data-open-fixture-events>Inserisci eventi</button>`;
   }else if(!eventsMatch){
@@ -2919,7 +2937,10 @@ $("#fixtureSaveEventBtn").onclick=async()=>{
       fixture_id:fixtureId,event_type:eventType,minute,stoppage_minute:stoppage||null,side,
       home_score:eventType==="goal"?homeScore:null,
       away_score:eventType==="goal"?awayScore:null,
-      source:"manual",created_by:sessionUser.id
+      source:"manual",
+      source_event_key:`manual_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
+      source_raw:{},
+      created_by:sessionUser.id
     };
     const r=await db.from("app_fixture_events").insert(payload).select("*").single();
     const saved=assertSaved(r,"Evento");
@@ -3013,7 +3034,8 @@ $("#fixtureForm").onsubmit=async e=>{
   e.preventDefault();
   try{
     const wasNew=!$("#fixtureId").value;
-    await fixtureSave({finalize:false});
+    const finalize=$("#fixtureStatus").value==="finished";
+    await fixtureSave({finalize});
     if(wasNew){
       $("#fixtureError").textContent="Partita salvata. Ora puoi inserire gli eventi.";
       $("#fixtureError").className="form-error fixture-save-note";
