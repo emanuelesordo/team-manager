@@ -370,7 +370,7 @@
       <label>Gol trasferta<input id="fixtureAwayScore" type="number" min="0"></label>
     </div>
     <p id="fixtureError" class="form-error hidden"></p>
-    <div class="dialog-actions"><button type="button" class="secondary" data-close-fixture>Annulla</button><button class="primary" type="submit">Salva</button></div>
+    <div class="dialog-actions"><button id="fixtureCsiImportBtn" type="button" class="secondary">Importa CSI</button><button type="button" class="secondary" data-close-fixture>Annulla</button><button class="primary" type="submit">Salva</button></div>
   </form>
 </dialog>
 
@@ -408,6 +408,7 @@
               <div class="mc-quick-actions">
                 <button type="button" data-mc-quick="goal"><span>⚽</span><b>Gol</b></button>
                 <button type="button" data-mc-quick="yellow_card"><span>▮</span><b>Ammonizione</b></button>
+                <button type="button" data-mc-quick="blue_card"><span class="mc-blue-symbol">▮</span><b>Cartellino blu</b></button>
                 <button type="button" data-mc-quick="red_card"><span>▮</span><b>Espulsione</b></button>
                 <button type="button" data-mc-quick="substitution"><span>↔</span><b>Sostituzione</b></button>
                 <button type="button" data-mc-quick="events"><span>◷</span><b>Altri eventi</b></button>
@@ -419,6 +420,7 @@
                 <button type="button" class="active" data-mc-event-filter="goal">Gol</button>
                 <button type="button" class="active" data-mc-event-filter="substitution">Cambi</button>
                 <button type="button" class="active" data-mc-event-filter="yellow_card">Gialli</button>
+                <button type="button" class="active" data-mc-event-filter="blue_card">Blu</button>
                 <button type="button" class="active" data-mc-event-filter="red_card">Rossi</button>
               </div>
               <div id="mcGeneralEvents" class="mc-general-timeline"></div>
@@ -453,7 +455,7 @@
       </section>
       <section data-mc-panel="events" class="hidden">
         <div class="mc-events-grid">
-          <section class="mc-card"><div class="mc-card-head"><strong>Timeline</strong><span id="mcEventsCount"></span></div><div id="mcEventsTimeline"></div></section>
+          <section class="mc-card"><div class="mc-card-head"><strong>Timeline</strong><div class="mc-card-head-actions"><span id="mcEventsCount"></span><button id="mcCsiImportBtn" type="button" class="secondary small">Importa CSI</button></div></div><div id="mcEventsTimeline"></div></section>
           <section class="mc-card">
             <div class="mc-card-head"><strong>Console evento</strong><span id="mcEligibilityHint"></span></div>
             <div class="mc-event-integrity">
@@ -462,7 +464,7 @@
             </div>
             <div id="mcLiveControls" class="mc-live-controls hidden"><label>Recupero <input id="mcRecoveryMinutes" type="number" min="0" value="0"></label><div><button type="button" data-mc-live="start_first">Inizia 1°T</button><button type="button" data-mc-live="end_first">Fine 1°T</button><button type="button" data-mc-live="start_second">Inizia 2°T</button><button type="button" data-mc-live="end_match">Fine partita</button></div></div>
             <form id="mcEventForm">
-              <label>Evento<select id="mcEventType"><option value="goal">Gol</option><option value="substitution">Cambio / uscita</option><option value="yellow_card">Giallo</option><option value="red_card">Rosso / espulsione</option></select></label>
+              <label>Evento<select id="mcEventType"><option value="goal">Gol</option><option value="substitution">Cambio / uscita</option><option value="yellow_card">Giallo</option><option value="blue_card">Blu / sospensione temporanea</option><option value="red_card">Rosso / espulsione</option></select></label>
               <div class="compact-grid"><label>Minuto<input id="mcEventMinute" type="number" min="0" placeholder="libero"></label><label>Recupero<input id="mcEventStoppage" type="number" min="0" placeholder="+"></label></div>
               <label>Squadra<select id="mcEventSide"><option value="team">Calcio Caselle</option><option value="opponent">Avversario</option></select></label>
               <label id="mcEventPlayerWrap">Giocatore<select id="mcEventPlayer"></select></label>
@@ -474,6 +476,23 @@
           </section>
         </div>
       </section>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="csiImportDialog" class="wizard csi-import-dialog">
+  <div>
+    <div class="dialog-head"><strong>Importa tabellino CSI</strong><button type="button" class="icon-btn" data-close-csi-import>×</button></div>
+    <label>URL partita CSI<input id="csiImportUrl" type="url" placeholder="https://live.centrosportivoitaliano.it/..."></label>
+    <div class="dialog-actions csi-import-actions">
+      <button id="csiPreviewBtn" type="button" class="secondary">Leggi dati ufficiali</button>
+    </div>
+    <div id="csiImportSummary" class="csi-import-summary muted">Inserisci il link della singola partita CSI.</div>
+    <div id="csiPlayerMappings" class="csi-player-mappings"></div>
+    <p id="csiImportError" class="form-error hidden"></p>
+    <div class="dialog-actions">
+      <button type="button" class="secondary" data-close-csi-import>Annulla</button>
+      <button id="csiConfirmImportBtn" type="button" class="primary" disabled>Importa</button>
     </div>
   </div>
 </dialog>
