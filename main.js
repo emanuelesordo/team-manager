@@ -890,7 +890,7 @@ function renderCompetitionFixtures(rows){
       </section>`).join("")}</div>`
     :'<div class="muted">Calendario non disponibile.</div>';
 
-  $$("[data-fixture-score]").forEach(b=>b.onclick=()=>openFixture(rows.find(r=>r.id===b.dataset.fixtureScore)));
+  $("[data-fixture-score]").forEach(b=>b.onclick=()=>openOtherMatchCenter(rows.find(r=>r.id===b.dataset.fixtureScore)));
   $$("[data-match-center-score]").forEach(b=>b.onclick=async e=>{e.stopPropagation();const fixture=rows.find(r=>r.id===b.dataset.matchCenterScore);await openMatchDetail(fixture);if(fixture?.status!=="finished"&&fixture?.home_score!=null&&fixture?.away_score!=null)mcOpenFinalScore()});
   $$("[data-match-center]").forEach(row=>row.onclick=e=>{if(e.target.closest("button"))return;openMatchDetail(rows.find(r=>r.id===row.dataset.matchCenter))});
 
@@ -3071,6 +3071,352 @@ $("#fixtureConfirmBtn").onclick=async()=>{
   }catch(err){
     $("#fixtureError").textContent=err.message||String(err);
     $("#fixtureError").className="form-error";
+  }
+};
+
+let otherMatchCenterState={fixture:null,events:[],filters:new Set(["goal","yellow_card","blue_card","red_card"])};
+
+function omcPeriodMinutes(){
+  const comp=competitions.find(x=>x.id===otherMatchCenterState.fixture?.competition_id);
+  return Number(comp?.minutes_per_period)||45;
+}
+function omcEventPeriod(e){
+  const explicit=e?.source_raw?.period;
+  if(explicit==="first_half"||explicit==="second_half")return explicit;
+  if(e?.event_type==="period_end")return explicit||"first_half";
+  const m=Number(e?.minute);
+  return Number.isFinite(m)&&m>omcPeriodMinutes()?"second_half":"first_half";
+}
+function omcLocalMinute(e){
+  if(e?.minute==null)return null;
+  const explicit=e?.source_raw?.period;
+  const raw=Number(e.minute);
+  if(explicit==="second_half")return raw;
+  if(!explicit&&raw>omcPeriodMinutes())return raw-omcPeriodMinutes();
+  return raw;
+}
+function omcEventOrder(e){
+  const period=omcEventPeriod(e);
+  if(e?.event_type==="period_end")return period==="second_half"?1998:998;
+  const local=Number(omcLocalMinute(e));
+  return (period==="second_half"?1000:0)+(Number.isFinite(local)?local:999)+(Number(e?.stoppage_minute||0)/100);
+}
+function omcPeriodShort(period){return period==="second_half"?"2T":"1T"}
+function omcDisplayMinute(e){
+  const local=omcLocalMinute(e);
+  if(local==null)return "–";
+  return omcPeriodShort(omcEventPeriod(e))+" "+local+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
+}
+function omcRecoveryEvent(period){
+  return otherMatchCenterState.events.find(e=>e.event_type==="period_end"&&omcEventPeriod(e)===period)||null;
+}
+function omcRecoveryMinutes(period){
+  const e=omcRecoveryEvent(period);
+  return Number(e?.source_raw?.recovery_minutes??e?.stoppage_minute??0)||0;
+}
+function omcGoalCounts(){
+  return otherMatchCenterState.events.reduce((a,e)=>{
+    if(e.event_type!=="goal")return a;
+    if(e.side==="home")a.home++;
+    if(e.side==="away")a.away++;
+    return a;
+  },{home:0,away:0});
+}
+function omcScoreAtMap(events){
+  let home=0,away=0;
+  const map=new Map();
+  [...events].sort((a,b)=>omcEventOrder(a)-omcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0)).forEach(e=>{
+    if(e.event_type!=="goal")return;
+    if(e.side==="home")home++;else if(e.side==="away")away++;
+    map.set(e,home+" - "+away);
+  });
+  return map;
+}
+function omcTeamLogo(name){
+  const v=teamVisual(name);
+  return v.logo?`<img src="${esc(v.logo)}" alt="">`:`<span>${esc(v.short)}</span>`;
+}
+function omcEventIcon(e){
+  if(e.event_type==="goal")return '<span class="mc-event-symbol goal">⚽</span>';
+  const cls=e.event_type==="yellow_card"?"yellow":e.event_type==="blue_card"?"blue":"red";
+  return '<span class="mc-event-symbol card '+cls+'"></span>';
+}
+function omcRenderHeaderEventSide(side){
+  const box=$(side==="home"?"#omcHomeMatchEvents":"#omcAwayMatchEvents");
+  if(!box)return;
+  const rows=[...otherMatchCenterState.events]
+    .filter(e=>e.side===side&&e.event_type!=="period_end")
+    .sort((a,b)=>omcEventOrder(a)-omcEventOrder(b))
+    .slice(-4);
+  box.innerHTML=rows.map(e=>'<span>'+omcDisplayMinute(e)+' · '+(e.event_type==="goal"?"⚽":e.event_type==="yellow_card"?"■ Giallo":e.event_type==="blue_card"?"■ Blu":"■ Rosso")+'</span>').join("");
+}
+function omcUpdateHeader(){
+  const f=otherMatchCenterState.fixture;if(!f)return;
+  $("#omcHomeName").textContent=f.home_team;
+  $("#omcAwayName").textContent=f.away_team;
+  $("#omcHomeLogo").innerHTML=omcTeamLogo(f.home_team);
+  $("#omcAwayLogo").innerHTML=omcTeamLogo(f.away_team);
+  $("#omcHomeScore").value=f.home_score??"";
+  $("#omcAwayScore").value=f.away_score??"";
+  $("#omcState").textContent=f.status==="finished"?"FT":f.status==="postponed"?"RIN":f.status==="cancelled"?"ANN":"PRE";
+  const comp=competitions.find(x=>x.id===f.competition_id);
+  $("#omcMeta").innerHTML='<span><b>'+(comp?esc(comp.name):"Competizione")+'</b></span><span>Turno '+esc(f.round_no??"–")+'</span><span>'+esc(localDateTime(f.kickoff_at))+'</span>';
+  omcRenderHeaderEventSide("home");
+  omcRenderHeaderEventSide("away");
+}
+function omcRenderGoalProgress(){
+  const goals=omcGoalCounts();
+  const h=$("#omcHomeScore").value,a=$("#omcAwayScore").value;
+  const ready=h!==""&&a!=="";
+  const ok=ready&&Number(h)===goals.home&&Number(a)===goals.away;
+  const box=$("#omcGoalProgress");
+  if(!box)return;
+  box.textContent=ready?(ok?"Gol coerenti · "+goals.home+"-"+goals.away:"Eventi gol "+goals.home+"-"+goals.away+" · risultato "+h+"-"+a):"Gol eventi "+goals.home+"-"+goals.away;
+  box.className=ok?"omc-goal-progress ok":ready?"omc-goal-progress warning":"omc-goal-progress";
+}
+function omcTimelineRow(e,scoreAt){
+  const home=e.side==="home";
+  const partial=e.event_type==="goal"?(scoreAt.get(e)||""):"";
+  const label=e.event_type==="goal"?"Gol":e.event_type==="yellow_card"?"Giallo":e.event_type==="blue_card"?"Blu":"Rosso";
+  const content='<span class="mc-event-content">'+omcEventIcon(e)+(partial?'<span class="mc-goal-score">'+esc(partial)+'</span>':"")+'<span class="mc-event-names"><strong>'+label+'</strong></span></span>';
+  return '<div class="mc-event-row mc-minute-group" data-omc-event-id="'+esc(e.id)+'" role="button" tabindex="0">'+
+    '<div class="mc-event-half mc-event-half-home">'+(home?'<div class="mc-minute-stack"><div class="mc-minute-event">'+content+'</div></div>':"")+'</div>'+
+    '<time>'+esc(omcDisplayMinute(e))+'</time>'+
+    '<div class="mc-event-half mc-event-half-away">'+(!home?'<div class="mc-minute-stack"><div class="mc-minute-event">'+content+'</div></div>':"")+'</div>'+
+  '</div>';
+}
+function omcRenderTimeline(){
+  const all=[...otherMatchCenterState.events].sort((a,b)=>omcEventOrder(a)-omcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0));
+  const scoreAt=omcScoreAtMap(all);
+  const regular=all.filter(e=>e.event_type!=="period_end"&&otherMatchCenterState.filters.has(e.event_type));
+  const first=regular.filter(e=>omcEventPeriod(e)==="first_half");
+  const second=regular.filter(e=>omcEventPeriod(e)==="second_half");
+  const firstGoals=all.filter(e=>e.event_type==="goal"&&omcEventPeriod(e)==="first_half").reduce((a,e)=>{if(e.side==="home")a.home++;else a.away++;return a},{home:0,away:0});
+  const rows=[];
+  if(otherMatchCenterState.fixture?.status==="finished"){
+    rows.push('<div class="mc-period-separator mc-ft"><span></span><strong>FT '+esc(otherMatchCenterState.fixture.home_score??0)+' - '+esc(otherMatchCenterState.fixture.away_score??0)+'</strong><span></span></div>');
+  }
+  const rec2=omcRecoveryMinutes("second_half");
+  if(rec2)rows.push('<div class="mc-recovery-chip" data-omc-recovery-period="second_half" role="button" tabindex="0">Recupero 2T +'+rec2+'\'</div>');
+  [...second].reverse().forEach(e=>rows.push(omcTimelineRow(e,scoreAt)));
+  if(second.length||omcRecoveryEvent("first_half")){
+    rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+firstGoals.home+' - '+firstGoals.away+'</strong><span></span></div>');
+  }
+  const rec1=omcRecoveryMinutes("first_half");
+  if(rec1)rows.push('<div class="mc-recovery-chip" data-omc-recovery-period="first_half" role="button" tabindex="0">Recupero 1T +'+rec1+'\'</div>');
+  [...first].reverse().forEach(e=>rows.push(omcTimelineRow(e,scoreAt)));
+  const box=$("#omcTimeline");
+  box.innerHTML=rows.length?rows.join(""):'<div class="empty-state mc-timeline-empty">Nessun evento<button type="button" class="mc-timeline-add empty-add" data-omc-add-event>+</button></div>';
+  box.querySelector("[data-omc-add-event]")?.addEventListener("click",()=>omcOpenEventDialog());
+  box.querySelectorAll("[data-omc-event-id]").forEach(row=>{
+    row.onclick=()=>omcOpenEventDialog(otherMatchCenterState.events.find(e=>String(e.id)===String(row.dataset.omcEventId)));
+    row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();row.click()}};
+  });
+  box.querySelectorAll("[data-omc-recovery-period]").forEach(row=>{
+    row.onclick=()=>omcOpenEventDialog(omcRecoveryEvent(row.dataset.omcRecoveryPeriod));
+    row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();row.click()}};
+  });
+  omcRenderGoalProgress();
+  omcRenderHeaderEventSide("home");
+  omcRenderHeaderEventSide("away");
+}
+async function omcLoadEvents(){
+  const f=otherMatchCenterState.fixture;
+  otherMatchCenterState.events=[];
+  if(!f)return;
+  const r=await db.from("app_fixture_events").select("*").eq("fixture_id",f.id);
+  if(r.error)throw r.error;
+  otherMatchCenterState.events=r.data||[];
+  omcRenderTimeline();
+}
+async function openOtherMatchCenter(f){
+  if(!f)return;
+  otherMatchCenterState.fixture=f;
+  otherMatchCenterState.filters=new Set(["goal","yellow_card","blue_card","red_card"]);
+  $$("[data-omc-event-filter]").forEach(b=>b.classList.add("active"));
+  $("#omcError").classList.add("hidden");
+  omcUpdateHeader();
+  $("#otherMatchCenterDialog").showModal();
+  try{await omcLoadEvents()}catch(err){
+    $("#omcError").textContent=err.message||String(err);
+    $("#omcError").classList.remove("hidden");
+  }
+}
+$$("[data-close-other-match-center]").forEach(b=>b.onclick=()=>$("#otherMatchCenterDialog").close());
+$$("[data-omc-event-filter]").forEach(b=>b.onclick=()=>{
+  const type=b.dataset.omcEventFilter;
+  if(otherMatchCenterState.filters.has(type))otherMatchCenterState.filters.delete(type);
+  else otherMatchCenterState.filters.add(type);
+  b.classList.toggle("active",otherMatchCenterState.filters.has(type));
+  omcRenderTimeline();
+});
+$("#omcAddEventBtn").onclick=()=>omcOpenEventDialog();
+
+function omcEventInputLimit(period){
+  return omcPeriodMinutes()+omcRecoveryMinutes(period);
+}
+function omcRefreshEventFormHint(){
+  const type=$("#omcEventType").value,period=$("#omcEventPeriod").value;
+  const recovery=omcRecoveryMinutes(period),regular=omcPeriodMinutes();
+  const sideWrap=$("#omcEventSide").closest("label");
+  const recoveryMode=type==="recovery";
+  sideWrap.classList.toggle("hidden",recoveryMode);
+  $("#omcMinuteWrap").classList.toggle("hidden",recoveryMode);
+  $("#omcRecoveryWrap").classList.toggle("hidden",!recoveryMode);
+  $("#omcEventMinute").max=String(regular+recovery);
+  $("#omcEventHint").textContent=recoveryMode
+    ?omcPeriodShort(period)+" · indica i minuti di recupero concessi (0–30)."
+    :omcPeriodShort(period)+" · minuto 0–"+regular+(recovery?" oppure fino a "+(regular+recovery)+" durante il recupero +"+recovery+".":"; per oltrepassare "+regular+" registra prima il recupero.");
+}
+function omcOpenEventDialog(event=null){
+  $("#otherMatchEventForm").reset();
+  $("#omcEventError").classList.add("hidden");
+  $("#omcEventId").value=event?.id||"";
+  $("#omcEventDialogTitle").textContent=event?"Modifica evento":"Nuovo evento";
+  const recovery=event?.event_type==="period_end";
+  $("#omcEventType").value=recovery?"recovery":(event?.event_type||"goal");
+  $("#omcEventSide").value=event?.side||"home";
+  const period=event?omcEventPeriod(event):"first_half";
+  $("#omcEventPeriod").value=period;
+  if(recovery){
+    $("#omcRecoveryMinutes").value=omcRecoveryMinutes(period);
+  }else if(event){
+    const local=omcLocalMinute(event);
+    $("#omcEventMinute").value=local==null?"":local+Number(event.stoppage_minute||0);
+  }
+  $("#omcDeleteEventBtn").classList.toggle("hidden",!event);
+  omcRefreshEventFormHint();
+  $("#otherMatchEventDialog").showModal();
+}
+$$("[data-close-other-match-event]").forEach(b=>b.onclick=()=>$("#otherMatchEventDialog").close());
+$("#omcEventType").onchange=omcRefreshEventFormHint;
+$("#omcEventPeriod").onchange=omcRefreshEventFormHint;
+
+async function omcReopenIfNeeded(){
+  if(otherMatchCenterState.fixture?.status!=="finished")return;
+  const r=await db.from("app_competition_fixtures")
+    .update({status:"scheduled",manual_result_override:true})
+    .eq("id",otherMatchCenterState.fixture.id)
+    .select("*")
+    .maybeSingle();
+  otherMatchCenterState.fixture=assertSaved(r,"Riapertura risultato");
+  omcUpdateHeader();
+}
+async function omcPersistProvisionalScoreFromGoals(){
+  const f=otherMatchCenterState.fixture;if(!f)return;
+  const goals=omcGoalCounts();
+  const r=await db.from("app_competition_fixtures")
+    .update({home_score:goals.home,away_score:goals.away,manual_result_override:true})
+    .eq("id",f.id)
+    .select("*")
+    .maybeSingle();
+  if(!r.error&&r.data)otherMatchCenterState.fixture=r.data;
+  omcUpdateHeader();
+}
+$("#otherMatchEventForm").onsubmit=async e=>{
+  e.preventDefault();
+  $("#omcEventError").classList.add("hidden");
+  try{
+    if(!sessionUser)throw new Error("Accedi per inserire eventi.");
+    const f=otherMatchCenterState.fixture;if(!f)throw new Error("Partita non disponibile.");
+    const id=$("#omcEventId").value;
+    const type=$("#omcEventType").value;
+    const period=$("#omcEventPeriod").value;
+    let payload;
+
+    if(type==="recovery"){
+      const recovery=Math.max(0,Number($("#omcRecoveryMinutes").value||0));
+      if(recovery>30)throw new Error("Il recupero massimo consentito è 30 minuti.");
+      const existing=omcRecoveryEvent(period);
+      payload={
+        fixture_id:f.id,event_type:"period_end",minute:null,stoppage_minute:recovery,side:"home",
+        home_score:null,away_score:null,source:"manual",
+        source_event_key:id?(otherMatchCenterState.events.find(x=>String(x.id)===String(id))?.source_event_key||`manual_${Date.now()}`):`manual_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
+        source_raw:{period,recovery_minutes:recovery},created_by:sessionUser.id
+      };
+      let r;
+      if(id)r=await db.from("app_fixture_events").update(payload).eq("id",id).select("*").maybeSingle();
+      else if(existing)r=await db.from("app_fixture_events").update(payload).eq("id",existing.id).select("*").maybeSingle();
+      else r=await db.from("app_fixture_events").insert(payload).select("*").single();
+      assertSaved(r,"Recupero");
+    }else{
+      const entered=Number($("#omcEventMinute").value);
+      const regular=omcPeriodMinutes(),recovery=omcRecoveryMinutes(period);
+      if(!Number.isFinite(entered)||entered<0)throw new Error("Inserisci un minuto valido.");
+      if(entered>regular+recovery){
+        if(!recovery)throw new Error("Per inserire eventi oltre il "+regular+"' registra prima il recupero del "+omcPeriodShort(period)+".");
+        throw new Error("Il minuto supera il recupero registrato (+"+recovery+"').");
+      }
+      const minute=Math.min(entered,regular);
+      const stoppage=Math.max(0,entered-regular);
+      const old=id?otherMatchCenterState.events.find(x=>String(x.id)===String(id)):null;
+      payload={
+        fixture_id:f.id,event_type:type,minute,stoppage_minute:stoppage||null,side:$("#omcEventSide").value,
+        home_score:null,away_score:null,source:"manual",
+        source_event_key:old?.source_event_key||`manual_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
+        source_raw:{period},created_by:sessionUser.id
+      };
+      const r=id
+        ?await db.from("app_fixture_events").update(payload).eq("id",id).select("*").maybeSingle()
+        :await db.from("app_fixture_events").insert(payload).select("*").single();
+      assertSaved(r,"Evento");
+      if(type==="goal"||old?.event_type==="goal")await omcReopenIfNeeded();
+    }
+
+    $("#otherMatchEventDialog").close();
+    await omcLoadEvents();
+    await omcPersistProvisionalScoreFromGoals();
+    await renderCompetitionHub();
+  }catch(err){
+    $("#omcEventError").textContent=err.message||String(err);
+    $("#omcEventError").classList.remove("hidden");
+  }
+};
+$("#omcDeleteEventBtn").onclick=async()=>{
+  $("#omcEventError").classList.add("hidden");
+  try{
+    if(!sessionUser)throw new Error("Accedi per eliminare eventi.");
+    const id=$("#omcEventId").value;if(!id)return;
+    const old=otherMatchCenterState.events.find(x=>String(x.id)===String(id));
+    if(!confirm("Eliminare definitivamente questo evento?"))return;
+    const r=await db.from("app_fixture_events").delete().eq("id",id);
+    if(r.error)throw r.error;
+    if(old?.event_type==="goal")await omcReopenIfNeeded();
+    $("#otherMatchEventDialog").close();
+    await omcLoadEvents();
+    await omcPersistProvisionalScoreFromGoals();
+    await renderCompetitionHub();
+  }catch(err){
+    $("#omcEventError").textContent=err.message||String(err);
+    $("#omcEventError").classList.remove("hidden");
+  }
+};
+
+$("#omcHomeScore").oninput=omcRenderGoalProgress;
+$("#omcAwayScore").oninput=omcRenderGoalProgress;
+$("#omcConfirmResultBtn").onclick=async()=>{
+  $("#omcError").classList.add("hidden");
+  try{
+    if(!sessionUser)throw new Error("Accedi per confermare il risultato.");
+    const f=otherMatchCenterState.fixture;if(!f)throw new Error("Partita non disponibile.");
+    const h=$("#omcHomeScore").value,a=$("#omcAwayScore").value;
+    if(h===""||a==="")throw new Error("Inserisci il risultato.");
+    const goals=omcGoalCounts();
+    if(Number(h)!==goals.home||Number(a)!==goals.away){
+      throw new Error("Risultato non coerente con gli eventi gol: eventi "+goals.home+"-"+goals.away+", risultato "+h+"-"+a+".");
+    }
+    const r=await db.from("app_competition_fixtures")
+      .update({status:"finished",home_score:Number(h),away_score:Number(a),manual_result_override:true})
+      .eq("id",f.id)
+      .select("*")
+      .maybeSingle();
+    otherMatchCenterState.fixture=assertSaved(r,"Risultato definitivo");
+    omcUpdateHeader();
+    omcRenderTimeline();
+    await renderCompetitionHub();
+  }catch(err){
+    $("#omcError").textContent=err.message||String(err);
+    $("#omcError").classList.remove("hidden");
   }
 };
 
