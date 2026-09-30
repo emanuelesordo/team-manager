@@ -1729,9 +1729,9 @@ function mcSetPlayerQuickKind(kind){
       '</div></label><input id="mcQuickCardType" type="hidden" value="'+(cardMode==="second_card"?"red_card":cardType)+'"><input id="mcQuickCardMode" type="hidden" value="'+cardMode+'">';
   }
   $("#mcPlayerQuickFields").innerHTML=html;
-  $("[data-quick-card]").forEach(b=>b.onclick=e=>{
+  $$("[data-quick-card]").forEach(b=>b.onclick=e=>{
     e.stopPropagation();
-    $("[data-quick-card]").forEach(x=>x.classList.remove("active"));
+    $$("[data-quick-card]").forEach(x=>x.classList.remove("active"));
     b.classList.add("active");
     $("#mcQuickCardType").value=b.dataset.quickCard;
     $("#mcQuickCardMode").value=b.dataset.quickCardMode||b.dataset.quickCard;
