@@ -1546,6 +1546,11 @@ $("#fixtureForm").onsubmit=async e=>{
     const awayScore=$("#fixtureAwayScore").value;
     if(status==="finished"&&(homeScore===""||awayScore===""))throw new Error("Inserisci il risultato.");
     const existing=(window.__competitionFixtureRows||[]).find(x=>x.id===id);
+    const scoreChanged=!!existing&&(
+      existing.status!==status||
+      Number(existing.home_score??-999)!==Number(status==="finished"?+homeScore:-999)||
+      Number(existing.away_score??-999)!==Number(status==="finished"?+awayScore:-999)
+    );
     const payload={
       season_id:currentSeason.id,
       competition_id:competitionHubId,
@@ -1556,7 +1561,8 @@ $("#fixtureForm").onsubmit=async e=>{
       venue:$("#fixtureVenue").value.trim()||null,
       status,
       home_score:status==="finished"?+homeScore:null,
-      away_score:status==="finished"?+awayScore:null
+      away_score:status==="finished"?+awayScore:null,
+      ...(existing&&scoreChanged?{manual_result_override:true}:{})
     };
     const result=id
       ?await db.from("app_competition_fixtures").update(payload).eq("id",id).select("*").maybeSingle()
