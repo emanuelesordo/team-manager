@@ -3655,3 +3655,30 @@ dialog form{padding:16px}
   margin-top:4px;
   margin-bottom:8px;
 }
+
+
+/* Match Center locked final state + borderless editable metadata */
+.match-center-dialog.mc-final-locked .mc-player-quick,
+.match-center-dialog.mc-final-locked .mc-timeline-add,
+.match-center-dialog.mc-final-locked .mc-period-add{
+  display:none!important;
+}
+.mc-meta .mc-meta-edit{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  padding:0!important;
+  min-height:0!important;
+  height:auto!important;
+  border-radius:0!important;
+}
+.mc-meta .mc-meta-edit:hover,
+.mc-meta .mc-meta-edit:focus{
+  border:0!important;
+  outline:0!important;
+  box-shadow:none!important;
+  background:transparent!important;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}
