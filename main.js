@@ -885,7 +885,7 @@ function renderCompetitionFixtures(rows){
         ${group.list.map(r=>{
           const own=isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team);
           const provisional=r.status!=="finished"&&r.home_score!=null&&r.away_score!=null; const score=(r.status==="finished"||provisional)?esc(r.home_score)+"-"+esc(r.away_score):"–";
-          return `<div class="mini-fixture ${own?"own-fixture mc-openable":""}" ${own?`data-match-center="${r.id}"`:""}>${compactTeamHtml(r.home_team)}<button type="button" class="score-link" ${own?`data-match-center-score="${r.id}"`:`data-fixture-score="${r.id}"`} class="${provisional?"provisional-score":""}">${score}</button>${compactTeamHtml(r.away_team)}</div>`;
+          return `<div class="mini-fixture ${own?"own-fixture mc-openable":""}" ${own?`data-match-center="${r.id}"`:""}>${compactTeamHtml(r.home_team)}<button type="button" class="score-link ${provisional?"provisional-score":""}" ${own?`data-match-center-score="${r.id}"`:`data-fixture-score="${r.id}"`}>${score}</button>${compactTeamHtml(r.away_team)}</div>`;
         }).join("")}
       </section>`).join("")}</div>`
     :'<div class="muted">Calendario non disponibile.</div>';
@@ -1011,7 +1011,7 @@ function mcHasProvisionalScore(){
   return !mcIsPost()&&matchCenterState.events.some(e=>e.event_type==="goal"&&e.validation_status!=="rejected");
 }
 async function mcSyncProvisionalScore(){
-  if(!matchCenterState.fixture||mcIsPost())return;
+  if(!matchCenterState.fixture||mcIsPost()||!matchCenterState.events.some(e=>e.event_type!=="period_end"))return;
   const score=mcEventScore();
   matchCenterState.fixture.home_score=score.home;
   matchCenterState.fixture.away_score=score.away;
@@ -1483,7 +1483,7 @@ function mcQuickEventShell(){
   pop.onclick=e=>e.stopPropagation();
   document.addEventListener("click",e=>{
     if(pop.classList.contains("hidden"))return;
-    if(e.target.closest("#mcPlayerQuickPopover")||e.target.closest("[data-mc-player-event]")||e.target.closest("[data-mc-timeline-add]")||e.target.closest("[data-mc-event-id]"))return;
+    if(e.target.closest("#mcPlayerQuickPopover")||e.target.closest("[data-mc-player-event]")||e.target.closest("[data-mc-timeline-add]")||e.target.closest("[data-mc-timeline-add-period]")||e.target.closest("[data-mc-event-id]"))return;
     mcClosePlayerQuickEvent();
   });
   return pop;
@@ -1609,7 +1609,7 @@ function mcSetPlayerQuickKind(kind){
   const benchRows=mcQuickBenchRows(activeIds);
 
   if(kind==="recovery"){
-    const recoveryPeriod=editing?(editing.payload?.period||"first_half"):mcQuickPeriodDefault();
+    const recoveryPeriod=draft.period||(editing?(editing.payload?.period||"first_half"):mcQuickPeriodDefault());
     const recoveryMinutes=editing?Number(editing.payload?.recovery_minutes??editing.stoppage_minute??0):0;
     html='<div class="mc-player-event-grid"><label>Tempo<select id="mcQuickPeriod">'+mcQuickPeriodOptions(recoveryPeriod)+'</select></label><label>Recupero (minuti)<input id="mcQuickRecovery" type="number" min="0" max="30" value="'+recoveryMinutes+'"></label></div>';
   }else if(kind==="substitution"){
@@ -1626,7 +1626,7 @@ function mcSetPlayerQuickKind(kind){
       const rows=mcQuickAllSelectableRows();
       html+='<div class="mc-player-event-grid players"><label>Giocatore esce>'+mcQuickSelect(rows,"mcQuickPlayer","Seleziona giocatore",draft.playerId||editing?.player_id||"")+'</label><label>Giocatore entra>'+mcQuickSelect(rows.filter(x=>String(x.player_id)!==String(draft.playerId||editing?.player_id||"")),"mcQuickOther","Nessun ingresso",editing?.secondary_player_id||"")+'</label></div>';
     }else{
-      html+='<div class="mc-player-event-grid players"><label>Giocatore esce>'+mcQuickSelect(fieldRows,"mcQuickPlayer","Seleziona giocatore")+'</label><label>Giocatore entra>'+mcQuickSelect(benchRows,"mcQuickOther","Seleziona giocatore")+'</label></div>';
+      html+='<div class="mc-player-event-grid players"><label>Giocatore esce>'+mcQuickSelect(fieldRows,"mcQuickPlayer","Seleziona giocatore",draft.playerId||"")+'</label><label>Giocatore entra>'+mcQuickSelect(benchRows,"mcQuickOther","Seleziona giocatore")+'</label></div>';
     }
     const reason=editing?.substitution_reason||"technical";
     html+='<label>Motivo cambio<select id="mcQuickSubtype"><option value="technical" '+(reason==="technical"?"selected":"")+'>Scelta tecnica</option><option value="injury" '+(reason==="injury"?"selected":"")+'>Infortunio</option><option value="tactical" '+(reason==="tactical"?"selected":"")+'>Tattico</option><option value="other" '+(reason==="other"?"selected":"")+'>Altro</option></select></label>';
@@ -1641,7 +1641,7 @@ function mcSetPlayerQuickKind(kind){
       const rows=mcQuickAllSelectableRows();
       html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickSelect(rows,"mcQuickPlayer","Seleziona marcatore",draft.playerId||editing?.player_id||"")+'</label><label>Assistman>'+mcQuickSelect(rows.filter(x=>String(x.player_id)!==String(draft.playerId||editing?.player_id||"")),"mcQuickOther","Nessun assist",editing?.secondary_player_id||"")+'</label></div>';
     }else{
-      html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickSelect(fieldRows,"mcQuickPlayer","Seleziona marcatore")+'</label><label>Assistman>'+mcQuickSelect(fieldRows,"mcQuickOther","Nessun assist")+'</label></div>';
+      html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickSelect(fieldRows,"mcQuickPlayer","Seleziona marcatore",draft.playerId||"")+'</label><label>Assistman>'+mcQuickSelect(fieldRows.filter(x=>String(x.player_id)!==String(draft.playerId||"")),"mcQuickOther","Nessun assist")+'</label></div>';
     }
     if(side!=="opponent"){
       const goalType=editing?.payload?.goal_type||"action";
@@ -1649,7 +1649,7 @@ function mcSetPlayerQuickKind(kind){
     }
   }else{
     if(side==="team"&&(source==="timeline"||source==="edit")){
-      html+='<label>Giocatore>'+mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore",draft.playerId||draft.playerId||editing?.player_id||"")+'</label>';
+      html+='<label>Giocatore>'+mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore",draft.playerId||editing?.player_id||"")+'</label>';
     }
     const cardType=editing?.event_type||"yellow_card";
     html+='<label>Cartellino<div class="mc-card-choice"><button type="button" class="yellow '+(cardType==="yellow_card"?"active":"")+'" data-quick-card="yellow_card"><i></i>Giallo</button><button type="button" class="red '+(cardType==="red_card"?"active":"")+'" data-quick-card="red_card"><i></i>Rosso</button><button type="button" class="blue '+(cardType==="blue_card"?"active":"")+'" data-quick-card="blue_card"><i></i>Blu</button></div></label><input id="mcQuickCardType" type="hidden" value="'+cardType+'">';
@@ -1896,8 +1896,9 @@ function mcRenderGeneralBench(){
   const returned=returnedIds.map(id=>mcMatchPlayer(id)||{player_id:id}).filter(Boolean);
 
   const renderRow=(x,status)=>{
-    const p=mcPlayer(x.player_id);
-    return '<div class="mc-general-bench-row"><span class="num">'+(x.shirt_number??p?.shirt_number??"–")+'</span><span class="mc-bench-player-copy"><strong>'+esc(mcPlayerName(x.player_id))+(mcInjury(x.player_id)?'<i class="mc-injury-icon" title="Infortunio">✚</i>':'')+'</strong><small>'+esc(status||roleLabel(p?.generic_role_manual))+'</small></span>'+(!mcIsPost()?mcPlayerQuickButtons(x.player_id,"bench"):"")+'</div>';
+    const p=mcPlayer(x.player_id),injured=!!mcInjury(x.player_id)||x.unavailability_reason==="injury";
+    const finalStatus=x.unavailability_reason==="injury"?"Infortunio":x.unavailability_reason==="technical"?"Scelta tecnica":x.unavailability_reason==="changes_finished"?"Cambi finiti":x.unavailability_reason==="physical"?"Problema fisico":status;
+    return '<div class="mc-general-bench-row"><span class="num">'+(x.shirt_number??p?.shirt_number??"–")+'</span><span class="mc-bench-player-copy"><strong>'+esc(mcPlayerName(x.player_id))+(injured?'<i class="mc-injury-icon" title="Infortunio">✚</i>':'')+'</strong><small>'+esc(finalStatus||roleLabel(p?.generic_role_manual))+'</small></span>'+(!mcIsPost()?mcPlayerQuickButtons(x.player_id,"bench"):"")+'</div>';
   };
   const unusedHtml=unused.map(x=>renderRow(x,roleLabel(mcPlayer(x.player_id)?.generic_role_manual))).join("");
   const returnedHtml=returned.map(x=>{
