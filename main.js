@@ -1443,8 +1443,10 @@ function mcTimeline(target,limit,filters=null){
   const hasSecondHalf=all.some(e=>e.event_type!=="period_end"&&mcEventPeriod(e)==="second_half")||recoveryByPeriod.has("first_half");
   const recoveryDividerInserted=new Set();
 
-  regular.forEach((e,index)=>{
+  for(let index=0;index<regular.length;){
+    const e=regular[index];
     const period=mcEventPeriod(e);
+
     if(periodsWithAddedTime.has(period)&&!mcIsAddedTimeEvent(e)&&!recoveryDividerInserted.has(period)){
       const recoveryEvent=recoveryByPeriod.get(period)?.event;
       rows.push('<div class="mc-recovery-divider" '+(recoveryEvent?'data-mc-event-id="'+esc(recoveryEvent.id)+'" role="button" tabindex="0"':'')+'><span></span><strong>'+esc(mcRecoveryDividerLabel(period,recoveryByPeriod,regular))+'</strong><span></span></div>');
@@ -1453,12 +1455,49 @@ function mcTimeline(target,limit,filters=null){
     if(!halfInserted&&hasSecondHalf&&period==="first_half"){
       rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><button type="button" class="mc-period-add" data-mc-timeline-add-period="first_half" title="Aggiungi evento 1° tempo">+</button><span></span></div>');
       const rec1=recoveryByPeriod.get("first_half");
-      if(rec1?.minutes&&!periodsWithAddedTime.has("first_half"))rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec1.event.id)+'" role="button" tabindex="0">Recupero 1T +'+rec1.minutes+'\'</div>');
+      if(rec1?.minutes&&!periodsWithAddedTime.has("first_half"))rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec1.event.id)+'" role="button" tabindex="0">Recupero 1T +'+rec1.minutes+'&#39;</div>');
       halfInserted=true;
     }
 
-    const isHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
     const minute=mcDisplayMinute(e);
+    const add=index===0?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
+
+    if(e.event_type==="substitution"){
+      const sameMoment=x=>
+        x?.event_type==="substitution"&&
+        mcEventPeriod(x)===period&&
+        Number(x.minute)===Number(e.minute)&&
+        Number(x.stoppage_minute||0)===Number(e.stoppage_minute||0);
+      const grouped=[];
+      let j=index;
+      while(j<regular.length&&sameMoment(regular[j])){grouped.push(regular[j]);j++}
+
+      const renderPair=x=>{
+        const isHome=(x.team_side==="team"&&ownHome)||(x.team_side==="opponent"&&!ownHome);
+        const main=x.secondary_player_id?mcTimelinePlayerName(x.secondary_player_id):"Nessun ingresso";
+        const secondary=x.player_id?mcTimelinePlayerName(x.player_id):"Uscita da completare";
+        const icon='<span class="mc-event-symbol substitution"><i class="sub-out">←</i><b class="sub-in">→</b></span>';
+        const names='<span class="mc-event-names"><strong>'+esc(main)+'</strong><small>'+esc(secondary)+'</small></span>';
+        const content='<span class="mc-event-content">'+icon+names+'</span>';
+        return {isHome,html:'<div class="mc-substitution-pair" data-mc-event-id="'+esc(x.id)+'" role="button" tabindex="0">'+content+'</div>'};
+      };
+
+      const pairs=grouped.map(renderPair);
+      const home=pairs.filter(x=>x.isHome).map(x=>x.html).join("");
+      const away=pairs.filter(x=>!x.isHome).map(x=>x.html).join("");
+
+      rows.push(
+        '<div class="mc-event-row mc-substitution-group'+(index===0?" mc-event-latest":"")+'">'+
+          '<div class="mc-event-half mc-event-half-home"><div class="mc-substitution-stack">'+home+'</div></div>'+
+          '<time>'+minute+'</time>'+add+
+          '<div class="mc-event-half mc-event-half-away"><div class="mc-substitution-stack">'+away+'</div></div>'+
+        '</div>'
+      );
+      index=j;
+      continue;
+    }
+
+    const isHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
     const partial=e.event_type==="goal"?(scoreAt.get(e)||""):"";
 
     let main="",secondary="";
@@ -1467,30 +1506,20 @@ function mcTimeline(target,limit,filters=null){
         main=e.player_id?mcTimelinePlayerName(e.player_id):"Gol";
         secondary=e.secondary_player_id?mcTimelinePlayerName(e.secondary_player_id):"";
       }else main="Gol avversario";
-    }else if(e.event_type==="substitution"){
-      main=e.secondary_player_id?mcTimelinePlayerName(e.secondary_player_id):"Nessun ingresso";
-      secondary=e.player_id?mcTimelinePlayerName(e.player_id):"Uscita da completare";
-    }else if(e.event_type==="yellow_card"){
+    }else if(e.event_type==="yellow_card"||e.event_type==="blue_card"||e.event_type==="red_card"){
       const shirt=e.payload?.opponent_shirt_number;
-      main=e.team_side==="team"?(e.player_id?mcTimelinePlayerName(e.player_id):"Ammonizione"):("Ammonizione avversaria"+(shirt?" #"+shirt:""));
-    }else if(e.event_type==="blue_card"){
-      const shirt=e.payload?.opponent_shirt_number;
-      main=e.team_side==="team"?(e.player_id?mcTimelinePlayerName(e.player_id):"Cartellino blu"):("Cartellino blu avversario"+(shirt?" #"+shirt:""));
-    }else if(e.event_type==="red_card"){
-      const shirt=e.payload?.opponent_shirt_number,isAccumulation=e.payload?.card_type==="second_yellow_blue"||e.payload?.card_type==="second_card";
-      main=e.team_side==="team"?(e.player_id?mcTimelinePlayerName(e.player_id):"Espulsione"):("Espulsione avversaria"+(shirt?" #"+shirt:"")+(isAccumulation?" · somma cartellini":""));
+      main=e.team_side==="team"
+        ?(e.player_id?mcTimelinePlayerName(e.player_id):"Giocatore")
+        :(shirt?"#"+shirt:"Avversario");
     }
 
     const icon=e.event_type==="goal"
       ?'<span class="mc-event-symbol goal">⚽</span>'
-      :e.event_type==="substitution"
-        ?'<span class="mc-event-symbol substitution"><i class="sub-out">←</i><b class="sub-in">→</b></span>'
-        :mcTimelineCardIcon(e,all);
+      :mcTimelineCardIcon(e,all);
 
     const names='<span class="mc-event-names"><strong>'+esc(main)+'</strong>'+(secondary?'<small>'+esc(secondary)+'</small>':"")+'</span>';
     const score=partial?'<span class="mc-goal-score">'+esc(partial)+'</span>':"";
     const content='<span class="mc-event-content">'+icon+score+names+'</span>';
-    const add=index===0?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
 
     rows.push(
       '<div class="mc-event-row mc-event-'+(isHome?"home":"away")+(index===0?" mc-event-latest":"")+'" data-mc-event-id="'+esc(e.id)+'" role="button" tabindex="0">'+
@@ -1499,7 +1528,8 @@ function mcTimeline(target,limit,filters=null){
         '<div class="mc-event-half mc-event-half-away">'+(isHome?"":content)+'</div>'+
       '</div>'
     );
-  });
+    index++;
+  }
 
   if(!halfInserted&&hasSecondHalf){
     rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><button type="button" class="mc-period-add" data-mc-timeline-add-period="first_half" title="Aggiungi evento 1° tempo">+</button><span></span></div>');
