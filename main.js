@@ -1903,7 +1903,7 @@ function rosterStat(id){return playerStats.find(x=>x.player_id===id)||{}}
 function rosterShirtNumber(p){
   const counts=new Map();
   rosterMatchPlayers.filter(x=>x.player_id===p.player_id&&x.shirt_number!=null).forEach(x=>{const n=Number(x.shirt_number);counts.set(n,(counts.get(n)||0)+1)});
-  if(!counts.size)return p.shirt_number??"–";
+  if(!counts.size)return "–";
   const max=Math.max(...counts.values());
   return Math.max(...[...counts.entries()].filter(([,count])=>count===max).map(([n])=>n));
 }
@@ -1978,7 +1978,6 @@ function openPlayerDialog(p=null){
   $("#newPlayerFirst").value=p?.first_name||"";
   $("#newPlayerLast").value=p?.last_name||"";
   $("#newPlayerRole").value=p?.generic_role_manual||"P";
-  $("#newPlayerNumber").value=p?.shirt_number??"";
   $("#newPlayerBirth").value=p?.birth_date||"";
   $("#newPlayerNationality").value=p?.nationality_code||"";
   $("#newPlayerHeight").value=p?.height_cm??"";
@@ -1998,11 +1997,11 @@ $("#playerForm").onsubmit=async e=>{
     const payload={team_id:currentSeason.team_id,first_name:$("#newPlayerFirst").value.trim(),last_name:$("#newPlayerLast").value.trim(),generic_role_manual:$("#newPlayerRole").value,birth_date:$("#newPlayerBirth").value||null,nationality_code:$("#newPlayerNationality").value.trim().toUpperCase()||null,height_cm:$("#newPlayerHeight").value?+$("#newPlayerHeight").value:null,preferred_foot:$("#newPlayerFoot").value||null,photo_url:$("#newPlayerPhoto").value.trim()||null,public_notes:$("#newPlayerNotes").value.trim()||null};
     if(id){
       const pr=await db.from("players").update(payload).eq("id",id).select("*").maybeSingle();assertSaved(pr,"Giocatore");
-      const roster=rosterRows.find(x=>x.player_id===id),num=$("#newPlayerNumber").value?+$("#newPlayerNumber").value:null;
-      if(roster?.roster_id){const rr=await db.from("app_roster").update({shirt_number:num}).eq("id",roster.roster_id).select("*").maybeSingle();assertSaved(rr,"Rosa")}
     }else{
       const pr=await db.from("players").insert(payload).select("*").single();assertSaved(pr,"Giocatore");
-      const rr=await db.from("app_roster").insert({season_id:currentSeason.id,player_id:pr.data.id,shirt_number:$("#newPlayerNumber").value?+$("#newPlayerNumber").value:null,active:true}).select("*").single();assertSaved(rr,"Rosa");
+      const rr=await db.from("app_roster").insert({season_id:currentSeason.id,player_id:pr.data.id,active:true}).select("*").single();
+      if(rr.error){await db.from("players").delete().eq("id",pr.data.id);throw rr.error}
+      assertSaved(rr,"Rosa");
       selectedPlayerId=pr.data.id;
     }
     $("#playerDialog").close();await loadRosterView();
