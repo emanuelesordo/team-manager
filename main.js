@@ -2764,9 +2764,107 @@ function fillFixtureVenueFromHome(force=false){
     $("#fixtureVenueAddress").value=v.address||"";
   }
 }
-function openFixture(f=null){
+let fixtureEditorEvents=[];
+let fixtureEditorCurrent=null;
+
+function fixtureEventIcon(type){
+  return type==="goal"?"⚽":type==="yellow_card"?"▰":type==="blue_card"?"▰":type==="red_card"?"▰":"•";
+}
+function fixtureEventLabel(type){
+  return type==="goal"?"Gol":type==="yellow_card"?"Cartellino giallo":type==="blue_card"?"Cartellino blu":type==="red_card"?"Cartellino rosso":"Evento";
+}
+function fixtureEventClass(type){
+  return type==="yellow_card"?"yellow":type==="blue_card"?"blue":type==="red_card"?"red":"goal";
+}
+function fixtureScoreFromEvents(){
+  return fixtureEditorEvents.reduce((a,e)=>{
+    if(e.event_type!=="goal")return a;
+    if(e.side==="home")a.home++;
+    if(e.side==="away")a.away++;
+    return a;
+  },{home:0,away:0});
+}
+function fixtureRenderResultCheck(){
+  const box=$("#fixtureResultCheck");
+  if(!box)return;
+  const h=$("#fixtureHomeScore").value,a=$("#fixtureAwayScore").value;
+  const scoreReady=h!==""&&a!=="";
+  const goals=fixtureScoreFromEvents();
+  const eventsMatch=scoreReady&&Number(h)===goals.home&&Number(a)===goals.away;
+  const hasGoalEvents=fixtureEditorEvents.some(e=>e.event_type==="goal");
+  if(!scoreReady){
+    box.className="fixture-result-check neutral";
+    box.innerHTML='<span>Inserisci il punteggio per poter confermare definitivamente.</span>';
+    return;
+  }
+  if(!hasGoalEvents){
+    box.className="fixture-result-check warning";
+    box.innerHTML=`<span>Eventi gol non ancora registrati · risultato ${esc(h)}–${esc(a)}</span><button type="button" data-open-fixture-events>Inserisci eventi</button>`;
+  }else if(!eventsMatch){
+    box.className="fixture-result-check error";
+    box.innerHTML=`<span>Controllo non superato: eventi gol ${goals.home}–${goals.away}, risultato ${esc(h)}–${esc(a)}</span><button type="button" data-open-fixture-events>Correggi eventi</button>`;
+  }else{
+    box.className="fixture-result-check ok";
+    box.innerHTML=`<span>✓ Punteggio coerente con gli eventi gol: ${goals.home}–${goals.away}</span>`;
+  }
+  box.querySelector("[data-open-fixture-events]")?.addEventListener("click",()=>fixtureSetTab("events"));
+}
+function fixtureRenderEvents(){
+  const list=$("#fixtureEventsList"),count=$("#fixtureEventCount");
+  if(count)count.textContent=String(fixtureEditorEvents.length);
+  if(!list)return;
+  const ordered=[...fixtureEditorEvents].sort((a,b)=>(Number(a.minute||0)+Number(a.stoppage_minute||0)/100)-(Number(b.minute||0)+Number(b.stoppage_minute||0)/100));
+  list.innerHTML=ordered.length?ordered.map(e=>{
+    const side=e.side==="home"?(fixtureEditorCurrent?.home_team||"Casa"):(fixtureEditorCurrent?.away_team||"Ospite");
+    const minute=Number.isFinite(Number(e.minute))?Number(e.minute):0;
+    const stop=Number(e.stoppage_minute||0);
+    return `<div class="fixture-event-item ${fixtureEventClass(e.event_type)}">
+      <div class="fixture-event-minute">${minute}'${stop?+"+"+stop:""}</div>
+      <span class="fixture-event-icon">${fixtureEventIcon(e.event_type)}</span>
+      <div class="fixture-event-copy"><strong>${fixtureEventLabel(e.event_type)}</strong><small>${esc(side)}</small></div>
+      <button type="button" class="icon-btn fixture-event-delete" data-fixture-event-delete="${e.id}" title="Elimina">×</button>
+    </div>`;
+  }).join(""):'<div class="fixture-events-empty">Nessun evento registrato.</div>';
+  $$("[data-fixture-event-delete]").forEach(b=>b.onclick=()=>fixtureDeleteEvent(b.dataset.fixtureEventDelete));
+  fixtureRenderResultCheck();
+}
+async function fixtureLoadEvents(fixtureId){
+  fixtureEditorEvents=[];
+  if(!fixtureId){fixtureRenderEvents();return}
+  const r=await db.from("app_fixture_events").select("*").eq("fixture_id",fixtureId);
+  if(r.error){
+    $("#fixtureError").textContent="Eventi non disponibili.";
+    $("#fixtureError").classList.remove("hidden");
+  }else fixtureEditorEvents=r.data||[];
+  fixtureRenderEvents();
+}
+function fixtureSetTab(tab){
+  $$("[data-fixture-tab]").forEach(b=>b.classList.toggle("active",b.dataset.fixtureTab===tab));
+  $$("[data-fixture-panel]").forEach(p=>p.classList.toggle("hidden",p.dataset.fixturePanel!==tab));
+}
+function fixtureUpdateBubble(){
+  const home=$("#fixtureHome").value.trim()||"Casa",away=$("#fixtureAway").value.trim()||"Ospite";
+  const hv=teamVisual(home),av=teamVisual(away);
+  $("#fixtureHomeDisplay").textContent=home;
+  $("#fixtureAwayDisplay").textContent=away;
+  $("#fixtureHomeLogo").innerHTML=hv.logo?`<img src="${esc(hv.logo)}" alt="">`:`<span>${esc(hv.short)}</span>`;
+  $("#fixtureAwayLogo").innerHTML=av.logo?`<img src="${esc(av.logo)}" alt="">`:`<span>${esc(av.short)}</span>`;
+  const round=$("#fixtureRound").value||"–",kickoff=$("#fixtureKickoff").value;
+  $("#fixtureBubbleMeta").textContent=`Turno ${round}${kickoff?" · "+localDateTime(new Date(kickoff).toISOString()):""}`;
+  $("#fixtureScoreState").textContent=$("#fixtureStatus").value==="finished"?"DEFINITIVO":"PROVVISORIO";
+}
+function fillFixtureVenueFromHome(force=false){
+  const home=$("#fixtureHome")?.value?.trim();if(!home)return;
+  const v=teamVenueData(home);
+  if(force||(!$("#fixtureVenueName").value&&!$("#fixtureVenueAddress").value)){
+    $("#fixtureVenueName").value=v.name||"";
+    $("#fixtureVenueAddress").value=v.address||"";
+  }
+}
+async function openFixture(f=null){
   $("#fixtureForm").reset();
   $("#fixtureError").classList.add("hidden");
+  fixtureEditorCurrent=f||null;
   $("#fixtureId").value=f?.id||"";
   $("#fixtureDialogTitle").textContent=f?"Modifica partita":"Nuova partita";
   $("#fixtureCsiImportBtn").disabled=!f;
@@ -2783,68 +2881,157 @@ function openFixture(f=null){
   $("#fixtureHomeScore").value=f?.home_score??"";
   $("#fixtureAwayScore").value=f?.away_score??"";
   $("#fixtureTeamNames").innerHTML=[team?.name,...opponents.map(o=>o.name)].filter(Boolean).map(n=>`<option value="${esc(n)}"></option>`).join("");
-  $("#fixtureHome").onchange=()=>fillFixtureVenueFromHome(true);
+  $("#fixtureHome").onchange=()=>{fillFixtureVenueFromHome(true);fixtureUpdateBubble()};
+  $("#fixtureAway").onchange=fixtureUpdateBubble;
+  $("#fixtureRound").oninput=fixtureUpdateBubble;
+  $("#fixtureKickoff").onchange=fixtureUpdateBubble;
+  $("#fixtureStatus").onchange=fixtureUpdateBubble;
+  $("#fixtureHomeScore").oninput=fixtureRenderResultCheck;
+  $("#fixtureAwayScore").oninput=fixtureRenderResultCheck;
+  fixtureSetTab("result");
+  fixtureUpdateBubble();
+  await fixtureLoadEvents(f?.id||null);
   $("#fixtureDialog").showModal();
 }
 $$("[data-close-fixture]").forEach(b=>b.onclick=()=>$("#fixtureDialog").close());
-$("#fixtureStatus").onchange=()=>{
-  const finished=$("#fixtureStatus").value==="finished";
-  if(!finished){$("#fixtureHomeScore").value="";$("#fixtureAwayScore").value=""}
+$$("[data-fixture-tab]").forEach(b=>b.onclick=()=>fixtureSetTab(b.dataset.fixtureTab));
+
+$("#fixtureAddEventBtn").onclick=()=>{
+  $("#fixtureEventComposer").classList.remove("hidden");
+  $("#fixtureEventMinute").focus();
 };
-$("#fixtureForm").onsubmit=async e=>{
-  e.preventDefault();
-  $("#fixtureError").classList.add("hidden");
+$("#fixtureCancelEventBtn").onclick=()=>$("#fixtureEventComposer").classList.add("hidden");
+$("#fixtureSaveEventBtn").onclick=async()=>{
+  const error=$("#fixtureError");error.classList.add("hidden");
   try{
-    if(!sessionUser)throw new Error("Accedi per modificare il calendario.");
-    const id=$("#fixtureId").value;
-    const status=$("#fixtureStatus").value;
-    const homeScore=$("#fixtureHomeScore").value;
-    const awayScore=$("#fixtureAwayScore").value;
-    if(status==="finished"&&(homeScore===""||awayScore===""))throw new Error("Inserisci il risultato.");
-    const existing=(window.__competitionFixtureRows||[]).find(x=>x.id===id);
-    const scoreChanged=!!existing&&(
-      existing.status!==status||
-      Number(existing.home_score??-999)!==Number(status==="finished"?+homeScore:-999)||
-      Number(existing.away_score??-999)!==Number(status==="finished"?+awayScore:-999)
-    );
+    if(!sessionUser)throw new Error("Accedi per inserire eventi.");
+    const fixtureId=$("#fixtureId").value;
+    if(!fixtureId)throw new Error("Salva prima la partita, poi aggiungi gli eventi.");
+    const eventType=$("#fixtureEventType").value;
+    const side=$("#fixtureEventSide").value;
+    const minute=Number($("#fixtureEventMinute").value);
+    const stoppage=Number($("#fixtureEventStoppage").value||0);
+    if(!Number.isFinite(minute)||minute<0)throw new Error("Inserisci un minuto valido.");
+    const goalsBefore=fixtureScoreFromEvents();
+    const homeScore=eventType==="goal"&&side==="home"?goalsBefore.home+1:goalsBefore.home;
+    const awayScore=eventType==="goal"&&side==="away"?goalsBefore.away+1:goalsBefore.away;
     const payload={
-      season_id:currentSeason.id,
-      competition_id:competitionHubId,
-      round_no:+$("#fixtureRound").value,
-      kickoff_at:new Date($("#fixtureKickoff").value).toISOString(),
-      home_team:$("#fixtureHome").value.trim(),
-      away_team:$("#fixtureAway").value.trim(),
-      venue_name:$("#fixtureVenueName").value.trim()||null,
-      venue_address:$("#fixtureVenueAddress").value.trim()||null,
-      venue:fixtureVenueLegacy($("#fixtureVenueName").value.trim(),$("#fixtureVenueAddress").value.trim()),
-      status,
-      home_score:status==="finished"?+homeScore:null,
-      away_score:status==="finished"?+awayScore:null,
-      ...(existing&&scoreChanged?{manual_result_override:true}:{})
+      fixture_id:fixtureId,event_type:eventType,minute,stoppage_minute:stoppage||null,side,
+      home_score:eventType==="goal"?homeScore:null,
+      away_score:eventType==="goal"?awayScore:null,
+      source:"manual",created_by:sessionUser.id
     };
-    const result=id
-      ?await db.from("app_competition_fixtures").update(payload).eq("id",id).select("*").maybeSingle()
-      :await db.from("app_competition_fixtures").insert({...payload,source:"manual"}).select("*").single();
-    const saved=assertSaved(result,"Partita");
-    if(existing&&(isOwnTeamName(existing.home_team)||isOwnTeamName(existing.away_team))){
-      if(!teamMatches.length){
-        const mr=await db.from("app_matches").select("*").eq("season_id",currentSeason.id);
-        teamMatches=mr.data||[];
-      }
-      const linked=linkedMatchForFixture(existing);
-      if(linked){
-        await db.from("app_matches").update({
-          kickoff_at:saved.kickoff_at,venue:saved.venue,venue_name:saved.venue_name,venue_address:saved.venue_address,status:saved.status,
-          home_score:saved.status==="finished"?saved.home_score:0,
-          away_score:saved.status==="finished"?saved.away_score:0
-        }).eq("id",linked.id);
-      }
-    }
-    $("#fixtureDialog").close();
-    await renderCompetitionHub();
+    const r=await db.from("app_fixture_events").insert(payload).select("*").single();
+    const saved=assertSaved(r,"Evento");
+    fixtureEditorEvents.push(saved);
+    $("#fixtureEventMinute").value="";
+    $("#fixtureEventStoppage").value="";
+    $("#fixtureEventComposer").classList.add("hidden");
+    fixtureRenderEvents();
+  }catch(err){
+    error.textContent=err.message||String(err);error.classList.remove("hidden");
+  }
+};
+async function fixtureDeleteEvent(id){
+  try{
+    if(!sessionUser)throw new Error("Accedi per eliminare eventi.");
+    const r=await db.from("app_fixture_events").delete().eq("id",id);
+    if(r.error)throw r.error;
+    fixtureEditorEvents=fixtureEditorEvents.filter(e=>String(e.id)!==String(id));
+    fixtureRenderEvents();
   }catch(err){
     $("#fixtureError").textContent=err.message||String(err);
     $("#fixtureError").classList.remove("hidden");
+  }
+}
+
+async function fixtureSave({finalize=false}={}){
+  $("#fixtureError").classList.add("hidden");
+  if(!sessionUser)throw new Error("Accedi per modificare il calendario.");
+  const id=$("#fixtureId").value;
+  const homeScoreRaw=$("#fixtureHomeScore").value;
+  const awayScoreRaw=$("#fixtureAwayScore").value;
+  const scoreReady=homeScoreRaw!==""&&awayScoreRaw!=="";
+  let status=$("#fixtureStatus").value;
+  if(finalize){
+    if(!id)throw new Error("Salva prima la partita.");
+    if(!scoreReady)throw new Error("Inserisci il risultato.");
+    const goals=fixtureScoreFromEvents();
+    if(goals.home!==Number(homeScoreRaw)||goals.away!==Number(awayScoreRaw)){
+      fixtureSetTab("events");
+      throw new Error(`Il risultato non coincide con gli eventi gol: eventi ${goals.home}-${goals.away}, risultato ${homeScoreRaw}-${awayScoreRaw}.`);
+    }
+    status="finished";
+    $("#fixtureStatus").value="finished";
+  }
+  const existing=(window.__competitionFixtureRows||[]).find(x=>x.id===id)||fixtureEditorCurrent;
+  const scoreChanged=!!existing&&(
+    existing.status!==status||
+    Number(existing.home_score??-999)!==Number(scoreReady?+homeScoreRaw:-999)||
+    Number(existing.away_score??-999)!==Number(scoreReady?+awayScoreRaw:-999)
+  );
+  const payload={
+    season_id:currentSeason.id,
+    competition_id:competitionHubId,
+    round_no:+$("#fixtureRound").value,
+    kickoff_at:new Date($("#fixtureKickoff").value).toISOString(),
+    home_team:$("#fixtureHome").value.trim(),
+    away_team:$("#fixtureAway").value.trim(),
+    venue_name:$("#fixtureVenueName").value.trim()||null,
+    venue_address:$("#fixtureVenueAddress").value.trim()||null,
+    venue:fixtureVenueLegacy($("#fixtureVenueName").value.trim(),$("#fixtureVenueAddress").value.trim()),
+    status,
+    home_score:scoreReady?+homeScoreRaw:null,
+    away_score:scoreReady?+awayScoreRaw:null,
+    ...(existing&&scoreChanged?{manual_result_override:true}:{})
+  };
+  const result=id
+    ?await db.from("app_competition_fixtures").update(payload).eq("id",id).select("*").maybeSingle()
+    :await db.from("app_competition_fixtures").insert({...payload,source:"manual"}).select("*").single();
+  const saved=assertSaved(result,"Partita");
+  fixtureEditorCurrent=saved;
+  $("#fixtureId").value=saved.id;
+  if(existing&&(isOwnTeamName(existing.home_team)||isOwnTeamName(existing.away_team))){
+    if(!teamMatches.length){
+      const mr=await db.from("app_matches").select("*").eq("season_id",currentSeason.id);
+      teamMatches=mr.data||[];
+    }
+    const linked=linkedMatchForFixture(existing);
+    if(linked){
+      await db.from("app_matches").update({
+        kickoff_at:saved.kickoff_at,venue:saved.venue,venue_name:saved.venue_name,venue_address:saved.venue_address,status:saved.status,
+        home_score:saved.home_score??0,away_score:saved.away_score??0
+      }).eq("id",linked.id);
+    }
+  }
+  fixtureUpdateBubble();
+  await renderCompetitionHub();
+  return saved;
+}
+
+$("#fixtureForm").onsubmit=async e=>{
+  e.preventDefault();
+  try{
+    const wasNew=!$("#fixtureId").value;
+    await fixtureSave({finalize:false});
+    if(wasNew){
+      $("#fixtureError").textContent="Partita salvata. Ora puoi inserire gli eventi.";
+      $("#fixtureError").className="form-error fixture-save-note";
+      await fixtureLoadEvents($("#fixtureId").value);
+      fixtureSetTab("events");
+    }else $("#fixtureDialog").close();
+  }catch(err){
+    $("#fixtureError").textContent=err.message||String(err);
+    $("#fixtureError").className="form-error";
+  }
+};
+$("#fixtureConfirmBtn").onclick=async()=>{
+  try{
+    await fixtureSave({finalize:true});
+    $("#fixtureDialog").close();
+  }catch(err){
+    $("#fixtureError").textContent=err.message||String(err);
+    $("#fixtureError").className="form-error";
   }
 };
 
