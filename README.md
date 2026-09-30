@@ -11,9 +11,19 @@ Webapp **one-team based** per gestione squadra, calendario, formazione, eventi e
 
 ## UI
 
-La shell non ha più header superiore. Il drawer contiene logo/nome squadra, selettore stagione, navigazione, Setup e controllo Accedi/Esci.
+La shell resta senza header e concentra stagione, navigazione, Setup e sessione nel drawer.
 
-Il design usa un unico stylesheet e un glassmorphism più marcato: superfici traslucide, blur 24px, saturazione, bordi chiari e ombre multilivello. Il vecchio `product-ui.css` è stato eliminato per evitare sovrapposizioni.
+Il design system è ora **dark glass / cinematic football**:
+- fondo blu-petrolio quasi nero con gradienti teal/blu;
+- pannelli scuri traslucidi;
+- blur e saturazione marcati;
+- bordi freddi molto sottili;
+- glow blu per navigazione, tab e CTA attive;
+- verde lime per stato positivo e countdown;
+- testo principale quasi bianco e testo secondario grigio-azzurro;
+- tabelle, card, form, dialog e moduli operativi condividono gli stessi token visivi.
+
+Esiste un solo stylesheet: `styles.css`.
 
 ## Moduli
 ### Home
