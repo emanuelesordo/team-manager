@@ -986,7 +986,64 @@ function mcPitch(target,rows,remove){
   }).join("");
 }
 
-function mcTimeline(target,limit,filters=null){let rows=[...matchCenterState.events];if(filters)rows=rows.filter(e=>filters.has(e.event_type));rows=rows.sort((a,b)=>(a.minute??999)-(b.minute??999));if(limit)rows=rows.slice(-limit);$(target).innerHTML=rows.length?rows.map(e=>{let d=e.team_side==="opponent"?"Avversario":mcPlayerName(e.player_id);if(e.event_type==="substitution")d=`🔴 ${mcPlayerName(e.player_id)}${e.secondary_player_id?` · 🟢 ${mcPlayerName(e.secondary_player_id)}`:" · nessun ingresso"}`;if(e.event_type==="goal"&&e.secondary_player_id)d+=` · assist ${mcPlayerName(e.secondary_player_id)}`;if(e.event_type==="red_card"&&e.team_side==="opponent")d="Espulsione avversaria";const icon=e.event_type==="goal"?"⚽":e.event_type==="substitution"?"↔":e.event_type==="yellow_card"?"🟨":"🟥";return `<div class="mc-event-row"><time>${e.minute==null?"–":e.minute+(e.stoppage_minute?`+${e.stoppage_minute}`:"")+"'"}</time><span>${icon}</span><div><strong>${esc(e.event_type)}</strong><small>${esc(d)}</small></div></div>`}).join(""):'<div class="empty-state">Nessun evento</div>'}
+function mcTimeline(target,limit,filters=null){
+  const all=[...matchCenterState.events].sort((a,b)=>(a.minute??999)-(b.minute??999)||new Date(a.created_at||0)-new Date(b.created_at||0));
+  const ownHome=isOwnTeamName(matchCenterState.fixture.home_team);
+  const scoreAt=new Map();
+  let homeGoals=0,awayGoals=0;
+
+  all.forEach(e=>{
+    if(e.event_type==="goal"){
+      const eventIsHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
+      if(eventIsHome)homeGoals++;else awayGoals++;
+      scoreAt.set(e,homeGoals+" - "+awayGoals);
+    }
+  });
+
+  let rows=filters?all.filter(e=>filters.has(e.event_type)):all;
+  if(limit)rows=rows.slice(-limit);
+
+  $("#"+target.replace("#","")).innerHTML=rows.length?rows.map(e=>{
+    const eventIsHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
+    const minute=e.minute==null?"–":e.minute+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
+    const icon=e.event_type==="goal"?"⚽":e.event_type==="substitution"?"↔":e.event_type==="yellow_card"?"🟨":"🟥";
+    const partial=e.event_type==="goal"?(scoreAt.get(e)||""):"";
+
+    let main="",detail="";
+    if(e.event_type==="goal"){
+      if(e.team_side==="team"){
+        main=mcPlayerName(e.player_id);
+        if(e.secondary_player_id)detail="Assist: "+mcPlayerName(e.secondary_player_id);
+      }else{
+        main="Gol avversario";
+      }
+    }else if(e.event_type==="substitution"){
+      const out=mcPlayerName(e.player_id);
+      const incoming=e.secondary_player_id?mcPlayerName(e.secondary_player_id):"Nessun ingresso";
+      main="🔴 "+out;
+      detail="🟢 "+incoming;
+    }else if(e.event_type==="yellow_card"){
+      main=e.team_side==="team"?mcPlayerName(e.player_id):"Ammonizione avversaria";
+    }else if(e.event_type==="red_card"){
+      main=e.team_side==="team"?mcPlayerName(e.player_id):"Espulsione avversaria";
+    }
+
+    const content='<span class="mc-event-icon">'+icon+'</span><div class="mc-event-copy"><strong>'+esc(main)+'</strong>'+(detail?'<small>'+esc(detail)+'</small>':"")+'</div>';
+    const homeContent=eventIsHome?content:"";
+    const awayContent=eventIsHome?"":content;
+    const homePartial=eventIsHome&&partial?partial:"";
+    const awayPartial=!eventIsHome&&partial?partial:"";
+
+    return '<div class="mc-event-row mc-event-'+(eventIsHome?"home":"away")+'">'+
+      '<b class="mc-event-partial mc-event-partial-home">'+homePartial+'</b>'+
+      '<div class="mc-event-side mc-event-side-home">'+homeContent+'</div>'+
+      '<time>'+minute+'</time>'+
+      '<div class="mc-event-side mc-event-side-away">'+awayContent+'</div>'+
+      '<b class="mc-event-partial mc-event-partial-away">'+awayPartial+'</b>'+
+    '</div>';
+  }).join(""):'<div class="empty-state">Nessun evento</div>';
+}
+
 let mcGeneralBenchSide="bench";
 let mcGeneralEventFilters=new Set(["goal","substitution","yellow_card","red_card"]);
 function mcQuickAction(type){
