@@ -852,12 +852,32 @@ async function loadDashboard(){
   const finished=fixtures.filter(f=>f.status==="finished"&&new Date(f.kickoff_at)<=now).sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
   const next=upcoming[0],last=finished[finished.length-1];
   const s=finished.reduce((a,f)=>{const o=fixtureOutcome(f);if(!o)return a;a.played++;a.gf+=o.gf;a.ga+=o.ga;if(o.result==="W")a.w++;else if(o.result==="D")a.d++;else a.l++;return a},{played:0,w:0,d:0,l:0,gf:0,ga:0});
+
   $("#dashboardHero").innerHTML=`
-    <section class="ui-card featured-match"><div class="card-section-head"><strong>Ultima partita</strong>${last?'<span class="match-status-pill done">Conclusa</span>':""}</div>${last?dashboardMatchCard(last,true):'<div class="empty-state">Nessuna partita conclusa</div>'}</section>
-    <section class="ui-card featured-match"><div class="card-section-head"><strong>Prossima partita</strong></div>${next?dashboardMatchCard(next,false):'<div class="empty-state">Nessuna partita programmata</div>'}</section>`;
-  $("#dashboardKpis").innerHTML=[["Partite giocate",s.played],["Vittorie",s.w],["Pareggi",s.d],["Sconfitte",s.l],["Gol fatti",s.gf],["Gol subiti",s.ga]].map(([l,v])=>`<div class="kpi-card"><strong>${v}</strong><span>${l}</span></div>`).join("");
+    <section class="hero-card glass">
+      <div class="hero-head"><div><h2>Ultima partita</h2>${last?`<div class="hero-meta">${esc(competitions.find(c=>c.id===last.competition_id)?.name||"")} · Giornata ${last.round_no}<br>${localDateTime(last.kickoff_at)}</div>`:""}</div>${last?'<span class="badge">Conclusa</span>':""}</div>
+      ${last?dashboardMatchCard(last,true):'<div class="empty-state">Nessuna partita conclusa</div>'}
+    </section>
+    <section class="hero-card glass">
+      <h2>Prossima partita</h2>
+      ${next?`<div class="hero-meta">${esc(competitions.find(c=>c.id===next.competition_id)?.name||"")} · Giornata ${next.round_no}<br>${localDateTime(next.kickoff_at)}</div>`:""}
+      ${next?dashboardMatchCard(next,false):'<div class="empty-state">Nessuna partita programmata</div>'}
+      ${next?'<button class="cta" type="button" data-go-calendar>Vedi dettagli</button>':""}
+    </section>`;
+
+  const kpis=[
+    [s.played,"Partite giocate","var(--blue)"],
+    [s.w,"Vittorie","var(--green)"],
+    [s.d,"Pareggi","var(--amber)"],
+    [s.l,"Sconfitte","var(--red)"],
+    [s.gf,"Gol fatti","var(--blue)"],
+    [s.ga,"Gol subiti","var(--red)"]
+  ];
+  $("#dashboardKpis").innerHTML=kpis.map(k=>`<div class="kpi glass"><b style="color:${k[2]}">${k[0]}</b><span>${k[1]}</span></div>`).join("");
+
   $("#dashboardRecent").innerHTML=finished.slice(-3).reverse().map(dashboardCompactMatchRow).join("")||'<div class="empty-state">Nessuna partita</div>';
   $("#dashboardUpcoming").innerHTML=upcoming.slice(0,3).map(dashboardCompactMatchRow).join("")||'<div class="empty-state">Nessuna partita</div>';
+
   const league=competitions.find(c=>c.kind==="league")||competitions[0];
   dashboardStandingRows=[];
   if(league){
@@ -865,40 +885,45 @@ async function loadDashboard(){
     dashboardStandingRows=(st.data||[]).sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference||b.goals_for-a.goals_for);
   }
   fitDashboardStandings();
-  requestAnimationFrame(fitDashboardStandings);
+  requestAnimationFrame(()=>{
+    fitDashboardStandings();
+    $$("#dashboardHero [data-go-calendar]").forEach(b=>b.onclick=()=>setAppView("calendar"));
+  });
 }
 function dashboardMatchCard(f,showScore){
-  const h=teamVisual(f.home_team),a=teamVisual(f.away_team),comp=competitions.find(c=>c.id===f.competition_id);
-  return `<div class="featured-meta">${esc(comp?.name||"")} · Giornata ${f.round_no}</div>
-    <div class="featured-teams">
-      <div>${fixtureLogo(f.home_team)}<strong>${esc(h.name)}</strong></div>
-      <b>${showScore?esc(f.home_score)+" - "+esc(f.away_score):"–"}</b>
-      <div>${fixtureLogo(f.away_team)}<strong>${esc(a.name)}</strong></div>
-    </div>
-    <div class="featured-foot">${localDateTime(f.kickoff_at)}</div>`;
+  const h=teamVisual(f.home_team),a=teamVisual(f.away_team);
+  return `<div class="vs">
+    <div class="team">${fixtureLogo(f.home_team)}<strong>${esc(h.name)}</strong></div>
+    <span class="score">${showScore?esc(f.home_score)+" - "+esc(f.away_score):"–"}</span>
+    <div class="team">${fixtureLogo(f.away_team)}<strong>${esc(a.name)}</strong></div>
+  </div>`;
 }
 function dashboardCompactMatchRow(f){
   const opp=isOwnTeamName(f.home_team)?teamVisual(f.away_team):teamVisual(f.home_team);
   const comp=competitions.find(c=>c.id===f.competition_id);
   const done=f.status==="finished";
-  const ownHome=isOwnTeamName(f.home_team);
-  const score=done?`${f.home_score}-${f.away_score}`:new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(new Date(f.kickoff_at));
-  return `<div class="dashboard-match-row">
-    <span class="dash-date"><b>${new Intl.DateTimeFormat("it-IT",{day:"2-digit"}).format(new Date(f.kickoff_at))}</b><small>${new Intl.DateTimeFormat("it-IT",{month:"short"}).format(new Date(f.kickoff_at)).replace(".","")}</small></span>
-    ${opp.logo?`<img src="${esc(opp.logo)}" alt="">`:`<i>${esc(opp.short)}</i>`}
-    <span class="dash-match-copy"><strong>${esc(ownHome?(team?.short_name||"CAS")+" - "+opp.short:opp.short+" - "+(team?.short_name||"CAS"))}</strong><small>${esc(comp?.name||"")} · G${f.round_no}</small></span>
-    <b class="dash-score">${esc(score)}</b>
+  const date=new Date(f.kickoff_at);
+  const score=done?`${f.home_score}-${f.away_score}`:new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(date);
+  return `<div class="match-row">
+    <div class="date">${new Intl.DateTimeFormat("it-IT",{day:"2-digit"}).format(date)}<small>${new Intl.DateTimeFormat("it-IT",{month:"short"}).format(date).replace(".","").toUpperCase()}</small></div>
+    ${opp.logo?`<img class="row-crest" src="${esc(opp.logo)}" alt="">`:`<span class="row-crest fallback">${esc(opp.short)}</span>`}
+    <div><strong>${esc(isOwnTeamName(f.home_team)?(team?.short_name||"CAS")+" - "+opp.short:opp.short+" - "+(team?.short_name||"CAS"))}</strong><small>${esc(comp?.name||"")} · Giornata ${f.round_no}</small></div>
+    <time>${esc(score)}</time>
   </div>`;
 }
 function fitDashboardStandings(){
   const card=$("#dashboardStandingsCard"),box=$("#dashboardStandings");
   if(!card||!box)return;
-  const head=card.querySelector(".card-section-head");
-  const usable=Math.max(72,card.clientHeight-(head?.offsetHeight||0)-16);
-  const rowHeight=27;
+  const head=card.querySelector(".card-head");
+  const usable=Math.max(90,card.clientHeight-(head?.offsetHeight||0)-8);
+  const rowHeight=31;
   const count=Math.max(3,Math.min(dashboardStandingRows.length,Math.floor(usable/rowHeight)));
   const rows=dashboardStandingRows.slice(0,count);
-  box.innerHTML=rows.length?rows.map((r,i)=>`<div class="stand-row ${isOwnTeamName(r.team)?"own":""}"><span>${i+1}</span><strong>${esc(r.team)}</strong><small>${r.played}</small><b>${r.points}</b></div>`).join(""):'<div class="empty-state">Nessuna classifica</div>';
+  box.innerHTML=rows.length?`<table><thead><tr><th>#</th><th>Squadra</th><th>G</th><th>Pt</th></tr></thead><tbody>${rows.map((r,i)=>`<tr class="${isOwnTeamName(r.team)?"me":""}"><td>${i+1}</td><td><span class="tn">${dashboardTeamBadge(r.team)}${esc(r.team)}</span></td><td>${r.played}</td><td>${r.points}</td></tr>`).join("")}</tbody></table>`:'<div class="empty-state">Nessuna classifica</div>';
+}
+function dashboardTeamBadge(name){
+  const v=teamVisual(name);
+  return v.logo?`<img class="crest" src="${esc(v.logo)}" alt="">`:`<span class="crest crest-fallback">${esc(v.short)}</span>`;
 }
 window.addEventListener("resize",fitDashboardStandings);
 $$("[data-go-calendar]").forEach(b=>b.onclick=()=>setAppView("calendar"));
