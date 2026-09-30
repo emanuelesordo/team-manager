@@ -622,3 +622,261 @@ dialog form{padding:16px}
   .football-pitch{min-height:430px}
   .event-edit-row{grid-template-columns:1fr 60px}
 }
+
+/* ===== Home precision pass ===== */
+.side-link .nav-icon{
+  width:18px;
+  height:18px;
+  display:block;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.65;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.side-link[data-app-view="events"] .nav-icon{fill:currentColor;stroke:none}
+.side-link{font-size:0}
+
+.home-team-overview{padding:6px 0 10px}
+.home-team-identity{
+  display:grid;
+  grid-template-rows:92px auto auto;
+  justify-items:center;
+  align-content:start;
+  text-align:center;
+  gap:6px;
+  min-height:126px;
+}
+.home-team-mark{
+  width:88px;
+  height:88px;
+  display:grid;
+  place-items:center;
+  overflow:visible;
+}
+.home-team-mark img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  display:block;
+}
+.home-team-identity>strong{
+  display:block;
+  max-width:100%;
+  margin:0;
+  font-size:14px;
+  line-height:1.1;
+  font-weight:850;
+  white-space:nowrap;
+}
+.home-team-identity>small{
+  display:block;
+  margin:0;
+  color:#697078;
+  font-size:9px;
+  line-height:1;
+}
+
+/* Schedule: logo avversaria instead of stretched black oval */
+.home-calendar-grid{
+  display:grid;
+  grid-template-columns:repeat(7,minmax(0,1fr));
+  grid-auto-rows:36px;
+  gap:3px;
+}
+.home-calendar-grid .calendar-empty,
+.home-calendar-grid .calendar-day{
+  position:relative;
+  min-width:0;
+  min-height:36px;
+  display:grid;
+  place-items:center;
+  font-size:8px;
+  font-weight:700;
+}
+.home-calendar-grid .logo-day{
+  padding:2px;
+}
+.home-calendar-grid .logo-day img{
+  width:28px;
+  height:28px;
+  object-fit:contain;
+  display:block;
+}
+.home-calendar-grid .logo-day i{
+  position:absolute;
+  right:1px;
+  bottom:0;
+  min-width:13px;
+  height:13px;
+  padding:0 3px;
+  display:grid;
+  place-items:center;
+  border-radius:7px;
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(15,20,23,.08);
+  color:#111;
+  font-size:7px;
+  font-style:normal;
+  font-weight:850;
+  line-height:1;
+}
+.home-calendar-grid .compact-day{
+  justify-self:center;
+  align-self:center;
+  min-width:25px;
+  width:auto;
+  height:25px;
+  min-height:25px;
+  padding:0 6px;
+  border-radius:12px;
+  background:#111;
+  color:#fff;
+  line-height:1;
+}
+.home-calendar-grid .compact-day::after{
+  content:"";
+  position:absolute;
+  bottom:-4px;
+  width:3px;
+  height:3px;
+  border-radius:50%;
+  background:#83e75b;
+}
+
+/* Scores: [name] [crest] [score] [crest] [name] [status] */
+#homeScores{
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+}
+.home-score-row{
+  flex:1 1 0;
+  min-height:0;
+  display:grid;
+  grid-template-columns:minmax(48px,1fr) 27px 56px 27px minmax(48px,1fr) 47px;
+  align-items:center;
+  gap:6px;
+  padding:5px 0;
+  border-bottom:1px solid rgba(15,20,23,.08);
+}
+.home-score-row:last-child{border-bottom:0}
+.score-team-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:8px;
+  font-weight:820;
+}
+.score-home-name{text-align:right}
+.score-away-name{text-align:left}
+.score-crest{
+  width:27px;
+  height:27px;
+  display:grid;
+  place-items:center;
+}
+.score-crest img{
+  width:25px;
+  height:25px;
+  object-fit:contain;
+  display:block;
+}
+.score-crest-fallback{
+  width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#e4e4e4;
+  color:#111;
+  font-size:6px;
+  font-weight:850;
+}
+.home-score-row>strong{
+  text-align:center;
+  font-size:clamp(9px,.78vw,13px);
+  font-weight:850;
+  white-space:nowrap;
+}
+.home-score-row>small{
+  justify-self:end;
+  color:#777d81;
+  font-size:7px;
+  font-weight:850;
+  white-space:nowrap;
+}
+
+/* Standings: 5 rows consume all card height */
+.home-standings-panel{
+  display:flex;
+  flex-direction:column;
+}
+.home-standings-panel .home-panel-head{
+  flex:0 0 auto;
+}
+#dashboardStandings{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+}
+#dashboardStandings table{
+  width:100%;
+  height:100%;
+  min-height:0;
+  table-layout:fixed;
+  border-collapse:collapse;
+}
+#dashboardStandings thead{
+  height:27px;
+}
+#dashboardStandings tbody{
+  height:calc(100% - 27px);
+}
+#dashboardStandings tbody tr{
+  height:20%;
+}
+#dashboardStandings th{
+  padding:4px 6px;
+  font-size:clamp(6px,.47vw,8px);
+  vertical-align:middle;
+}
+#dashboardStandings td{
+  padding:3px 6px;
+  font-size:clamp(8px,.62vw,11px);
+  vertical-align:middle;
+}
+#dashboardStandings td:first-child{
+  width:26px;
+  font-weight:850;
+}
+#dashboardStandings th:first-child{width:26px}
+#dashboardStandings th:nth-child(3),
+#dashboardStandings th:nth-child(4),
+#dashboardStandings td:nth-child(3),
+#dashboardStandings td:nth-child(4){width:34px}
+#dashboardStandings .tn{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:clamp(8px,.64vw,11px);
+  line-height:1.05;
+  font-weight:800;
+}
+#dashboardStandings .tn .crest{
+  width:clamp(16px,1.18vw,22px);
+  height:clamp(16px,1.18vw,22px);
+  flex:0 0 auto;
+  object-fit:contain;
+}
+#dashboardStandings tr.me td{
+  background:#d8d8d8;
+  font-weight:850;
+}
+
+@media(max-width:1120px){
+  .side-link .nav-icon{width:17px;height:17px}
+  #dashboardStandings tbody tr{height:auto}
+}
