@@ -11,21 +11,18 @@ Webapp **one-team based** per gestione squadra, calendario, formazione, eventi e
 
 ## UI
 
-L'interfaccia è stata ricostruita da zero con un sistema **minimal flat glass**.
+L'intero progetto usa ora lo stesso linguaggio della Home editoriale:
 
-Principi:
-- pannelli come lastre di vetro piane, non card gonfie;
-- angoli da 2–4 px;
-- nessuna pill decorativa;
-- profondità ottenuta con trasparenza, blur, bordi e stratificazione, non con curvature;
-- navigazione attiva evidenziata da una barra lineare e da un riempimento leggero;
-- tab e filtri come linguette piatte;
-- CTA rettangolari compatte;
-- stemmi senza contenitori tondeggianti;
-- avatar circolari solo dove semanticamente corretto;
-- gerarchie dense, tecniche e moderne.
+- base chiara grigio-perla;
+- superfici bianche / grigio chiarissimo con effetto vetro;
+- rail laterale compatta con controlli iconici;
+- bottoni e filtri piccoli e netti;
+- tabelle, form, calendari, card, dialog, rosa, partite, eventi e statistiche con lo stesso sistema visivo;
+- accenti neri, verde lime e blu solo dove servono;
+- ombre morbide e poco invadenti;
+- densità elevata e gerarchie tipografiche semplici.
 
-La logica applicativa e il modello dati restano invariati.
+La logica applicativa non cambia.
 
 ## Moduli
 ### Home
