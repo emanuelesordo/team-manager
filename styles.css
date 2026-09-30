@@ -4334,3 +4334,62 @@ dialog form{padding:16px}
     font-size:8px;
   }
 }
+
+
+/* Match Center finalized tabs live in the header, like the original tab strip */
+.mc-header .mc-post-tabs{
+  height:38px;
+  margin:4px -24px 0;
+  padding:0 24px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  gap:12px;
+  border-bottom:1px solid rgba(30,34,36,.08);
+}
+.mc-header .mc-post-tabs.hidden{
+  display:none!important;
+}
+.mc-header .mc-post-tabs button{
+  min-width:96px;
+  height:34px;
+  padding:0 14px;
+  border:0;
+  border-bottom:3px solid transparent;
+  border-radius:0;
+  background:transparent!important;
+  color:#8a8f92;
+  font-size:9px;
+  font-weight:900;
+  letter-spacing:.01em;
+}
+.mc-header .mc-post-tabs button:hover{
+  color:#444a4e;
+}
+.mc-header .mc-post-tabs button.active{
+  color:#17191a;
+  border-bottom-color:#17191a;
+  background:transparent!important;
+}
+
+/* Tabs are no longer inside the body, so both views use its full height */
+.mc-body>[data-mc-post-panel="match"],
+.mc-body>[data-mc-post-panel="rating"],
+.mc-rating-panel{
+  height:100%!important;
+}
+
+@media(max-width:700px){
+  .mc-header .mc-post-tabs{
+    height:36px;
+    margin:4px -14px 0;
+    padding:0 14px;
+    gap:6px;
+  }
+  .mc-header .mc-post-tabs button{
+    flex:0 1 120px;
+    min-width:90px;
+    height:32px;
+    padding-inline:10px;
+  }
+}
