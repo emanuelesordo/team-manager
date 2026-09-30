@@ -548,14 +548,222 @@ async function renderCompetitionHub(){
     window.__competitionFixtureRows=fx.data||[];
     renderCompetitionFixtures(window.__competitionFixtureRows);
   }
+  if(!st.error&&!fx.error)renderCompetitionProjection(st.data||[],fx.data||[],c);
+  else{
+    $("#competitionProjection").innerHTML='<div class="muted">Proiezione non disponibile.</div>';
+    $("#projectionReliability").textContent="";
+  }
 }
 function renderStandings(rows){
   const sorted=[...rows].sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference||b.goals_for-a.goals_for||String(a.team).localeCompare(String(b.team),"it"));
   $("#competitionStandings").innerHTML=sorted.length?`<div class="standings-wrap"><table class="standings-table">
     <thead><tr><th>#</th><th>Squadra</th><th>G</th><th>V</th><th>N</th><th>P</th><th>GF</th><th>GS</th><th>DR</th><th>Pt</th></tr></thead>
-    <tbody>${sorted.map((r,i)=>`<tr class="${isOwnTeamName(r.team)?"own-team":""}"><td>${i+1}</td><td>${esc(r.team)}</td><td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td><td>${r.goals_for}</td><td>${r.goals_against}</td><td>${r.goal_difference>0?"+":""}${r.goal_difference}</td><td><strong>${r.points}</strong></td></tr>`).join("")}</tbody>
+    <tbody>${sorted.map((r,i)=>`<tr class="${isOwnTeamName(r.team)?"own-team":""}">
+      <td>${i+1}</td>
+      <td><span class="standing-team">${dashboardTeamBadge(r.team)}<span>${esc(r.team)}</span></span></td>
+      <td>${r.played}</td><td>${r.won}</td><td>${r.drawn}</td><td>${r.lost}</td>
+      <td>${r.goals_for}</td><td>${r.goals_against}</td><td>${r.goal_difference>0?"+":""}${r.goal_difference}</td>
+      <td><strong>${r.points}</strong></td>
+    </tr>`).join("")}</tbody>
   </table></div>`:'<div class="muted">Classifica non disponibile.</div>';
 }
+
+
+function clamp01(v){return Math.max(0,Math.min(1,v))}
+function normalizeRange(v,min,max){
+  if(!Number.isFinite(v)||!Number.isFinite(min)||!Number.isFinite(max)||max===min)return .5;
+  return clamp01((v-min)/(max-min));
+}
+function seededRandom(seed){
+  let s=seed>>>0;
+  return ()=>{
+    s=(s+0x6D2B79F5)>>>0;
+    let t=s;
+    t=Math.imul(t^(t>>>15),t|1);
+    t^=t+Math.imul(t^(t>>>7),t|61);
+    return ((t^(t>>>14))>>>0)/4294967296;
+  };
+}
+function stableHash(text){
+  let h=2166136261;
+  for(let i=0;i<String(text).length;i++){h^=String(text).charCodeAt(i);h=Math.imul(h,16777619)}
+  return h>>>0;
+}
+function teamProjectionModel(standings,fixtures,competition){
+  const teams=standings.map(r=>r.team);
+  const rowByTeam=new Map(standings.map(r=>[r.team,r]));
+  const finished=fixtures
+    .filter(f=>f.status==="finished"&&Number.isFinite(Number(f.home_score))&&Number.isFinite(Number(f.away_score)))
+    .sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
+  const remaining=fixtures.filter(f=>f.status!=="finished");
+  const winPts=Number(competition?.win_points??3),drawPts=Number(competition?.draw_points??1),lossPts=Number(competition?.loss_points??0);
+
+  const stats=new Map(teams.map(t=>[t,{recent:[],home:{p:0,pts:0},away:{p:0,pts:0}}]));
+  const pointsFor=(gf,ga)=>gf>ga?winPts:gf===ga?drawPts:lossPts;
+
+  finished.forEach(f=>{
+    const hg=Number(f.home_score),ag=Number(f.away_score);
+    if(stats.has(f.home_team)){
+      const s=stats.get(f.home_team),pts=pointsFor(hg,ag);
+      s.recent.push({date:new Date(f.kickoff_at).getTime(),pts});
+      s.home.p++;s.home.pts+=pts;
+    }
+    if(stats.has(f.away_team)){
+      const s=stats.get(f.away_team),pts=pointsFor(ag,hg);
+      s.recent.push({date:new Date(f.kickoff_at).getTime(),pts});
+      s.away.p++;s.away.pts+=pts;
+    }
+  });
+
+  const raw=teams.map(team=>{
+    const r=rowByTeam.get(team)||{};
+    const played=Math.max(0,Number(r.played||0));
+    const seasonPPG=played?Number(r.points||0)/(played*Math.max(1,winPts)):0;
+
+    const recent=(stats.get(team)?.recent||[]).sort((a,b)=>b.date-a.date).slice(0,5);
+    let wsum=0,psum=0;
+    recent.forEach((x,i)=>{const w=5-i;wsum+=w;psum+=w*(x.pts/Math.max(1,winPts))});
+    const form=wsum?psum/wsum:seasonPPG;
+
+    const gfpg=played?Number(r.goals_for||0)/played:0;
+    const gapg=played?Number(r.goals_against||0)/played:0;
+    const gdpg=played?Number(r.goal_difference||0)/played:0;
+    const venue=stats.get(team)||{home:{p:0,pts:0},away:{p:0,pts:0}};
+    const homePerf=venue.home.p?venue.home.pts/(venue.home.p*Math.max(1,winPts)):seasonPPG;
+    const awayPerf=venue.away.p?venue.away.pts/(venue.away.p*Math.max(1,winPts)):seasonPPG;
+
+    return {team,seasonPPG,form,gfpg,gapg,gdpg,homePerf,awayPerf,currentPoints:Number(r.points||0),currentRank:0,played};
+  });
+
+  const minsMaxes={};
+  for(const key of ["gfpg","gapg","gdpg"]){
+    const vals=raw.map(x=>x[key]);
+    minsMaxes[key]=[Math.min(...vals),Math.max(...vals)];
+  }
+
+  raw.forEach(x=>{
+    const attack=normalizeRange(x.gfpg,...minsMaxes.gfpg);
+    const defense=1-normalizeRange(x.gapg,...minsMaxes.gapg);
+    const gd=normalizeRange(x.gdpg,...minsMaxes.gdpg);
+    const venue=(x.homePerf+x.awayPerf)/2;
+    x.strength=clamp01(.30*x.seasonPPG+.25*x.form+.20*gd+.10*attack+.10*defense+.05*venue);
+  });
+
+  const sortedCurrent=[...standings].sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference||b.goals_for-a.goals_for||String(a.team).localeCompare(String(b.team),"it"));
+  sortedCurrent.forEach((r,i)=>{const x=raw.find(t=>t.team===r.team);if(x)x.currentRank=i+1});
+
+  const modelByTeam=new Map(raw.map(x=>[x.team,x]));
+  const simCount=4000;
+  const rng=seededRandom(stableHash((competition?.id||"competition")+"|"+(currentSeason?.id||"season")));
+  const rankSamples=new Map(teams.map(t=>[t,[]]));
+  const pointSamples=new Map(teams.map(t=>[t,[]]));
+
+  for(let sim=0;sim<simCount;sim++){
+    const simRows=raw.map(x=>({team:x.team,points:x.currentPoints,strength:x.strength}));
+    const simMap=new Map(simRows.map(x=>[x.team,x]));
+
+    remaining.forEach(f=>{
+      const home=modelByTeam.get(f.home_team),away=modelByTeam.get(f.away_team);
+      if(!home||!away)return;
+
+      const hs=clamp01(.95*home.strength+.05*home.homePerf);
+      const as=clamp01(.95*away.strength+.05*away.awayPerf);
+      const diff=hs-as+.035;
+      const drawProb=Math.max(.16,Math.min(.30,.27-Math.abs(diff)*.14));
+      const homeShare=1/(1+Math.exp(-4.2*diff));
+      const homeProb=(1-drawProb)*homeShare;
+      const roll=rng();
+
+      if(roll<homeProb){
+        simMap.get(f.home_team).points+=winPts;
+        simMap.get(f.away_team).points+=lossPts;
+      }else if(roll<homeProb+drawProb){
+        simMap.get(f.home_team).points+=drawPts;
+        simMap.get(f.away_team).points+=drawPts;
+      }else{
+        simMap.get(f.home_team).points+=lossPts;
+        simMap.get(f.away_team).points+=winPts;
+      }
+    });
+
+    simRows.sort((a,b)=>b.points-a.points||b.strength-a.strength||String(a.team).localeCompare(String(b.team),"it"));
+    simRows.forEach((r,i)=>{rankSamples.get(r.team).push(i+1);pointSamples.get(r.team).push(r.points)});
+  }
+
+  const percentile=(arr,p)=>{
+    const a=[...arr].sort((x,y)=>x-y);
+    if(!a.length)return 0;
+    return a[Math.max(0,Math.min(a.length-1,Math.round((a.length-1)*p)))];
+  };
+
+  const projected=raw.map(x=>{
+    const ranks=rankSamples.get(x.team),pts=pointSamples.get(x.team);
+    const avgRank=ranks.reduce((a,b)=>a+b,0)/ranks.length;
+    const avgPts=pts.reduce((a,b)=>a+b,0)/pts.length;
+    return {...x,avgRank,avgPts,rankLow:percentile(ranks,.2),rankHigh:percentile(ranks,.8)};
+  }).sort((a,b)=>a.avgRank-b.avgRank||b.avgPts-a.avgPts);
+
+  const totalTeamGames=Math.max(1,fixtures.length*2);
+  const playedTeamGames=finished.length*2;
+  const progress=clamp01(playedTeamGames/totalTeamGames);
+  const avgPlayed=raw.length?raw.reduce((a,b)=>a+b.played,0)/raw.length:0;
+  const depth=clamp01(avgPlayed/5);
+  const reliability=Math.round(8+progress*62+depth*25);
+
+  return {projected,reliability:Math.min(95,reliability),remaining:remaining.length,simCount};
+}
+
+function projectionWindow(rows,size=5){
+  if(rows.length<=size)return rows;
+  const own=rows.findIndex(r=>isOwnTeamName(r.team));
+  if(own<0)return rows.slice(0,size);
+  let start=own-2,end=own+3;
+  if(start<0){end=Math.min(rows.length,end-start);start=0}
+  if(end>rows.length){start=Math.max(0,start-(end-rows.length));end=rows.length}
+  return rows.slice(start,end);
+}
+
+function renderCompetitionProjection(standings,fixtures,competition){
+  const box=$("#competitionProjection"),rel=$("#projectionReliability");
+  if(!box||!rel)return;
+  if(!standings.length){
+    box.innerHTML='<div class="muted">Dati insufficienti.</div>';
+    rel.textContent="";
+    return;
+  }
+
+  const model=teamProjectionModel(standings,fixtures,competition);
+  const rows=projectionWindow(model.projected,5);
+  const reliabilityLabel=model.reliability<25?"molto bassa":model.reliability<45?"bassa":model.reliability<65?"media":model.reliability<82?"buona":"alta";
+  rel.textContent=`Affidabilità ${reliabilityLabel} · ${model.reliability}%`;
+
+  box.innerHTML=`<div class="projection-note">${model.remaining} partite da simulare · ${model.simCount.toLocaleString("it-IT")} scenari</div>
+    <table class="projection-table">
+      <thead><tr><th>Prev.</th><th>Squadra</th><th>Δ</th><th>Pt</th><th>Range</th></tr></thead>
+      <tbody>${rows.map((r,i)=>{
+        const projectedRank=model.projected.indexOf(r)+1;
+        const delta=r.currentRank-projectedRank;
+        const arrow=delta>0?"↑":delta<0?"↓":"–";
+        const cls=delta>0?"up":delta<0?"down":"flat";
+        return `<tr class="${isOwnTeamName(r.team)?"own-team":""}">
+          <td><strong>${projectedRank}</strong></td>
+          <td><span class="projection-team">${dashboardTeamBadge(r.team)}<span>${esc(r.team)}</span></span></td>
+          <td class="projection-delta ${cls}">${arrow}${delta?Math.abs(delta):""}</td>
+          <td>${r.avgPts.toFixed(1)}</td>
+          <td>${r.rankLow===r.rankHigh?r.rankLow+"°":r.rankLow+"°–"+r.rankHigh+"°"}</td>
+        </tr>`;
+      }).join("")}</tbody>
+    </table>`;
+
+  const info=$("#projectionInfoBtn");
+  if(info)info.onclick=()=>alert(
+    "Proiezione statistica, non previsione certa.\n\n"+
+    "Forza squadra: 30% rendimento stagione, 25% forma recente, 20% differenza reti, 10% attacco, 10% difesa, 5% rendimento casa/trasferta. "+
+    "Le partite rimanenti vengono simulate 4.000 volte con probabilità derivate dalla forza relativa. "+
+    "L'affidabilità è un indicatore euristico che cresce con il numero di partite disputate."
+  );
+}
+
 function renderCompetitionFixtures(rows){
   const source=competitionFixtureFilter==="mine"?rows.filter(r=>isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)):rows;
   const grouped=new Map();
