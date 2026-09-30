@@ -3404,3 +3404,34 @@ dialog form{padding:16px}
   pointer-events:auto;
   transform:translate(-50%,0);
 }
+
+
+/* Match Center final interaction refinements */
+.mc-bench-subbed-divider{
+  display:block;
+  height:1px;
+  margin:7px 3px 5px;
+  padding:0;
+  background:rgba(70,78,84,.16);
+}
+.mc-bench-subbed-divider>span,
+.mc-bench-subbed-divider>b{
+  display:none;
+}
+.mc-recovery-divider[data-mc-event-id]{
+  cursor:pointer;
+}
+.mc-recovery-divider[data-mc-event-id]:hover>strong{
+  color:#2e3438;
+}
+.mc-player-quick-pitch{
+  display:flex!important;
+  flex-direction:row!important;
+  flex-wrap:nowrap!important;
+  gap:3px!important;
+  width:max-content!important;
+}
+.pitch-player.modern.quick-visible .mc-player-quick-pitch{
+  opacity:1!important;
+  pointer-events:auto!important;
+}
