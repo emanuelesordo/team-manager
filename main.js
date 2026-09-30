@@ -1103,11 +1103,13 @@ function mcTimeline(target,limit,filters=null){
   }
 
   let halfInserted=false;
+  const hasFirstHalf=all.some(e=>e.event_type!=="period_end"&&Number(e.minute??999)<=45);
+  const hasSecondHalf=all.some(e=>e.event_type!=="period_end"&&Number(e.minute??999)>45);
 
   regular.forEach(e=>{
     const minuteNumber=Number(e.minute??999);
-    if(!halfInserted&&minuteNumber<=45&&regular.some(x=>Number(x.minute??999)>45)){
-      rows.push('<div class="mc-period-separator"><span></span><strong>HT '+halfScore+'</strong><span></span></div>');
+    if(!halfInserted&&hasFirstHalf&&hasSecondHalf&&minuteNumber<=45){
+      rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><span></span></div>');
       const rec1=recoveryByPeriod.get("first_half")||0;
       if(rec1)rows.push('<div class="mc-recovery-chip">Minuti di recupero '+rec1+'</div>');
       halfInserted=true;
