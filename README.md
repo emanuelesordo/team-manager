@@ -37,7 +37,7 @@ La dashboard segue la nuova composizione editoriale:
 Se l'utente autenticato non è associato a un giocatore, la card Player Stats mostra un fallback neutro senza inventare dati.
 
 ### Competizioni
-La vista competizione mostra classifica reale e calendario completo. La classifica include gli stemmi; nel calendario ogni risultato segue la composizione nome–stemma–punteggio–stemma–nome, con toggle Tutte/Caselle esterno alla card e punteggio senza contorno. Sotto la classifica reale è presente una **Proiezione classifica** client-side:
+La vista competizione mostra classifica reale e calendario completo. La classifica include gli stemmi; nel calendario ogni risultato segue la composizione nome–stemma–punteggio–stemma–nome, con selettore competizione e toggle Tutte/Caselle allineati sopra le due card, punteggio senza contorno e griglia fixtures adattiva fino a 16 giornate prima di introdurre lo scroll. Sotto la classifica reale è presente una **Proiezione classifica** client-side:
 - forza squadra = 30% rendimento stagione, 25% forma recente, 20% differenza reti, 10% attacco, 10% difesa, 5% rendimento casa/trasferta;
 - forma recente ponderata con peso maggiore alle partite più vicine;
 - calendario restante simulato 4.000 volte con RNG deterministico, quindi il risultato non cambia a ogni refresh;
