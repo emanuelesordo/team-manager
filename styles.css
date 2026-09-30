@@ -2065,6 +2065,7 @@ dialog form{padding:16px}
   border-radius:1px;
 }
 .mc-event-symbol.card.yellow{background:#e4b800}
+.mc-event-symbol.card.blue{background:#2f76d2}
 .mc-event-symbol.card.red{background:#df4b53}
 
 .mc-goal-score{
@@ -2276,6 +2277,7 @@ dialog form{padding:16px}
 .pitch-event.out{color:#c64245!important}
 .pitch-event.assist{color:#4665ff!important}
 .pitch-event.card.yellow{color:#cfaa00!important}
+.pitch-event.card.blue{color:#2f76d2!important}
 .pitch-event.card.red{color:#d74750!important}
 .mc-full-pitch .pitch-player.modern>button{
   position:absolute;
@@ -2594,4 +2596,42 @@ dialog form{padding:16px}
   .mc-full-pitch .pitch-player.modern>.kit-shirt{width:36px;height:32px}
   .mc-pitch .pitch-player.modern>strong,
   .mc-full-pitch .pitch-player.modern>strong{max-width:60px;font-size:6px}
+}
+
+
+/* CSI official match import */
+.mc-blue-symbol{color:#2f76d2}
+.mc-card-head-actions{display:flex;align-items:center;gap:7px}
+.mc-card-head-actions .small{min-height:26px;padding:4px 8px;font-size:7px}
+.csi-import-dialog>div{padding:16px}
+.csi-import-dialog label{display:grid;gap:5px}
+.csi-import-actions{justify-content:flex-end}
+.csi-import-summary{
+  margin:10px 0;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#fff;
+  font-size:9px;
+  line-height:1.45;
+}
+.csi-player-mappings{display:grid;gap:6px;max-height:360px;overflow:auto}
+.csi-map-title{margin-top:4px;font-size:9px;font-weight:900}
+.csi-map-row{
+  display:grid!important;
+  grid-template-columns:minmax(160px,.8fr) minmax(220px,1.2fr);
+  align-items:center;
+  gap:8px!important;
+  padding:8px;
+  border:1px solid var(--line);
+  border-radius:11px;
+  background:#fff;
+}
+.csi-map-row>span{min-width:0;display:flex;flex-direction:column;gap:2px}
+.csi-map-row strong{font-size:9px}
+.csi-map-row small{color:var(--muted);font-size:7px}
+.csi-map-row select{min-width:0}
+@media(max-width:620px){
+  .csi-map-row{grid-template-columns:1fr}
+  .mc-card-head-actions .small{padding:4px 6px}
 }
