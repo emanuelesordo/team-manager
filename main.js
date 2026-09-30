@@ -878,23 +878,39 @@ function renderCalendarRows(){
   $("#calendarHubMeta").textContent=`${rows.length} partite del Caselle`;
   $("#calendarHubList").innerHTML=rows.map(r=>{
     const competition=competitions.find(c=>c.id===r.competition_id);
-    const opponentName=isOwnTeamName(r.home_team)?r.away_team:r.home_team;
-    const opponent=teamVisual(opponentName);
-    const isHome=isOwnTeamName(r.home_team);
-    const score=r.status==="finished"?`${r.home_score}-${r.away_score}`:"–";
+    const home=teamVisual(r.home_team);
+    const away=teamVisual(r.away_team);
+    const score=r.status==="finished"?`${r.home_score} - ${r.away_score}`:"–";
+    const venue=(r.venue||"").trim();
+
+    const homeLogo=home.logo
+      ?`<img src="${esc(home.logo)}" alt="">`
+      :`<i>${esc(home.short)}</i>`;
+    const awayLogo=away.logo
+      ?`<img src="${esc(away.logo)}" alt="">`
+      :`<i>${esc(away.short)}</i>`;
+
     return `<article class="team-calendar-row">
-      <div class="team-calendar-date">${localDateTime(r.kickoff_at)}</div>
-      <div class="team-calendar-competition">${esc(competition?.name||"")}</div>
-      <div class="team-calendar-opponent">
-        <span class="home-away">${isHome?"CASA":"TRASF."}</span>
-        ${opponent.logo?`<img src="${esc(opponent.logo)}" alt="">`:`<i>${esc(opponent.short)}</i>`}
-        <strong>${esc(opponent.name)}</strong>
+      <div class="team-calendar-meta">
+        <span class="team-calendar-date">${localDateTime(r.kickoff_at)}</span>
+        <span class="team-calendar-competition">${esc(competition?.name||"")}</span>
       </div>
-      <button type="button" class="score-link calendar-score" data-match-score="${r.id}">${score}</button>
+
+      <div class="calendar-match-line">
+        <strong class="calendar-team-name calendar-home-team">${esc(home.name)}</strong>
+        <span class="calendar-team-logo">${homeLogo}</span>
+        <button type="button" class="score-link calendar-score" data-match-score="${r.id}">${score}</button>
+        <span class="calendar-team-logo">${awayLogo}</span>
+        <strong class="calendar-team-name calendar-away-team">${esc(away.name)}</strong>
+      </div>
+
+      <div class="calendar-venue" title="${esc(venue||"Indirizzo non indicato")}">${esc(venue||"—")}</div>
     </article>`;
   }).join("")||'<div class="muted">Nessuna partita con i filtri selezionati.</div>';
+
   $$("[data-match-score]").forEach(b=>b.onclick=()=>openMatchDetail(calendarRows.find(r=>r.id===b.dataset.matchScore)));
 }
+
 function playerOptions(selected){
   return '<option value="">—</option>'+players.map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.last_name+" "+p.first_name)}</option>`).join("");
 }
