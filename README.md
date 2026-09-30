@@ -29,13 +29,15 @@ La logica applicativa e il modello dati restano invariati.
 
 ## Moduli
 ### Home
-Occupa il viewport desktop disponibile:
-- ultima partita a sinistra e prossima partita a destra;
-- countdown live al fischio d'inizio al posto del bottone dettagli;
-- 6 KPI principali;
-- ultime 4 partite;
-- prossime 4 partite;
-- classifica di 5 squadre centrata sulla squadra principale: 2 sopra e 2 sotto quando disponibili, recuperando righe dal lato opposto ai bordi della classifica.
+La dashboard segue la nuova composizione editoriale:
+- grande Team KPIs a sinistra su due righe;
+- ultima partita e forma recente integrate nella card squadra;
+- Player Stats del giocatore associato all'utente autenticato tramite `app_user_roles.player_id`;
+- Schedule mensile con matchday e prossima partita;
+- classifica compatta centrata sul Caselle;
+- Scores limitato esclusivamente alle partite della squadra principale.
+
+Se l'utente autenticato non è associato a un giocatore, la card Player Stats mostra un fallback neutro senza inventare dati.
 
 ### Competizioni
 Classifica a sinistra e calendario compatto completo a destra. Toggle Tutte/Caselle e click sul punteggio.
