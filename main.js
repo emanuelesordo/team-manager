@@ -3323,11 +3323,13 @@ $("#otherMatchEventForm").onsubmit=async e=>{
     const type=$("#omcEventType").value;
     const period=$("#omcEventPeriod").value;
     let payload;
+    let scoreAffected=false;
 
     if(type==="recovery"){
       const recovery=Math.max(0,Number($("#omcRecoveryMinutes").value||0));
       if(recovery>30)throw new Error("Il recupero massimo consentito è 30 minuti.");
       const existing=omcRecoveryEvent(period);
+      if(id&&existing&&String(existing.id)!==String(id))throw new Error("Il recupero del "+omcPeriodShort(period)+" è già registrato.");
       payload={
         fixture_id:f.id,event_type:"period_end",minute:null,stoppage_minute:recovery,side:"home",
         home_score:null,away_score:null,source:"manual",
@@ -3350,6 +3352,7 @@ $("#otherMatchEventForm").onsubmit=async e=>{
       const minute=Math.min(entered,regular);
       const stoppage=Math.max(0,entered-regular);
       const old=id?otherMatchCenterState.events.find(x=>String(x.id)===String(id)):null;
+      scoreAffected=type==="goal"||old?.event_type==="goal";
       payload={
         fixture_id:f.id,event_type:type,minute,stoppage_minute:stoppage||null,side:$("#omcEventSide").value,
         home_score:null,away_score:null,source:"manual",
@@ -3360,12 +3363,12 @@ $("#otherMatchEventForm").onsubmit=async e=>{
         ?await db.from("app_fixture_events").update(payload).eq("id",id).select("*").maybeSingle()
         :await db.from("app_fixture_events").insert(payload).select("*").single();
       assertSaved(r,"Evento");
-      if(type==="goal"||old?.event_type==="goal")await omcReopenIfNeeded();
+      if(scoreAffected)await omcReopenIfNeeded();
     }
 
     $("#otherMatchEventDialog").close();
     await omcLoadEvents();
-    await omcPersistProvisionalScoreFromGoals();
+    if(scoreAffected)await omcPersistProvisionalScoreFromGoals();
     await renderCompetitionHub();
   }catch(err){
     $("#omcEventError").textContent=err.message||String(err);
@@ -3381,10 +3384,11 @@ $("#omcDeleteEventBtn").onclick=async()=>{
     if(!confirm("Eliminare definitivamente questo evento?"))return;
     const r=await db.from("app_fixture_events").delete().eq("id",id);
     if(r.error)throw r.error;
-    if(old?.event_type==="goal")await omcReopenIfNeeded();
+    const scoreAffected=old?.event_type==="goal";
+    if(scoreAffected)await omcReopenIfNeeded();
     $("#otherMatchEventDialog").close();
     await omcLoadEvents();
-    await omcPersistProvisionalScoreFromGoals();
+    if(scoreAffected)await omcPersistProvisionalScoreFromGoals();
     await renderCompetitionHub();
   }catch(err){
     $("#omcEventError").textContent=err.message||String(err);
@@ -3428,7 +3432,7 @@ $("#previewCalendarBtn").onclick=async()=>{const f=$("#calendarFile").files[0];i
 window.TM={
   db,esc,assertSaved,
   loadAll,loadCompetitions,loadCompetitionHub,loadCalendarHub,ensureMainTeam,
-  setPanel,localDateTime,isOwnTeamName,teamVisual,linkedMatchForFixture,openMatchDetail,openFixture,
+  setPanel,localDateTime,isOwnTeamName,teamVisual,linkedMatchForFixture,openMatchDetail,openFixture,openOtherMatchCenter,
   getState:()=>({
     seasons,competitions,opponents,currentSeason,team,sessionUser,
     competitionHubId,competitionFixtureFilter,calendarRows,teamMatches,calendarCompetitionIds,players
