@@ -1444,11 +1444,14 @@ function mcTimeline(target,limit,filters=null){
       main=e.secondary_player_id?mcTimelinePlayerName(e.secondary_player_id):"Nessun ingresso";
       secondary=e.player_id?mcTimelinePlayerName(e.player_id):"Uscita da completare";
     }else if(e.event_type==="yellow_card"){
-      main=e.team_side==="team"?(e.player_id?mcTimelinePlayerName(e.player_id):"Ammonizione"):"Ammonizione avversaria";
+      const shirt=e.payload?.opponent_shirt_number;
+      main=e.team_side==="team"?(e.player_id?mcTimelinePlayerName(e.player_id):"Ammonizione"):("Ammonizione avversaria"+(shirt?" #"+shirt:""));
     }else if(e.event_type==="blue_card"){
-      main=e.team_side==="team"?(e.player_id?mcTimelinePlayerName(e.player_id):"Cartellino blu"):"Cartellino blu avversario";
+      const shirt=e.payload?.opponent_shirt_number;
+      main=e.team_side==="team"?(e.player_id?mcTimelinePlayerName(e.player_id):"Cartellino blu"):("Cartellino blu avversario"+(shirt?" #"+shirt:""));
     }else if(e.event_type==="red_card"){
-      main=e.team_side==="team"?(e.player_id?mcTimelinePlayerName(e.player_id):"Espulsione"):"Espulsione avversaria";
+      const shirt=e.payload?.opponent_shirt_number,isAccumulation=e.payload?.card_type==="second_yellow_blue"||e.payload?.card_type==="second_card";
+      main=e.team_side==="team"?(e.player_id?mcTimelinePlayerName(e.player_id):"Espulsione"):("Espulsione avversaria"+(shirt?" #"+shirt:"")+(isAccumulation?" · somma cartellini":""));
     }
 
     const icon=e.event_type==="goal"
@@ -1641,9 +1644,13 @@ function mcCaptureQuickDraft(){
   const period=$("#mcQuickPeriod")?.value;
   const minute=$("#mcQuickMinute")?.value;
   const player=$("#mcQuickPlayer")?.value;
+  const opponentShirt=$("#mcQuickOpponentShirt")?.value;
+  const cardMode=$("#mcQuickCardMode")?.value;
   if(period)draft.period=period;
   if(minute!==undefined&&minute!==null)draft.minute=minute;
   if(player)draft.playerId=player;
+  if(opponentShirt!==undefined&&opponentShirt!==null)draft.opponentShirt=opponentShirt;
+  if(cardMode)draft.cardMode=cardMode;
   mcPlayerQuickState.draft=draft;
 }
 function mcSetPlayerQuickKind(kind){
@@ -1708,10 +1715,27 @@ function mcSetPlayerQuickKind(kind){
       html+='<label>Giocatore>'+mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore",draft.playerId||editing?.player_id||"")+'</label>';
     }
     const cardType=editing?.event_type||"yellow_card";
-    html+='<label>Cartellino<div class="mc-card-choice"><button type="button" class="yellow '+(cardType==="yellow_card"?"active":"")+'" data-quick-card="yellow_card"><i></i>Giallo</button><button type="button" class="red '+(cardType==="red_card"?"active":"")+'" data-quick-card="red_card"><i></i>Rosso</button><button type="button" class="blue '+(cardType==="blue_card"?"active":"")+'" data-quick-card="blue_card"><i></i>Blu</button></div></label><input id="mcQuickCardType" type="hidden" value="'+cardType+'">';
+    const editingMode=editing?.payload?.card_type||"";
+    const cardMode=draft.cardMode||(editingMode==="second_yellow_blue"||editingMode==="second_card"?"second_card":cardType);
+    if(side==="opponent"){
+      const shirt=draft.opponentShirt??editing?.payload?.opponent_shirt_number??"";
+      html+='<label>Numero maglia avversario <small>(facoltativo)</small><input id="mcQuickOpponentShirt" type="number" min="1" max="99" inputmode="numeric" value="'+esc(shirt)+'" placeholder="—"></label>';
+    }
+    html+='<label>Cartellino<div class="mc-card-choice">'+
+      '<button type="button" class="yellow '+(cardMode==="yellow_card"?"active":"")+'" data-quick-card="yellow_card" data-quick-card-mode="yellow_card"><i></i>Giallo</button>'+
+      '<button type="button" class="red '+(cardMode==="red_card"?"active":"")+'" data-quick-card="red_card" data-quick-card-mode="red_card"><i></i>Rosso</button>'+
+      '<button type="button" class="blue '+(cardMode==="blue_card"?"active":"")+'" data-quick-card="blue_card" data-quick-card-mode="blue_card"><i></i>Blu</button>'+
+      (side==="opponent"?'<button type="button" class="red accumulation '+(cardMode==="second_card"?"active":"")+'" data-quick-card="red_card" data-quick-card-mode="second_card"><i></i>Rosso per somma</button>':"")+
+      '</div></label><input id="mcQuickCardType" type="hidden" value="'+(cardMode==="second_card"?"red_card":cardType)+'"><input id="mcQuickCardMode" type="hidden" value="'+cardMode+'">';
   }
   $("#mcPlayerQuickFields").innerHTML=html;
-  $$("[data-quick-card]").forEach(b=>b.onclick=e=>{e.stopPropagation();$$("[data-quick-card]").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("#mcQuickCardType").value=b.dataset.quickCard});
+  $("[data-quick-card]").forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    $("[data-quick-card]").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    $("#mcQuickCardType").value=b.dataset.quickCard;
+    $("#mcQuickCardMode").value=b.dataset.quickCardMode||b.dataset.quickCard;
+  });
   $$("[data-quick-side]").forEach(b=>b.onclick=e=>{e.stopPropagation();mcCaptureQuickDraft();mcPlayerQuickState.side=b.dataset.quickSide;mcSetPlayerQuickKind(mcPlayerQuickState.kind)});
   $("#mcPlayerQuickError").classList.add("hidden");
   requestAnimationFrame(()=>mcPositionPlayerQuickEvent(mcPlayerQuickState.anchor));
@@ -1726,9 +1750,10 @@ async function mcUpdateDirectEvent(eventId,payload){
 }
 async function mcDeleteAutomaticRedFor(event){
   if(!event||!(event.event_type==="yellow_card"||event.event_type==="blue_card"))return;
-  const period=event.payload?.period||mcEventPeriod(event);
+  const period=event.payload?.period||mcEventPeriod(event),shirt=String(event.payload?.opponent_shirt_number||"");
   const auto=matchCenterState.events.find(x=>
-    x.event_type==="red_card"&&x.player_id===event.player_id&&x.payload?.automatic===true&&
+    x.event_type==="red_card"&&x.team_side===event.team_side&&x.payload?.automatic===true&&
+    (event.team_side==="opponent"?String(x.payload?.opponent_shirt_number||"")===shirt:x.player_id===event.player_id)&&
     (x.minute??null)===(event.minute??null)&&(x.payload?.period||mcEventPeriod(x))===period
   );
   if(auto)await db.from("app_match_events").delete().eq("id",auto.id);
@@ -1819,17 +1844,38 @@ async function mcSubmitPlayerQuickEvent(e){
       const playerId=side==="team"?(source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer").value||null)):null;
       if(side==="team"&&!playerId)throw new Error("Seleziona il giocatore.");
       const type=$("#mcQuickCardType").value||"yellow_card";
-      const cardPayload={...base,event_type:type,player_id:playerId,secondary_player_id:null,payload:{period,card_type:type==="red_card"?"direct":type==="blue_card"?"blue":"yellow",...(type==="blue_card"?{temporary_suspension_minutes:10}:{})},substitution_reason:null};
+      const cardMode=$("#mcQuickCardMode")?.value||type;
+      const shirtRaw=$("#mcQuickOpponentShirt")?.value?.trim()||"";
+      const opponentShirt=side==="opponent"&&shirtRaw?String(Math.max(1,Math.min(99,Number(shirtRaw)))):null;
+      if(side==="opponent"&&cardMode==="second_card"&&!opponentShirt)throw new Error("Per il rosso per somma indica il numero di maglia avversario.");
+      const cardType=cardMode==="second_card"?"second_card":type==="red_card"?"direct":type==="blue_card"?"blue":"yellow";
+      const cardPayload={...base,event_type:type,player_id:playerId,secondary_player_id:null,payload:{period,card_type:cardType,...(opponentShirt?{opponent_shirt_number:opponentShirt}:{}),...(type==="blue_card"?{temporary_suspension_minutes:10}:{})},substitution_reason:null};
       if(editingId){
         const old=matchCenterState.events.find(x=>String(x.id)===String(editingId));
         await mcDeleteAutomaticRedFor(old);
         await mcUpdateDirectEvent(editingId,cardPayload);
       }else await mcInsertDirectEvent(cardPayload);
+
       if(side==="team"&&(type==="yellow_card"||type==="blue_card")){
         const previous=matchCenterState.events.filter(x=>String(x.id)!==String(editingId||"")&&x.player_id===playerId&&x.team_side==="team"&&(x.event_type==="yellow_card"||x.event_type==="blue_card")&&x.validation_status!=="rejected").length;
         const alreadyRed=matchCenterState.events.some(x=>String(x.id)!==String(editingId||"")&&x.player_id===playerId&&x.team_side==="team"&&x.event_type==="red_card"&&x.validation_status!=="rejected"&&!x.payload?.automatic);
         if(previous>=1&&!alreadyRed){
           await mcInsertDirectEvent({...base,event_type:"red_card",player_id:playerId,secondary_player_id:null,payload:{period,card_type:"second_yellow_blue",automatic:true,trigger_event_type:type},substitution_reason:null});
+        }
+      }
+
+      if(side==="opponent"&&opponentShirt&&(type==="yellow_card"||type==="blue_card")){
+        const previous=matchCenterState.events.filter(x=>
+          String(x.id)!==String(editingId||"")&&x.team_side==="opponent"&&
+          (x.event_type==="yellow_card"||x.event_type==="blue_card")&&
+          String(x.payload?.opponent_shirt_number||"")===opponentShirt&&x.validation_status!=="rejected"
+        ).length;
+        const alreadyRed=matchCenterState.events.some(x=>
+          String(x.id)!==String(editingId||"")&&x.team_side==="opponent"&&x.event_type==="red_card"&&
+          String(x.payload?.opponent_shirt_number||"")===opponentShirt&&x.validation_status!=="rejected"
+        );
+        if(previous>=1&&!alreadyRed){
+          await mcInsertDirectEvent({...base,event_type:"red_card",player_id:null,secondary_player_id:null,payload:{period,card_type:"second_yellow_blue",automatic:true,trigger_event_type:type,opponent_shirt_number:opponentShirt},substitution_reason:null});
         }
       }
     }
