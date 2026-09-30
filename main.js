@@ -1595,7 +1595,7 @@ function mcSetPlayerQuickKind(kind){
   const source=mcPlayerQuickState.source,id=mcPlayerQuickState.playerId,p=id?mcPlayer(id):null;
   const editing=source==="edit"?matchCenterState.events.find(x=>String(x.id)===String(mcPlayerQuickState.editingEventId)):null;
   const fieldRows=mcCurrentFieldRows(),activeIds=new Set(fieldRows.map(x=>x.player_id)),isActive=id?activeIds.has(id):false;
-  $$$("[data-quick-kind]").forEach(b=>b.classList.toggle("active",b.dataset.quickKind===kind));
+  $("[data-quick-kind]").forEach(b=>b.classList.toggle("active",b.dataset.quickKind===kind));
   const label=kind==="substitution"?"Cambio":kind==="goal"?"Gol":kind==="recovery"?"Recupero":"Cartellino";
   $("#mcPlayerQuickTitle").textContent=source==="edit"?("Modifica evento · "+label):source==="player"?(label+" · "+(p?.last_name||mcPlayerName(id))):("Aggiungi evento · "+label);
   const side=source==="player"?"team":(mcPlayerQuickState.side||editing?.team_side||"team");
@@ -1656,7 +1656,7 @@ function mcSetPlayerQuickKind(kind){
   }
   $("#mcPlayerQuickFields").innerHTML=html;
   $$("[data-quick-card]").forEach(b=>b.onclick=e=>{e.stopPropagation();$$("[data-quick-card]").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("#mcQuickCardType").value=b.dataset.quickCard});
-  $$("[data-quick-side]").forEach(b=>b.onclick=e=>{e.stopPropagation();mcPlayerQuickState.side=b.dataset.quickSide;mcSetPlayerQuickKind(mcPlayerQuickState.kind)});
+  $("[data-quick-side]").forEach(b=>b.onclick=e=>{e.stopPropagation();mcCaptureQuickDraft();mcPlayerQuickState.side=b.dataset.quickSide;mcSetPlayerQuickKind(mcPlayerQuickState.kind)});
   $("#mcPlayerQuickError").classList.add("hidden");
   requestAnimationFrame(()=>mcPositionPlayerQuickEvent(mcPlayerQuickState.anchor));
 }
