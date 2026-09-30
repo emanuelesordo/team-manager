@@ -3712,3 +3712,23 @@ dialog form{padding:16px}
   border-radius:1px;
   box-shadow:4px 0 0 rgba(223,75,83,.45);
 }
+
+
+/* Match Center event popover: viewport-safe */
+.mc-player-event-popover{
+  position:fixed!important;
+  max-width:calc(100vw - 20px);
+  max-height:calc(100dvh - 20px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+@media(max-width:700px){
+  .mc-player-event-popover{
+    left:8px!important;
+    right:8px!important;
+    top:auto!important;
+    bottom:8px!important;
+    width:auto!important;
+    max-height:calc(100dvh - 16px);
+  }
+}
