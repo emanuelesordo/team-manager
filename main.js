@@ -1322,8 +1322,18 @@ async function mcSubmitEvent(e){
       :(type==="yellow_card"||type==="blue_card"||type==="red_card")
         ?{card_type:sub,...(type==="blue_card"?{temporary_suspension_minutes:10}:{}) ,...(period?{period}:{})}
         :(period?{period}:{});
-    const r=await db.from("app_match_events").insert({match_id:matchCenterState.match.id,event_type:type,minute,stoppage_minute:$("#mcEventStoppage").value===""?null:Number($("#mcEventStoppage").value),team_side:side,player_id:player,secondary_player_id:secondary,payload,substitution_reason:type==="substitution"?sub:null,proposed_by:sessionUser.id,validation_status:"proposed"}).select("*").single();
-    assertSaved(r,"Evento");$("#mcEventForm").reset();await mcReload();mcSetTab("events");
+    const stoppage=$("#mcEventStoppage").value===""?null:Number($("#mcEventStoppage").value);
+    const r=await db.from("app_match_events").insert({match_id:matchCenterState.match.id,event_type:type,minute,stoppage_minute:stoppage,team_side:side,player_id:player,secondary_player_id:secondary,payload,substitution_reason:type==="substitution"?sub:null,proposed_by:sessionUser.id,validation_status:"proposed"}).select("*").single();
+    assertSaved(r,"Evento");
+    if(side==="team"&&player&&(type==="yellow_card"||type==="blue_card")){
+      const previousCautions=matchCenterState.events.filter(x=>x.player_id===player&&x.team_side==="team"&&(x.event_type==="yellow_card"||x.event_type==="blue_card")&&x.validation_status!=="rejected").length;
+      const alreadySentOff=matchCenterState.events.some(x=>x.player_id===player&&x.team_side==="team"&&x.event_type==="red_card"&&x.validation_status!=="rejected");
+      if(previousCautions>=1&&!alreadySentOff){
+        const rr=await db.from("app_match_events").insert({match_id:matchCenterState.match.id,event_type:"red_card",minute,stoppage_minute:stoppage,team_side:"team",player_id:player,secondary_player_id:null,payload:{card_type:"second_yellow_blue",automatic:true,trigger_event_type:type,...(period?{period}:{})},substitution_reason:null,proposed_by:sessionUser.id,validation_status:"proposed"}).select("*").single();
+        assertSaved(rr,"Espulsione per seconda ammonizione");
+      }
+    }
+    $("#mcEventForm").reset();await mcReload();mcSetTab("events");
   }catch(err){$("#mcEventError").textContent=err.message||String(err);$("#mcEventError").classList.remove("hidden")}
 }
 async function mcLiveAction(action){try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");if(!sessionUser)throw new Error("Accedi per gestire il live.");const u={},recovery=Number($("#mcRecoveryMinutes").value||0);if(action==="start_first"){u.status="live";u.live_started_at=matchCenterState.match.live_started_at||new Date().toISOString();u.live_period="first_half"}if(action==="end_first")u.live_period="halftime";if(action==="start_second"){u.status="live";u.live_period="second_half"}if(action==="end_match"){u.status="finished";u.live_period="full_time";u.finalized_at=new Date().toISOString()}const r=await db.from("app_matches").update(u).eq("id",matchCenterState.match.id).select("*").maybeSingle();matchCenterState.match=assertSaved(r,"Live");if((action==="end_first"||action==="end_match")&&recovery>0){await db.from("app_match_events").insert({match_id:matchCenterState.match.id,event_type:"period_end",minute:null,stoppage_minute:recovery,team_side:"team",payload:{period:action==="end_first"?"first_half":"second_half",recovery_minutes:recovery},proposed_by:sessionUser.id,validation_status:"proposed"})}await mcReload();mcSetTab("events")}catch(e){alert(e.message||String(e))}}
