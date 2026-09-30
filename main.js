@@ -931,7 +931,7 @@ function renderCalendarRows(){
 function playerOptions(selected){
   return '<option value="">—</option>'+players.map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.last_name+" "+p.first_name)}</option>`).join("");
 }
-let matchCenterState={fixture:null,match:null,matchPlayers:[],events:[],injuries:[],suspensions:[],tab:"general"};
+let matchCenterState={fixture:null,match:null,matchPlayers:[],events:[],ratings:[],injuries:[],suspensions:[],tab:"general"};
 let matchCenterTimer=null;
 function mcPlayer(id){return rosterRows.find(p=>p.player_id===id)||players.find(p=>p.id===id)||null}
 function mcPlayerName(id){const p=mcPlayer(id);return p?(p.last_name+" "+p.first_name):"—"}
@@ -997,12 +997,63 @@ function mcRoleRank(row){
   if(role==="A"||role==="F"||role==="ATT")return 3;
   return 2;
 }
+function mcAverageRating(playerId){
+  const vals=matchCenterState.ratings.filter(r=>r.player_id===playerId).map(r=>Number(r.rating)).filter(Number.isFinite);
+  return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+}
+function mcPlayerEventSummary(playerId){
+  const events=matchCenterState.events.filter(e=>e.team_side==="team"&&(e.player_id===playerId||e.secondary_player_id===playerId));
+  const goals=events.filter(e=>e.event_type==="goal"&&e.player_id===playerId).length;
+  const assists=events.filter(e=>e.event_type==="goal"&&e.secondary_player_id===playerId).length;
+  const entered=events.find(e=>e.event_type==="substitution"&&e.secondary_player_id===playerId);
+  const exited=events.find(e=>e.event_type==="substitution"&&e.player_id===playerId);
+  const yellow=events.some(e=>e.event_type==="yellow_card"&&e.player_id===playerId);
+  const red=events.some(e=>e.event_type==="red_card"&&e.player_id===playerId);
+  return {goals,assists,entered,exited,yellow,red};
+}
+function mcCurrentFieldRows(){
+  const map=new Map(matchCenterState.matchPlayers.filter(x=>x.started).map(x=>[x.player_id,{...x}]));
+  [...matchCenterState.events].filter(e=>e.team_side==="team").sort((a,b)=>(a.minute??999)-(b.minute??999)).forEach(e=>{
+    if(e.event_type==="substitution"){
+      if(e.player_id)map.delete(e.player_id);
+      if(e.secondary_player_id){
+        const source=mcMatchPlayer(e.secondary_player_id)||{player_id:e.secondary_player_id,selection_status:"bench"};
+        map.set(e.secondary_player_id,{...source,started:true});
+      }
+    }
+    if(e.event_type==="red_card"&&e.player_id)map.delete(e.player_id);
+  });
+  return [...map.values()];
+}
+function mcKit(){
+  return {
+    style:team?.kit_style||"solid",
+    primary:team?.kit_primary_color||team?.primary_color||"#f4d318",
+    secondary:team?.kit_secondary_color||team?.secondary_color||"#111111",
+    number:team?.kit_number_color||"#111111"
+  };
+}
 function mcPitch(target,rows,remove){
   const pos=[[50,90],[18,72],[39,72],[61,72],[82,72],[18,50],[39,50],[61,50],[82,50],[35,26],[65,26]];
   const ordered=[...rows].sort((a,b)=>mcRoleRank(a)-mcRoleRank(b)||(a.tactical_slot??99)-(b.tactical_slot??99));
+  const kit=mcKit();
   target.innerHTML=ordered.slice(0,11).map((x,i)=>{
-    const p=mcPlayer(x.player_id),q=pos[i]||[50,50];
-    return '<div class="pitch-player" style="left:'+q[0]+'%;top:'+q[1]+'%"><span>'+(x.shirt_number??p?.shirt_number??"–")+'</span><strong>'+esc(p?.last_name||"—")+'</strong>'+(remove?'<button type="button" data-mc-unassign="'+x.player_id+'">×</button>':"")+'</div>';
+    const p=mcPlayer(x.player_id),q=pos[i]||[50,50],ev=mcPlayerEventSummary(x.player_id),rating=mcAverageRating(x.player_id);
+    const badges=[
+      ev.goals?'<span class="pitch-event goal">⚽'+(ev.goals>1?"×"+ev.goals:"")+'</span>':"",
+      ev.assists?'<span class="pitch-event assist">A'+(ev.assists>1?"×"+ev.assists:"")+'</span>':"",
+      ev.entered?'<span class="pitch-event in">↗ '+(ev.entered.minute??"")+"'"+'</span>':"",
+      ev.exited?'<span class="pitch-event out">↘ '+(ev.exited.minute??"")+"'"+'</span>':"",
+      ev.yellow?'<span class="pitch-event card yellow">■</span>':"",
+      ev.red?'<span class="pitch-event card red">■</span>':""
+    ].join("");
+    return '<div class="pitch-player modern" style="left:'+q[0]+'%;top:'+q[1]+'%">'+
+      (rating!=null?'<span class="pitch-rating">'+rating.toFixed(1)+'</span>':"")+
+      '<span class="kit-shirt kit-'+esc(kit.style)+'" style="--kit-primary:'+esc(kit.primary)+';--kit-secondary:'+esc(kit.secondary)+';--kit-number:'+esc(kit.number)+'"><b>'+(x.shirt_number??p?.shirt_number??"–")+'</b></span>'+
+      '<strong>'+esc(p?.last_name||"—")+'</strong>'+
+      '<span class="pitch-events">'+badges+'</span>'+
+      (remove?'<button type="button" data-mc-unassign="'+x.player_id+'">×</button>':"")+
+    '</div>';
   }).join("");
 }
 
@@ -1106,8 +1157,8 @@ function mcRenderIntegrity(){
   $("#mcIntegrity").innerHTML=checks.map(([ok,t])=>'<div class="'+(ok?"ok":"warn")+'"><span>'+(ok?"✓":"!")+'</span>'+esc(t)+'</div>').join("");
 }
 function mcRenderGeneral(){
-  const starters=matchCenterState.matchPlayers.filter(x=>x.started);
-  $("#mcGeneralFormationMeta").textContent=(matchCenterState.match?.formation||"—")+" · "+starters.length+" XI";
+  const starters=mcCurrentFieldRows();
+  $("#mcGeneralFormationMeta").textContent=(matchCenterState.match?.formation||"—")+" · "+starters.length+" in campo";
   mcPitch($("#mcGeneralPitch"),starters,false);
   mcRenderGeneralBench();
   mcTimeline("#mcGeneralEvents",0,mcGeneralEventFilters);
@@ -1134,8 +1185,8 @@ function mcRenderAvailability(){$("#mcAvailabilityList").innerHTML=rosterRows.ma
 function mcRenderFormation(){const starters=matchCenterState.matchPlayers.filter(x=>x.started),bench=matchCenterState.matchPlayers.filter(x=>x.selection_status==="bench"),assigned=new Set([...starters,...bench].map(x=>x.player_id)),unavailable=new Set(matchCenterState.matchPlayers.filter(x=>x.selection_status==="unavailable"||x.unavailability_reason).map(x=>x.player_id)),pool=rosterRows.filter(p=>!assigned.has(p.player_id)&&!unavailable.has(p.player_id));$("#mcFormationSelect").value=matchCenterState.match?.formation||"4-4-2";$("#mcFormationPool").innerHTML=pool.map(p=>`<div class="mc-selection-row"><div><strong>${esc(p.last_name)}</strong><small>${mcInjury(p.player_id)?"Infortunato · ":""}${mcSuspension(p.player_id)?"Squalificato":roleLabel(p.generic_role_manual)}</small></div><div><button ${mcSuspension(p.player_id)?"disabled":""} data-mc-assign="${p.player_id}:starter">XI</button><button ${mcSuspension(p.player_id)?"disabled":""} data-mc-assign="${p.player_id}:bench">P</button></div></div>`).join("")||'<div class="empty-state">Nessun giocatore da assegnare</div>';$$("[data-mc-assign]").forEach(b=>b.onclick=()=>{const [id,state]=b.dataset.mcAssign.split(":");mcSetSelection(id,state)});mcPitch($("#mcFormationPitch"),starters,true);$("#mcFormationBench").innerHTML=bench.map(x=>`<div class="mc-bench-row"><strong>${esc(mcPlayerName(x.player_id))}</strong><button data-mc-unassign="${x.player_id}">×</button></div>`).join("")||'<div class="empty-state">Panchina vuota</div>';$$("[data-mc-unassign]").forEach(b=>b.onclick=()=>mcSetSelection(b.dataset.mcUnassign,"available"));const nc=rosterRows.filter(p=>!assigned.has(p.player_id));$("#mcNotCalled").innerHTML=nc.map(p=>{const mp=mcMatchPlayer(p.player_id);return `<div class="mc-not-called-row"><strong>${esc(p.last_name+" "+p.first_name)}</strong><select data-nc="${p.player_id}">${mcReasonOptions(mp?.unavailability_reason||"")}</select><button type="button" class="text-btn" data-save-nc="${p.player_id}">Salva</button></div>`}).join("");$$("[data-save-nc]").forEach(b=>b.onclick=()=>mcSaveNotCalled(b.dataset.saveNc))}
 function mcRenderEvents(){mcTimeline("#mcEventsTimeline",0);$("#mcEventsCount").textContent=matchCenterState.events.length+" eventi";mcRenderIntegrity();mcRefreshComposer()}
 function mcRenderAll(){mcHeader();mcRenderGeneral();mcRenderAvailability();mcRenderFormation();mcRenderEvents()}
-async function mcReload(){if(!matchCenterState.match){mcRenderAll();return}const [mp,ev]=await Promise.all([db.from("app_match_players").select("*").eq("match_id",matchCenterState.match.id),db.from("app_match_events").select("*").eq("match_id",matchCenterState.match.id).order("minute",{ascending:true})]);matchCenterState.matchPlayers=mp.data||[];matchCenterState.events=ev.data||[];mcRenderAll()}
-async function openMatchDetail(fixture){if(!fixture||!(isOwnTeamName(fixture.home_team)||isOwnTeamName(fixture.away_team)))return;clearInterval(matchCenterTimer);await loadCoreSeasonData();await loadCompetitions();await ensureMainTeam();const match=linkedMatchForFixture(fixture);const [inj,sus]=await Promise.all([db.from("injuries").select("*").eq("season_id",currentSeason.id),db.from("suspensions").select("*").eq("season_id",currentSeason.id)]);matchCenterState={fixture,match,matchPlayers:[],events:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general"};$("#matchDetailFixtureId").value=fixture.id;$("#matchDetailMatchId").value=match?.id||"";$("#matchDetailDialog").showModal();$$("[data-mc-tab]").forEach(b=>b.onclick=()=>mcSetTab(b.dataset.mcTab));$("#mcSaveFormation").onclick=mcSaveFormation;$("#mcEventType").onchange=mcRefreshComposer;$("#mcEventMinute").oninput=mcRefreshComposer;$("#mcEventSide").onchange=mcRefreshComposer;$("#mcEventForm").onsubmit=mcSubmitEvent;$$("[data-mc-live]").forEach(b=>b.onclick=()=>mcLiveAction(b.dataset.mcLive));await mcReload();mcSetTab("general")}
+async function mcReload(){if(!matchCenterState.match){matchCenterState.ratings=[];mcRenderAll();return}const [mp,ev,rt]=await Promise.all([db.from("app_match_players").select("*").eq("match_id",matchCenterState.match.id),db.from("app_match_events").select("*").eq("match_id",matchCenterState.match.id).order("minute",{ascending:true}),db.from("app_match_ratings").select("player_id,rating").eq("match_id",matchCenterState.match.id)]);matchCenterState.matchPlayers=mp.data||[];matchCenterState.events=ev.data||[];matchCenterState.ratings=rt.data||[];mcRenderAll()}
+async function openMatchDetail(fixture){if(!fixture||!(isOwnTeamName(fixture.home_team)||isOwnTeamName(fixture.away_team)))return;clearInterval(matchCenterTimer);await loadCoreSeasonData();await loadCompetitions();await ensureMainTeam();const match=linkedMatchForFixture(fixture);const [inj,sus]=await Promise.all([db.from("injuries").select("*").eq("season_id",currentSeason.id),db.from("suspensions").select("*").eq("season_id",currentSeason.id)]);matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general"};$("#matchDetailFixtureId").value=fixture.id;$("#matchDetailMatchId").value=match?.id||"";$("#matchDetailDialog").showModal();$$("[data-mc-tab]").forEach(b=>b.onclick=()=>mcSetTab(b.dataset.mcTab));$("#mcSaveFormation").onclick=mcSaveFormation;$("#mcEventType").onchange=mcRefreshComposer;$("#mcEventMinute").oninput=mcRefreshComposer;$("#mcEventSide").onchange=mcRefreshComposer;$("#mcEventForm").onsubmit=mcSubmitEvent;$$("[data-mc-live]").forEach(b=>b.onclick=()=>mcLiveAction(b.dataset.mcLive));await mcReload();mcSetTab("general")}
 $$( "[data-close-match-detail]" ).forEach(b=>b.onclick=()=>{clearInterval(matchCenterTimer);$("#matchDetailDialog").close()});
 async function mcSaveAvailability(id){try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");if(!sessionUser)throw new Error("Accedi per modificare.");const row=$(`[data-mc-avail="${id}"]`),reason=row.querySelector("[data-reason]").value,note=row.querySelector("[data-note]").value.trim(),old=mcMatchPlayer(id),p=reason?{selection_status:"unavailable",started:false,unavailability_reason:reason,unavailability_note:note||null}:{selection_status:"available",started:false,unavailability_reason:null,unavailability_note:null};const r=old?await db.from("app_match_players").update(p).eq("id",old.id).select("*").maybeSingle():await db.from("app_match_players").insert({match_id:matchCenterState.match.id,player_id:id,...p}).select("*").single();assertSaved(r,"Disponibilità");await mcReload()}catch(e){alert(e.message||String(e))}}
 async function mcSaveNotCalled(id){const sel=$(`[data-nc="${id}"]`),row=$(`[data-mc-avail="${id}"]`);if(row){row.querySelector("[data-reason]").value=sel.value;return mcSaveAvailability(id)}}
