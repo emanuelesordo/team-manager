@@ -50,6 +50,9 @@ La vista competizione mostra classifica reale e calendario completo. La classifi
 Classifica a sinistra e calendario compatto completo a destra. Toggle Tutte/Caselle e click sul punteggio.
 
 ### Calendario
+La lista partite della squadra principale usa nomi completi per entrambe le squadre e il formato centrale **Squadra casa | logo | risultato | logo | squadra ospite**, con venue/indirizzo a destra; data e competizione restano metadati secondari.
+
+
 Solo partite del Caselle in ordine cronologico, filtri per competizione, dettaglio e modifica.
 
 ### Rosa
