@@ -1162,7 +1162,7 @@ function mcHeader(){
     f.venue_name?'<button type="button" class="mc-meta-edit" data-mc-meta-edit="venue_name"><b>⌖</b>'+esc(f.venue_name)+'</button>':"",
     (f.venue_address||(!f.venue_name&&f.venue))?'<button type="button" class="mc-meta-edit" data-mc-meta-edit="venue_address"><b>⌖</b>'+esc(f.venue_address||f.venue)+'</button>':""
   ].filter(Boolean).join("");
-  $("[data-mc-meta-edit]").forEach(b=>b.onclick=()=>mcEditFixtureMeta(b.dataset.mcMetaEdit));
+  $$("[data-mc-meta-edit]").forEach(b=>b.onclick=()=>mcEditFixtureMeta(b.dataset.mcMetaEdit));
   $("#mcState").textContent=mcIsPost()?"FINALE":(mcIsLive()||mcHasProvisionalScore())?"LIVE":"PRE";$("#mcLiveControls")?.classList.toggle("hidden",!m||mcIsPost());
   clearInterval(matchCenterTimer);const timer=$("#mcTimer");
   if(mcIsLive()){timer.classList.remove("hidden");const tick=()=>{const sec=Math.max(0,Math.floor((Date.now()-new Date(m.live_started_at).getTime())/1000));timer.textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0")};tick();matchCenterTimer=setInterval(tick,1000)}else timer.classList.add("hidden");
@@ -2008,8 +2008,8 @@ function mcRenderAll(){
   $("#mcHistoryTitle").textContent=mcIsLive()?"Cronologia live":"Cronologia partita";
   const g=mcGoalInfo();
   $("#mcGoalProgress").textContent=mcIsPost()?("CAS "+g.team+"/"+g.expectedTeam+" · AVV "+g.opp+"/"+g.expectedOpp):(g.team+"-"+g.opp);
-  $("[data-mc-bench-side]").forEach(b=>b.onclick=()=>{mcGeneralBenchSide=b.dataset.mcBenchSide;mcRenderGeneralBench()});
-  $("[data-mc-event-filter]").forEach(b=>{
+  $$("[data-mc-bench-side]").forEach(b=>b.onclick=()=>{mcGeneralBenchSide=b.dataset.mcBenchSide;mcRenderGeneralBench()});
+  $$("[data-mc-event-filter]").forEach(b=>{
     b.classList.toggle("active",mcGeneralEventFilters.has(b.dataset.mcEventFilter));
     b.onclick=()=>{
       const type=b.dataset.mcEventFilter;
