@@ -834,23 +834,68 @@ function renderCompetitionProjection(standings,fixtures,competition){
 }
 
 function renderCompetitionFixtures(rows){
-  const source=competitionFixtureFilter==="mine"?rows.filter(r=>isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)):rows;
+  const source=competitionFixtureFilter==="mine"
+    ?rows.filter(r=>isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team))
+    :rows;
+
   const grouped=new Map();
-  source.forEach(r=>{if(!grouped.has(r.round_no))grouped.set(r.round_no,[]);grouped.get(r.round_no).push(r)});
-  const rounds=[...grouped.entries()].sort((a,b)=>a[0]-b[0]);
-  const roundCount=Math.max(1,rounds.length);
-  const maxMatches=Math.max(1,...rounds.map(([,list])=>list.length));
+  source.forEach(r=>{
+    const roundKey=Number(r.round_no)||0;
+    if(!grouped.has(roundKey))grouped.set(roundKey,[]);
+    grouped.get(roundKey).push(r);
+  });
+
+  const rounds=[...grouped.entries()]
+    .map(([round,list])=>{
+      const ordered=[...list].sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
+      const times=ordered.map(x=>new Date(x.kickoff_at).getTime()).filter(Number.isFinite);
+      return {
+        round,
+        list:ordered,
+        firstAt:times.length?Math.min(...times):Infinity,
+        lastAt:times.length?Math.max(...times):-Infinity
+      };
+    })
+    .sort((a,b)=>a.round-b.round);
+
   const grid=$("#competitionFixtures");
-  grid.style.setProperty("--round-count",roundCount);grid.style.setProperty("--max-matches",maxMatches);
-  grid.classList.toggle("dense-rounds",roundCount>10||maxMatches>6);grid.classList.toggle("overflow-rounds",roundCount>16);
-  grid.innerHTML=`<div class="round-grid">${rounds.map(([round,list])=>`<section class="mini-round"><div class="mini-round-label">${round}</div>${list.map(r=>{
-    const own=isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team);
-    const score=r.status==="finished"?esc(r.home_score)+"-"+esc(r.away_score):"–";
-    return `<div class="mini-fixture ${own?"own-fixture mc-openable":""}" ${own?`data-match-center="${r.id}"`:""}>${compactTeamHtml(r.home_team)}<button type="button" class="score-link" ${own?`data-match-center-score="${r.id}"`:`data-fixture-score="${r.id}"`}>${score}</button>${compactTeamHtml(r.away_team)}</div>`;
-  }).join("")}</section>`).join("")}</div>`||'<div class="muted">Calendario non disponibile.</div>';
+  const focusLabel=$("#competitionFixtureFocusLabel");
+  const now=Date.now();
+
+  let nextIndex=rounds.findIndex(x=>x.lastAt>=now);
+  if(nextIndex<0)nextIndex=rounds.length-1;
+  const previousIndex=Math.max(0,nextIndex-1);
+  const focusIndex=rounds.length?previousIndex:-1;
+  const focusRound=rounds[focusIndex];
+  const nextRound=rounds[Math.min(rounds.length-1,focusIndex+1)];
+
+  if(focusLabel){
+    if(!rounds.length)focusLabel.textContent="";
+    else if(focusRound&&nextRound&&focusRound.round!==nextRound.round)focusLabel.textContent=`Turni ${focusRound.round}–${nextRound.round}`;
+    else focusLabel.textContent=`Turno ${focusRound?.round??""}`;
+  }
+
+  grid.innerHTML=rounds.length
+    ?`<div class="round-grid">${rounds.map((group,index)=>`<section class="mini-round ${index===focusIndex||index===focusIndex+1?"current-window":""}" data-round-index="${index}" data-round-no="${group.round}">
+        <div class="mini-round-label">Turno ${group.round}</div>
+        ${group.list.map(r=>{
+          const own=isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team);
+          const score=r.status==="finished"?esc(r.home_score)+"-"+esc(r.away_score):"–";
+          return `<div class="mini-fixture ${own?"own-fixture mc-openable":""}" ${own?`data-match-center="${r.id}"`:""}>${compactTeamHtml(r.home_team)}<button type="button" class="score-link" ${own?`data-match-center-score="${r.id}"`:`data-fixture-score="${r.id}"`}>${score}</button>${compactTeamHtml(r.away_team)}</div>`;
+        }).join("")}
+      </section>`).join("")}</div>`
+    :'<div class="muted">Calendario non disponibile.</div>';
+
   $$("[data-fixture-score]").forEach(b=>b.onclick=()=>openFixture(rows.find(r=>r.id===b.dataset.fixtureScore)));
   $$("[data-match-center-score]").forEach(b=>b.onclick=e=>{e.stopPropagation();openMatchDetail(rows.find(r=>r.id===b.dataset.matchCenterScore))});
   $$("[data-match-center]").forEach(row=>row.onclick=e=>{if(e.target.closest("button"))return;openMatchDetail(rows.find(r=>r.id===row.dataset.matchCenter))});
+
+  if(focusIndex>=0){
+    requestAnimationFrame(()=>{
+      const target=grid.querySelector(`[data-round-index="${focusIndex}"]`);
+      if(target)grid.scrollTop=Math.max(0,target.offsetTop-grid.offsetTop-2);
+    });
+  }
 }
 
 function toLocalInputValue(value){
