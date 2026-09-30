@@ -1651,7 +1651,7 @@ async function loadCoreSeasonData(){
     db.from("injuries").select("*").eq("season_id",currentSeason.id).order("injury_date",{ascending:false})
   ]);
   const playerMap=new Map((allPlayers.data||[]).map(p=>[p.id,p]));
-  rosterRows=(roster.data||[]).map(r=>({...r,...playerMap.get(r.player_id)}));
+  rosterRows=(roster.data||[]).map(r=>({...r,roster_id:r.id,...playerMap.get(r.player_id)}));
   playerStats=stats.data||[];teamMatches=matchesResult.data||[];players=allPlayers.data||[];rosterInjuries=injuriesResult.data||[];
   const matchIds=teamMatches.map(m=>m.id);
   if(matchIds.length){
@@ -1999,7 +1999,7 @@ $("#playerForm").onsubmit=async e=>{
     if(id){
       const pr=await db.from("players").update(payload).eq("id",id).select("*").maybeSingle();assertSaved(pr,"Giocatore");
       const roster=rosterRows.find(x=>x.player_id===id),num=$("#newPlayerNumber").value?+$("#newPlayerNumber").value:null;
-      if(roster?.id){const rr=await db.from("app_roster").update({shirt_number:num}).eq("id",roster.id).select("*").maybeSingle();assertSaved(rr,"Rosa")}
+      if(roster?.roster_id){const rr=await db.from("app_roster").update({shirt_number:num}).eq("id",roster.roster_id).select("*").maybeSingle();assertSaved(rr,"Rosa")}
     }else{
       const pr=await db.from("players").insert(payload).select("*").single();assertSaved(pr,"Giocatore");
       const rr=await db.from("app_roster").insert({season_id:currentSeason.id,player_id:pr.data.id,shirt_number:$("#newPlayerNumber").value?+$("#newPlayerNumber").value:null,active:true}).select("*").single();assertSaved(rr,"Rosa");
