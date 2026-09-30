@@ -1313,7 +1313,7 @@ function mcQuickEventShell(){
   });
   return pop;
 }
-let mcPlayerQuickState={playerId:null,kind:null,anchor:null,source:"player",editingEventId:null};
+let mcPlayerQuickState={playerId:null,kind:null,anchor:null,source:"player",editingEventId:null,side:"team"};
 function mcQuickPeriodDefault(){
   const p=matchCenterState.match?.live_period;
   return p==="second_half"?"second_half":"first_half";
@@ -1356,7 +1356,7 @@ function mcQuickAllSelectableRows(){
   return [...field,...bench,...mcQuickAllParticipantRows()].filter(x=>x?.player_id&&!seen.has(x.player_id)&&seen.add(x.player_id));
 }
 function mcOpenPlayerQuickEvent(playerId,kind,anchor){
-  mcPlayerQuickState={playerId,kind,anchor,source:"player",editingEventId:null};
+  mcPlayerQuickState={playerId,kind,anchor,source:"player",editingEventId:null,side:"team"};
   const pop=mcQuickEventShell();
   pop.classList.add("direct-player");
   pop.classList.remove("hidden");
@@ -1365,7 +1365,7 @@ function mcOpenPlayerQuickEvent(playerId,kind,anchor){
   requestAnimationFrame(()=>mcPositionPlayerQuickEvent(anchor));
 }
 function mcOpenTimelineQuickEvent(anchor){
-  mcPlayerQuickState={playerId:null,kind:"substitution",anchor,source:"timeline",editingEventId:null};
+  mcPlayerQuickState={playerId:null,kind:"substitution",anchor,source:"timeline",editingEventId:null,side:"team"};
   const pop=mcQuickEventShell();
   pop.classList.remove("direct-player","hidden");
   $("#mcPlayerQuickDelete").classList.add("hidden");
@@ -1376,7 +1376,7 @@ function mcOpenTimelineEventEditor(eventId,anchor){
   const event=matchCenterState.events.find(x=>String(x.id)===String(eventId));
   if(!event||event.event_type==="period_end")return;
   const kind=event.event_type==="substitution"?"substitution":event.event_type==="goal"?"goal":"card";
-  mcPlayerQuickState={playerId:event.player_id||null,kind,anchor,source:"edit",editingEventId:event.id};
+  mcPlayerQuickState={playerId:event.player_id||null,kind,anchor,source:"edit",editingEventId:event.id,side:event.team_side||"team"};
   const pop=mcQuickEventShell();
   pop.classList.remove("direct-player","hidden");
   $("#mcPlayerQuickDelete").classList.remove("hidden");
@@ -1413,13 +1413,19 @@ function mcSetPlayerQuickKind(kind){
   $$("[data-quick-kind]").forEach(b=>b.classList.toggle("active",b.dataset.quickKind===kind));
   const label=kind==="substitution"?"Cambio":kind==="goal"?"Gol":"Cartellino";
   $("#mcPlayerQuickTitle").textContent=source==="edit"?("Modifica evento · "+label):source==="player"?(label+" · "+(p?.last_name||mcPlayerName(id))):("Aggiungi evento · "+label);
+  const side=source==="player"?"team":(editing?.team_side||mcPlayerQuickState.side||"team");
+  mcPlayerQuickState.side=side;
   const period=editing?(editing.payload?.period||mcEventPeriod(editing)):mcQuickPeriodDefault();
   const minute=editing?(editing.minute??""):mcQuickMinuteValue();
   const timing='<div class="mc-player-event-grid"><label>Tempo<select id="mcQuickPeriod">'+mcQuickPeriodOptions(period)+'</select></label><label>Minuto<input id="mcQuickMinute" type="number" min="0" max="120" value="'+minute+'" placeholder="—"></label></div>';
-  let html=timing;
+  const sidePicker=source==="player"?"":'<div class="mc-side-choice"><button type="button" class="'+(side==="team"?"active":"")+'" data-quick-side="team">Caselle</button><button type="button" class="'+(side==="opponent"?"active":"")+'" data-quick-side="opponent">Avversario</button></div>';
+  let html=sidePicker+timing;
   const benchRows=mcQuickBenchRows(activeIds);
 
   if(kind==="substitution"){
+    if(side==="opponent"){
+      html+='<div class="mc-opponent-disabled">Cambio avversario non disponibile senza rosa avversaria.</div>';
+    }else
     if(source==="player"){
       if(isActive){
         html+='<div class="mc-player-event-grid players"><label>Giocatore esce>'+mcQuickPlayerChip(id,"Esce")+'</label><label>Giocatore entra>'+mcQuickSelect(benchRows.filter(x=>x.player_id!==id),"mcQuickOther","Seleziona giocatore")+'</label></div>';
@@ -1435,6 +1441,10 @@ function mcSetPlayerQuickKind(kind){
     const reason=editing?.substitution_reason||"technical";
     html+='<label>Motivo cambio<select id="mcQuickSubtype"><option value="technical" '+(reason==="technical"?"selected":"")+'>Scelta tecnica</option><option value="injury" '+(reason==="injury"?"selected":"")+'>Infortunio</option><option value="tactical" '+(reason==="tactical"?"selected":"")+'>Tattico</option><option value="other" '+(reason==="other"?"selected":"")+'>Altro</option></select></label>';
   }else if(kind==="goal"){
+    if(side==="opponent"){
+      const goalType=editing?.payload?.goal_type||"action";
+      html+='<label>Tipologia<select id="mcQuickSubtype"><option value="action" '+(goalType==="action"?"selected":"")+'>Azione</option><option value="penalty" '+(goalType==="penalty"?"selected":"")+'>Rigore</option><option value="free_kick" '+(goalType==="free_kick"?"selected":"")+'>Punizione</option><option value="own_goal" '+(goalType==="own_goal"?"selected":"")+'>Autogol</option></select></label>';
+    }else
     if(source==="player"){
       html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickPlayerChip(id,"Marcatore")+'</label><label>Assistman>'+mcQuickSelect(fieldRows.filter(x=>x.player_id!==id),"mcQuickOther","Nessun assist")+'</label></div>';
     }else if(source==="edit"){
@@ -1446,14 +1456,15 @@ function mcSetPlayerQuickKind(kind){
     const goalType=editing?.payload?.goal_type||"action";
     html+='<label>Tipologia<select id="mcQuickSubtype"><option value="action" '+(goalType==="action"?"selected":"")+'>Azione</option><option value="penalty" '+(goalType==="penalty"?"selected":"")+'>Rigore</option><option value="free_kick" '+(goalType==="free_kick"?"selected":"")+'>Punizione</option><option value="own_goal" '+(goalType==="own_goal"?"selected":"")+'>Autogol</option></select></label>';
   }else{
-    if(source==="timeline"||source==="edit"){
+    if(side==="team"&&(source==="timeline"||source==="edit")){
       html+='<label>Giocatore>'+mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore",editing?.player_id||"")+'</label>';
     }
     const cardType=editing?.event_type||"yellow_card";
     html+='<label>Cartellino<div class="mc-card-choice"><button type="button" class="yellow '+(cardType==="yellow_card"?"active":"")+'" data-quick-card="yellow_card"><i></i>Giallo</button><button type="button" class="red '+(cardType==="red_card"?"active":"")+'" data-quick-card="red_card"><i></i>Rosso</button><button type="button" class="blue '+(cardType==="blue_card"?"active":"")+'" data-quick-card="blue_card"><i></i>Blu</button></div></label><input id="mcQuickCardType" type="hidden" value="'+cardType+'">';
   }
   $("#mcPlayerQuickFields").innerHTML=html;
-  $$("[data-quick-card]").forEach(b=>b.onclick=e=>{e.stopPropagation();$$("[data-quick-card]").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("#mcQuickCardType").value=b.dataset.quickCard});
+  $("[data-quick-card]").forEach(b=>b.onclick=e=>{e.stopPropagation();$("[data-quick-card]").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("#mcQuickCardType").value=b.dataset.quickCard});
+  $("[data-quick-side]").forEach(b=>b.onclick=e=>{e.stopPropagation();mcPlayerQuickState.side=b.dataset.quickSide;mcSetPlayerQuickKind(mcPlayerQuickState.kind)});
   $("#mcPlayerQuickError").classList.add("hidden");
   requestAnimationFrame(()=>mcPositionPlayerQuickEvent(mcPlayerQuickState.anchor));
 }
@@ -1498,11 +1509,12 @@ async function mcSubmitPlayerQuickEvent(e){
   try{
     if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");
     if(!sessionUser)throw new Error("Accedi per inserire eventi.");
-    const source=mcPlayerQuickState.source,kind=mcPlayerQuickState.kind,editingId=mcPlayerQuickState.editingEventId,period=$("#mcQuickPeriod").value;
+    const source=mcPlayerQuickState.source,kind=mcPlayerQuickState.kind,editingId=mcPlayerQuickState.editingEventId,side=source==="player"?"team":(mcPlayerQuickState.side||"team"),period=$("#mcQuickPeriod").value;
     const rawMinute=$("#mcQuickMinute").value,minute=rawMinute===""?null:Number(rawMinute);
-    const base={match_id:matchCenterState.match.id,minute,stoppage_minute:null,team_side:"team",proposed_by:sessionUser.id,validation_status:"proposed"};
+    const base={match_id:matchCenterState.match.id,minute,stoppage_minute:null,team_side:side,proposed_by:sessionUser.id,validation_status:"proposed"};
 
     if(kind==="substitution"){
+      if(side==="opponent")throw new Error("Cambio avversario non disponibile senza rosa avversaria.");
       let outgoing,incoming;
       if(source==="player"){
         const id=mcPlayerQuickState.playerId,activeIds=new Set(mcCurrentFieldRows().map(x=>x.player_id)),isActive=activeIds.has(id),other=$("#mcQuickOther").value||null;
@@ -1515,18 +1527,25 @@ async function mcSubmitPlayerQuickEvent(e){
       const payload={...base,event_type:"substitution",player_id:outgoing,secondary_player_id:incoming,payload:{period},substitution_reason:$("#mcQuickSubtype").value};
       if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
     }else if(kind==="goal"){
-      const scorer=source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer").value||null);
-      if(!scorer)throw new Error("Seleziona il marcatore.");
-      const activeIds=new Set(mcCurrentFieldRows().map(x=>x.player_id));
-      if(!editingId&&!activeIds.has(scorer))throw new Error("Il marcatore deve essere in campo al momento del gol.");
-      const sub=$("#mcQuickSubtype").value,assist=$("#mcQuickOther").value||null;
-      if(assist===scorer)throw new Error("Marcatore e assistman non possono coincidere.");
-      if(mcIsPost()&&!editingId){const g=mcGoalInfo();if(g.team>=g.expectedTeam)throw new Error("Numero di gol già coerente con il risultato ufficiale.");}
+      const sub=$("#mcQuickSubtype").value;
+      let scorer=null,assist=null;
+      if(side==="team"){
+        scorer=source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer").value||null);
+        if(!scorer)throw new Error("Seleziona il marcatore.");
+        const activeIds=new Set(mcCurrentFieldRows().map(x=>x.player_id));
+        if(!editingId&&!activeIds.has(scorer))throw new Error("Il marcatore deve essere in campo al momento del gol.");
+        assist=$("#mcQuickOther").value||null;
+        if(assist===scorer)throw new Error("Marcatore e assistman non possono coincidere.");
+      }
+      if(mcIsPost()&&!editingId){
+        const g=mcGoalInfo(),max=side==="team"?g.expectedTeam:g.expectedOpp,cur=side==="team"?g.team:g.opp;
+        if(cur>=max)throw new Error("Numero di gol già coerente con il risultato ufficiale.");
+      }
       const payload={...base,event_type:"goal",player_id:scorer,secondary_player_id:assist,payload:{period,goal_type:sub},substitution_reason:null};
       if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
     }else{
-      const playerId=source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer").value||null);
-      if(!playerId)throw new Error("Seleziona il giocatore.");
+      const playerId=side==="team"?(source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer").value||null)):null;
+      if(side==="team"&&!playerId)throw new Error("Seleziona il giocatore.");
       const type=$("#mcQuickCardType").value||"yellow_card";
       const cardPayload={...base,event_type:type,player_id:playerId,secondary_player_id:null,payload:{period,card_type:type==="red_card"?"direct":type==="blue_card"?"blue":"yellow",...(type==="blue_card"?{temporary_suspension_minutes:10}:{})},substitution_reason:null};
       if(editingId){
@@ -1534,7 +1553,7 @@ async function mcSubmitPlayerQuickEvent(e){
         await mcDeleteAutomaticRedFor(old);
         await mcUpdateDirectEvent(editingId,cardPayload);
       }else await mcInsertDirectEvent(cardPayload);
-      if(type==="yellow_card"||type==="blue_card"){
+      if(side==="team"&&(type==="yellow_card"||type==="blue_card")){
         const previous=matchCenterState.events.filter(x=>String(x.id)!==String(editingId||"")&&x.player_id===playerId&&x.team_side==="team"&&(x.event_type==="yellow_card"||x.event_type==="blue_card")&&x.validation_status!=="rejected").length;
         const alreadyRed=matchCenterState.events.some(x=>String(x.id)!==String(editingId||"")&&x.player_id===playerId&&x.team_side==="team"&&x.event_type==="red_card"&&x.validation_status!=="rejected"&&!x.payload?.automatic);
         if(previous>=1&&!alreadyRed){
