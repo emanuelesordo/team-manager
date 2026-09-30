@@ -1287,11 +1287,12 @@ function mcRatingEventIcons(playerId){
     }).join("");
 }
 function mcNormalizeRatingInput(raw){
-  return String(raw??"").trim().replace(",",".");
+  return String(raw??"").trim().toUpperCase().replace(",",".");
 }
 function mcParseRatingInput(raw){
   const normalized=mcNormalizeRatingInput(raw);
   if(!normalized)return null;
+  if(normalized==="SV")return "SV";
   const value=Number(normalized);
   if(!Number.isFinite(value)||value<1||value>10)return null;
   const snapped=Math.round(value*2)/2;
@@ -1306,7 +1307,7 @@ function mcRenderRatingRow(item){
   const average=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
   const mine=ratings.find(r=>r.voter_id===sessionUser?.id);
   const current=mine?Number(mine.rating):null;
-  const averageText=average==null?"—":average.toFixed(1).replace(".",",");
+  const averageText=average==null?"SV":average.toFixed(1).replace(".",",");
   const averageStyle=average==null?"":' style="--rating-bg:'+mcRatingColor(average)+';--rating-fg:'+mcRatingTextColor(average)+'"';
   const currentColor=current==null?"#e4e6e5":mcRatingColor(current);
   const currentFg=current==null?"#6e7579":mcRatingTextColor(current);
@@ -1326,7 +1327,7 @@ function mcRenderRatingRow(item){
     '<label class="mc-rating-vote">'+
       '<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" maxlength="4" '+
         'value="'+(current==null?"":String(current).replace(".",","))+'" '+
-        'placeholder="1–10" data-mc-rating-player="'+playerId+'" '+
+        'placeholder="SV / 1–10" data-mc-rating-player="'+playerId+'" '+
         'style="--rating-color:'+currentColor+';--rating-fg:'+currentFg+'" '+(!sessionUser?"disabled":"")+'>'+
     '</label>'+
   '</div>';
@@ -1361,10 +1362,10 @@ function mcRenderRating(){
     const playerId=input.dataset.mcRatingPlayer;
     let timer=null;
     const paint=value=>{
-      if(value==null){
-        input.style.setProperty("--rating-bg","#fff");
-        input.style.setProperty("--rating-fg","#25282a");
-        input.classList.remove("valid");
+      if(value==null||value==="SV"){
+        input.style.setProperty("--rating-color","#d7dcdf");
+        input.style.setProperty("--rating-fg","#6e7579");
+        input.classList.toggle("valid",value==="SV");
         return;
       }
       input.style.setProperty("--rating-color",mcRatingColor(value));
@@ -1380,11 +1381,17 @@ function mcRenderRating(){
         return;
       }
       input.classList.remove("invalid");
+      if(value==="SV"){
+        input.value="SV";
+        await mcSaveRating(playerId,"SV",input);
+        return;
+      }
       input.value=String(value).replace(".",",");
       await mcSaveRating(playerId,value,input);
     };
     input.oninput=()=>{
-      input.value=input.value.replace(".",",").replace(/[^0-9,]/g,"").replace(/(,.*),/g,"$1");
+      const raw=input.value.toUpperCase().replace(".",",");
+      input.value=raw.startsWith("S")?raw.replace(/[^SV]/g,"").slice(0,2):raw.replace(/[^0-9,]/g,"").replace(/(,.*),/g,"$1");
       const value=mcParseRatingInput(input.value);
       paint(value);
       input.classList.remove("invalid");
@@ -1407,13 +1414,20 @@ async function mcSaveRating(playerId,value,control){
     if(!mcIsPost())throw new Error("I rating sono disponibili solo a risultato definitivo.");
     if(!sessionUser)throw new Error("Accedi per assegnare un voto.");
     const rating=mcParseRatingInput(value);
-    if(rating==null)throw new Error("Voto non valido: usa valori da 1 a 10 con incrementi di 0,5.");
+    if(rating==null)throw new Error("Voto non valido: usa SV oppure valori da 1 a 10 con incrementi di 0,5.");
     control.disabled=true;
     const existing=matchCenterState.ratings.find(r=>r.player_id===playerId&&r.voter_id===sessionUser.id);
-    const result=existing
-      ?await db.from("app_match_ratings").update({rating}).eq("match_id",matchCenterState.match.id).eq("player_id",playerId).eq("voter_id",sessionUser.id).select("*").maybeSingle()
-      :await db.from("app_match_ratings").insert({match_id:matchCenterState.match.id,player_id:playerId,voter_id:sessionUser.id,rating}).select("*").single();
-    assertSaved(result,"Rating");
+    if(rating==="SV"){
+      if(existing){
+        const result=await db.from("app_match_ratings").delete().eq("match_id",matchCenterState.match.id).eq("player_id",playerId).eq("voter_id",sessionUser.id);
+        if(result.error)throw result.error;
+      }
+    }else{
+      const result=existing
+        ?await db.from("app_match_ratings").update({rating}).eq("match_id",matchCenterState.match.id).eq("player_id",playerId).eq("voter_id",sessionUser.id).select("*").maybeSingle()
+        :await db.from("app_match_ratings").insert({match_id:matchCenterState.match.id,player_id:playerId,voter_id:sessionUser.id,rating}).select("*").single();
+      assertSaved(result,"Rating");
+    }
     const refreshed=await db.from("app_match_ratings").select("player_id,rating,voter_id").eq("match_id",matchCenterState.match.id);
     if(refreshed.error)throw refreshed.error;
     matchCenterState.ratings=refreshed.data||[];
@@ -1424,7 +1438,7 @@ async function mcSaveRating(playerId,value,control){
       const average=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
       const avg=row.querySelector(".mc-rating-average-value"),count=row.querySelector(".mc-rating-average small");
       if(avg){
-        avg.textContent=average==null?"—":average.toFixed(1).replace(".",",");
+        avg.textContent=average==null?"SV":average.toFixed(1).replace(".",",");
         avg.classList.toggle("empty",average==null);
         avg.style.setProperty("--rating-bg",average==null?"#e4e6e5":mcRatingColor(average));
         avg.style.setProperty("--rating-fg",average==null?"#90969a":mcRatingTextColor(average));
