@@ -264,10 +264,10 @@ function renderSeasons(){
 
 async function loadTeam(){
   if(!currentSeason)return;
-  const r=await db.from("teams").select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color,kit_style,kit_primary_color,kit_secondary_color,kit_number_color").eq("id",currentSeason.team_id).maybeSingle();
+  const r=await db.from("teams").select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color,kit_style,kit_primary_color,kit_secondary_color,kit_number_color,home_venue_name,home_venue_address").eq("id",currentSeason.team_id).maybeSingle();
   if(r.error){$("#teamMessage").textContent="Accedi come staff per modificare la squadra.";$("#teamMessage").classList.remove("hidden");return}
   team=r.data; if(!team)return; updateAppBrand();
-  $("#teamName").value=team.name||"";$("#teamShort").value=(team.short_name||"").slice(0,3).toUpperCase();
+  $("#teamName").value=team.name||"";$("#teamShort").value=(team.short_name||"").slice(0,3).toUpperCase();$("#teamVenueName").value=team.home_venue_name||"";$("#teamVenueAddress").value=team.home_venue_address||"";
   $("#teamColor1").value=team.primary_color||"#111827";$("#teamColor2").value=team.secondary_color||"#ffffff";$("#teamColor3").value=team.accent_color||"#2563eb";
   $("#teamKitStyle").value=team.kit_style||"solid";$("#teamKitPrimary").value=team.kit_primary_color||team.primary_color||"#f4d318";$("#teamKitSecondary").value=team.kit_secondary_color||team.secondary_color||"#111111";$("#teamKitNumber").value=team.kit_number_color||"#111111";
   $("#teamLogoPreview").innerHTML=team.logo_url?`<img src="${esc(team.logo_url)}" alt="">`:"Logo";
@@ -295,9 +295,9 @@ function renderTeamKitPreview(){
 });
 
 $("#teamForm").onsubmit=async e=>{e.preventDefault();if(!team)return;let logo=team.logo_url;const file=$("#teamLogoFile").files[0];if(file){const canvas=document.createElement("canvas"),img=new Image();await new Promise(res=>{img.onload=res;img.src=URL.createObjectURL(file)});const scale=Math.min(1,1200/Math.max(img.width,img.height));canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);const blob=await new Promise(res=>canvas.toBlob(res,"image/png"));const path=`${team.id}/logo.png`;const up=await db.storage.from("team-assets").upload(path,blob,{contentType:"image/png",upsert:true});if(up.error)return teamMsg(up.error.message,true);logo=db.storage.from("team-assets").getPublicUrl(path).data.publicUrl+"?t="+Date.now()}
-  const payload={name:$("#teamName").value.trim(),short_name:$("#teamShort").value.trim().toUpperCase(),logo_url:logo,primary_color:$("#teamColor1").value,secondary_color:$("#teamColor2").value,accent_color:$("#teamColor3").value,kit_style:$("#teamKitStyle").value,kit_primary_color:$("#teamKitPrimary").value,kit_secondary_color:$("#teamKitSecondary").value,kit_number_color:$("#teamKitNumber").value,inherit_organization_branding:false};
+  const payload={name:$("#teamName").value.trim(),short_name:$("#teamShort").value.trim().toUpperCase(),logo_url:logo,home_venue_name:$("#teamVenueName").value.trim()||null,home_venue_address:$("#teamVenueAddress").value.trim()||null,primary_color:$("#teamColor1").value,secondary_color:$("#teamColor2").value,accent_color:$("#teamColor3").value,kit_style:$("#teamKitStyle").value,kit_primary_color:$("#teamKitPrimary").value,kit_secondary_color:$("#teamKitSecondary").value,kit_number_color:$("#teamKitNumber").value,inherit_organization_branding:false};
   try{
-    const r=await db.from("teams").update(payload).eq("id",team.id).select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color,kit_style,kit_primary_color,kit_secondary_color,kit_number_color").maybeSingle();
+    const r=await db.from("teams").update(payload).eq("id",team.id).select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color,kit_style,kit_primary_color,kit_secondary_color,kit_number_color,home_venue_name,home_venue_address").maybeSingle();
     assertSaved(r,"Squadra");
     teamMsg("Salvato.");
     await loadTeam();
@@ -322,7 +322,7 @@ function renderOpponents(filter=""){
     <div class="card-head">
       <div class="opponent-brand">
         <div class="opponent-card-logo">${o.logo_url?`<img src="${esc(o.logo_url)}" alt="">`:(esc(o.short_name||o.name.slice(0,3))).toUpperCase()}</div>
-        <div><div class="card-title">${esc(o.name)}</div><span class="badge">${esc(o.short_name||"")}</span></div>
+        <div><div class="card-title">${esc(o.name)}</div><span class="badge">${esc(o.short_name||"")}</span>${o.home_venue_name?`<small>${esc(o.home_venue_name)}</small>`:""}${o.home_venue_address?`<small>${esc(o.home_venue_address)}</small>`:""}</div>
       </div>
       <div class="palette-dots" aria-label="Palette">
         <i style="--dot:${esc(o.primary_color||"#d0d5dd")}"></i>
@@ -341,7 +341,7 @@ function openOpponent(o=null){
   $("#opponentMessage").classList.add("hidden");
   $("#opponentId").value=o?.id||"";
   $("#opponentName").value=o?.name||"";
-  $("#opponentShort").value=o?.short_name||"";
+  $("#opponentShort").value=o?.short_name||"";$("#opponentVenueName").value=o?.home_venue_name||"";$("#opponentVenueAddress").value=o?.home_venue_address||"";
   $("#opponentColor1").value=o?.primary_color||"#111827";
   $("#opponentColor2").value=o?.secondary_color||"#ffffff";
   $("#opponentColor3").value=o?.accent_color||"#667085";
@@ -391,6 +391,8 @@ $("#opponentForm").onsubmit=async e=>{
       name:$("#opponentName").value.trim(),
       short_name:$("#opponentShort").value.trim()||null,
       logo_url:logoUrl,
+      home_venue_name:$("#opponentVenueName").value.trim()||null,
+      home_venue_address:$("#opponentVenueAddress").value.trim()||null,
       primary_color:$("#opponentColor1").value,
       secondary_color:$("#opponentColor2").value,
       accent_color:$("#opponentColor3").value
@@ -522,7 +524,7 @@ function updateAppBrand(){
 }
 async function ensureMainTeam(){
   if(team||!currentSeason)return;
-  const r=await db.from("teams").select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color").eq("id",currentSeason.team_id).maybeSingle();
+  const r=await db.from("teams").select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color,home_venue_name,home_venue_address").eq("id",currentSeason.team_id).maybeSingle();
   if(!r.error){team=r.data;updateAppBrand()}
 }
 function normalizeTeamName(value){
@@ -906,7 +908,7 @@ function renderCalendarRows(){
     const home=teamVisual(r.home_team);
     const away=teamVisual(r.away_team);
     const score=r.status==="finished"?`${r.home_score} - ${r.away_score}`:"–";
-    const venue=(r.venue||"").trim();
+    const venueName=(r.venue_name||"").trim(),venueAddress=(r.venue_address||"").trim(),venue=[venueName,venueAddress].filter(Boolean).join(" · ")||(r.venue||"").trim();
 
     const homeLogo=home.logo
       ?`<img src="${esc(home.logo)}" alt="">`
@@ -976,7 +978,7 @@ function mcHeader(){
   $("#mcMeta").innerHTML=[
     '<span><b>▣</b>'+esc(localDateTime(f.kickoff_at))+'</span>',
     c?.name?'<span><b>◆</b>'+esc(c.name)+'</span>':"",
-    f.venue?'<span><b>⌖</b>'+esc(f.venue)+'</span>':""
+    (f.venue_name||f.venue_address||f.venue)?'<span><b>⌖</b>'+esc([f.venue_name,f.venue_address].filter(Boolean).join(' · ')||f.venue)+'</span>':""
   ].filter(Boolean).join("");
   $("#mcState").textContent=mcIsLive()?"LIVE":mcIsPost()?"FINALE":"PRE";$("#mcLiveControls").classList.toggle("hidden",!m||mcIsPost());
   clearInterval(matchCenterTimer);const timer=$("#mcTimer");
@@ -1351,21 +1353,28 @@ async function mcLiveAction(action){try{if(!matchCenterState.match)throw new Err
 let csiImportState={fixture:null,preview:null,aliases:[],mapping:new Map()};
 function csiNorm(v){return String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim()}
 function csiExternalKey(player){
-  if(!player?.name)return "";
-  const tokens=csiNorm(player.name).split(" ").filter(Boolean);
-  if(!tokens.length)return "";
-  const initial=tokens.length>1&&tokens[tokens.length-1].length===1?tokens.pop():"";
-  return tokens.join(" ")+"|"+initial;
+  return csiNorm(player?.name||"");
 }
-function csiAliasKey(player){return csiExternalKey(player)+"|"+(player?.number??-1)}
+function csiAliasKey(player){return csiExternalKey(player)}
 function csiRosterCandidates(player){
-  const key=csiExternalKey(player),[surname,initial]=key.split("|");
-  let rows=rosterRows.filter(p=>csiNorm(p.last_name)===surname&&(!initial||csiNorm(p.first_name).startsWith(initial)));
-  if(rows.length>1&&player?.number!=null){
-    const byNumber=rows.filter(p=>Number(p.shirt_number)===Number(player.number)||Number(mcMatchPlayer(p.player_id)?.shirt_number)===Number(player.number));
-    if(byNumber.length)rows=byNumber;
-  }
-  return rows;
+  const raw=csiNorm(player?.name||"");
+  const t=raw.split(" ").filter(Boolean);
+  if(!t.length)return [];
+  return rosterRows.filter(p=>{
+    const first=csiNorm(p.first_name),last=csiNorm(p.last_name);
+    const fi=first.charAt(0),li=last.charAt(0);
+    const fullFL=(first+" "+last).trim(),fullLF=(last+" "+first).trim();
+    if(raw===fullFL||raw===fullLF)return true;
+    if(t.length===1)return raw===last;
+    if(t.length===2){
+      const [a,b]=t;
+      if(a===last&&b===fi)return true;
+      if(a===first&&b===li)return true;
+      if(a===last&&b===first)return true;
+      if(a===first&&b===last)return true;
+    }
+    return false;
+  });
 }
 async function csiLoadAliases(){
   if(!currentSeason||!team)return [];
@@ -1374,8 +1383,8 @@ async function csiLoadAliases(){
 }
 function csiResolvePlayer(player){
   if(!player?.name)return null;
-  const nk=csiExternalKey(player),num=Number(player.number??-1);
-  const alias=csiImportState.aliases.find(a=>a.normalized_key===nk&&(Number(a.external_number??-1)===num||a.external_number==null));
+  const nk=csiExternalKey(player);
+  const alias=csiImportState.aliases.find(a=>a.normalized_key===nk);
   if(alias)return alias.player_id;
   const candidates=csiRosterCandidates(player);
   return candidates.length===1?candidates[0].player_id:null;
@@ -1406,7 +1415,7 @@ function csiRenderPreview(){
   playersToMap.forEach(p=>csiImportState.mapping.set(csiAliasKey(p),csiResolvePlayer(p)));
   $("#csiPlayerMappings").innerHTML=playersToMap.length?'<div class="csi-map-title">Normalizzazione giocatori Caselle</div>'+playersToMap.map(p=>{
     const key=csiAliasKey(p),selected=csiImportState.mapping.get(key)||"",candidates=csiRosterCandidates(p);
-    return '<label class="csi-map-row"><span><strong>'+esc(p.name)+'</strong><small>#'+esc(p.number??"–")+(candidates.length===1?' · riconosciuto automaticamente':candidates.length>1?' · omonimia da confermare':' · da associare')+'</small></span><select data-csi-map="'+esc(key)+'"><option value="">Non associato</option>'+rosterRows.map(r=>'<option value="'+r.player_id+'" '+(r.player_id===selected?"selected":"")+'>'+esc(r.last_name+" "+r.first_name)+(r.shirt_number!=null?' #'+r.shirt_number:"")+'</option>').join("")+'</select></label>';
+    return '<label class="csi-map-row"><span><strong>'+esc(p.name)+'</strong><small>'+(candidates.length===1?'Riconosciuto dal nome':candidates.length>1?'Più corrispondenze possibili':'Da associare manualmente')+'</small></span><select data-csi-map="'+esc(key)+'"><option value="">Non associato</option>'+rosterRows.map(r=>'<option value="'+r.player_id+'" '+(r.player_id===selected?"selected":"")+'>'+esc(r.last_name+" "+r.first_name)+'</option>').join("")+'</select></label>';
   }).join(""):"";
   $$("[data-csi-map]").forEach(s=>s.onchange=()=>csiImportState.mapping.set(s.dataset.csiMap,s.value||null));
 }
@@ -1439,12 +1448,12 @@ async function csiSaveAliases(){
   const playersToMap=csiMappingPlayers();
   for(const p of playersToMap){
     const playerId=csiImportState.mapping.get(csiAliasKey(p));if(!playerId)continue;
-    const nk=csiExternalKey(p),num=p.number??null;
-    const existing=csiImportState.aliases.find(a=>a.normalized_key===nk&&Number(a.external_number??-1)===Number(num??-1));
+    const nk=csiExternalKey(p);
+    const existing=csiImportState.aliases.find(a=>a.normalized_key===nk);
     if(existing){
       if(existing.player_id!==playerId)await db.from("app_csi_player_aliases").update({player_id:playerId,external_name:p.name,updated_at:new Date().toISOString()}).eq("id",existing.id);
     }else{
-      const r=await db.from("app_csi_player_aliases").insert({season_id:currentSeason.id,team_id:team.id,source:"csi",external_name:p.name,external_number:num,normalized_key:nk,player_id:playerId,created_by:sessionUser.id}).select("*").single();
+      const r=await db.from("app_csi_player_aliases").insert({season_id:currentSeason.id,team_id:team.id,source:"csi",external_name:p.name,external_number:null,normalized_key:nk,player_id:playerId,created_by:sessionUser.id}).select("*").single();
       if(!r.error&&r.data)csiImportState.aliases.push(r.data);
     }
   }
@@ -1542,6 +1551,20 @@ async function requestCsiSync(scope,fixture=null){
 const csiGlobalSyncBtn=$("#csiGlobalSyncBtn");
 if(csiGlobalSyncBtn)csiGlobalSyncBtn.onclick=()=>requestCsiSync("competition");
 
+function teamVenueData(name){
+  if(isOwnTeamName(name))return {name:team?.home_venue_name||"",address:team?.home_venue_address||""};
+  const o=fixtureOpponent(name);
+  return {name:o?.home_venue_name||"",address:o?.home_venue_address||""};
+}
+function fixtureVenueLegacy(name,address){return [name,address].filter(Boolean).join(" · ")||null}
+function fillFixtureVenueFromHome(force=false){
+  const home=$("#fixtureHome")?.value?.trim();if(!home)return;
+  const v=teamVenueData(home);
+  if(force||(!$("#fixtureVenueName").value&&!$("#fixtureVenueAddress").value)){
+    $("#fixtureVenueName").value=v.name||"";
+    $("#fixtureVenueAddress").value=v.address||"";
+  }
+}
 function openFixture(f=null){
   $("#fixtureForm").reset();
   $("#fixtureError").classList.add("hidden");
@@ -1554,10 +1577,14 @@ function openFixture(f=null){
   $("#fixtureStatus").value=f?.status||"scheduled";
   $("#fixtureHome").value=f?.home_team||team?.name||"Calcio Caselle";
   $("#fixtureAway").value=f?.away_team||"";
-  $("#fixtureVenue").value=f?.venue||"";
+  $("#fixtureVenueName").value=f?.venue_name||"";
+  $("#fixtureVenueAddress").value=f?.venue_address||"";
+  if(!f?.venue_name&&!f?.venue_address&&f?.venue)$("#fixtureVenueAddress").value=f.venue;
+  if(!f)fillFixtureVenueFromHome(true);
   $("#fixtureHomeScore").value=f?.home_score??"";
   $("#fixtureAwayScore").value=f?.away_score??"";
   $("#fixtureTeamNames").innerHTML=[team?.name,...opponents.map(o=>o.name)].filter(Boolean).map(n=>`<option value="${esc(n)}"></option>`).join("");
+  $("#fixtureHome").onchange=()=>fillFixtureVenueFromHome(true);
   $("#fixtureDialog").showModal();
 }
 $$("[data-close-fixture]").forEach(b=>b.onclick=()=>$("#fixtureDialog").close());
@@ -1588,7 +1615,9 @@ $("#fixtureForm").onsubmit=async e=>{
       kickoff_at:new Date($("#fixtureKickoff").value).toISOString(),
       home_team:$("#fixtureHome").value.trim(),
       away_team:$("#fixtureAway").value.trim(),
-      venue:$("#fixtureVenue").value.trim()||null,
+      venue_name:$("#fixtureVenueName").value.trim()||null,
+      venue_address:$("#fixtureVenueAddress").value.trim()||null,
+      venue:fixtureVenueLegacy($("#fixtureVenueName").value.trim(),$("#fixtureVenueAddress").value.trim()),
       status,
       home_score:status==="finished"?+homeScore:null,
       away_score:status==="finished"?+awayScore:null,
@@ -1606,7 +1635,7 @@ $("#fixtureForm").onsubmit=async e=>{
       const linked=linkedMatchForFixture(existing);
       if(linked){
         await db.from("app_matches").update({
-          kickoff_at:saved.kickoff_at,venue:saved.venue,status:saved.status,
+          kickoff_at:saved.kickoff_at,venue:saved.venue,venue_name:saved.venue_name,venue_address:saved.venue_address,status:saved.status,
           home_score:saved.status==="finished"?saved.home_score:0,
           away_score:saved.status==="finished"?saved.away_score:0
         }).eq("id",linked.id);
