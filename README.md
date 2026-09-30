@@ -94,3 +94,26 @@ Le scritture rispettano RLS e permessi esistenti.
 8. Setup — operativo; import CSV/PDF da rifinire
 9. Livescore avanzato — da completare
 10. Rating/discipline avanzate — da completare
+
+
+### Match Center
+Il dettaglio di una partita del Caselle si apre dalle Fixtures della competizione o dal Calendario/programma partite. Le vecchie voci dirette Partite ed Eventi non sono più punti di ingresso.
+
+Il prototipo usa un unico dettaglio per pre, live e post:
+- header comune con squadre, stemmi, risultato e metadati;
+- in live compare il timer;
+- tab Generale: formazione, panchina, riepilogo eventi e controlli di congruità;
+- tab Disponibilità: infortuni, squalifiche e indisponibilità specifiche della gara;
+- tab Formazione: rosa da assegnare, XI, panchina e non convocati;
+- tab Eventi: timeline e console di inserimento.
+
+Regole già implementate:
+- la squalifica blocca XI/Panchina; l'infortunio viene segnalato ma non blocca;
+- titolari eleggibili dal minuto 1 fino a uscita o rosso;
+- panchinari eleggibili dal minuto d'ingresso fino a uscita/rosso;
+- con minuto valorizzato, gol/assist/uscente propongono solo giocatori attivi;
+- cartellini possono essere assegnati anche alla panchina;
+- con minuto vuoto la selezione resta libera;
+- nel cambio l'uscente è obbligatorio, l'entrante facoltativo: è ammessa l'uscita senza ingresso;
+- espulsione avversaria supportata senza anagrafica avversaria;
+- in post i gol inseriti non possono superare il risultato ufficiale della fixture.
