@@ -115,6 +115,28 @@
         <label>Colore 2<input id="teamColor2" type="color"></label>
         <label>Colore 3<input id="teamColor3" type="color"></label>
       </div>
+
+      <section class="kit-setup">
+        <div class="kit-setup-head">
+          <div><strong>Divisa campo</strong><small>Usata nel Match Center per rappresentare i giocatori.</small></div>
+          <div id="teamKitPreview" class="kit-preview"></div>
+        </div>
+        <div class="compact-grid">
+          <label>Stile maglia
+            <select id="teamKitStyle">
+              <option value="solid">Tinta unita</option>
+              <option value="vertical_stripes">Bande verticali</option>
+              <option value="horizontal_stripes">Bande orizzontali</option>
+              <option value="halves">Metà / metà</option>
+              <option value="diagonal">Diagonale</option>
+            </select>
+          </label>
+          <label>Colore principale<input id="teamKitPrimary" type="color"></label>
+          <label>Colore secondario<input id="teamKitSecondary" type="color"></label>
+          <label>Colore numero<input id="teamKitNumber" type="color"></label>
+        </div>
+      </section>
+
       <div class="toolbar end"><button class="primary" type="submit">Salva</button></div>
       <p id="teamMessage" class="form-message hidden"></p>
     </form>
