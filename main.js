@@ -1545,6 +1545,14 @@ function mcQuickEventShell(){
     if(e.target.closest("#mcPlayerQuickPopover")||e.target.closest("[data-mc-player-event]")||e.target.closest("[data-mc-timeline-add]")||e.target.closest("[data-mc-timeline-add-period]")||e.target.closest("[data-mc-event-id]"))return;
     mcClosePlayerQuickEvent();
   });
+  const reposition=()=>{
+    if(pop.classList.contains("hidden")||!mcPlayerQuickState.anchor)return;
+    requestAnimationFrame(()=>mcPositionPlayerQuickEvent(mcPlayerQuickState.anchor));
+  };
+  window.addEventListener("resize",reposition,{passive:true});
+  document.addEventListener("scroll",reposition,{passive:true,capture:true});
+  window.visualViewport?.addEventListener("resize",reposition,{passive:true});
+  window.visualViewport?.addEventListener("scroll",reposition,{passive:true});
   return pop;
 }
 let mcPlayerQuickState={playerId:null,kind:null,anchor:null,source:"player",editingEventId:null,side:"team",draft:null};
@@ -1621,22 +1629,53 @@ function mcClosePlayerQuickEvent(){
   $("#mcPlayerQuickPopover")?.classList.add("hidden");
 }
 function mcPositionPlayerQuickEvent(anchor){
-  const pop=$("#mcPlayerQuickPopover"),shell=$("#matchDetailDialog .match-center-shell");
-  if(!pop||!anchor||!shell)return;
-  const a=anchor.getBoundingClientRect(),r=shell.getBoundingClientRect(),w=pop.offsetWidth||430,h=pop.offsetHeight||330;
-  let left=a.left-r.left+a.width/2-w/2;
-  left=Math.max(10,Math.min(r.width-w-10,left));
-  let top=a.bottom-r.top+12;
-  const above=a.top-r.top-h-12;
-  const useAbove=top+h>r.height-10&&above>10;
-  if(useAbove)top=above;
+  const pop=$("#mcPlayerQuickPopover");
+  if(!pop||!anchor||pop.classList.contains("hidden"))return;
+
+  const vv=window.visualViewport;
+  const vx=vv?.offsetLeft||0,vy=vv?.offsetTop||0;
+  const vw=vv?.width||window.innerWidth,vh=vv?.height||window.innerHeight;
+  const margin=10,gap=12;
+  const a=anchor.getBoundingClientRect();
+
+  pop.style.position="fixed";
+  pop.style.right="auto";
+  pop.style.bottom="auto";
+  pop.style.maxWidth=Math.max(220,vw-margin*2)+"px";
+  pop.style.maxHeight=Math.max(180,vh-margin*2)+"px";
+  pop.style.overflowY="auto";
+
+  const w=Math.min(pop.offsetWidth||430,vw-margin*2);
+  const naturalH=pop.scrollHeight||pop.offsetHeight||330;
+  const anchorCenter=a.left+a.width/2;
+
+  let left=anchorCenter-w/2;
+  left=Math.max(vx+margin,Math.min(vx+vw-w-margin,left));
+
+  const roomBelow=vy+vh-margin-(a.bottom+gap);
+  const roomAbove=a.top-gap-(vy+margin);
+  const useAbove=roomAbove>roomBelow&&roomAbove>=Math.min(naturalH,220);
+  const available=Math.max(180,useAbove?roomAbove:roomBelow);
+  const maxH=Math.min(naturalH,available,vh-margin*2);
+
+  pop.style.maxHeight=Math.max(180,maxH)+"px";
+
+  const renderedH=Math.min(pop.scrollHeight||naturalH,Math.max(180,maxH));
+  let top=useAbove?a.top-gap-renderedH:a.bottom+gap;
+  top=Math.max(vy+margin,Math.min(vy+vh-renderedH-margin,top));
+
   pop.style.left=left+"px";
-  pop.style.top=Math.max(10,top)+"px";
+  pop.style.top=top+"px";
   pop.classList.toggle("above",useAbove);
+
   const arrow=pop.querySelector(".mc-player-event-arrow");
   if(arrow){
-    const anchorCenter=a.left-r.left+a.width/2;
-    arrow.style.left=Math.max(18,Math.min(w-18,anchorCenter-left))+"px";
+    const arrowLeft=anchorCenter-left;
+    arrow.style.left=Math.max(18,Math.min(w-18,arrowLeft))+"px";
+    const anchored=useAbove
+      ?Math.abs((top+renderedH+gap)-a.top)<18
+      :Math.abs((top-gap)-a.bottom)<18;
+    arrow.style.display=anchored?"":"none";
   }
 }
 function mcCaptureQuickDraft(){
