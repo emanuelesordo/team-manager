@@ -3,16 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#101828">
+  <meta name="theme-color" content="#e8f2ff">
   <title>Team Manager</title>
   <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./product-ui.css">
 </head>
 <body>
 <div class="app-shell">
   <aside class="side-nav glass">
-    <div class="side-brand"><span id="sideTeamLogo" class="side-logo">TM</span><strong id="sideTeamName">Squadra</strong></div>
-    <nav class="side-menu">
+    <div class="side-brand">
+      <span id="sideTeamLogo" class="side-logo">TM</span>
+      <strong id="sideTeamName">Squadra</strong>
+    </div>
+
+    <label class="side-season">
+      <span>Stagione</span>
+      <select id="seasonSelector" class="season-selector" aria-label="Stagione"></select>
+    </label>
+
+    <nav class="side-menu" aria-label="Navigazione principale">
       <button class="side-link active" data-app-view="home"><span>⌂</span>Home</button>
       <button class="side-link" data-app-view="competitions"><span>▦</span>Competizioni</button>
       <button class="side-link" data-app-view="calendar"><span>▤</span>Calendario</button>
@@ -20,19 +28,18 @@
       <button class="side-link" data-app-view="matches"><span>⚽</span>Partite</button>
       <button class="side-link" data-app-view="events"><span>✦</span>Eventi</button>
       <button class="side-link" data-app-view="stats"><span>▥</span>Statistiche</button>
-      <button class="side-link side-setup" data-app-view="setup"><span>⚙</span>Setup</button>
     </nav>
-  </aside>
-  <section class="workspace">
-    <header class="topbar glass">
-      <div class="topbar-copy"><strong id="topbarTitle">Dashboard</strong><small id="topbarSubtitle"></small></div>
-      <div class="topbar-actions">
-        <input id="globalSearch" class="top-search" placeholder="Cerca...">
-        <select id="seasonSelector" class="season-selector" aria-label="Stagione"></select>
+
+    <div class="side-bottom">
+      <button class="side-link side-setup" data-app-view="setup"><span>⚙</span>Setup</button>
+      <div class="side-session">
         <span id="authState" class="auth-state">Sessione…</span>
         <button id="authButton" class="auth-button" type="button">Accedi</button>
       </div>
-    </header>
+    </div>
+  </aside>
+
+  <section class="workspace">
 <main class="main">
   <section id="homeView" class="home-viewport">
     <div id="dashboardHero" class="dashboard-hero"></div>
@@ -40,15 +47,15 @@
     <div class="dashboard-bottom">
       <section class="list-card glass dashboard-list-card">
         <div class="card-head"><strong>Ultime partite</strong></div>
-        <div id="dashboardRecent" class="scroll"></div>
+        <div id="dashboardRecent" class="dashboard-list"></div>
       </section>
       <section class="list-card glass dashboard-list-card">
         <div class="card-head"><strong>Prossime partite</strong><button class="ghost-link" type="button" data-go-calendar>Calendario</button></div>
-        <div id="dashboardUpcoming" class="scroll"></div>
+        <div id="dashboardUpcoming" class="dashboard-list"></div>
       </section>
       <section id="dashboardStandingsCard" class="list-card glass dashboard-standings-card">
         <div class="card-head"><strong>Classifica</strong><button class="ghost-link" type="button" data-go-competition>Completa</button></div>
-        <div id="dashboardStandings" class="scroll"></div>
+        <div id="dashboardStandings" class="dashboard-table"></div>
       </section>
     </div>
   </section>
