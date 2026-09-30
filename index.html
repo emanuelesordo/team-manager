@@ -146,7 +146,19 @@
   <section id="competitionsView" class="hidden">
     <div class="competition-picker"><select id="competitionHubSelect" aria-label="Competizione"></select></div>
     <div class="competition-split">
-      <section class="competition-half standings-card"><div id="competitionStandings"></div></section>
+      <section class="competition-half standings-card">
+        <div id="competitionStandings"></div>
+        <section id="competitionProjectionCard" class="projection-card">
+          <div class="projection-head">
+            <div>
+              <strong>Proiezione classifica</strong>
+              <small id="projectionReliability"></small>
+            </div>
+            <button id="projectionInfoBtn" class="projection-info" type="button" title="Come viene calcolata">i</button>
+          </div>
+          <div id="competitionProjection"></div>
+        </section>
+      </section>
       <section class="competition-half fixtures-card">
         <div class="mini-calendar-tools">
           <div class="segmented">
