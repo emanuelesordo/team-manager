@@ -630,27 +630,184 @@ label{
 }
 
 /* Calendar */
-.competition-filter-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.competition-filter-row{
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
 .competition-filter{
-  display:flex;align-items:center;gap:5px;margin:0;padding:6px 8px;border:1px solid var(--line);
-  border-radius:999px;background:#fff;color:#333;font-size:9px
+  display:flex;
+  align-items:center;
+  gap:5px;
+  margin:0;
+  padding:6px 8px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#fff;
+  color:#333;
+  font-size:9px;
 }
 .competition-filter input{width:auto;margin:0}
+
 .team-calendar-row{
-  display:grid;grid-template-columns:110px 130px minmax(0,1fr) auto;gap:8px;align-items:center;
-  padding:10px 12px;margin-bottom:6px;border:1px solid rgba(255,255,255,.85);border-radius:14px;
-  background:rgba(248,248,248,.88);box-shadow:0 8px 18px rgba(0,0,0,.06)
+  display:grid;
+  grid-template-columns:150px minmax(0,1fr) minmax(180px,30%);
+  gap:16px;
+  align-items:center;
+  min-height:68px;
+  padding:10px 16px;
+  margin-bottom:6px;
+  border:1px solid rgba(255,255,255,.85);
+  border-radius:14px;
+  background:rgba(248,248,248,.88);
+  box-shadow:0 8px 18px rgba(0,0,0,.06);
 }
 .team-calendar-row:hover{background:#fff}
-.team-calendar-date{color:var(--muted);font-size:9px}
-.team-calendar-competition{color:#4d5357;font-size:8px;font-weight:800}
-.team-calendar-opponent{display:flex;align-items:center;gap:7px;min-width:0}
-.team-calendar-opponent img,.team-calendar-opponent i{
-  width:28px;height:28px;object-fit:contain;display:grid;place-items:center;font-style:normal;font-size:7px;font-weight:800
+
+.team-calendar-meta{
+  min-width:0;
+  display:grid;
+  gap:3px;
 }
-.team-calendar-opponent strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.home-away{width:42px;color:var(--muted);font-size:8px;font-weight:800}
-.calendar-score{font-size:10px;padding:6px 8px}
+.team-calendar-date{
+  color:var(--muted);
+  font-size:9px;
+  white-space:nowrap;
+}
+.team-calendar-competition{
+  color:#4d5357;
+  font-size:8px;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.calendar-match-line{
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(130px,1fr) 34px 58px 34px minmax(130px,1fr);
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.calendar-team-name{
+  min-width:0;
+  font-size:13px;
+  font-weight:850;
+  line-height:1.1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.calendar-home-team{text-align:right}
+.calendar-away-team{text-align:left}
+
+.calendar-team-logo{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+}
+.calendar-team-logo img{
+  width:31px;
+  height:31px;
+  object-fit:contain;
+  display:block;
+}
+.calendar-team-logo i{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#ececec;
+  color:#222;
+  font-size:7px;
+  font-style:normal;
+  font-weight:850;
+}
+
+.calendar-score{
+  width:58px;
+  min-width:58px;
+  padding:0;
+  border:0;
+  outline:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+  color:#111;
+  text-align:center;
+  font-size:15px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.calendar-score:hover,
+.calendar-score:focus-visible{
+  background:transparent;
+  box-shadow:none;
+  text-decoration:underline;
+}
+
+.calendar-venue{
+  min-width:0;
+  padding-left:18px;
+  position:relative;
+  color:#4f5559;
+  font-size:9px;
+  font-weight:700;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.calendar-venue::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:50%;
+  width:10px;
+  height:1px;
+  background:rgba(16,18,20,.28);
+}
+
+@media(max-width:1120px){
+  .team-calendar-row{
+    grid-template-columns:120px minmax(0,1fr);
+  }
+  .calendar-venue{
+    grid-column:2;
+    padding-left:0;
+  }
+  .calendar-venue::before{display:none}
+  .calendar-match-line{
+    grid-template-columns:minmax(95px,1fr) 30px 52px 30px minmax(95px,1fr);
+  }
+}
+@media(max-width:780px){
+  .team-calendar-row{
+    grid-template-columns:1fr;
+    gap:8px;
+    padding:10px 12px;
+  }
+  .team-calendar-meta{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+  }
+  .calendar-match-line{
+    grid-template-columns:minmax(0,1fr) 27px 46px 27px minmax(0,1fr);
+    gap:5px;
+  }
+  .calendar-team-name{font-size:10px}
+  .calendar-team-logo{width:27px;height:27px}
+  .calendar-team-logo img{width:25px;height:25px}
+  .calendar-team-logo i{width:24px;height:24px;font-size:6px}
+  .calendar-score{width:46px;min-width:46px;font-size:12px}
+  .calendar-venue{grid-column:auto;padding-left:0}
+  .calendar-venue::before{display:none}
+}
 
 /* Roster */
 .view-actions{display:flex;gap:6px}
