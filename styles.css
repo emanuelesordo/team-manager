@@ -434,53 +434,62 @@ label{
 
 /* Competition */
 #competitionsView{
-  height:100%;
+  height:var(--competition-view-height,calc(100% - 10px));
+  max-height:var(--competition-view-height,calc(100% - 10px));
   min-height:0;
+  padding-bottom:2px;
   display:grid;
-  grid-template-rows:48px minmax(0,1fr);
+  grid-template-rows:46px minmax(0,1fr);
 }
 #competitionsView.hidden{display:none!important}
 .competition-toolbar{
-  min-height:48px;
+  min-height:46px;
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
   gap:12px;
+  overflow:hidden;
 }
-.competition-picker{margin:0}
-.competition-picker select{
-  width:290px;
-  min-width:220px;
-  height:40px;
-  padding:0 16px;
-  border:1px solid rgba(16,18,20,.18);
-  border-radius:14px;
-  background:rgba(255,255,255,.72);
-  color:#17191b;
-  font-size:13px;
-  font-weight:650;
-  box-shadow:0 7px 18px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.9);
+.competition-tabs{
+  min-width:0;
+  max-width:calc(100% - 160px);
+  padding:3px;
+  border-radius:999px;
+  background:rgba(255,255,255,.46);
+  display:flex;
+  flex-wrap:nowrap;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.competition-tabs::-webkit-scrollbar{display:none}
+.competition-tabs .competition-tab{
+  flex:0 0 auto;
+  min-width:0;
+  padding:7px 14px;
+  white-space:nowrap;
 }
 .competition-toolbar .mini-calendar-tools{
+  flex:0 0 auto;
   min-height:40px;
   margin:0;
-  padding:0 4px;
+  padding:0;
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   justify-content:flex-end;
 }
-.competition-toolbar .segmented{
+.competition-toolbar .mini-calendar-tools .segmented{
   padding:3px;
   border-radius:999px;
   background:rgba(255,255,255,.46);
 }
-.competition-toolbar .segment{
+.competition-toolbar .mini-calendar-tools .segment{
   min-width:64px;
   padding:7px 13px;
 }
 .competition-split{
   min-height:0;
-  height:100%;
+  height:calc(100% - 2px);
+  padding-bottom:2px;
   display:grid;
   grid-template-columns:minmax(350px,.88fr) minmax(0,1.35fr);
   gap:10px;
@@ -490,7 +499,7 @@ label{
 .standings-card{
   position:relative;
   top:auto;
-  height:100%;
+  height:calc(100% - 1px);
   overflow:hidden;
   display:grid;
   grid-template-rows:minmax(0,57%) minmax(0,43%);
@@ -514,7 +523,7 @@ label{
 #competitionStandings .standings-table thead{height:28px}
 #competitionStandings .standings-table tbody tr{height:calc((100% - 28px)/13)}
 .fixtures-card{
-  height:100%;
+  height:calc(100% - 1px);
   min-height:0;
   padding:10px;
   overflow:hidden;
@@ -1439,7 +1448,12 @@ dialog form{padding:16px}
 }
 @media(max-width:780px){
   .competition-toolbar{align-items:stretch}
-  .competition-picker{flex:1}
-  .competition-picker select{width:100%;min-width:0}
-  .competition-toolbar .segment{min-width:0;padding-inline:10px}
+      .competition-toolbar .segment{min-width:0;padding-inline:10px}
+}
+
+@media(max-width:780px){
+  .competition-toolbar{gap:6px}
+  .competition-tabs{max-width:calc(100% - 126px)}
+  .competition-tabs .competition-tab{padding-inline:10px}
+  .competition-toolbar .mini-calendar-tools .segment{min-width:0;padding-inline:9px}
 }
