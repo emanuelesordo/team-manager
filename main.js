@@ -724,11 +724,12 @@ function projectionWindow(rows,size=5){
 }
 
 function renderCompetitionProjection(standings,fixtures,competition){
-  const box=$("#competitionProjection"),rel=$("#projectionReliability");
-  if(!box||!rel)return;
+  const box=$("#competitionProjection"),rel=$("#projectionReliability"),meta=$("#projectionScenarioMeta");
+  if(!box||!rel||!meta)return;
   if(!standings.length){
     box.innerHTML='<div class="muted">Dati insufficienti.</div>';
     rel.textContent="";
+    meta.textContent="";
     return;
   }
 
@@ -736,9 +737,9 @@ function renderCompetitionProjection(standings,fixtures,competition){
   const rows=projectionWindow(model.projected,5);
   const reliabilityLabel=model.reliability<25?"molto bassa":model.reliability<45?"bassa":model.reliability<65?"media":model.reliability<82?"buona":"alta";
   rel.textContent=`Affidabilità ${reliabilityLabel} · ${model.reliability}%`;
+  meta.textContent=`${model.remaining} partite · ${model.simCount.toLocaleString("it-IT")} scenari`;
 
-  box.innerHTML=`<div class="projection-note">${model.remaining} partite da simulare · ${model.simCount.toLocaleString("it-IT")} scenari</div>
-    <table class="projection-table">
+  box.innerHTML=`<table class="projection-table">
       <thead><tr><th>Prev.</th><th>Squadra</th><th>Δ</th><th>Pt</th><th>Range</th></tr></thead>
       <tbody>${rows.map((r,i)=>{
         const projectedRank=model.projected.indexOf(r)+1;
@@ -775,6 +776,7 @@ function renderCompetitionFixtures(rows){
   grid.style.setProperty("--round-count",roundCount);
   grid.style.setProperty("--max-matches",maxMatches);
   grid.classList.toggle("dense-rounds",roundCount>10||maxMatches>6);
+  grid.classList.toggle("overflow-rounds",roundCount>16);
   $("#competitionFixtures").innerHTML=`<div class="round-grid">${rounds.map(([round,list])=>`
     <section class="mini-round">
       <div class="mini-round-label">${round}</div>
