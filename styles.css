@@ -772,6 +772,11 @@ label{
   box-shadow:none;
   text-decoration:underline;
 }
+.score-link.provisional-score{
+  color:#777d81;
+  text-decoration:underline dotted;
+  text-underline-offset:3px;
+}
 
 @media(max-width:1120px){
   #competitionsView{height:auto;max-height:none;display:block}
