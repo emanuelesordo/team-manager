@@ -3931,3 +3931,15 @@ dialog form{padding:16px}
   align-self:center!important;
   justify-self:center;
 }
+
+
+/* Match Center: separate different minutes, keep same-minute blocks compact */
+.mc-general-timeline .mc-minute-group{
+  margin-block:5px;
+}
+.mc-general-timeline .mc-minute-stack{
+  gap:1px;
+}
+.mc-general-timeline .mc-minute-event .mc-timeline-card-stack{
+  margin-inline:3px;
+}
