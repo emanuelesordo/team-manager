@@ -21,17 +21,17 @@
     </label>
 
     <nav class="side-menu" aria-label="Navigazione principale">
-      <button class="side-link active" data-app-view="home"><span>⌂</span>Home</button>
-      <button class="side-link" data-app-view="competitions"><span>▦</span>Competizioni</button>
-      <button class="side-link" data-app-view="calendar"><span>▤</span>Calendario</button>
-      <button class="side-link" data-app-view="roster"><span>♙</span>Rosa</button>
-      <button class="side-link" data-app-view="matches"><span>⚽</span>Partite</button>
-      <button class="side-link" data-app-view="events"><span>✦</span>Eventi</button>
-      <button class="side-link" data-app-view="stats"><span>▥</span>Statistiche</button>
+      <button class="side-link active" data-app-view="home" aria-label="Home" title="Home"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 10.5 12 4l8 6.5v8a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5z"/><path d="M9 20v-6h6v6"/></svg>Home</button>
+      <button class="side-link" data-app-view="competitions" aria-label="Competizioni" title="Competizioni"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0z"/><path d="M7 6H4v2a4 4 0 0 0 4 4M17 6h3v2a4 4 0 0 1-4 4M12 13v4M8 20h8M9 17h6"/></svg>Competizioni</button>
+      <button class="side-link" data-app-view="calendar" aria-label="Calendario" title="Calendario"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M7 3v5M17 3v5M3.5 10h17M8 14h2M12 14h2M16 14h2M8 17h2M12 17h2"/></svg>Calendario</button>
+      <button class="side-link" data-app-view="roster" aria-label="Rosa" title="Rosa"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 20a6.5 6.5 0 0 1 13 0M4 10.5a3 3 0 0 1 3-3M20 10.5a3 3 0 0 0-3-3"/></svg>Rosa</button>
+      <button class="side-link" data-app-view="matches" aria-label="Partite" title="Partite"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m12 7 3 2.2-1.1 3.5h-3.8L9 9.2zM6.4 9.5l-2 2.4M17.6 9.5l2 2.4M8.5 16.8l-1.1 2.7M15.5 16.8l1.1 2.7M10.1 12.7 8.5 16.8M13.9 12.7l1.6 4.1"/></svg>Partite</button>
+      <button class="side-link" data-app-view="events" aria-label="Eventi" title="Eventi"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 14.2 9 21 12l-6.8 3L12 21.2 9.8 15 3 12l6.8-3z"/></svg>Eventi</button>
+      <button class="side-link" data-app-view="stats" aria-label="Statistiche" title="Statistiche"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20V11h3v9M10.5 20V5h3v15M16 20v-7h3v7M3 20h18"/></svg>Statistiche</button>
     </nav>
 
     <div class="side-bottom">
-      <button class="side-link side-setup" data-app-view="setup"><span>⚙</span>Setup</button>
+      <button class="side-link side-setup" data-app-view="setup" aria-label="Setup" title="Setup"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.2 13.5a7.7 7.7 0 0 0 0-3l2-1.5-2-3.4-2.4 1a8.5 8.5 0 0 0-2.6-1.5L14 2.5h-4l-.2 2.6a8.5 8.5 0 0 0-2.6 1.5l-2.4-1-2 3.4 2 1.5a7.7 7.7 0 0 0 0 3l-2 1.5 2 3.4 2.4-1a8.5 8.5 0 0 0 2.6 1.5l.2 2.6h4l.2-2.6a8.5 8.5 0 0 0 2.6-1.5l2.4 1 2-3.4z"/></svg>Setup</button>
       <div class="side-session">
         <span id="authState" class="auth-state">Sessione…</span>
         <button id="authButton" class="auth-button" type="button">Accedi</button>
