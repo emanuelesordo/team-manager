@@ -1710,12 +1710,12 @@ async function loadDashboard(){
   const scoreRows=[...finished.slice(-2).reverse(),...upcoming.slice(0,3)].slice(0,5);
   $("#homeScores").innerHTML=scoreRows.length?scoreRows.map(renderHomeScoreRow).join(""):'<div class="home-empty">Nessuna partita disponibile</div>';
 
-  $("[data-match-center]",$("#homeView")).forEach(el=>{
+  Array.from($("#homeView").querySelectorAll("[data-match-center]")).forEach(el=>{
     const open=()=>openMatchDetail(fixtures.find(f=>f.id===el.dataset.matchCenter));
     el.onclick=open;
     el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}};
   });
-  $("[data-go-calendar]",$("#homeView")).forEach(b=>b.onclick=()=>setAppView("calendar"));
+  Array.from($("#homeView").querySelectorAll("[data-go-calendar]")).forEach(b=>b.onclick=()=>setAppView("calendar"));
   $$("#homeView [data-go-competition]").forEach(b=>b.onclick=()=>setAppView("competitions"));
   $$("#homeView [data-go-roster]").forEach(b=>b.onclick=()=>setAppView("roster"));
 }
