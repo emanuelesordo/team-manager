@@ -171,6 +171,7 @@
           <button class="segment active" type="button" data-comp-fixture-filter="all">Tutte</button>
           <button class="segment" type="button" data-comp-fixture-filter="mine">Caselle</button>
         </div>
+        <button id="csiGlobalSyncBtn" class="secondary small" type="button">Aggiorna tutto da CSI</button>
       </div>
     </div>
     <div class="competition-split">
@@ -370,7 +371,7 @@
       <label>Gol trasferta<input id="fixtureAwayScore" type="number" min="0"></label>
     </div>
     <p id="fixtureError" class="form-error hidden"></p>
-    <div class="dialog-actions"><button id="fixtureCsiImportBtn" type="button" class="secondary">Importa CSI</button><button type="button" class="secondary" data-close-fixture>Annulla</button><button class="primary" type="submit">Salva</button></div>
+    <div class="dialog-actions"><button id="fixtureCsiImportBtn" type="button" class="secondary">Aggiorna da CSI</button><button type="button" class="secondary" data-close-fixture>Annulla</button><button class="primary" type="submit">Salva</button></div>
   </form>
 </dialog>
 
@@ -455,7 +456,7 @@
       </section>
       <section data-mc-panel="events" class="hidden">
         <div class="mc-events-grid">
-          <section class="mc-card"><div class="mc-card-head"><strong>Timeline</strong><div class="mc-card-head-actions"><span id="mcEventsCount"></span><button id="mcCsiImportBtn" type="button" class="secondary small">Importa CSI</button></div></div><div id="mcEventsTimeline"></div></section>
+          <section class="mc-card"><div class="mc-card-head"><strong>Timeline</strong><div class="mc-card-head-actions"><span id="mcEventsCount"></span><button id="mcCsiImportBtn" type="button" class="secondary small">Aggiorna da CSI</button></div></div><div id="mcEventsTimeline"></div></section>
           <section class="mc-card">
             <div class="mc-card-head"><strong>Console evento</strong><span id="mcEligibilityHint"></span></div>
             <div class="mc-event-integrity">
