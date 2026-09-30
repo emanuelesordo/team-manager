@@ -911,104 +911,61 @@ function renderCalendarRows(){
 function playerOptions(selected){
   return '<option value="">—</option>'+players.map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.last_name+" "+p.first_name)}</option>`).join("");
 }
-async function openMatchDetail(fixture){
-  if(!fixture)return;
-  const match=linkedMatchForFixture(fixture);
-  $("#matchDetailForm").reset();
-  $("#matchDetailError").classList.add("hidden");
-  $("#matchDetailFixtureId").value=fixture.id;
-  $("#matchDetailMatchId").value=match?.id||"";
-  $("#matchDetailTitle").textContent=`${fixture.home_team} · ${fixture.away_team}`;
-  $("#matchDetailKickoff").value=toLocalInputValue(fixture.kickoff_at);
-  $("#matchDetailStatus").value=fixture.status||"scheduled";
-  $("#matchDetailVenue").value=fixture.venue||"";
-  $("#matchDetailHomeScore").value=fixture.home_score??"";
-  $("#matchDetailAwayScore").value=fixture.away_score??"";
-  if(!match){
-    $("#matchEventList").innerHTML='<div class="muted">Nessuna partita operativa collegata: eventi non disponibili.</div>';
-  }else{
-    await loadMatchEvents(match.id);
-  }
-  $("#matchDetailDialog").showModal();
+let matchCenterState={fixture:null,match:null,matchPlayers:[],events:[],injuries:[],suspensions:[],tab:"general"};
+let matchCenterTimer=null;
+function mcPlayer(id){return rosterRows.find(p=>p.player_id===id)||players.find(p=>p.id===id)||null}
+function mcPlayerName(id){const p=mcPlayer(id);return p?(p.last_name+" "+p.first_name):"—"}
+function mcMatchPlayer(id){return matchCenterState.matchPlayers.find(x=>x.player_id===id)||null}
+function mcIsPost(){return matchCenterState.fixture?.status==="finished"||matchCenterState.match?.status==="finished"||!!matchCenterState.match?.finalized_at}
+function mcIsLive(){const m=matchCenterState.match;return !!(m&&m.live_started_at&&!m.finalized_at&&m.status!=="finished")}
+function mcSetTab(tab){matchCenterState.tab=tab;$$("[data-mc-tab]").forEach(b=>b.classList.toggle("active",b.dataset.mcTab===tab));$$("[data-mc-panel]").forEach(p=>p.classList.toggle("hidden",p.dataset.mcPanel!==tab));if(tab==="events")mcRefreshComposer()}
+function mcHeader(){
+  const f=matchCenterState.fixture,m=matchCenterState.match,home=teamVisual(f.home_team),away=teamVisual(f.away_team),c=competitions.find(x=>x.id===f.competition_id);
+  $("#mcHomeName").textContent=home.name;$("#mcAwayName").textContent=away.name;
+  $("#mcHomeLogo").innerHTML=home.logo?`<img src="${esc(home.logo)}" alt="">`:`<span>${esc(home.short)}</span>`;
+  $("#mcAwayLogo").innerHTML=away.logo?`<img src="${esc(away.logo)}" alt="">`:`<span>${esc(away.short)}</span>`;
+  $("#mcScore").textContent=(f.home_score!=null||f.away_score!=null)?`${f.home_score??0} - ${f.away_score??0}`:"–";
+  $("#mcMeta").textContent=[c?.name,localDateTime(f.kickoff_at),f.venue].filter(Boolean).join(" · ");
+  $("#mcState").textContent=mcIsLive()?"LIVE":mcIsPost()?"FINALE":"PRE";$("#mcLiveControls").classList.toggle("hidden",!m||mcIsPost());
+  clearInterval(matchCenterTimer);const timer=$("#mcTimer");
+  if(mcIsLive()){timer.classList.remove("hidden");const tick=()=>{const sec=Math.max(0,Math.floor((Date.now()-new Date(m.live_started_at).getTime())/1000));timer.textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0")};tick();matchCenterTimer=setInterval(tick,1000)}else timer.classList.add("hidden");
 }
-$$("[data-close-match-detail]").forEach(b=>b.onclick=()=>$("#matchDetailDialog").close());
-async function loadMatchEvents(matchId){
-  const r=await db.from("app_match_events").select("*").eq("match_id",matchId).order("minute",{ascending:true});
-  if(r.error){
-    $("#matchEventList").innerHTML='<div class="form-error">Eventi non disponibili.</div>';
-    return;
-  }
-  renderMatchEvents(r.data||[]);
+function mcInjury(id){const d=new Date(matchCenterState.fixture.kickoff_at).toISOString().slice(0,10);return matchCenterState.injuries.find(x=>x.player_id===id&&(!x.injury_date||x.injury_date<=d)&&(!x.actual_return||x.actual_return>=d)&&!["closed","resolved","recovered"].includes(String(x.status||"").toLowerCase()))||null}
+function mcSuspension(id){const d=new Date(matchCenterState.fixture.kickoff_at).toISOString().slice(0,10),comp=matchCenterState.fixture.competition_id;return matchCenterState.suspensions.find(x=>x.player_id===id&&(!x.competition_id||x.competition_id===comp)&&!["served","closed","completed"].includes(String(x.status||"").toLowerCase())&&(!x.start_date||x.start_date<=d)&&(!x.end_date||x.end_date>=d)&&!(Number(x.matches_count||0)>0&&Number(x.matches_served||0)>=Number(x.matches_count||0)))||null}
+function mcActiveIds(minute){
+  if(minute===""||minute==null)return new Set(rosterRows.map(p=>p.player_id));
+  const m=Number(minute),active=new Set(matchCenterState.matchPlayers.filter(x=>x.started).map(x=>x.player_id));
+  matchCenterState.events.filter(e=>e.minute!=null&&Number(e.minute)<m).sort((a,b)=>Number(a.minute)-Number(b.minute)).forEach(e=>{if(e.team_side!=="team")return;if(e.event_type==="substitution"){if(e.player_id)active.delete(e.player_id);if(e.secondary_player_id)active.add(e.secondary_player_id)}if(e.event_type==="red_card"&&e.player_id)active.delete(e.player_id)});
+  return active;
 }
-function eventTypeOptions(value){
-  const values=[["goal","Gol"],["substitution","Sostituzione"],["yellow_card","Giallo"],["red_card","Rosso"],["own_goal","Autogol"]];
-  if(value&&!values.some(x=>x[0]===value))values.push([value,value]);
-  return values.map(x=>`<option value="${esc(x[0])}" ${x[0]===value?"selected":""}>${esc(x[1])}</option>`).join("");
+function mcEligible(kind,minute,side){
+  if(side==="opponent")return [];if(minute==="")return rosterRows;
+  if(kind==="card")return rosterRows.filter(p=>{const mp=mcMatchPlayer(p.player_id);return !!(mp&&(mp.started||mp.selection_status==="bench"))});
+  const active=mcActiveIds(minute);
+  if(kind==="incoming"){const exited=new Set(matchCenterState.events.filter(e=>e.team_side==="team"&&e.minute!=null&&Number(e.minute)<Number(minute)&&(e.event_type==="substitution"||e.event_type==="red_card")).map(e=>e.player_id));return rosterRows.filter(p=>{const mp=mcMatchPlayer(p.player_id);return mp?.selection_status==="bench"&&!active.has(p.player_id)&&!exited.has(p.player_id)})}
+  return rosterRows.filter(p=>active.has(p.player_id));
 }
-function renderMatchEvents(events){
-  $("#matchEventList").innerHTML=events.length?events.map(e=>`<div class="event-edit-row" data-event-row="${e.id}">
-    <select data-event-type>${eventTypeOptions(e.event_type)}</select>
-    <input data-event-minute type="number" min="0" value="${e.minute??""}" placeholder="min">
-    <select data-event-side><option value="team" ${e.team_side==="team"?"selected":""}>Caselle</option><option value="opponent" ${e.team_side==="opponent"?"selected":""}>Avversario</option></select>
-    <select data-event-player>${playerOptions(e.player_id)}</select>
-    <select data-event-secondary>${playerOptions(e.secondary_player_id)}</select>
-    <button type="button" class="secondary event-save" data-event-save="${e.id}">Salva</button>
-  </div>`).join(""):'<div class="muted">Nessun evento registrato.</div>';
-  $$("[data-event-save]").forEach(b=>b.onclick=()=>saveMatchEvent(b.dataset.eventSave));
-}
-async function saveMatchEvent(id){
-  const row=$(`[data-event-row="${id}"]`);
-  if(!row)return;
-  try{
-    if(!sessionUser)throw new Error("Accedi per modificare gli eventi.");
-    const payload={
-      event_type:row.querySelector("[data-event-type]").value,
-      minute:row.querySelector("[data-event-minute]").value===""?null:+row.querySelector("[data-event-minute]").value,
-      team_side:row.querySelector("[data-event-side]").value,
-      player_id:row.querySelector("[data-event-player]").value||null,
-      secondary_player_id:row.querySelector("[data-event-secondary]").value||null
-    };
-    const r=await db.from("app_match_events").update(payload).eq("id",id).select("*").maybeSingle();
-    assertSaved(r,"Evento");
-    await loadMatchEvents($("#matchDetailMatchId").value);
-  }catch(err){
-    $("#matchDetailError").textContent=err.message||String(err);
-    $("#matchDetailError").classList.remove("hidden");
-  }
-}
-$("#matchDetailForm").onsubmit=async e=>{
-  e.preventDefault();
-  $("#matchDetailError").classList.add("hidden");
-  try{
-    if(!sessionUser)throw new Error("Accedi per modificare la partita.");
-    const fixtureId=$("#matchDetailFixtureId").value;
-    const matchId=$("#matchDetailMatchId").value;
-    const status=$("#matchDetailStatus").value;
-    const homeScore=$("#matchDetailHomeScore").value;
-    const awayScore=$("#matchDetailAwayScore").value;
-    if(status==="finished"&&(homeScore===""||awayScore===""))throw new Error("Inserisci il risultato.");
-    const payload={
-      kickoff_at:new Date($("#matchDetailKickoff").value).toISOString(),
-      venue:$("#matchDetailVenue").value.trim()||null,
-      status,
-      home_score:status==="finished"?+homeScore:null,
-      away_score:status==="finished"?+awayScore:null
-    };
-    const fr=await db.from("app_competition_fixtures").update(payload).eq("id",fixtureId).select("*").maybeSingle();
-    assertSaved(fr,"Partita");
-    if(matchId){
-      const matchPayload={...payload,home_score:status==="finished"?+homeScore:0,away_score:status==="finished"?+awayScore:0};
-      const mr=await db.from("app_matches").update(matchPayload).eq("id",matchId).select("*").maybeSingle();
-      assertSaved(mr,"Partita operativa");
-    }
-    $("#matchDetailDialog").close();
-    await loadCalendarHub();
-    if(!$("#competitionsView").classList.contains("hidden"))await renderCompetitionHub();
-  }catch(err){
-    $("#matchDetailError").textContent=err.message||String(err);
-    $("#matchDetailError").classList.remove("hidden");
-  }
-}
+function mcOptions(rows,empty){return `<option value="">${empty}</option>`+rows.map(p=>`<option value="${p.player_id}">${esc(p.last_name+" "+p.first_name)}</option>`).join("")}
+function mcReasonOptions(v){return [["","Nessun motivo"],["work","Lavoro"],["travel","Viaggio"],["personal","Personale"],["technical","Scelta tecnica"],["other","Altro"]].map(([x,l])=>`<option value="${x}" ${x===(v||"")?"selected":""}>${l}</option>`).join("")}
+function mcGoalInfo(){const f=matchCenterState.fixture,ownHome=isOwnTeamName(f.home_team),team=matchCenterState.events.filter(e=>e.event_type==="goal"&&e.team_side==="team").length,opp=matchCenterState.events.filter(e=>e.event_type==="goal"&&e.team_side==="opponent").length;return {team,opp,expectedTeam:Number(ownHome?f.home_score:f.away_score)||0,expectedOpp:Number(ownHome?f.away_score:f.home_score)||0}}
+function mcPitch(target,rows,remove){const pos=[[50,90],[25,72],[42,72],[58,72],[75,72],[18,50],[39,50],[61,50],[82,50],[38,26],[62,26]];target.innerHTML=rows.slice(0,11).map((x,i)=>{const p=mcPlayer(x.player_id),q=pos[i]||[50,50];return `<div class="pitch-player" style="left:${q[0]}%;top:${q[1]}%"><span>${x.shirt_number??p?.shirt_number??"–"}</span><strong>${esc(p?.last_name||"—")}</strong>${remove?`<button type="button" data-mc-unassign="${x.player_id}">×</button>`:""}</div>`}).join("")}
+function mcTimeline(target,limit){let rows=[...matchCenterState.events].sort((a,b)=>(a.minute??999)-(b.minute??999));if(limit)rows=rows.slice(-limit);$(target).innerHTML=rows.length?rows.map(e=>{let d=e.team_side==="opponent"?"Avversario":mcPlayerName(e.player_id);if(e.event_type==="substitution")d=`🔴 ${mcPlayerName(e.player_id)}${e.secondary_player_id?` · 🟢 ${mcPlayerName(e.secondary_player_id)}`:" · nessun ingresso"}`;if(e.event_type==="goal"&&e.secondary_player_id)d+=` · assist ${mcPlayerName(e.secondary_player_id)}`;if(e.event_type==="red_card"&&e.team_side==="opponent")d="Espulsione avversaria";const icon=e.event_type==="goal"?"⚽":e.event_type==="substitution"?"↔":e.event_type==="yellow_card"?"🟨":"🟥";return `<div class="mc-event-row"><time>${e.minute==null?"–":e.minute+(e.stoppage_minute?`+${e.stoppage_minute}`:"")+"'"}</time><span>${icon}</span><div><strong>${esc(e.event_type)}</strong><small>${esc(d)}</small></div></div>`}).join(""):'<div class="empty-state">Nessun evento</div>'}
+function mcRenderGeneral(){const starters=matchCenterState.matchPlayers.filter(x=>x.started),bench=matchCenterState.matchPlayers.filter(x=>x.selection_status==="bench");$("#mcGeneralFormationMeta").textContent=(matchCenterState.match?.formation||"—")+" · "+starters.length+" XI";mcPitch($("#mcGeneralPitch"),starters,false);$("#mcGeneralBench").innerHTML=bench.length?bench.map(x=>`<span>${esc(mcPlayerName(x.player_id))}</span>`).join(""):'<span class="muted">Panchina vuota</span>';mcTimeline("#mcGeneralEvents",6);const g=mcGoalInfo();$("#mcGoalProgress").textContent=mcIsPost()?`CAS ${g.team}/${g.expectedTeam} · AVV ${g.opp}/${g.expectedOpp}`:`${g.team}-${g.opp}`;const checks=[];if(mcIsPost()){checks.push([g.team===g.expectedTeam,`Gol Caselle ${g.team}/${g.expectedTeam}`]);checks.push([g.opp===g.expectedOpp,`Gol avversari ${g.opp}/${g.expectedOpp}`])}checks.push([!matchCenterState.events.some(e=>e.event_type==="substitution"&&e.secondary_player_id&&!e.player_id),"Cambi coerenti"]);$("#mcIntegrity").innerHTML=checks.map(([ok,t])=>`<div class="${ok?"ok":"warn"}"><span>${ok?"✓":"!"}</span>${esc(t)}</div>`).join("")}
+function mcRenderAvailability(){$("#mcAvailabilityList").innerHTML=rosterRows.map(p=>{const mp=mcMatchPlayer(p.player_id),inj=mcInjury(p.player_id),sus=mcSuspension(p.player_id);return `<div class="mc-availability-row" data-mc-avail="${p.player_id}"><div><strong>${esc(p.last_name+" "+p.first_name)}</strong><small>#${p.shirt_number??"–"} · ${roleLabel(p.generic_role_manual)}</small></div><div class="mc-badges">${inj?'<span class="inj">Infortunato</span>':""}${sus?'<span class="sus">Squalificato</span>':""}</div><select data-reason>${mcReasonOptions(mp?.unavailability_reason||"")}</select><input data-note value="${esc(mp?.unavailability_note||"")}" placeholder="Nota"><button type="button" class="secondary" data-save-avail="${p.player_id}">Salva</button></div>`}).join("");$$("[data-save-avail]").forEach(b=>b.onclick=()=>mcSaveAvailability(b.dataset.saveAvail))}
+function mcRenderFormation(){const starters=matchCenterState.matchPlayers.filter(x=>x.started),bench=matchCenterState.matchPlayers.filter(x=>x.selection_status==="bench"),assigned=new Set([...starters,...bench].map(x=>x.player_id)),unavailable=new Set(matchCenterState.matchPlayers.filter(x=>x.selection_status==="unavailable"||x.unavailability_reason).map(x=>x.player_id)),pool=rosterRows.filter(p=>!assigned.has(p.player_id)&&!unavailable.has(p.player_id));$("#mcFormationSelect").value=matchCenterState.match?.formation||"4-4-2";$("#mcFormationPool").innerHTML=pool.map(p=>`<div class="mc-selection-row"><div><strong>${esc(p.last_name)}</strong><small>${mcInjury(p.player_id)?"Infortunato · ":""}${mcSuspension(p.player_id)?"Squalificato":roleLabel(p.generic_role_manual)}</small></div><div><button ${mcSuspension(p.player_id)?"disabled":""} data-mc-assign="${p.player_id}:starter">XI</button><button ${mcSuspension(p.player_id)?"disabled":""} data-mc-assign="${p.player_id}:bench">P</button></div></div>`).join("")||'<div class="empty-state">Nessun giocatore da assegnare</div>';$$("[data-mc-assign]").forEach(b=>b.onclick=()=>{const [id,state]=b.dataset.mcAssign.split(":");mcSetSelection(id,state)});mcPitch($("#mcFormationPitch"),starters,true);$("#mcFormationBench").innerHTML=bench.map(x=>`<div class="mc-bench-row"><strong>${esc(mcPlayerName(x.player_id))}</strong><button data-mc-unassign="${x.player_id}">×</button></div>`).join("")||'<div class="empty-state">Panchina vuota</div>';$$("[data-mc-unassign]").forEach(b=>b.onclick=()=>mcSetSelection(b.dataset.mcUnassign,"available"));const nc=rosterRows.filter(p=>!assigned.has(p.player_id));$("#mcNotCalled").innerHTML=nc.map(p=>{const mp=mcMatchPlayer(p.player_id);return `<div class="mc-not-called-row"><strong>${esc(p.last_name+" "+p.first_name)}</strong><select data-nc="${p.player_id}">${mcReasonOptions(mp?.unavailability_reason||"")}</select><button type="button" class="text-btn" data-save-nc="${p.player_id}">Salva</button></div>`}).join("");$$("[data-save-nc]").forEach(b=>b.onclick=()=>mcSaveNotCalled(b.dataset.saveNc))}
+function mcRenderEvents(){mcTimeline("#mcEventsTimeline",0);$("#mcEventsCount").textContent=matchCenterState.events.length+" eventi";mcRefreshComposer()}
+function mcRenderAll(){mcHeader();mcRenderGeneral();mcRenderAvailability();mcRenderFormation();mcRenderEvents()}
+async function mcReload(){if(!matchCenterState.match){mcRenderAll();return}const [mp,ev]=await Promise.all([db.from("app_match_players").select("*").eq("match_id",matchCenterState.match.id),db.from("app_match_events").select("*").eq("match_id",matchCenterState.match.id).order("minute",{ascending:true})]);matchCenterState.matchPlayers=mp.data||[];matchCenterState.events=ev.data||[];mcRenderAll()}
+async function openMatchDetail(fixture){if(!fixture||!(isOwnTeamName(fixture.home_team)||isOwnTeamName(fixture.away_team)))return;clearInterval(matchCenterTimer);await loadCoreSeasonData();await loadCompetitions();await ensureMainTeam();const match=linkedMatchForFixture(fixture);const [inj,sus]=await Promise.all([db.from("injuries").select("*").eq("season_id",currentSeason.id),db.from("suspensions").select("*").eq("season_id",currentSeason.id)]);matchCenterState={fixture,match,matchPlayers:[],events:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general"};$("#matchDetailFixtureId").value=fixture.id;$("#matchDetailMatchId").value=match?.id||"";$("#matchDetailDialog").showModal();$$("[data-mc-tab]").forEach(b=>b.onclick=()=>mcSetTab(b.dataset.mcTab));$("#mcSaveFormation").onclick=mcSaveFormation;$("#mcEventType").onchange=mcRefreshComposer;$("#mcEventMinute").oninput=mcRefreshComposer;$("#mcEventSide").onchange=mcRefreshComposer;$("#mcEventForm").onsubmit=mcSubmitEvent;$$("[data-mc-live]").forEach(b=>b.onclick=()=>mcLiveAction(b.dataset.mcLive));await mcReload();mcSetTab("general")}
+$$( "[data-close-match-detail]" ).forEach(b=>b.onclick=()=>{clearInterval(matchCenterTimer);$("#matchDetailDialog").close()});
+async function mcSaveAvailability(id){try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");if(!sessionUser)throw new Error("Accedi per modificare.");const row=$(`[data-mc-avail="${id}"]`),reason=row.querySelector("[data-reason]").value,note=row.querySelector("[data-note]").value.trim(),old=mcMatchPlayer(id),p=reason?{selection_status:"unavailable",started:false,unavailability_reason:reason,unavailability_note:note||null}:{selection_status:"available",started:false,unavailability_reason:null,unavailability_note:null};const r=old?await db.from("app_match_players").update(p).eq("id",old.id).select("*").maybeSingle():await db.from("app_match_players").insert({match_id:matchCenterState.match.id,player_id:id,...p}).select("*").single();assertSaved(r,"Disponibilità");await mcReload()}catch(e){alert(e.message||String(e))}}
+async function mcSaveNotCalled(id){const sel=$(`[data-nc="${id}"]`),row=$(`[data-mc-avail="${id}"]`);if(row){row.querySelector("[data-reason]").value=sel.value;return mcSaveAvailability(id)}}
+async function mcSetSelection(id,state){try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");if(!sessionUser)throw new Error("Accedi per modificare.");if((state==="starter"||state==="bench")&&mcSuspension(id))throw new Error("Giocatore squalificato: convocazione bloccata.");const old=mcMatchPlayer(id),p={selection_status:state,started:state==="starter",unavailability_reason:null,unavailability_note:null};const r=old?await db.from("app_match_players").update(p).eq("id",old.id).select("*").maybeSingle():await db.from("app_match_players").insert({match_id:matchCenterState.match.id,player_id:id,...p}).select("*").single();assertSaved(r,"Formazione");await mcReload()}catch(e){alert(e.message||String(e))}}
+async function mcSaveFormation(){try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");const r=await db.from("app_matches").update({formation:$("#mcFormationSelect").value}).eq("id",matchCenterState.match.id).select("*").maybeSingle();matchCenterState.match=assertSaved(r,"Modulo");await mcReload()}catch(e){alert(e.message||String(e))}}
+function mcRefreshComposer(){const type=$("#mcEventType").value,side=$("#mcEventSide").value,minute=$("#mcEventMinute").value;let a=[],b=[],hint="";if(type==="goal"){a=mcEligible("active",minute,side);b=mcEligible("active",minute,side);$("#mcEventPlayerWrap").classList.toggle("hidden",side==="opponent");$("#mcEventSecondaryWrap").classList.toggle("hidden",side==="opponent");$("#mcEventSubtype").innerHTML='<option value="action">Azione</option><option value="penalty">Rigore</option><option value="free_kick">Punizione</option><option value="own_goal">Autogol</option>';hint=minute===""?"Inserimento libero":"Solo giocatori attivi"}else if(type==="substitution"){a=mcEligible("active",minute,side);b=mcEligible("incoming",minute,side);$("#mcEventPlayerWrap").classList.toggle("hidden",side==="opponent");$("#mcEventSecondaryWrap").classList.toggle("hidden",side==="opponent");$("#mcEventSubtype").innerHTML='<option value="tactical">Tattico</option><option value="injury">Infortunio</option><option value="technical">Tecnico</option><option value="other">Altro</option>';hint=minute===""?"Inserimento libero · ingresso facoltativo":"Esce: in campo · Entra: panchina"}else{a=mcEligible("card",minute,side);$("#mcEventPlayerWrap").classList.toggle("hidden",side==="opponent");$("#mcEventSecondaryWrap").classList.add("hidden");$("#mcEventSubtype").innerHTML=type==="red_card"?'<option value="direct">Diretto</option><option value="second_yellow">Secondo giallo</option>':'<option value="yellow">Ammonizione</option>';hint=side==="opponent"?"Evento avversario":"Campo + panchina"}$("#mcEventPlayer").innerHTML=mcOptions(a,type==="substitution"?"Giocatore che esce":"—");$("#mcEventSecondary").innerHTML=mcOptions(b,type==="substitution"?"Nessun ingresso":"Nessun assist");$("#mcEligibilityHint").textContent=hint}
+async function mcSubmitEvent(e){e.preventDefault();$("#mcEventError").classList.add("hidden");try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");if(!sessionUser)throw new Error("Accedi per inserire eventi.");const type=$("#mcEventType").value,side=$("#mcEventSide").value,min=$("#mcEventMinute").value,minute=min===""?null:Number(min),player=side==="team"?($("#mcEventPlayer").value||null):null,secondary=(type==="goal"||type==="substitution")?($("#mcEventSecondary").value||null):null,sub=$("#mcEventSubtype").value;if(type==="substitution"&&side==="opponent")throw new Error("Cambi avversari non gestiti nel prototipo.");if(type==="substitution"&&!player)throw new Error("Il giocatore che esce è obbligatorio; quello che entra è facoltativo.");if(type==="goal"&&side==="team"&&sub!=="own_goal"&&!player)throw new Error("Indica il marcatore.");if((type==="yellow_card"||type==="red_card")&&side==="team"&&!player)throw new Error("Indica il giocatore.");if(mcIsPost()&&type==="goal"){const g=mcGoalInfo(),max=side==="team"?g.expectedTeam:g.expectedOpp,cur=side==="team"?g.team:g.opp;if(cur>=max)throw new Error("Numero di gol già coerente con il risultato ufficiale.")}const payload=type==="goal"?{goal_type:sub}:(type==="yellow_card"||type==="red_card"?{card_type:sub}:{});const r=await db.from("app_match_events").insert({match_id:matchCenterState.match.id,event_type:type,minute,stoppage_minute:$("#mcEventStoppage").value===""?null:Number($("#mcEventStoppage").value),team_side:side,player_id:player,secondary_player_id:secondary,payload,substitution_reason:type==="substitution"?sub:null,proposed_by:sessionUser.id,validation_status:"proposed"}).select("*").single();assertSaved(r,"Evento");$("#mcEventForm").reset();await mcReload();mcSetTab("events")}catch(err){$("#mcEventError").textContent=err.message||String(err);$("#mcEventError").classList.remove("hidden")}}
+async function mcLiveAction(action){try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");if(!sessionUser)throw new Error("Accedi per gestire il live.");const u={};if(action==="start_first"){u.status="live";u.live_started_at=matchCenterState.match.live_started_at||new Date().toISOString();u.live_period="first_half"}if(action==="end_first")u.live_period="halftime";if(action==="start_second"){u.status="live";u.live_period="second_half"}if(action==="end_match"){u.status="finished";u.live_period="full_time";u.finalized_at=new Date().toISOString()}const r=await db.from("app_matches").update(u).eq("id",matchCenterState.match.id).select("*").maybeSingle();matchCenterState.match=assertSaved(r,"Live");await mcReload();mcSetTab("events")}catch(e){alert(e.message||String(e))}}
+
 function openFixture(f=null){
   $("#fixtureForm").reset();
   $("#fixtureError").classList.add("hidden");
