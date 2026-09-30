@@ -436,7 +436,11 @@
       <div id="mcMeta" class="mc-meta"></div>
     </header>
     <div class="mc-body">
-      <section data-mc-panel="general">
+      <nav id="mcPostTabs" class="mc-post-tabs hidden" aria-label="Vista partita conclusa">
+        <button type="button" class="active" data-mc-post-view="match">PARTITA</button>
+        <button type="button" data-mc-post-view="rating">RATING</button>
+      </nav>
+      <section data-mc-panel="general" data-mc-post-panel="match">
         <div class="mc-general-grid">
           <div class="mc-general-left">
             <section class="mc-card mc-history-card">
@@ -466,6 +470,18 @@
             </section>
           </div>
         </div>
+      </section>
+      <section data-mc-post-panel="rating" class="mc-rating-panel hidden">
+        <section class="mc-card mc-rating-card">
+          <div class="mc-card-head">
+            <div>
+              <strong>Rating giocatori</strong>
+              <small>Voti anonimi · 1–10, incrementi di 0,5</small>
+            </div>
+            <span id="mcRatingCount"></span>
+          </div>
+          <div id="mcRatingList" class="mc-rating-list"></div>
+        </section>
       </section>
     </div>
   </div>
