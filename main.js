@@ -992,7 +992,7 @@ function renderCalendarRows(){
 function playerOptions(selected){
   return '<option value="">—</option>'+players.map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.last_name+" "+p.first_name)}</option>`).join("");
 }
-let matchCenterState={fixture:null,match:null,matchPlayers:[],events:[],ratings:[],injuries:[],suspensions:[],tab:"general",editMode:false};
+let matchCenterState={fixture:null,match:null,matchPlayers:[],events:[],ratings:[],injuries:[],suspensions:[],tab:"general",editMode:false,postView:"match"};
 let matchCenterTimer=null;
 function mcPlayer(id){return rosterRows.find(p=>p.player_id===id)||players.find(p=>p.id===id)||null}
 function mcPlayerName(id){const p=mcPlayer(id);return p?(p.last_name+" "+p.first_name):"—"}
@@ -1203,6 +1203,138 @@ function mcRoleRank(row){
 function mcAverageRating(playerId){
   const vals=matchCenterState.ratings.filter(r=>r.player_id===playerId).map(r=>Number(r.rating)).filter(Number.isFinite);
   return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+}
+
+function mcRatingColor(value){
+  const v=Math.max(0,Math.min(10,Number(value)||0));
+  const mix=(a,b,t)=>{
+    const pa=a.match(/\w\w/g).map(x=>parseInt(x,16)),pb=b.match(/\w\w/g).map(x=>parseInt(x,16));
+    return "#"+pa.map((x,i)=>Math.round(x+(pb[i]-x)*t).toString(16).padStart(2,"0")).join("");
+  };
+  return v<=6?mix("b51f3d","f0c419",v/6):mix("f0c419","10b981",(v-6)/4);
+}
+function mcRatingTextColor(value){
+  const v=Number(value);
+  return v<=3.5||v>=8.5?"#fff":"#202426";
+}
+function mcMatchRecoveryMinutes(period){
+  const explicit=matchCenterState.events.find(e=>e.event_type==="period_end"&&e.payload?.period===period);
+  if(explicit)return Math.max(0,Number(explicit.payload?.recovery_minutes??explicit.stoppage_minute??0)||0);
+  const base=mcPeriodMinutes();
+  const over=matchCenterState.events
+    .filter(e=>e.event_type!=="period_end"&&mcEventPeriod(e)===period&&Number(e.minute)>base)
+    .map(e=>Number(e.minute)-base)
+    .filter(n=>Number.isFinite(n)&&n>0);
+  return over.length?Math.max(...over):0;
+}
+function mcParticipationElapsed(event,firstHalfRecovery){
+  const minute=Number(event?.minute);
+  if(!Number.isFinite(minute))return null;
+  return mcEventPeriod(event)==="second_half"?mcPeriodMinutes()+firstHalfRecovery+minute:minute;
+}
+function mcRatingParticipants(){
+  const firstRecovery=mcMatchRecoveryMinutes("first_half"),secondRecovery=mcMatchRecoveryMinutes("second_half");
+  const regulation=mcPeriodMinutes();
+  const active=new Set(matchCenterState.matchPlayers.filter(x=>x.started).map(x=>x.player_id));
+  const touched=new Set(active);
+  const minutes=new Map([...active].map(id=>[id,0]));
+  const ordered=matchCenterState.events
+    .filter(e=>e.team_side==="team"&&e.minute!=null&&(e.event_type==="substitution"||e.event_type==="red_card"))
+    .map(e=>({event:e,elapsed:mcParticipationElapsed(e,firstRecovery)}))
+    .filter(x=>Number.isFinite(x.elapsed))
+    .sort((a,b)=>a.elapsed-b.elapsed||new Date(a.event.created_at||0)-new Date(b.event.created_at||0));
+  let cursor=0;
+  for(const item of ordered){
+    const t=Math.max(cursor,item.elapsed),delta=Math.max(0,t-cursor);
+    active.forEach(id=>minutes.set(id,(minutes.get(id)||0)+delta));
+    const e=item.event;
+    if(e.event_type==="substitution"){
+      if(e.player_id)active.delete(e.player_id);
+      if(e.secondary_player_id){
+        touched.add(e.secondary_player_id);
+        if(!minutes.has(e.secondary_player_id))minutes.set(e.secondary_player_id,0);
+        active.add(e.secondary_player_id);
+      }
+    }else if(e.event_type==="red_card"&&e.player_id)active.delete(e.player_id);
+    cursor=t;
+  }
+  const effectiveEnd=Math.max(regulation*2+firstRecovery+secondRecovery,cursor);
+  const tail=Math.max(0,effectiveEnd-cursor);
+  active.forEach(id=>minutes.set(id,(minutes.get(id)||0)+tail));
+  return [...touched].map(playerId=>({playerId,minutes:Math.max(0,minutes.get(playerId)||0)})).sort((a,b)=>{
+    if(b.minutes!==a.minutes)return b.minutes-a.minutes;
+    return mcPlayerName(a.playerId).localeCompare(mcPlayerName(b.playerId),"it",{sensitivity:"base"});
+  });
+}
+function mcSetPostView(view){
+  matchCenterState.postView=view==="rating"&&mcIsPost()?"rating":"match";
+  mcRenderAll();
+}
+function mcRatingOptions(selected){
+  let html='<option value="">Vota</option>';
+  for(let v=1;v<=10;v+=.5){
+    const label=Number.isInteger(v)?String(v):v.toFixed(1).replace(".",",");
+    html+='<option value="'+v+'" '+(Number(selected)===v?"selected":"")+'>'+label+'</option>';
+  }
+  return html;
+}
+function mcRenderRating(){
+  const list=$("#mcRatingList"),count=$("#mcRatingCount");
+  if(!list||!count)return;
+  if(!mcIsPost()){
+    list.innerHTML='<div class="empty-state">I rating saranno disponibili a risultato definitivo.</div>';
+    count.textContent="";
+    return;
+  }
+  const participants=mcRatingParticipants();
+  count.textContent=participants.length+" giocatori";
+  list.innerHTML=participants.map(({playerId,minutes})=>{
+    const player=mcPlayer(playerId),ratings=matchCenterState.ratings.filter(r=>r.player_id===playerId);
+    const values=ratings.map(r=>Number(r.rating)).filter(Number.isFinite);
+    const average=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
+    const mine=ratings.find(r=>r.voter_id===sessionUser?.id);
+    const averageText=average==null?"—":average.toFixed(1).replace(".",",");
+    const averageStyle=average==null?"":' style="--rating-bg:'+mcRatingColor(average)+';--rating-fg:'+mcRatingTextColor(average)+'"';
+    const myValue=mine?Number(mine.rating):"";
+    const myStyle=myValue===""?"":' style="--rating-bg:'+mcRatingColor(myValue)+';--rating-fg:'+mcRatingTextColor(myValue)+'"';
+    return '<div class="mc-rating-row" data-rating-row="'+playerId+'">'+
+      '<div class="mc-rating-player"><span class="num">'+esc(mcMatchPlayer(playerId)?.shirt_number??player?.shirt_number??"–")+'</span>'+
+        '<span><strong>'+esc(mcPlayerName(playerId))+'</strong><small>'+Math.round(minutes)+"' giocati"+'</small></span></div>'+
+      '<div class="mc-rating-average"><span class="mc-rating-average-value '+(average==null?"empty":"")+'"'+averageStyle+'>'+averageText+'</span>'+
+        '<small>'+values.length+' '+(values.length===1?"voto":"voti")+'</small></div>'+
+      '<label class="mc-rating-vote">Il tuo voto<select data-mc-rating-player="'+playerId+'"'+myStyle+'>'+mcRatingOptions(myValue)+'</select></label>'+
+    '</div>';
+  }).join("")||'<div class="empty-state">Nessun giocatore entrato.</div>';
+  document.querySelectorAll("[data-mc-rating-player]").forEach(select=>{
+    const paint=()=>{
+      const value=Number(select.value);
+      if(!value){select.style.removeProperty("--rating-bg");select.style.removeProperty("--rating-fg")}
+      else{select.style.setProperty("--rating-bg",mcRatingColor(value));select.style.setProperty("--rating-fg",mcRatingTextColor(value))}
+    };
+    paint();
+    select.onchange=async()=>{paint();await mcSaveRating(select.dataset.mcRatingPlayer,select.value,select)};
+  });
+}
+async function mcSaveRating(playerId,value,select){
+  try{
+    if(!mcIsPost())throw new Error("I rating sono disponibili solo a risultato definitivo.");
+    if(!sessionUser)throw new Error("Accedi per assegnare un voto.");
+    const rating=Number(value);
+    if(!Number.isFinite(rating)||rating<1||rating>10||rating*2!==Math.trunc(rating*2))throw new Error("Voto non valido.");
+    select.disabled=true;
+    const existing=matchCenterState.ratings.find(r=>r.player_id===playerId&&r.voter_id===sessionUser.id);
+    const result=existing
+      ?await db.from("app_match_ratings").update({rating}).eq("match_id",matchCenterState.match.id).eq("player_id",playerId).eq("voter_id",sessionUser.id).select("*").maybeSingle()
+      :await db.from("app_match_ratings").insert({match_id:matchCenterState.match.id,player_id:playerId,voter_id:sessionUser.id,rating}).select("*").single();
+    assertSaved(result,"Rating");
+    const refreshed=await db.from("app_match_ratings").select("player_id,rating,voter_id").eq("match_id",matchCenterState.match.id);
+    if(refreshed.error)throw refreshed.error;
+    matchCenterState.ratings=refreshed.data||[];
+    mcRenderRating();
+  }catch(err){
+    alert(err.message||String(err));
+    mcRenderRating();
+  }
 }
 function mcPlayerEventSummary(playerId){
   const events=matchCenterState.events.filter(e=>e.team_side==="team"&&(e.player_id===playerId||e.secondary_player_id===playerId));
@@ -2143,6 +2275,17 @@ function mcRenderAll(){
   const dialog=$("#matchDetailDialog");
   dialog?.classList.toggle("mc-final-locked",mcFinalLocked());
   mcHeader();
+  const post=mcIsPost();
+  if(!post)matchCenterState.postView="match";
+  const tabs=$("#mcPostTabs");
+  tabs?.classList.toggle("hidden",!post);
+  document.querySelectorAll("[data-mc-post-view]").forEach(b=>{
+    b.classList.toggle("active",b.dataset.mcPostView===matchCenterState.postView);
+    b.onclick=()=>mcSetPostView(b.dataset.mcPostView);
+  });
+  const matchPanel=$('[data-mc-post-panel="match"]'),ratingPanel=$('[data-mc-post-panel="rating"]');
+  matchPanel?.classList.toggle("hidden",post&&matchCenterState.postView==="rating");
+  ratingPanel?.classList.toggle("hidden",!post||matchCenterState.postView!=="rating");
   const errors=[];
   try{
     mcTimeline("#mcGeneralEvents",0,mcGeneralEventFilters);
@@ -2179,6 +2322,7 @@ function mcRenderAll(){
       mcTimeline("#mcGeneralEvents",0,mcGeneralEventFilters);
     };
   });
+  if(post)mcRenderRating();
   if(errors.length)console.warn("Match Center partial render:",errors.join(", "));
 }
 async function mcReload(){
@@ -2186,7 +2330,7 @@ async function mcReload(){
   const [mp,ev,rt]=await Promise.all([
     db.from("app_match_players").select("*").eq("match_id",matchCenterState.match.id),
     db.from("app_match_events").select("*").eq("match_id",matchCenterState.match.id).order("minute",{ascending:true}),
-    db.from("app_match_ratings").select("player_id,rating").eq("match_id",matchCenterState.match.id)
+    db.from("app_match_ratings").select("player_id,rating,voter_id").eq("match_id",matchCenterState.match.id)
   ]);
   matchCenterState.matchPlayers=mp.data||[];
   matchCenterState.events=ev.data||[];
@@ -2215,7 +2359,7 @@ async function openMatchDetail(fixture){
     db.from("injuries").select("*").eq("season_id",currentSeason.id),
     db.from("suspensions").select("*").eq("season_id",currentSeason.id)
   ]);
-  matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general",editMode:false};
+  matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general",editMode:false,postView:"match"};
   $("#matchDetailFixtureId").value=fixture.id;
   $("#matchDetailMatchId").value=match?.id||"";
   $("#matchDetailDialog").showModal();
