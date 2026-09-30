@@ -1085,10 +1085,12 @@ function mcCurrentFieldRows(){
   const map=new Map(matchCenterState.matchPlayers.filter(x=>x.started).map(x=>[x.player_id,{...x}]));
   [...matchCenterState.events].filter(e=>e.team_side==="team").sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)).forEach(e=>{
     if(e.event_type==="substitution"){
+      const outgoing=e.player_id?map.get(e.player_id):null;
       if(e.player_id)map.delete(e.player_id);
       if(e.secondary_player_id){
         const source=mcMatchPlayer(e.secondary_player_id)||{player_id:e.secondary_player_id,selection_status:"bench"};
-        map.set(e.secondary_player_id,{...source,started:true});
+        const inheritedSlot=e.payload?.tactical_slot??outgoing?.tactical_slot??source.tactical_slot??null;
+        map.set(e.secondary_player_id,{...source,started:true,tactical_slot:inheritedSlot});
       }
     }
     if(e.event_type==="red_card"&&e.player_id)map.delete(e.player_id);
@@ -1105,20 +1107,27 @@ function mcKit(){
 }
 function mcPitch(target,rows,remove){
   const pos=[[50,90],[18,72],[39,72],[61,72],[82,72],[18,50],[39,50],[61,50],[82,50],[35,26],[65,26]];
-  const ordered=[...rows].sort((a,b)=>mcRoleRank(a)-mcRoleRank(b)||(a.tactical_slot??99)-(b.tactical_slot??99));
+  const ordered=[...rows].sort((a,b)=>{
+    const as=Number(a.tactical_slot),bs=Number(b.tactical_slot);
+    if(Number.isFinite(as)&&Number.isFinite(bs)&&as!==bs)return as-bs;
+    if(Number.isFinite(as))return -1;
+    if(Number.isFinite(bs))return 1;
+    return mcRoleRank(a)-mcRoleRank(b);
+  });
   const kit=mcKit();
   target.innerHTML=ordered.slice(0,11).map((x,i)=>{
     const p=mcPlayer(x.player_id),q=pos[i]||[50,50],ev=mcPlayerEventSummary(x.player_id),rating=mcAverageRating(x.player_id);
+    x._display_slot=i+1;
     const badges=[
       ev.goals?'<span class="pitch-event goal">⚽'+(ev.goals>1?"×"+ev.goals:"")+'</span>':"",
       ev.assists?'<span class="pitch-event assist">A'+(ev.assists>1?"×"+ev.assists:"")+'</span>':"",
-      ev.entered?'<span class="pitch-event in">↗ '+(ev.entered.minute??"")+"'"+'</span>':"",
-      ev.exited?'<span class="pitch-event out">↘ '+(ev.exited.minute??"")+"'"+'</span>':"",
+      ev.entered?'<span class="pitch-event in">↗ '+mcDisplayMinute(ev.entered)+'</span>':"",
+      ev.exited?'<span class="pitch-event out">↘ '+mcDisplayMinute(ev.exited)+'</span>':"",
       ev.yellow?'<span class="pitch-event card yellow">■</span>':"",
       ev.blue?'<span class="pitch-event card blue">■</span>':"",
       ev.red?'<span class="pitch-event card red">■</span>':""
     ].join("");
-    return '<div class="pitch-player modern" style="left:'+q[0]+'%;top:'+q[1]+'%">'+
+    return '<div class="pitch-player modern" data-mc-pitch-player="'+x.player_id+'" draggable="'+(!remove)+'" style="left:'+q[0]+'%;top:'+q[1]+'%">'+
       (rating!=null?'<span class="pitch-rating">'+rating.toFixed(1)+'</span>':"")+
       '<span class="kit-shirt kit-'+esc(kit.style)+'" style="--kit-primary:'+esc(kit.primary)+';--kit-secondary:'+esc(kit.secondary)+';--kit-number:'+esc(kit.number)+'"><b>'+(x.shirt_number??p?.shirt_number??"–")+'</b></span>'+
       '<strong>'+esc(p?.last_name||"—")+'</strong>'+
@@ -1127,8 +1136,55 @@ function mcPitch(target,rows,remove){
       (remove?'<button type="button" data-mc-unassign="'+x.player_id+'">×</button>':"")+
     '</div>';
   }).join("");
+  if(!remove)mcBindPitchInteractions(target,ordered);
 }
-
+let mcPitchQuickHideTimer=null;
+function mcBindPitchInteractions(target,ordered){
+  const rowsById=new Map(ordered.map((x,i)=>[String(x.player_id),{...x,_display_slot:i+1}]));
+  const players=[...target.querySelectorAll("[data-mc-pitch-player]")];
+  players.forEach(el=>{
+    el.addEventListener("mouseenter",()=>{
+      clearTimeout(mcPitchQuickHideTimer);
+      players.forEach(other=>{if(other!==el)other.classList.remove("quick-visible")});
+      el.classList.add("quick-visible");
+    });
+    el.addEventListener("mouseleave",()=>{
+      clearTimeout(mcPitchQuickHideTimer);
+      mcPitchQuickHideTimer=setTimeout(()=>el.classList.remove("quick-visible"),3000);
+    });
+    el.addEventListener("dragstart",e=>{
+      e.dataTransfer.setData("text/plain",el.dataset.mcPitchPlayer);
+      e.dataTransfer.effectAllowed="move";
+      el.classList.add("dragging");
+    });
+    el.addEventListener("dragend",()=>el.classList.remove("dragging"));
+    el.addEventListener("dragover",e=>{e.preventDefault();e.dataTransfer.dropEffect="move";el.classList.add("drag-over")});
+    el.addEventListener("dragleave",()=>el.classList.remove("drag-over"));
+    el.addEventListener("drop",async e=>{
+      e.preventDefault();el.classList.remove("drag-over");
+      const sourceId=e.dataTransfer.getData("text/plain"),targetId=el.dataset.mcPitchPlayer;
+      if(!sourceId||sourceId===targetId)return;
+      const sourceRow=rowsById.get(String(sourceId)),targetRow=rowsById.get(String(targetId));
+      if(!sourceRow||!targetRow)return;
+      await mcSwapPitchSlots(sourceRow,targetRow);
+    });
+  });
+}
+async function mcSwapPitchSlots(a,b){
+  try{
+    if(!sessionUser)throw new Error("Accedi per modificare la posizione.");
+    const amp=mcMatchPlayer(a.player_id),bmp=mcMatchPlayer(b.player_id);
+    if(!amp||!bmp)throw new Error("Giocatore non associato alla partita.");
+    const aSlot=Number(a.tactical_slot)||Number(a._display_slot)||1;
+    const bSlot=Number(b.tactical_slot)||Number(b._display_slot)||1;
+    const [ra,rb]=await Promise.all([
+      db.from("app_match_players").update({tactical_slot:bSlot}).eq("id",amp.id).select("*").maybeSingle(),
+      db.from("app_match_players").update({tactical_slot:aSlot}).eq("id",bmp.id).select("*").maybeSingle()
+    ]);
+    assertSaved(ra,"Posizione");assertSaved(rb,"Posizione");
+    await mcReload();
+  }catch(err){alert(err.message||String(err))}
+}
 function mcTimelinePlayerName(id){
   const p=mcPlayer(id);
   if(!p)return "—";
@@ -1571,7 +1627,8 @@ async function mcSubmitPlayerQuickEvent(e){
         outgoing=$("#mcQuickPlayer").value||null;incoming=$("#mcQuickOther").value||null;
         if(!outgoing)throw new Error("Seleziona il giocatore uscente.");
       }
-      const payload={...base,event_type:"substitution",player_id:outgoing,secondary_player_id:incoming,payload:{period},substitution_reason:$("#mcQuickSubtype").value};
+      const outgoingRow=mcCurrentFieldRows().find(x=>String(x.player_id)===String(outgoing));
+      const payload={...base,event_type:"substitution",player_id:outgoing,secondary_player_id:incoming,payload:{period,tactical_slot:outgoingRow?.tactical_slot??null},substitution_reason:$("#mcQuickSubtype").value};
       if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
     }else if(kind==="goal"){
       const sub=$("#mcQuickSubtype").value;
@@ -1714,19 +1771,29 @@ function mcRenderGeneralBench(){
   title.textContent="Panchina";
   label.textContent=team?.name||"Calcio Caselle";
   const activeIds=new Set(mcCurrentFieldRows().map(x=>x.player_id));
-  const unavailableAfterPlay=new Set(matchCenterState.events.filter(e=>e.team_side==="team"&&(e.event_type==="substitution"||e.event_type==="red_card")).map(e=>e.player_id));
-  const bench=matchCenterState.matchPlayers.filter(x=>{
-    if(x.selection_status!=="bench")return false;
-    if(mcIsPost())return true;
-    return !activeIds.has(x.player_id)&&!unavailableAfterPlay.has(x.player_id);
-  });
-  box.innerHTML=bench.length?bench.map(x=>{
+  const substitutions=matchCenterState.events.filter(e=>e.team_side==="team"&&e.event_type==="substitution").sort((a,b)=>mcEventOrder(a)-mcEventOrder(b));
+  const enteredIds=new Set(substitutions.map(e=>e.secondary_player_id).filter(Boolean));
+  const outEvents=new Map();
+  substitutions.forEach(e=>{if(e.player_id)outEvents.set(e.player_id,e)});
+  const redIds=new Set(matchCenterState.events.filter(e=>e.team_side==="team"&&e.event_type==="red_card").map(e=>e.player_id).filter(Boolean));
+
+  const unused=matchCenterState.matchPlayers.filter(x=>
+    x.selection_status==="bench"&&!activeIds.has(x.player_id)&&!enteredIds.has(x.player_id)&&!redIds.has(x.player_id)
+  );
+  const returnedIds=[...outEvents.keys()].filter(id=>!activeIds.has(id)&&!redIds.has(id));
+  const returned=returnedIds.map(id=>mcMatchPlayer(id)||{player_id:id}).filter(Boolean);
+
+  const renderRow=(x,status)=>{
     const p=mcPlayer(x.player_id);
-    const entered=matchCenterState.events.find(e=>e.team_side==="team"&&e.event_type==="substitution"&&e.secondary_player_id===x.player_id);
-    const exited=matchCenterState.events.find(e=>e.team_side==="team"&&e.event_type==="substitution"&&e.player_id===x.player_id);
-    const status=entered?("Entrato "+(entered.minute??"")+"\'"):(exited?("Uscito "+(exited.minute??"")+"\'"):roleLabel(p?.generic_role_manual));
-    return '<div class="mc-general-bench-row"><span class="num">'+(x.shirt_number??p?.shirt_number??"–")+'</span><span class="mc-bench-player-copy"><strong>'+esc(mcPlayerName(x.player_id))+'</strong><small>'+esc(status)+'</small></span>'+(!mcIsPost()?mcPlayerQuickButtons(x.player_id,"bench"):"")+'</div>';
-  }).join(""):'<div class="empty-state">Panchina vuota</div>';
+    return '<div class="mc-general-bench-row"><span class="num">'+(x.shirt_number??p?.shirt_number??"–")+'</span><span class="mc-bench-player-copy"><strong>'+esc(mcPlayerName(x.player_id))+'</strong><small>'+esc(status||roleLabel(p?.generic_role_manual))+'</small></span>'+(!mcIsPost()?mcPlayerQuickButtons(x.player_id,"bench"):"")+'</div>';
+  };
+  const unusedHtml=unused.map(x=>renderRow(x,roleLabel(mcPlayer(x.player_id)?.generic_role_manual))).join("");
+  const returnedHtml=returned.map(x=>{
+    const e=outEvents.get(x.player_id);
+    return renderRow(x,"Uscito "+(e?mcDisplayMinute(e):""));
+  }).join("");
+  const divider=unusedHtml&&returnedHtml?'<div class="mc-bench-subbed-divider"><span></span><b>Sostituiti</b><span></span></div>':"";
+  box.innerHTML=(unusedHtml+divider+returnedHtml)||'<div class="empty-state">Panchina vuota</div>';
   mcBindPlayerQuickActions(box);
 }
 function mcRenderIntegrity(){
