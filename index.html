@@ -144,32 +144,33 @@
   </section>
   </div>
   <section id="competitionsView" class="hidden">
-    <div class="competition-picker"><select id="competitionHubSelect" aria-label="Competizione"></select></div>
+    <div class="competition-toolbar">
+      <div class="competition-picker"><select id="competitionHubSelect" aria-label="Competizione"></select></div>
+      <div class="mini-calendar-tools">
+        <div class="segmented">
+          <button class="segment active" type="button" data-comp-fixture-filter="all">Tutte</button>
+          <button class="segment" type="button" data-comp-fixture-filter="mine">Caselle</button>
+        </div>
+      </div>
+    </div>
     <div class="competition-split">
       <section class="competition-half standings-card">
         <div id="competitionStandings"></div>
         <section id="competitionProjectionCard" class="projection-card">
           <div class="projection-head">
-            <div>
-              <strong>Proiezione classifica</strong>
-              <small id="projectionReliability"></small>
+            <strong>Proiezione classifica</strong>
+            <div class="projection-head-meta">
+              <span id="projectionReliability"></span>
+              <span id="projectionScenarioMeta"></span>
+              <button id="projectionInfoBtn" class="projection-info" type="button" title="Come viene calcolata">i</button>
             </div>
-            <button id="projectionInfoBtn" class="projection-info" type="button" title="Come viene calcolata">i</button>
           </div>
           <div id="competitionProjection"></div>
         </section>
       </section>
-      <div class="competition-fixtures-column">
-        <div class="mini-calendar-tools">
-          <div class="segmented">
-            <button class="segment active" type="button" data-comp-fixture-filter="all">Tutte</button>
-            <button class="segment" type="button" data-comp-fixture-filter="mine">Caselle</button>
-          </div>
-        </div>
-        <section class="competition-half fixtures-card">
-          <div id="competitionFixtures"></div>
-        </section>
-      </div>
+      <section class="competition-half fixtures-card">
+        <div id="competitionFixtures"></div>
+      </section>
     </div>
   </section>
 
