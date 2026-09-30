@@ -862,21 +862,36 @@ function renderCompetitionFixtures(rows){
   const focusLabel=$("#competitionFixtureFocusLabel");
   const now=Date.now();
 
-  let nextIndex=rounds.findIndex(x=>x.lastAt>=now);
-  if(nextIndex<0)nextIndex=rounds.length-1;
-  const previousIndex=Math.max(0,nextIndex-1);
-  const focusIndex=rounds.length?previousIndex:-1;
-  const focusRound=rounds[focusIndex];
-  const nextRound=rounds[Math.min(rounds.length-1,focusIndex+1)];
+  // Finestra iniziale guidata dalle date reali, non dal numero di giornata:
+  // ultimo turno interamente passato sopra, primo turno futuro subito sotto.
+  const pastIndexes=rounds
+    .map((x,index)=>({index,lastAt:x.lastAt}))
+    .filter(x=>Number.isFinite(x.lastAt)&&x.lastAt<now);
+  const futureIndexes=rounds
+    .map((x,index)=>({index,firstAt:x.firstAt}))
+    .filter(x=>Number.isFinite(x.firstAt)&&x.firstAt>=now);
+
+  const lastPastIndex=pastIndexes.length?pastIndexes[pastIndexes.length-1].index:-1;
+  const nextFutureIndex=futureIndexes.length?futureIndexes[0].index:-1;
+
+  let focusIndex=-1;
+  if(lastPastIndex>=0)focusIndex=lastPastIndex;
+  else if(nextFutureIndex>=0)focusIndex=nextFutureIndex;
+  else if(rounds.length)focusIndex=rounds.length-1;
+
+  const focusRound=focusIndex>=0?rounds[focusIndex]:null;
+  const nextRound=nextFutureIndex>=0?rounds[nextFutureIndex]:null;
 
   if(focusLabel){
     if(!rounds.length)focusLabel.textContent="";
-    else if(focusRound&&nextRound&&focusRound.round!==nextRound.round)focusLabel.textContent=`Turni ${focusRound.round}–${nextRound.round}`;
-    else focusLabel.textContent=`Turno ${focusRound?.round??""}`;
+    else if(lastPastIndex>=0&&nextFutureIndex>=0&&lastPastIndex!==nextFutureIndex){
+      focusLabel.textContent=`Ultimo ${rounds[lastPastIndex].round} · Prossimo ${rounds[nextFutureIndex].round}`;
+    }else if(nextRound)focusLabel.textContent=`Prossimo ${nextRound.round}`;
+    else focusLabel.textContent=`Ultimo ${focusRound?.round??""}`;
   }
 
   grid.innerHTML=rounds.length
-    ?`<div class="round-grid">${rounds.map((group,index)=>`<section class="mini-round ${index===focusIndex||index===focusIndex+1?"current-window":""}" data-round-index="${index}" data-round-no="${group.round}">
+    ?`<div class="round-grid">${rounds.map((group,index)=>`<section class="mini-round ${index===lastPastIndex||index===nextFutureIndex?"current-window":""}" data-round-index="${index}" data-round-no="${group.round}">
         <div class="mini-round-label">Turno ${group.round}</div>
         ${group.list.map(r=>{
           const own=isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team);
