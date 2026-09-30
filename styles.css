@@ -4982,3 +4982,165 @@ dialog form{padding:16px}
     padding:5px 6px!important;
   }
 }
+
+
+/* Match Center RATING: balanced centered rows, score-style value outlines */
+.mc-rating-column-list>.mc-rating-row{
+  grid-template-columns:minmax(0,1fr) 56px 76px!important;
+  align-items:center!important;
+  justify-items:stretch!important;
+  padding:0 8px!important;
+  gap:10px!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+.mc-rating-player{
+  min-width:0!important;
+  align-self:center!important;
+  grid-template-columns:26px minmax(0,1fr)!important;
+  gap:8px!important;
+}
+.mc-rating-player>.num{
+  width:26px!important;
+  height:26px!important;
+  border-radius:7px!important;
+  background:#f6f7f6!important;
+  color:#586066!important;
+}
+.mc-rating-player-copy{
+  min-width:0!important;
+  align-self:center!important;
+}
+.mc-rating-name-line{
+  min-width:0!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  line-height:1!important;
+}
+.mc-rating-name-line>strong{
+  min-width:0!important;
+  font-size:9px!important;
+  line-height:1!important;
+}
+.mc-rating-player-copy>small{
+  margin-top:2px!important;
+  font-size:6px!important;
+  line-height:1!important;
+}
+.mc-rating-events{
+  display:flex!important;
+  align-items:center!important;
+  gap:4px!important;
+  flex:0 0 auto!important;
+}
+
+.mc-rating-average{
+  align-self:center!important;
+  justify-self:center!important;
+  display:grid!important;
+  place-items:center!important;
+  gap:2px!important;
+}
+.mc-rating-average-value{
+  min-width:38px!important;
+  height:22px!important;
+  padding:0 7px!important;
+  border:1.25px solid var(--rating-bg,#5267ff)!important;
+  border-radius:999px!important;
+  background:#fbfbff!important;
+  color:#202326!important;
+  box-shadow:none!important;
+  font-size:9px!important;
+  line-height:1!important;
+}
+.mc-rating-average-value.empty{
+  border-color:#d8dde0!important;
+  background:#fff!important;
+  color:#8b9195!important;
+}
+.mc-rating-average small{
+  font-size:5.5px!important;
+  line-height:1!important;
+}
+
+.mc-rating-vote{
+  align-self:center!important;
+  justify-self:center!important;
+  width:64px!important;
+  display:grid!important;
+  grid-template-rows:auto 22px!important;
+  align-content:center!important;
+  justify-items:center!important;
+  gap:2px!important;
+  margin:0!important;
+}
+.mc-rating-vote>span{
+  width:auto!important;
+  margin:0!important;
+  justify-content:center!important;
+  font-size:5.5px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+.mc-rating-vote input[type="text"]{
+  width:48px!important;
+  min-width:48px!important;
+  max-width:48px!important;
+  height:22px!important;
+  min-height:22px!important;
+  padding:0 6px!important;
+  border:1.25px solid var(--rating-bg,#d8dde0)!important;
+  border-radius:999px!important;
+  background:#fbfbff!important;
+  color:#202326!important;
+  box-shadow:none!important;
+  font-size:9px!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+.mc-rating-vote input[type="text"].valid{
+  background:#fbfbff!important;
+  color:#202326!important;
+  box-shadow:none!important;
+}
+.mc-rating-vote input[type="text"]:focus{
+  outline:none!important;
+  box-shadow:0 0 0 2px rgba(82,103,255,.12)!important;
+}
+.mc-rating-vote input[type="text"].invalid{
+  border-color:#b51f3d!important;
+  box-shadow:none!important;
+}
+
+/* Soft hover only: rows stay visually merged */
+.mc-rating-column-list>.mc-rating-row:hover,
+.mc-rating-column-list>.mc-rating-row:focus-within{
+  background:rgba(31,143,215,.045)!important;
+}
+
+/* Keep contents vertically centered in each /12 slot */
+.mc-rating-column-list{
+  align-content:start!important;
+}
+.mc-rating-column-list>.mc-rating-row>*{
+  align-self:center!important;
+}
+
+@media(max-width:900px) and (min-width:641px){
+  .mc-rating-column-list>.mc-rating-row{
+    grid-template-columns:minmax(0,1fr) 50px 68px!important;
+    gap:7px!important;
+    padding-inline:5px!important;
+  }
+  .mc-rating-vote{
+    width:58px!important;
+  }
+  .mc-rating-vote input[type="text"]{
+    width:44px!important;
+    min-width:44px!important;
+    max-width:44px!important;
+  }
+}
