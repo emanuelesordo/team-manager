@@ -3319,3 +3319,26 @@ dialog form{padding:16px}
     flex-basis:40px;
   }
 }
+
+
+/* Match Center added-time separator */
+.mc-recovery-divider{
+  display:grid;
+  grid-template-columns:minmax(18px,1fr) auto minmax(18px,1fr);
+  align-items:center;
+  gap:7px;
+  margin:1px 0 3px;
+  padding:0 2px;
+}
+.mc-recovery-divider>span{
+  height:1px;
+  background:rgba(70,78,84,.18);
+}
+.mc-recovery-divider>strong{
+  color:#777d81;
+  font-size:7px;
+  line-height:1;
+  font-weight:850;
+  white-space:nowrap;
+  letter-spacing:.02em;
+}
