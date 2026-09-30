@@ -964,7 +964,11 @@ function mcHeader(){
   $("#mcHomeMatchEvents").innerHTML=mcHeaderEventItems("home");
   $("#mcAwayMatchEvents").innerHTML=mcHeaderEventItems("away");
   $("#mcScore").textContent=(f.home_score!=null||f.away_score!=null)?String(f.home_score??0)+" - "+String(f.away_score??0):"–";
-  $("#mcMeta").textContent=[c?.name,localDateTime(f.kickoff_at),f.venue].filter(Boolean).join(" · ");
+  $("#mcMeta").innerHTML=[
+    '<span><b>▣</b>'+esc(localDateTime(f.kickoff_at))+'</span>',
+    c?.name?'<span><b>◆</b>'+esc(c.name)+'</span>':"",
+    f.venue?'<span><b>⌖</b>'+esc(f.venue)+'</span>':""
+  ].filter(Boolean).join("");
   $("#mcState").textContent=mcIsLive()?"LIVE":mcIsPost()?"FINALE":"PRE";$("#mcLiveControls").classList.toggle("hidden",!m||mcIsPost());
   clearInterval(matchCenterTimer);const timer=$("#mcTimer");
   if(mcIsLive()){timer.classList.remove("hidden");const tick=()=>{const sec=Math.max(0,Math.floor((Date.now()-new Date(m.live_started_at).getTime())/1000));timer.textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0")};tick();matchCenterTimer=setInterval(tick,1000)}else timer.classList.add("hidden");
@@ -1071,10 +1075,25 @@ function mcTimeline(target,limit,filters=null){
     }
   });
 
-  let rows=filters?all.filter(e=>filters.has(e.event_type)):all;
-  if(limit)rows=rows.slice(-limit);
+  let regular=all.filter(e=>e.event_type!=="period_end");
+  if(filters)regular=regular.filter(e=>filters.has(e.event_type));
+  regular=[...regular].reverse();
+  if(limit)regular=regular.slice(0,limit);
 
-  $("#"+target.replace("#","")).innerHTML=rows.length?rows.map(e=>{
+  const rows=[];
+  if(mcIsPost()){
+    const f=matchCenterState.fixture;
+    rows.push('<div class="mc-timeline-system mc-ft"><span></span><strong>FT '+esc(f.home_score??0)+' - '+esc(f.away_score??0)+'</strong><span></span></div>');
+  }
+
+  const periodEvents=[...all].filter(e=>e.event_type==="period_end").reverse();
+  periodEvents.forEach(e=>{
+    const recovery=Number(e.payload?.recovery_minutes??e.stoppage_minute??0);
+    const label=e.payload?.period==="first_half"?"Intervallo":"Fine tempo";
+    rows.push('<div class="mc-timeline-system"><span></span><strong>'+esc(label)+(recovery?' · recupero '+recovery+"'":"")+'</strong><span></span></div>');
+  });
+
+  regular.forEach(e=>{
     const eventIsHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
     const minute=e.minute==null?"–":e.minute+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
     const icon=e.event_type==="goal"?"⚽":e.event_type==="substitution"?"↔":e.event_type==="yellow_card"?"🟨":"🟥";
@@ -1085,9 +1104,7 @@ function mcTimeline(target,limit,filters=null){
       if(e.team_side==="team"){
         main=mcPlayerName(e.player_id);
         if(e.secondary_player_id)detail="Assist: "+mcPlayerName(e.secondary_player_id);
-      }else{
-        main="Gol avversario";
-      }
+      }else main="Gol avversario";
     }else if(e.event_type==="substitution"){
       const out=mcPlayerName(e.player_id);
       const incoming=e.secondary_player_id?mcPlayerName(e.secondary_player_id):"Nessun ingresso";
@@ -1100,19 +1117,16 @@ function mcTimeline(target,limit,filters=null){
     }
 
     const content='<span class="mc-event-icon">'+icon+'</span><div class="mc-event-copy"><strong>'+esc(main)+'</strong>'+(detail?'<small>'+esc(detail)+'</small>':"")+'</div>';
-    const homeContent=eventIsHome?content:"";
-    const awayContent=eventIsHome?"":content;
-    const homePartial=eventIsHome&&partial?partial:"";
-    const awayPartial=!eventIsHome&&partial?partial:"";
-
-    return '<div class="mc-event-row mc-event-'+(eventIsHome?"home":"away")+'">'+
-      '<b class="mc-event-partial mc-event-partial-home">'+homePartial+'</b>'+
-      '<div class="mc-event-side mc-event-side-home">'+homeContent+'</div>'+
+    rows.push('<div class="mc-event-row mc-event-'+(eventIsHome?"home":"away")+'">'+
+      '<b class="mc-event-partial mc-event-partial-home">'+(eventIsHome&&partial?partial:"")+'</b>'+
+      '<div class="mc-event-side mc-event-side-home">'+(eventIsHome?content:"")+'</div>'+
       '<time>'+minute+'</time>'+
-      '<div class="mc-event-side mc-event-side-away">'+awayContent+'</div>'+
-      '<b class="mc-event-partial mc-event-partial-away">'+awayPartial+'</b>'+
-    '</div>';
-  }).join(""):'<div class="empty-state">Nessun evento</div>';
+      '<div class="mc-event-side mc-event-side-away">'+(eventIsHome?"":content)+'</div>'+
+      '<b class="mc-event-partial mc-event-partial-away">'+(!eventIsHome&&partial?partial:"")+'</b>'+
+    '</div>');
+  });
+
+  $(target).innerHTML=rows.length?rows.join(""):'<div class="empty-state">Nessun evento</div>';
 }
 
 let mcGeneralBenchSide="bench";
