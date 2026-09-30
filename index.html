@@ -179,21 +179,28 @@
       </div>
     </div>
     <div class="competition-split">
-      <section class="competition-half standings-card">
+      <section class="competition-third standings-card">
+        <div class="competition-column-head"><strong>Classifica</strong></div>
         <div id="competitionStandings"></div>
-        <section id="competitionProjectionCard" class="projection-card">
-          <div class="projection-head">
-            <strong>Proiezione classifica</strong>
-            <div class="projection-head-meta">
-              <span id="projectionReliability"></span>
-              <span id="projectionScenarioMeta"></span>
-              <button id="projectionInfoBtn" class="projection-info" type="button" title="Come viene calcolata">i</button>
-            </div>
-          </div>
-          <div id="competitionProjection"></div>
-        </section>
       </section>
-      <section class="competition-half fixtures-card">
+
+      <section id="competitionProjectionCard" class="competition-third projection-card">
+        <div class="projection-head">
+          <strong>Classifica pronosticata</strong>
+          <div class="projection-head-meta">
+            <span id="projectionReliability"></span>
+            <span id="projectionScenarioMeta"></span>
+            <button id="projectionInfoBtn" class="projection-info" type="button" title="Come viene calcolata">i</button>
+          </div>
+        </div>
+        <div id="competitionProjection"></div>
+      </section>
+
+      <section class="competition-third fixtures-card">
+        <div class="competition-column-head fixture-column-head">
+          <strong>Calendario</strong>
+          <span id="competitionFixtureFocusLabel" class="muted"></span>
+        </div>
         <div id="competitionFixtures"></div>
       </section>
     </div>
