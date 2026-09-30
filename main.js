@@ -44,7 +44,8 @@ class Query{
   insert(body){this.action="insert";this.body=body;return this}
   update(body){this.action="update";this.body=body;return this}
   delete(){this.action="delete";return this}
-  eq(col,val){this.filters.push([col,val]);return this}
+  eq(col,val){this.filters.push([col,"eq",val]);return this}
+  in(col,values){this.filters.push([col,"in",Array.isArray(values)?values:[values]]);return this}
   order(col,{ascending=true}={}){this.orderBy=[col,ascending];return this}
   maybeSingle(){this.singleMode="maybe";return this}
   single(){this.singleMode="single";return this}
@@ -52,7 +53,12 @@ class Query{
   async execute(){
     const qs=new URLSearchParams();
     if(this.action==="select"||this.action==="insert"||this.action==="update")qs.set("select",this.columns||"*");
-    for(const [c,v] of this.filters)qs.append(c,"eq."+v);
+    for(const [c,op,v] of this.filters){
+      if(op==="in"){
+        const vals=(v||[]).map(x=>String(x).replace(/"/g,'\\\"'));
+        qs.append(c,"in.("+vals.map(x=>'"'+x+'"').join(",")+")");
+      }else qs.append(c,"eq."+v);
+    }
     if(this.orderBy)qs.set("order",this.orderBy[0]+"."+(this.orderBy[1]?"asc":"desc"));
     const url=SUPABASE_URL+"/rest/v1/"+this.table+(qs.toString()?"?"+qs.toString():"");
     const method=this.action==="select"?"GET":this.action==="insert"?"POST":this.action==="update"?"PATCH":"DELETE";
