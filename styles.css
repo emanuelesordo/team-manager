@@ -4734,3 +4734,138 @@ dialog form{padding:16px}
     height:auto;
   }
 }
+
+
+/* Match Center RATING: fixed 12-slot vertical rhythm on both columns */
+.mc-rating-columns{
+  height:100%!important;
+  min-height:0!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  align-items:stretch!important;
+}
+.mc-rating-column{
+  min-height:0!important;
+  grid-template-rows:auto minmax(0,1fr)!important;
+  align-content:stretch!important;
+}
+.mc-rating-column-list{
+  min-height:0!important;
+  height:100%!important;
+  overflow:hidden!important;
+  display:grid!important;
+  grid-template-rows:repeat(12,minmax(0,1fr))!important;
+  grid-auto-rows:minmax(0,1fr)!important;
+  gap:4px!important;
+  align-content:stretch!important;
+}
+.mc-rating-column-list>.mc-rating-row{
+  min-height:0!important;
+  height:100%!important;
+  max-height:none!important;
+  padding:clamp(3px,0.55vh,6px) clamp(5px,0.65vw,8px)!important;
+  gap:clamp(5px,0.7vw,9px)!important;
+  border-radius:clamp(7px,0.8vh,11px)!important;
+  overflow:hidden!important;
+  container-type:size;
+}
+.mc-rating-player{
+  grid-template-columns:clamp(20px,5.5cqh,27px) minmax(0,1fr)!important;
+  gap:clamp(4px,1.3cqh,7px)!important;
+}
+.mc-rating-player>.num{
+  width:clamp(20px,5.5cqh,27px)!important;
+  height:clamp(20px,5.5cqh,27px)!important;
+  border-radius:clamp(6px,1.6cqh,8px)!important;
+  font-size:clamp(6px,1.7cqh,8px)!important;
+}
+.mc-rating-player-copy{
+  gap:clamp(1px,.7cqh,2px)!important;
+}
+.mc-rating-name-line{
+  gap:clamp(7px,1.8cqh,10px)!important;
+}
+.mc-rating-name-line>strong{
+  font-size:clamp(7px,1.9cqh,9px)!important;
+}
+.mc-rating-player-copy>small{
+  font-size:clamp(5px,1.4cqh,7px)!important;
+}
+.mc-rating-events{
+  gap:clamp(2px,.8cqh,4px)!important;
+}
+.mc-rating-event.goal,
+.mc-rating-event.assist{
+  width:clamp(9px,2.6cqh,12px)!important;
+  height:clamp(9px,2.6cqh,12px)!important;
+  font-size:clamp(7px,2.1cqh,9px)!important;
+}
+.mc-rating-event.sub-in,
+.mc-rating-event.sub-out{
+  font-size:clamp(8px,2.5cqh,11px)!important;
+}
+.mc-rating-event.card{
+  width:clamp(4px,1.3cqh,6px)!important;
+  height:clamp(6px,2cqh,9px)!important;
+}
+.mc-rating-average-value{
+  min-width:clamp(30px,7cqh,38px)!important;
+  height:clamp(22px,5.5cqh,27px)!important;
+  padding-inline:clamp(4px,1.5cqh,7px)!important;
+  font-size:clamp(8px,2.1cqh,10px)!important;
+}
+.mc-rating-average small{
+  font-size:clamp(5px,1.3cqh,6px)!important;
+}
+.mc-rating-vote{
+  gap:clamp(2px,.8cqh,4px)!important;
+  font-size:clamp(5px,1.3cqh,6px)!important;
+}
+.mc-rating-vote input[type="text"]{
+  height:clamp(24px,6cqh,31px)!important;
+  padding-inline:clamp(5px,1.8cqh,9px)!important;
+  font-size:clamp(8px,2.2cqh,10px)!important;
+}
+
+/* The XI uses 11 of the 12 slots; substitutes use the same row height on the right */
+.mc-rating-starters .mc-rating-column-list,
+.mc-rating-bench .mc-rating-column-list{
+  grid-template-rows:repeat(12,minmax(0,1fr))!important;
+}
+.mc-rating-starters .mc-rating-row,
+.mc-rating-bench .mc-rating-row{
+  min-height:0!important;
+  height:100%!important;
+}
+
+/* Keep left/right layout until true mobile width */
+@media(max-width:900px){
+  .mc-rating-columns{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+    height:100%!important;
+  }
+  .mc-rating-column-list{
+    grid-template-rows:repeat(12,minmax(0,1fr))!important;
+    overflow:hidden!important;
+  }
+  .mc-rating-starters .mc-rating-row{
+    min-height:0!important;
+    height:100%!important;
+  }
+}
+@media(max-width:640px){
+  .mc-rating-columns{
+    grid-template-columns:1fr!important;
+    height:auto!important;
+  }
+  .mc-rating-column-list{
+    height:auto!important;
+    grid-template-rows:none!important;
+    grid-auto-rows:auto!important;
+    overflow:visible!important;
+  }
+  .mc-rating-column-list>.mc-rating-row{
+    min-height:48px!important;
+    height:auto!important;
+    container-type:normal;
+  }
+}
