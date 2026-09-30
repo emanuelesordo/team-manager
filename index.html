@@ -41,23 +41,52 @@
 
   <section class="workspace">
 <main class="main">
-  <section id="homeView" class="home-viewport">
-    <div id="dashboardHero" class="dashboard-hero"></div>
-    <div id="dashboardKpis" class="kpi-grid"></div>
-    <div class="dashboard-bottom">
-      <section class="list-card glass dashboard-list-card">
-        <div class="card-head"><strong>Ultime partite</strong></div>
-        <div id="dashboardRecent" class="dashboard-list"></div>
-      </section>
-      <section class="list-card glass dashboard-list-card">
-        <div class="card-head"><strong>Prossime partite</strong><button class="ghost-link" type="button" data-go-calendar>Calendario</button></div>
-        <div id="dashboardUpcoming" class="dashboard-list"></div>
-      </section>
-      <section id="dashboardStandingsCard" class="list-card glass dashboard-standings-card">
-        <div class="card-head"><strong>Classifica</strong><button class="ghost-link" type="button" data-go-competition>Completa</button></div>
-        <div id="dashboardStandings" class="dashboard-table"></div>
-      </section>
-    </div>
+  <section id="homeView" class="home-reference-grid">
+    <section id="homeTeamPanel" class="home-panel home-team-panel glass">
+      <div class="home-panel-head">
+        <strong>Team KPIs</strong>
+        <button type="button" class="home-detail-link" data-go-competition>Dettagli ↗</button>
+      </div>
+      <div id="homeTeamOverview" class="home-team-overview"></div>
+      <div id="homeTeamMetrics" class="home-team-metrics"></div>
+      <div class="home-subhead"><strong>Ultima partita</strong></div>
+      <div id="homeLastMatch"></div>
+      <div class="home-subhead"><strong>Forma recente</strong></div>
+      <div id="homeFormChart" class="home-form-chart"></div>
+    </section>
+
+    <section class="home-panel home-player-panel glass">
+      <div class="home-panel-head">
+        <strong>Player Stats</strong>
+        <button type="button" class="home-detail-link" data-go-roster>Dettagli ↗</button>
+      </div>
+      <div id="homePlayerStats"></div>
+    </section>
+
+    <section class="home-panel home-schedule-panel glass">
+      <div class="home-panel-head">
+        <strong>Schedule</strong>
+        <button type="button" class="home-detail-link" data-go-calendar>Dettagli ↗</button>
+      </div>
+      <div id="homeMiniCalendar"></div>
+      <div id="homeNextMatch" class="home-next-match"></div>
+    </section>
+
+    <section class="home-panel home-standings-panel glass">
+      <div class="home-panel-head">
+        <strong>League Standings</strong>
+        <button type="button" class="home-detail-link" data-go-competition>Dettagli ↗</button>
+      </div>
+      <div id="dashboardStandings" class="dashboard-table"></div>
+    </section>
+
+    <section class="home-panel home-scores-panel glass">
+      <div class="home-panel-head">
+        <strong>Scores</strong>
+        <button type="button" class="home-detail-link" data-go-calendar>Dettagli ↗</button>
+      </div>
+      <div id="homeScores"></div>
+    </section>
   </section>
 
   <div id="setupView" class="hidden">
