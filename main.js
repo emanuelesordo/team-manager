@@ -998,7 +998,7 @@ function mcPlayerName(id){const p=mcPlayer(id);return p?(p.last_name+" "+p.first
 function mcMatchPlayer(id){return matchCenterState.matchPlayers.find(x=>x.player_id===id)||null}
 function mcIsPost(){return matchCenterState.fixture?.status==="finished"||matchCenterState.match?.status==="finished"||!!matchCenterState.match?.finalized_at}
 function mcIsLive(){const m=matchCenterState.match;return !!(m&&m.live_started_at&&!m.finalized_at&&m.status!=="finished")}
-function mcSetTab(tab){matchCenterState.tab=tab;$$("[data-mc-tab]").forEach(b=>b.classList.toggle("active",b.dataset.mcTab===tab));$$("[data-mc-panel]").forEach(p=>p.classList.toggle("hidden",p.dataset.mcPanel!==tab));if(tab==="events")mcRefreshComposer()}
+function mcSetTab(tab){matchCenterState.tab="general"}
 function mcHeaderEventItems(side){
   const f=matchCenterState.fixture;
   const ownHome=isOwnTeamName(f.home_team);
@@ -1029,7 +1029,7 @@ function mcHeader(){
     c?.name?'<span><b>◆</b>'+esc(c.name)+'</span>':"",
     (f.venue_name||f.venue_address||f.venue)?'<span><b>⌖</b>'+esc([f.venue_name,f.venue_address].filter(Boolean).join(' · ')||f.venue)+'</span>':""
   ].filter(Boolean).join("");
-  $("#mcState").textContent=mcIsLive()?"LIVE":mcIsPost()?"FINALE":"PRE";$("#mcLiveControls").classList.toggle("hidden",!m||mcIsPost());
+  $("#mcState").textContent=mcIsLive()?"LIVE":mcIsPost()?"FINALE":"PRE";$("#mcLiveControls")?.classList.toggle("hidden",!m||mcIsPost());
   clearInterval(matchCenterTimer);const timer=$("#mcTimer");
   if(mcIsLive()){timer.classList.remove("hidden");const tick=()=>{const sec=Math.max(0,Math.floor((Date.now()-new Date(m.live_started_at).getTime())/1000));timer.textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0")};tick();matchCenterTimer=setInterval(tick,1000)}else timer.classList.add("hidden");
 }
@@ -1197,7 +1197,7 @@ function mcTimeline(target,limit,filters=null){
   let halfInserted=false;
   const hasSecondHalf=all.some(e=>e.event_type!=="period_end"&&mcEventPeriod(e)==="second_half");
 
-  regular.forEach(e=>{
+  regular.forEach((e,index)=>{
     const period=mcEventPeriod(e);
     if(!halfInserted&&hasSecondHalf&&period==="first_half"){
       rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><span></span></div>');
@@ -1240,11 +1240,12 @@ function mcTimeline(target,limit,filters=null){
     const names='<span class="mc-event-names"><strong>'+esc(main)+'</strong>'+(secondary?'<small>'+esc(secondary)+'</small>':"")+'</span>';
     const score=partial?'<span class="mc-goal-score">'+esc(partial)+'</span>':"";
     const content='<span class="mc-event-content">'+icon+score+names+'</span>';
+    const add=index===0?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
 
     rows.push(
-      '<div class="mc-event-row mc-event-'+(isHome?"home":"away")+'">'+
+      '<div class="mc-event-row mc-event-'+(isHome?"home":"away")+(index===0?" mc-event-latest":"")+'">'+
         '<div class="mc-event-half mc-event-half-home">'+(isHome?content:"")+'</div>'+
-        '<time>'+minute+'</time>'+
+        '<time>'+minute+'</time>'+add+
         '<div class="mc-event-half mc-event-half-away">'+(isHome?"":content)+'</div>'+
       '</div>'
     );
@@ -1256,14 +1257,20 @@ function mcTimeline(target,limit,filters=null){
     if(rec1)rows.push('<div class="mc-recovery-chip">Minuti di recupero '+rec1+'</div>');
   }
 
-  $(target).innerHTML=rows.length?rows.join(""):'<div class="empty-state">Nessun evento</div>';
+  const box=$(target);
+  box.innerHTML=rows.length?rows.join(""):'<div class="empty-state mc-timeline-empty">Nessun evento<button type="button" class="mc-timeline-add empty-add" data-mc-timeline-add title="Aggiungi evento">+</button></div>';
+  const add=box.querySelector("[data-mc-timeline-add]");
+  if(add)add.onclick=e=>{e.stopPropagation();mcOpenTimelineQuickEvent(add)};
 }
 
+function mcCardStackIcon(){
+  return '<span class="mc-card-stack" aria-hidden="true"><i class="yellow"></i><i class="red"></i><i class="blue"></i></span>';
+}
 function mcPlayerQuickButtons(playerId,mode){
   return '<span class="mc-player-quick mc-player-quick-'+mode+'" aria-label="Eventi rapidi">'+
     '<button type="button" data-mc-player-event="substitution" data-player-id="'+playerId+'" title="Cambio">↔</button>'+
     '<button type="button" data-mc-player-event="goal" data-player-id="'+playerId+'" title="Gol">⚽</button>'+
-    '<button type="button" data-mc-player-event="card" data-player-id="'+playerId+'" title="Cartellino"><i></i></button>'+
+    '<button type="button" data-mc-player-event="card" data-player-id="'+playerId+'" title="Cartellino">'+mcCardStackIcon()+'</button>'+
   '</span>';
 }
 function mcBindPlayerQuickActions(root=document){
@@ -1277,15 +1284,30 @@ function mcQuickEventShell(){
   pop=document.createElement("div");
   pop.id="mcPlayerQuickPopover";
   pop.className="mc-player-event-popover hidden";
-  pop.innerHTML='<div class="mc-player-event-arrow"></div><div class="mc-player-event-head"><strong id="mcPlayerQuickTitle"></strong><button type="button" id="mcPlayerQuickClose">×</button></div><div class="mc-player-event-tabs"><button type="button" data-quick-kind="substitution">Cambio</button><button type="button" data-quick-kind="goal">Gol</button><button type="button" data-quick-kind="card">Cartellino</button></div><form id="mcPlayerQuickForm"><div id="mcPlayerQuickFields"></div><p id="mcPlayerQuickError" class="form-error hidden"></p><div class="mc-player-event-actions"><button type="button" class="secondary" id="mcPlayerQuickCancel">Annulla</button><button type="submit" class="primary">Salva evento</button></div></form>';
+  pop.innerHTML='<div class="mc-player-event-arrow"></div>'+
+    '<div class="mc-player-event-head"><strong id="mcPlayerQuickTitle"></strong><button type="button" id="mcPlayerQuickClose">×</button></div>'+
+    '<div class="mc-player-event-tabs" aria-label="Tipo evento">'+
+      '<button type="button" data-quick-kind="substitution" title="Cambio">↔</button>'+
+      '<button type="button" data-quick-kind="goal" title="Gol">⚽</button>'+
+      '<button type="button" data-quick-kind="card" title="Cartellino">'+mcCardStackIcon()+'</button>'+
+    '</div>'+
+    '<form id="mcPlayerQuickForm"><div id="mcPlayerQuickFields"></div><p id="mcPlayerQuickError" class="form-error hidden"></p>'+
+      '<div class="mc-player-event-actions"><button type="button" class="secondary" id="mcPlayerQuickCancel">Annulla</button><button type="submit" class="primary">Salva evento</button></div>'+
+    '</form>';
   $("#matchDetailDialog .match-center-shell").appendChild(pop);
   $("#mcPlayerQuickClose").onclick=mcClosePlayerQuickEvent;
   $("#mcPlayerQuickCancel").onclick=mcClosePlayerQuickEvent;
-  $("[data-quick-kind]").forEach(b=>b.onclick=()=>mcSetPlayerQuickKind(b.dataset.quickKind));
+  $$("[data-quick-kind]").forEach(b=>b.onclick=e=>{e.stopPropagation();mcSetPlayerQuickKind(b.dataset.quickKind)});
   $("#mcPlayerQuickForm").onsubmit=mcSubmitPlayerQuickEvent;
+  pop.onclick=e=>e.stopPropagation();
+  document.addEventListener("click",e=>{
+    if(pop.classList.contains("hidden"))return;
+    if(e.target.closest("#mcPlayerQuickPopover")||e.target.closest("[data-mc-player-event]")||e.target.closest("[data-mc-timeline-add]"))return;
+    mcClosePlayerQuickEvent();
+  });
   return pop;
 }
-let mcPlayerQuickState={playerId:null,kind:null,anchor:null};
+let mcPlayerQuickState={playerId:null,kind:null,anchor:null,source:"player"};
 function mcQuickPeriodDefault(){
   const p=matchCenterState.match?.live_period;
   return p==="second_half"?"second_half":"first_half";
@@ -1304,14 +1326,32 @@ function mcQuickPlayerChip(id,label){
   const p=mcPlayer(id);
   return '<div class="mc-quick-player-chip"><b>'+esc(p?.last_name||mcPlayerName(id))+'</b><small>'+esc(label||roleLabel(p?.generic_role_manual))+'</small></div>';
 }
-function mcQuickSelect(rows,id,placeholder){
-  return '<select id="'+id+'"><option value="">'+esc(placeholder)+'</option>'+rows.map(p=>'<option value="'+p.player_id+'">'+esc(mcPlayerName(p.player_id))+'</option>').join("")+'</select>';
+function mcQuickSelect(rows,id,placeholder,selected=""){
+  return '<select id="'+id+'"><option value="">'+esc(placeholder)+'</option>'+rows.map(p=>'<option value="'+p.player_id+'" '+(p.player_id===selected?"selected":"")+'>'+esc(mcPlayerName(p.player_id))+'</option>').join("")+'</select>';
+}
+function mcQuickBenchRows(activeIds){
+  return matchCenterState.matchPlayers.filter(x=>x.selection_status==="bench"&&!activeIds.has(x.player_id));
+}
+function mcQuickAllSelectableRows(){
+  const field=mcCurrentFieldRows();
+  const activeIds=new Set(field.map(x=>x.player_id));
+  const bench=mcQuickBenchRows(activeIds);
+  const seen=new Set();
+  return [...field,...bench].filter(x=>x?.player_id&&!seen.has(x.player_id)&&seen.add(x.player_id));
 }
 function mcOpenPlayerQuickEvent(playerId,kind,anchor){
-  mcPlayerQuickState={playerId,kind,anchor};
+  mcPlayerQuickState={playerId,kind,anchor,source:"player"};
   const pop=mcQuickEventShell();
+  pop.classList.add("direct-player");
   pop.classList.remove("hidden");
   mcSetPlayerQuickKind(kind);
+  requestAnimationFrame(()=>mcPositionPlayerQuickEvent(anchor));
+}
+function mcOpenTimelineQuickEvent(anchor){
+  mcPlayerQuickState={playerId:null,kind:"substitution",anchor,source:"timeline"};
+  const pop=mcQuickEventShell();
+  pop.classList.remove("direct-player","hidden");
+  mcSetPlayerQuickKind("substitution");
   requestAnimationFrame(()=>mcPositionPlayerQuickEvent(anchor));
 }
 function mcClosePlayerQuickEvent(){
@@ -1330,31 +1370,50 @@ function mcPositionPlayerQuickEvent(anchor){
   pop.style.left=left+"px";
   pop.style.top=Math.max(10,top)+"px";
   pop.classList.toggle("above",useAbove);
+  const arrow=pop.querySelector(".mc-player-event-arrow");
+  if(arrow){
+    const anchorCenter=a.left-r.left+a.width/2;
+    arrow.style.left=Math.max(18,Math.min(w-18,anchorCenter-left))+"px";
+  }
 }
 function mcSetPlayerQuickKind(kind){
   mcPlayerQuickState.kind=kind;
-  const id=mcPlayerQuickState.playerId,p=mcPlayer(id),fieldRows=mcCurrentFieldRows(),activeIds=new Set(fieldRows.map(x=>x.player_id)),isActive=activeIds.has(id);
-  $("[data-quick-kind]").forEach(b=>b.classList.toggle("active",b.dataset.quickKind===kind));
-  $("#mcPlayerQuickTitle").textContent="Aggiungi evento · "+(p?.last_name||mcPlayerName(id));
+  const source=mcPlayerQuickState.source,id=mcPlayerQuickState.playerId,p=id?mcPlayer(id):null;
+  const fieldRows=mcCurrentFieldRows(),activeIds=new Set(fieldRows.map(x=>x.player_id)),isActive=id?activeIds.has(id):false;
+  $$("[data-quick-kind]").forEach(b=>b.classList.toggle("active",b.dataset.quickKind===kind));
+  const label=kind==="substitution"?"Cambio":kind==="goal"?"Gol":"Cartellino";
+  $("#mcPlayerQuickTitle").textContent=source==="player"?(label+" · "+(p?.last_name||mcPlayerName(id))):("Aggiungi evento · "+label);
   const period=mcQuickPeriodDefault(),minute=mcQuickMinuteValue();
   const timing='<div class="mc-player-event-grid"><label>Tempo<select id="mcQuickPeriod">'+mcQuickPeriodOptions(period)+'</select></label><label>Minuto<input id="mcQuickMinute" type="number" min="0" max="120" value="'+minute+'" placeholder="—"></label></div>';
   let html=timing;
+  const benchRows=mcQuickBenchRows(activeIds);
+
   if(kind==="substitution"){
-    const benchRows=matchCenterState.matchPlayers.filter(x=>x.selection_status==="bench"&&!activeIds.has(x.player_id)&&x.player_id!==id);
-    if(isActive){
-      html+='<div class="mc-player-event-grid players"><label>Giocatore esce>'+mcQuickPlayerChip(id,"Esce")+'</label><label>Giocatore entra>'+mcQuickSelect(benchRows,"mcQuickOther","Seleziona giocatore")+'</label></div>';
+    if(source==="player"){
+      if(isActive){
+        html+='<div class="mc-player-event-grid players"><label>Giocatore esce>'+mcQuickPlayerChip(id,"Esce")+'</label><label>Giocatore entra>'+mcQuickSelect(benchRows.filter(x=>x.player_id!==id),"mcQuickOther","Seleziona giocatore")+'</label></div>';
+      }else{
+        html+='<div class="mc-player-event-grid players"><label>Giocatore entra>'+mcQuickPlayerChip(id,"Entra")+'</label><label>Giocatore esce>'+mcQuickSelect(fieldRows.filter(x=>x.player_id!==id),"mcQuickOther","Seleziona giocatore")+'</label></div>';
+      }
     }else{
-      html+='<div class="mc-player-event-grid players"><label>Giocatore entra>'+mcQuickPlayerChip(id,"Entra")+'</label><label>Giocatore esce>'+mcQuickSelect(fieldRows.filter(x=>x.player_id!==id),"mcQuickOther","Seleziona giocatore")+'</label></div>';
+      html+='<div class="mc-player-event-grid players"><label>Giocatore esce>'+mcQuickSelect(fieldRows,"mcQuickPlayer","Seleziona giocatore")+'</label><label>Giocatore entra>'+mcQuickSelect(benchRows,"mcQuickOther","Seleziona giocatore")+'</label></div>';
     }
     html+='<label>Motivo cambio<select id="mcQuickSubtype"><option value="technical">Scelta tecnica</option><option value="injury">Infortunio</option><option value="tactical">Tattico</option><option value="other">Altro</option></select></label>';
   }else if(kind==="goal"){
-    html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickPlayerChip(id,"Marcatore")+'</label><label>Assistman>'+mcQuickSelect(fieldRows.filter(x=>x.player_id!==id),"mcQuickOther","Nessun assist")+'</label></div>';
+    if(source==="player"){
+      html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickPlayerChip(id,"Marcatore")+'</label><label>Assistman>'+mcQuickSelect(fieldRows.filter(x=>x.player_id!==id),"mcQuickOther","Nessun assist")+'</label></div>';
+    }else{
+      html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickSelect(fieldRows,"mcQuickPlayer","Seleziona marcatore")+'</label><label>Assistman>'+mcQuickSelect(fieldRows,"mcQuickOther","Nessun assist")+'</label></div>';
+    }
     html+='<label>Tipologia<select id="mcQuickSubtype"><option value="action">Azione</option><option value="penalty">Rigore</option><option value="free_kick">Punizione</option><option value="own_goal">Autogol</option></select></label>';
   }else{
-    html+='<label>Cartellino<div class="mc-card-choice"><button type="button" class="active yellow" data-quick-card="yellow_card"><i></i>Giallo</button><button type="button" class="blue" data-quick-card="blue_card"><i></i>Blu</button><button type="button" class="red" data-quick-card="red_card"><i></i>Rosso</button></div></label><input id="mcQuickCardType" type="hidden" value="yellow_card">';
+    if(source==="timeline"){
+      html+='<label>Giocatore>'+mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore")+'</label>';
+    }
+    html+='<label>Cartellino<div class="mc-card-choice"><button type="button" class="active yellow" data-quick-card="yellow_card"><i></i>Giallo</button><button type="button" class="red" data-quick-card="red_card"><i></i>Rosso</button><button type="button" class="blue" data-quick-card="blue_card"><i></i>Blu</button></div></label><input id="mcQuickCardType" type="hidden" value="yellow_card">';
   }
   $("#mcPlayerQuickFields").innerHTML=html;
-  $("[data-quick-card]").forEach(b=>b.onclick=()=>{$("[data-quick-card]").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("#mcQuickCardType").value=b.dataset.quickCard});
+  $$("[data-quick-card]").forEach(b=>b.onclick=e=>{e.stopPropagation();$$("[data-quick-card]").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("#mcQuickCardType").value=b.dataset.quickCard});
   $("#mcPlayerQuickError").classList.add("hidden");
   requestAnimationFrame(()=>mcPositionPlayerQuickEvent(mcPlayerQuickState.anchor));
 }
@@ -1368,34 +1427,45 @@ async function mcSubmitPlayerQuickEvent(e){
   try{
     if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");
     if(!sessionUser)throw new Error("Accedi per inserire eventi.");
-    const id=mcPlayerQuickState.playerId,kind=mcPlayerQuickState.kind,period=$("#mcQuickPeriod").value;
+    const source=mcPlayerQuickState.source,kind=mcPlayerQuickState.kind,period=$("#mcQuickPeriod").value;
     const rawMinute=$("#mcQuickMinute").value,minute=rawMinute===""?null:Number(rawMinute);
     const base={match_id:matchCenterState.match.id,minute,stoppage_minute:null,team_side:"team",proposed_by:sessionUser.id,validation_status:"proposed"};
+
     if(kind==="substitution"){
-      const activeIds=new Set(mcCurrentFieldRows().map(x=>x.player_id)),isActive=activeIds.has(id),other=$("#mcQuickOther").value||null;
-      if(!other)throw new Error(isActive?"Seleziona il giocatore che entra.":"Seleziona il giocatore che esce.");
-      const outgoing=isActive?id:other,incoming=isActive?other:id;
+      let outgoing,incoming;
+      if(source==="player"){
+        const id=mcPlayerQuickState.playerId,activeIds=new Set(mcCurrentFieldRows().map(x=>x.player_id)),isActive=activeIds.has(id),other=$("#mcQuickOther").value||null;
+        if(!other)throw new Error(isActive?"Seleziona il giocatore che entra.":"Seleziona il giocatore che esce.");
+        outgoing=isActive?id:other;incoming=isActive?other:id;
+      }else{
+        outgoing=$("#mcQuickPlayer").value||null;incoming=$("#mcQuickOther").value||null;
+        if(!outgoing||!incoming)throw new Error("Seleziona giocatore uscente ed entrante.");
+      }
       await mcInsertDirectEvent({...base,event_type:"substitution",player_id:outgoing,secondary_player_id:incoming,payload:{period},substitution_reason:$("#mcQuickSubtype").value});
     }else if(kind==="goal"){
+      const scorer=source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer").value||null);
+      if(!scorer)throw new Error("Seleziona il marcatore.");
       const activeIds=new Set(mcCurrentFieldRows().map(x=>x.player_id));
-      if(!activeIds.has(id))throw new Error("Il marcatore deve essere in campo al momento del gol.");
+      if(!activeIds.has(scorer))throw new Error("Il marcatore deve essere in campo al momento del gol.");
       const sub=$("#mcQuickSubtype").value,assist=$("#mcQuickOther").value||null;
+      if(assist===scorer)throw new Error("Marcatore e assistman non possono coincidere.");
       if(mcIsPost()){const g=mcGoalInfo();if(g.team>=g.expectedTeam)throw new Error("Numero di gol già coerente con il risultato ufficiale.");}
-      await mcInsertDirectEvent({...base,event_type:"goal",player_id:id,secondary_player_id:assist,payload:{period,goal_type:sub},substitution_reason:null});
+      await mcInsertDirectEvent({...base,event_type:"goal",player_id:scorer,secondary_player_id:assist,payload:{period,goal_type:sub},substitution_reason:null});
     }else{
+      const playerId=source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer").value||null);
+      if(!playerId)throw new Error("Seleziona il giocatore.");
       const type=$("#mcQuickCardType").value||"yellow_card";
-      await mcInsertDirectEvent({...base,event_type:type,player_id:id,secondary_player_id:null,payload:{period,card_type:type==="red_card"?"direct":type==="blue_card"?"blue":"yellow",...(type==="blue_card"?{temporary_suspension_minutes:10}:{})},substitution_reason:null});
+      await mcInsertDirectEvent({...base,event_type:type,player_id:playerId,secondary_player_id:null,payload:{period,card_type:type==="red_card"?"direct":type==="blue_card"?"blue":"yellow",...(type==="blue_card"?{temporary_suspension_minutes:10}:{})},substitution_reason:null});
       if(type==="yellow_card"||type==="blue_card"){
-        const previous=matchCenterState.events.filter(x=>x.player_id===id&&x.team_side==="team"&&(x.event_type==="yellow_card"||x.event_type==="blue_card")&&x.validation_status!=="rejected").length;
-        const alreadyRed=matchCenterState.events.some(x=>x.player_id===id&&x.team_side==="team"&&x.event_type==="red_card"&&x.validation_status!=="rejected");
+        const previous=matchCenterState.events.filter(x=>x.player_id===playerId&&x.team_side==="team"&&(x.event_type==="yellow_card"||x.event_type==="blue_card")&&x.validation_status!=="rejected").length;
+        const alreadyRed=matchCenterState.events.some(x=>x.player_id===playerId&&x.team_side==="team"&&x.event_type==="red_card"&&x.validation_status!=="rejected");
         if(previous>=1&&!alreadyRed){
-          await mcInsertDirectEvent({...base,event_type:"red_card",player_id:id,secondary_player_id:null,payload:{period,card_type:"second_yellow_blue",automatic:true,trigger_event_type:type},substitution_reason:null});
+          await mcInsertDirectEvent({...base,event_type:"red_card",player_id:playerId,secondary_player_id:null,payload:{period,card_type:"second_yellow_blue",automatic:true,trigger_event_type:type},substitution_reason:null});
         }
       }
     }
     mcClosePlayerQuickEvent();
     await mcReload();
-    mcSetTab("general");
   }catch(err){
     error.textContent=err.message||String(err);error.classList.remove("hidden");
   }
@@ -1455,11 +1525,6 @@ function mcRenderGeneral(){
   $("#mcHistoryTitle").textContent=mcIsLive()?"Cronologia live":"Cronologia partita";
   const g=mcGoalInfo();
   $("#mcGoalProgress").textContent=mcIsPost()?("CAS "+g.team+"/"+g.expectedTeam+" · AVV "+g.opp+"/"+g.expectedOpp):(g.team+"-"+g.opp);
-  $("#mcGeneralQuickCard").classList.toggle("hidden",!mcIsLive());
-  $("#mcGeneralModify").classList.toggle("hidden",!mcIsLive());
-
-  $$("[data-mc-quick]").forEach(b=>b.onclick=()=>mcQuickAction(b.dataset.mcQuick));
-  $$("[data-mc-open-tab]").forEach(b=>b.onclick=()=>mcSetTab(b.dataset.mcOpenTab));
   $$("[data-mc-bench-side]").forEach(b=>b.onclick=()=>{mcGeneralBenchSide=b.dataset.mcBenchSide;mcRenderGeneralBench()});
   $$("[data-mc-event-filter]").forEach(b=>{
     b.classList.toggle("active",mcGeneralEventFilters.has(b.dataset.mcEventFilter));
@@ -1474,9 +1539,24 @@ function mcRenderGeneral(){
 function mcRenderAvailability(){$("#mcAvailabilityList").innerHTML=rosterRows.map(p=>{const mp=mcMatchPlayer(p.player_id),inj=mcInjury(p.player_id),sus=mcSuspension(p.player_id);return `<div class="mc-availability-row" data-mc-avail="${p.player_id}"><div><strong>${esc(p.last_name+" "+p.first_name)}</strong><small>#${p.shirt_number??"–"} · ${roleLabel(p.generic_role_manual)}</small></div><div class="mc-badges">${inj?'<span class="inj">Infortunato</span>':""}${sus?'<span class="sus">Squalificato</span>':""}</div><select data-reason>${mcReasonOptions(mp?.unavailability_reason||"")}</select><input data-note value="${esc(mp?.unavailability_note||"")}" placeholder="Nota"><button type="button" class="secondary" data-save-avail="${p.player_id}">Salva</button></div>`}).join("");$$("[data-save-avail]").forEach(b=>b.onclick=()=>mcSaveAvailability(b.dataset.saveAvail))}
 function mcRenderFormation(){const starters=matchCenterState.matchPlayers.filter(x=>x.started),bench=matchCenterState.matchPlayers.filter(x=>x.selection_status==="bench"),assigned=new Set([...starters,...bench].map(x=>x.player_id)),unavailable=new Set(matchCenterState.matchPlayers.filter(x=>x.selection_status==="unavailable"||x.unavailability_reason).map(x=>x.player_id)),pool=rosterRows.filter(p=>!assigned.has(p.player_id)&&!unavailable.has(p.player_id));$("#mcFormationSelect").value=matchCenterState.match?.formation||"4-4-2";$("#mcFormationPool").innerHTML=pool.map(p=>`<div class="mc-selection-row"><div><strong>${esc(p.last_name)}</strong><small>${mcInjury(p.player_id)?"Infortunato · ":""}${mcSuspension(p.player_id)?"Squalificato":roleLabel(p.generic_role_manual)}</small></div><div><button ${mcSuspension(p.player_id)?"disabled":""} data-mc-assign="${p.player_id}:starter">XI</button><button ${mcSuspension(p.player_id)?"disabled":""} data-mc-assign="${p.player_id}:bench">P</button></div></div>`).join("")||'<div class="empty-state">Nessun giocatore da assegnare</div>';$$("[data-mc-assign]").forEach(b=>b.onclick=()=>{const [id,state]=b.dataset.mcAssign.split(":");mcSetSelection(id,state)});mcPitch($("#mcFormationPitch"),starters,true);$("#mcFormationBench").innerHTML=bench.map(x=>`<div class="mc-bench-row"><strong>${esc(mcPlayerName(x.player_id))}</strong><button data-mc-unassign="${x.player_id}">×</button></div>`).join("")||'<div class="empty-state">Panchina vuota</div>';$$("[data-mc-unassign]").forEach(b=>b.onclick=()=>mcSetSelection(b.dataset.mcUnassign,"available"));const nc=rosterRows.filter(p=>!assigned.has(p.player_id));$("#mcNotCalled").innerHTML=nc.map(p=>{const mp=mcMatchPlayer(p.player_id);return `<div class="mc-not-called-row"><strong>${esc(p.last_name+" "+p.first_name)}</strong><select data-nc="${p.player_id}">${mcReasonOptions(mp?.unavailability_reason||"")}</select><button type="button" class="text-btn" data-save-nc="${p.player_id}">Salva</button></div>`}).join("");$$("[data-save-nc]").forEach(b=>b.onclick=()=>mcSaveNotCalled(b.dataset.saveNc))}
 function mcRenderEvents(){mcTimeline("#mcEventsTimeline",0);$("#mcEventsCount").textContent=matchCenterState.events.length+" eventi";mcRenderIntegrity();mcRefreshComposer()}
-function mcRenderAll(){mcHeader();mcRenderGeneral();mcRenderAvailability();mcRenderFormation();mcRenderEvents()}
+function mcRenderAll(){mcHeader();mcRenderGeneral()}
 async function mcReload(){if(!matchCenterState.match){matchCenterState.ratings=[];mcRenderAll();return}const [mp,ev,rt]=await Promise.all([db.from("app_match_players").select("*").eq("match_id",matchCenterState.match.id),db.from("app_match_events").select("*").eq("match_id",matchCenterState.match.id).order("minute",{ascending:true}),db.from("app_match_ratings").select("player_id,rating").eq("match_id",matchCenterState.match.id)]);matchCenterState.matchPlayers=mp.data||[];matchCenterState.events=ev.data||[];matchCenterState.ratings=rt.data||[];mcRenderAll()}
-async function openMatchDetail(fixture){if(!fixture||!(isOwnTeamName(fixture.home_team)||isOwnTeamName(fixture.away_team)))return;clearInterval(matchCenterTimer);await loadCoreSeasonData();await loadCompetitions();await ensureMainTeam();const match=linkedMatchForFixture(fixture);const [inj,sus]=await Promise.all([db.from("injuries").select("*").eq("season_id",currentSeason.id),db.from("suspensions").select("*").eq("season_id",currentSeason.id)]);matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general"};$("#matchDetailFixtureId").value=fixture.id;$("#matchDetailMatchId").value=match?.id||"";$("#matchDetailDialog").showModal();$$("[data-mc-tab]").forEach(b=>b.onclick=()=>mcSetTab(b.dataset.mcTab));$("#mcSaveFormation").onclick=mcSaveFormation;$("#mcEventType").onchange=mcRefreshComposer;$("#mcEventMinute").oninput=mcRefreshComposer;$("#mcEventSide").onchange=mcRefreshComposer;$("#mcEventForm").onsubmit=mcSubmitEvent;$("#mcCsiImportBtn").onclick=()=>requestCsiSync("fixture",fixture);$$("[data-mc-live]").forEach(b=>b.onclick=()=>mcLiveAction(b.dataset.mcLive));await mcReload();mcSetTab("general")}
+async function openMatchDetail(fixture){
+  if(!fixture||!(isOwnTeamName(fixture.home_team)||isOwnTeamName(fixture.away_team)))return;
+  clearInterval(matchCenterTimer);
+  mcClosePlayerQuickEvent();
+  await loadCoreSeasonData();await loadCompetitions();await ensureMainTeam();
+  const match=linkedMatchForFixture(fixture);
+  const [inj,sus]=await Promise.all([
+    db.from("injuries").select("*").eq("season_id",currentSeason.id),
+    db.from("suspensions").select("*").eq("season_id",currentSeason.id)
+  ]);
+  matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general"};
+  $("#matchDetailFixtureId").value=fixture.id;
+  $("#matchDetailMatchId").value=match?.id||"";
+  $("#matchDetailDialog").showModal();
+  await mcReload();
+}
 $$( "[data-close-match-detail]" ).forEach(b=>b.onclick=()=>{clearInterval(matchCenterTimer);$("#matchDetailDialog").close()});
 async function mcSaveAvailability(id){try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");if(!sessionUser)throw new Error("Accedi per modificare.");const row=$(`[data-mc-avail="${id}"]`),reason=row.querySelector("[data-reason]").value,note=row.querySelector("[data-note]").value.trim(),old=mcMatchPlayer(id),p=reason?{selection_status:"unavailable",started:false,unavailability_reason:reason,unavailability_note:note||null}:{selection_status:"available",started:false,unavailability_reason:null,unavailability_note:null};const r=old?await db.from("app_match_players").update(p).eq("id",old.id).select("*").maybeSingle():await db.from("app_match_players").insert({match_id:matchCenterState.match.id,player_id:id,...p}).select("*").single();assertSaved(r,"Disponibilità");await mcReload()}catch(e){alert(e.message||String(e))}}
 async function mcSaveNotCalled(id){const sel=$(`[data-nc="${id}"]`),row=$(`[data-mc-avail="${id}"]`);if(row){row.querySelector("[data-reason]").value=sel.value;return mcSaveAvailability(id)}}
