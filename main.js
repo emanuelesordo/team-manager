@@ -978,15 +978,20 @@ function mcInjury(id){const d=new Date(matchCenterState.fixture.kickoff_at).toIS
 function mcSuspension(id){const d=new Date(matchCenterState.fixture.kickoff_at).toISOString().slice(0,10),comp=matchCenterState.fixture.competition_id;return matchCenterState.suspensions.find(x=>x.player_id===id&&(!x.competition_id||x.competition_id===comp)&&!["served","closed","completed"].includes(String(x.status||"").toLowerCase())&&(!x.start_date||x.start_date<=d)&&(!x.end_date||x.end_date>=d)&&!(Number(x.matches_count||0)>0&&Number(x.matches_served||0)>=Number(x.matches_count||0)))||null}
 function mcActiveIds(minute){
   if(minute===""||minute==null)return new Set(rosterRows.map(p=>p.player_id));
-  const m=Number(minute),active=new Set(matchCenterState.matchPlayers.filter(x=>x.started).map(x=>x.player_id));
-  matchCenterState.events.filter(e=>e.minute!=null&&Number(e.minute)<m).sort((a,b)=>Number(a.minute)-Number(b.minute)).forEach(e=>{if(e.team_side!=="team")return;if(e.event_type==="substitution"){if(e.player_id)active.delete(e.player_id);if(e.secondary_player_id)active.add(e.secondary_player_id)}if(e.event_type==="red_card"&&e.player_id)active.delete(e.player_id)});
+  const raw=Number(minute);
+  const targetOrder=matchCenterState.match?.live_period==="second_half"?mcPeriodMinutes()+raw:raw;
+  const active=new Set(matchCenterState.matchPlayers.filter(x=>x.started).map(x=>x.player_id));
+  matchCenterState.events
+    .filter(e=>e.minute!=null&&mcEventOrder(e)<targetOrder)
+    .sort((a,b)=>mcEventOrder(a)-mcEventOrder(b))
+    .forEach(e=>{if(e.team_side!=="team")return;if(e.event_type==="substitution"){if(e.player_id)active.delete(e.player_id);if(e.secondary_player_id)active.add(e.secondary_player_id)}if(e.event_type==="red_card"&&e.player_id)active.delete(e.player_id)});
   return active;
 }
 function mcEligible(kind,minute,side){
   if(side==="opponent")return [];if(minute==="")return rosterRows;
   if(kind==="card")return rosterRows.filter(p=>{const mp=mcMatchPlayer(p.player_id);return !!(mp&&(mp.started||mp.selection_status==="bench"))});
   const active=mcActiveIds(minute);
-  if(kind==="incoming"){const exited=new Set(matchCenterState.events.filter(e=>e.team_side==="team"&&e.minute!=null&&Number(e.minute)<Number(minute)&&(e.event_type==="substitution"||e.event_type==="red_card")).map(e=>e.player_id));return rosterRows.filter(p=>{const mp=mcMatchPlayer(p.player_id);return mp?.selection_status==="bench"&&!active.has(p.player_id)&&!exited.has(p.player_id)})}
+  if(kind==="incoming"){const targetOrder=matchCenterState.match?.live_period==="second_half"?mcPeriodMinutes()+Number(minute):Number(minute);const exited=new Set(matchCenterState.events.filter(e=>e.team_side==="team"&&e.minute!=null&&mcEventOrder(e)<targetOrder&&(e.event_type==="substitution"||e.event_type==="red_card")).map(e=>e.player_id));return rosterRows.filter(p=>{const mp=mcMatchPlayer(p.player_id);return mp?.selection_status==="bench"&&!active.has(p.player_id)&&!exited.has(p.player_id)})}
   return rosterRows.filter(p=>active.has(p.player_id));
 }
 function mcOptions(rows,empty){return `<option value="">${empty}</option>`+rows.map(p=>`<option value="${p.player_id}">${esc(p.last_name+" "+p.first_name)}</option>`).join("")}
@@ -1018,7 +1023,7 @@ function mcPlayerEventSummary(playerId){
 }
 function mcCurrentFieldRows(){
   const map=new Map(matchCenterState.matchPlayers.filter(x=>x.started).map(x=>[x.player_id,{...x}]));
-  [...matchCenterState.events].filter(e=>e.team_side==="team").sort((a,b)=>(a.minute??999)-(b.minute??999)).forEach(e=>{
+  [...matchCenterState.events].filter(e=>e.team_side==="team").sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)).forEach(e=>{
     if(e.event_type==="substitution"){
       if(e.player_id)map.delete(e.player_id);
       if(e.secondary_player_id){
@@ -1474,9 +1479,16 @@ $("#csiConfirmImportBtn").onclick=async()=>{
   try{
     if(!csiImportState.preview||!csiImportState.fixture)throw new Error("Prima leggi il tabellino CSI.");
     const f=csiImportState.fixture,p=csiImportState.preview.match||{},done=Number.isFinite(p.home_score)&&Number.isFinite(p.away_score);
-    const upd=await db.from("app_competition_fixtures").update({match_code:p.match_code||f.match_code,venue:p.venue||f.venue,status:done?"finished":f.status,home_score:done?p.home_score:f.home_score,away_score:done?p.away_score:f.away_score,source:"csi",source_url:csiImportState.preview.url,source_imported_at:new Date().toISOString()}).eq("id",f.id).select("*").maybeSingle();
-    const saved=assertSaved(upd,"Partita CSI");csiImportState.fixture=saved;
-    if(isOwnTeamName(saved.home_team)||isOwnTeamName(saved.away_team))await csiImportOwn(saved);else await csiImportOtherFixture(saved);
+    const ownFixture=isOwnTeamName(f.home_team)||isOwnTeamName(f.away_team);
+    let saved=f;
+    if(ownFixture){
+      const upd=await db.from("app_competition_fixtures").update({match_code:p.match_code||f.match_code,venue:p.venue||f.venue,status:done?"finished":f.status,home_score:done?p.home_score:f.home_score,away_score:done?p.away_score:f.away_score,source:"csi",source_url:csiImportState.preview.url,source_imported_at:new Date().toISOString()}).eq("id",f.id).select("*").maybeSingle();
+      saved=assertSaved(upd,"Partita CSI");
+      csiImportState.fixture=saved;
+      await csiImportOwn(saved);
+    }else{
+      await csiImportOtherFixture(saved);
+    }
     $("#csiImportDialog").close();
     if($("#fixtureDialog").open)$("#fixtureDialog").close();
     if(competitionHubId===saved.competition_id)await renderCompetitionHub();
@@ -1843,8 +1855,8 @@ async function setMatchSelection(matchId,spec,map){try{if(!sessionUser)throw new
 $("#saveFormationBtn").onclick=async()=>{try{if(!sessionUser)throw new Error("Accedi per salvare il modulo.");const r=await db.from("app_matches").update({formation:$("#matchFormation").value}).eq("id",selectedMatchId).select("*").maybeSingle();assertSaved(r,"Modulo");await loadMatchesView()}catch(err){alert(err.message||String(err))}};
 async function loadEventsView(){await loadCoreSeasonData();const match=teamMatches.find(x=>x.id===selectedMatchId)||teamMatches[0];if(!match){$("#eventsMatchTop").innerHTML='<div class="empty-state">Nessuna partita</div>';return}selectedMatchId=match.id;const o=opponentVisualById(match.opponent_id);$("#eventsMatchTop").innerHTML=`<div class="match-select-wrap"><select id="eventsMatchSelect">${teamMatches.map(m=>`<option value="${m.id}" ${m.id===match.id?"selected":""}>${localDateTime(m.kickoff_at)} · ${esc(matchLabel(m))}</option>`).join("")}</select></div><div class="match-score-head"><strong>${esc(team?.short_name||"CAS")}</strong><b>${match.home_score} : ${match.away_score}</b><strong>${esc(o?.short_name||o?.name||"AVV")}</strong></div>`;$("#eventsMatchSelect").onchange=e=>{selectedMatchId=e.target.value;loadEventsView()};const ev=await db.from("app_match_events").select("*").eq("match_id",match.id).order("minute",{ascending:true});renderEventsTimeline(ev.data||[]);const opts='<option value="">—</option>'+rosterRows.map(p=>`<option value="${p.player_id}">${esc(p.last_name+" "+p.first_name)}</option>`).join("");$("#newEventPlayer").innerHTML=opts;$("#newEventSecondary").innerHTML=opts;toggleNewEventSecondary()}
 function renderEventsTimeline(events){$("#eventsTimeline").innerHTML=events.length?events.map(e=>`<div class="timeline-row"><time>${e.minute??"–"}'</time><span class="event-icon ${esc(e.event_type)}">${eventIcon(e.event_type)}</span><div><strong>${eventLabel(e.event_type)}</strong><small>${esc(playerNameById(e.player_id))}${e.secondary_player_id?" → "+esc(playerNameById(e.secondary_player_id)):""} · ${e.team_side==="team"?"Caselle":"Avversario"}</small></div></div>`).join(""):'<div class="empty-state">Nessun evento</div>'}
-function eventIcon(t){return t==="goal"?"⚽":t==="yellow_card"?"▮":t==="red_card"?"▮":t==="substitution"?"↔":"•"}
-function eventLabel(t){return t==="goal"?"Gol":t==="yellow_card"?"Cartellino giallo":t==="red_card"?"Cartellino rosso":t==="substitution"?"Sostituzione":t}
+function eventIcon(t){return t==="goal"?"⚽":t==="yellow_card"?"▮":t==="blue_card"?"▮":t==="red_card"?"▮":t==="substitution"?"↔":"•"}
+function eventLabel(t){return t==="goal"?"Gol":t==="yellow_card"?"Cartellino giallo":t==="blue_card"?"Cartellino blu":t==="red_card"?"Cartellino rosso":t==="substitution"?"Sostituzione":t}
 function toggleNewEventSecondary(){const t=document.querySelector('input[name="newEventType"]:checked')?.value;$("#newEventSecondaryWrap").classList.toggle("hidden",t!=="substitution")}
 $$('input[name="newEventType"]').forEach(x=>x.onchange=toggleNewEventSecondary);
 $("#eventComposeForm").onsubmit=async e=>{e.preventDefault();$("#eventComposeError").classList.add("hidden");try{if(!sessionUser)throw new Error("Accedi per aggiungere eventi.");const type=document.querySelector('input[name="newEventType"]:checked').value,p={match_id:selectedMatchId,event_type:type,minute:+$("#newEventMinute").value,player_id:$("#newEventPlayer").value||null,secondary_player_id:type==="substitution"?($("#newEventSecondary").value||null):null,payload:{},proposed_by:sessionUser.id,validation_status:"proposed",team_side:$("#newEventSide").value};const r=await db.from("app_match_events").insert(p).select("*").single();assertSaved(r,"Evento");$("#eventComposeForm").reset();await loadEventsView()}catch(err){$("#eventComposeError").textContent=err.message||String(err);$("#eventComposeError").classList.remove("hidden")}};
