@@ -11,17 +11,19 @@ Webapp **one-team based** per gestione squadra, calendario, formazione, eventi e
 
 ## UI
 
-La Home usa direttamente la struttura HTML fornita dall'utente come base operativa: shell glass, sidebar, topbar, hero, KPI, righe partita e tabella classifica. I dati demo presenti nel file originale non vengono usati: tutti i contenuti sono popolati dal database Supabase.
+La shell non ha più header superiore. Il drawer contiene logo/nome squadra, selettore stagione, navigazione, Setup e controllo Accedi/Esci.
+
+Il design usa un unico stylesheet e un glassmorphism più marcato: superfici traslucide, blur 24px, saturazione, bordi chiari e ombre multilivello. Il vecchio `product-ui.css` è stato eliminato per evitare sovrapposizioni.
 
 ## Moduli
 ### Home
-Dashboard progettata per occupare l'intero viewport desktop senza scroll verticale:
+Occupa il viewport desktop disponibile:
 - ultima partita a sinistra e prossima partita a destra;
+- countdown live al fischio d'inizio al posto del bottone dettagli;
 - 6 KPI principali;
-- 3 ultime partite;
-- 3 prossime partite;
-- classifica con numero di righe calcolato dinamicamente in base allo spazio realmente disponibile nella card.
-Su mobile il layout torna fluido e impilato.
+- ultime 4 partite;
+- prossime 4 partite;
+- classifica di 5 squadre centrata sulla squadra principale: 2 sopra e 2 sotto quando disponibili, recuperando righe dal lato opposto ai bordi della classifica.
 
 ### Competizioni
 Classifica a sinistra e calendario compatto completo a destra. Toggle Tutte/Caselle e click sul punteggio.
