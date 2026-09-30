@@ -1137,7 +1137,7 @@ function mcTimeline(target,limit,filters=null){
     const icon=e.event_type==="goal"
       ?'<span class="mc-event-symbol goal">⚽</span>'
       :e.event_type==="substitution"
-        ?'<span class="mc-event-symbol substitution"><i>↪</i><b>↩</b></span>'
+        ?'<span class="mc-event-symbol substitution"><i class="sub-out">←</i><b class="sub-in">→</b></span>'
         :e.event_type==="yellow_card"
           ?'<span class="mc-event-symbol card yellow"></span>'
           :'<span class="mc-event-symbol card red"></span>';
