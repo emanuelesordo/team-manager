@@ -1808,3 +1808,83 @@ dialog form{padding:16px}
   .mc-body{padding:6px}
   .mc-availability-row{grid-template-columns:1fr}
 }
+
+/* ===== Match Center detail refinements ===== */
+.mc-header{padding-top:18px}
+.mc-scoreboard{min-height:82px;align-items:start}
+.mc-team-copy{min-width:0;display:grid;gap:5px;padding-top:5px}
+.mc-home .mc-team-copy{text-align:right}
+.mc-away .mc-team-copy{text-align:left}
+.mc-header-events{
+  min-height:20px;
+  display:grid;
+  gap:2px;
+  color:#686e72;
+  font-size:7px;
+  line-height:1.15;
+}
+.mc-header-events span{white-space:nowrap}
+.mc-header-events .red{color:#a93e49}
+.mc-header-events .red b{color:#dc4e59;font-size:8px}
+.mc-meta{margin-top:2px}
+
+.mc-event-filters{
+  flex:0 0 auto;
+  display:flex;
+  gap:4px;
+  flex-wrap:wrap;
+  margin:-2px 0 7px;
+}
+.mc-event-filters button{
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:#fff;
+  color:#777;
+  padding:4px 7px;
+  font-size:7px;
+  font-weight:800;
+}
+.mc-event-filters button.active{
+  background:#111;
+  border-color:#111;
+  color:#fff;
+}
+
+.mc-event-integrity{
+  margin-bottom:8px;
+  padding:8px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+}
+.mc-event-integrity>strong{
+  display:block;
+  margin-bottom:6px;
+  font-size:8px;
+}
+.mc-event-integrity .mc-integrity-compact{
+  margin:0;
+  padding:0;
+  border:0;
+  grid-template-columns:repeat(auto-fit,minmax(115px,1fr));
+}
+
+/* Vertical pitch: goalkeeper is at the bottom, midfield line horizontal. */
+.mc-pitch:after,.mc-full-pitch:after{
+  left:4%;
+  right:4%;
+  top:50%;
+  bottom:auto;
+  width:auto;
+  height:0;
+  border-left:0;
+  border-top:1px solid rgba(255,255,255,.72);
+}
+
+/* General: right rail is bench / not called only. */
+.mc-general-bench-row small{
+  max-width:90px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
