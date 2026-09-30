@@ -1324,11 +1324,10 @@ function mcRenderRatingRow(item){
       '<small>'+values.length+' '+(values.length===1?"voto":"voti")+'</small>'+
     '</div>'+
     '<label class="mc-rating-vote">'+
-      '<span>Il tuo voto</span>'+
       '<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" maxlength="4" '+
         'value="'+(current==null?"":String(current).replace(".",","))+'" '+
         'placeholder="1–10" data-mc-rating-player="'+playerId+'" '+
-        'style="--rating-bg:'+currentColor+';--rating-fg:'+currentFg+'" '+(!sessionUser?"disabled":"")+'>'+
+        'style="--rating-color:'+currentColor+';--rating-fg:'+currentFg+'" '+(!sessionUser?"disabled":"")+'>'+
     '</label>'+
   '</div>';
 }
@@ -1349,6 +1348,7 @@ function mcRenderRating(){
   const column=(title,items,kind)=>
     '<section class="mc-rating-column mc-rating-'+kind+'">'+
       '<div class="mc-rating-column-head"><strong>'+title+'</strong><span>'+items.length+'</span></div>'+
+      '<div class="mc-rating-fields-head"><span>Giocatore</span><span>Media</span><strong>Il tuo voto</strong></div>'+
       '<div class="mc-rating-column-list">'+(items.map(mcRenderRatingRow).join("")||'<div class="empty-state">Nessun giocatore.</div>')+'</div>'+
     '</section>';
 
@@ -1367,8 +1367,8 @@ function mcRenderRating(){
         input.classList.remove("valid");
         return;
       }
-      input.style.setProperty("--rating-bg",mcRatingColor(value));
-      input.style.setProperty("--rating-fg",mcRatingTextColor(value));
+      input.style.setProperty("--rating-color",mcRatingColor(value));
+      input.style.setProperty("--rating-fg","#202326");
       input.classList.add("valid");
     };
     const save=async(force=false)=>{
