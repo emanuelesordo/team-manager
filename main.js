@@ -518,18 +518,39 @@ function compactTeamHtml(name){
 async function loadCompetitionHub(){
   await loadCompetitions();
   await ensureMainTeam();
-  const select=$("#competitionHubSelect");
-  select.innerHTML=competitions.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join("");
+  const tabs=$("#competitionHubTabs");
+
   if(!competitions.length){
+    tabs.innerHTML="";
     $("#competitionStandings").innerHTML='<div class="muted">Nessuna competizione.</div>';
     $("#competitionFixtures").innerHTML="";
+    syncCompetitionViewportHeight();
     return;
   }
+
   competitionHubId=competitions.some(c=>c.id===competitionHubId)?competitionHubId:competitions[0].id;
-  select.value=competitionHubId;
+  tabs.innerHTML=competitions.map(c=>`
+    <button type="button"
+      class="segment competition-tab ${c.id===competitionHubId?"active":""}"
+      data-competition-hub="${c.id}"
+      role="tab"
+      aria-selected="${c.id===competitionHubId?"true":"false"}">${esc(c.name)}</button>
+  `).join("");
+
+  $("[data-competition-hub]").forEach(b=>b.onclick=async()=>{
+    if(b.dataset.competitionHub===competitionHubId)return;
+    competitionHubId=b.dataset.competitionHub;
+    $("[data-competition-hub]").forEach(x=>{
+      const active=x.dataset.competitionHub===competitionHubId;
+      x.classList.toggle("active",active);
+      x.setAttribute("aria-selected",active?"true":"false");
+    });
+    await renderCompetitionHub();
+  });
+
   await renderCompetitionHub();
+  syncCompetitionViewportHeight();
 }
-$("#competitionHubSelect").onchange=async e=>{competitionHubId=e.target.value;await renderCompetitionHub()};
 $$("[data-comp-fixture-filter]").forEach(b=>b.onclick=()=>{
   competitionFixtureFilter=b.dataset.compFixtureFilter;
   $$("[data-comp-fixture-filter]").forEach(x=>x.classList.toggle("active",x===b));
@@ -552,8 +573,24 @@ async function renderCompetitionHub(){
   else{
     $("#competitionProjection").innerHTML='<div class="muted">Proiezione non disponibile.</div>';
     $("#projectionReliability").textContent="";
+    const meta=$("#projectionScenarioMeta");if(meta)meta.textContent="";
   }
+  syncCompetitionViewportHeight();
 }
+function syncCompetitionViewportHeight(){
+  const view=$("#competitionsView");
+  const main=$(".main");
+  if(!view||!main||view.classList.contains("hidden"))return;
+
+  const viewTop=view.getBoundingClientRect().top;
+  const mainBottom=main.getBoundingClientRect().bottom;
+  const reservedBottom=10;
+  const available=Math.max(420,Math.floor(mainBottom-viewTop-reservedBottom));
+
+  view.style.setProperty("--competition-view-height",available+"px");
+}
+window.addEventListener("resize",syncCompetitionViewportHeight);
+
 function renderStandings(rows){
   const sorted=[...rows].sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference||b.goals_for-a.goals_for||String(a.team).localeCompare(String(b.team),"it"));
   $("#competitionStandings").innerHTML=sorted.length?`<div class="standings-wrap"><table class="standings-table">
