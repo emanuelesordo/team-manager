@@ -1286,6 +1286,18 @@ function mcRatingEventIcons(playerId){
       return "";
     }).join("");
 }
+function mcNormalizeRatingInput(raw){
+  return String(raw??"").trim().replace(",",".");
+}
+function mcParseRatingInput(raw){
+  const normalized=mcNormalizeRatingInput(raw);
+  if(!normalized)return null;
+  const value=Number(normalized);
+  if(!Number.isFinite(value)||value<1||value>10)return null;
+  const snapped=Math.round(value*2)/2;
+  if(Math.abs(snapped-value)>.0001)return null;
+  return snapped;
+}
 function mcRenderRatingRow(item){
   const {playerId,minutes}=item;
   const player=mcPlayer(playerId),matchPlayer=mcMatchPlayer(playerId);
@@ -1293,10 +1305,11 @@ function mcRenderRatingRow(item){
   const values=ratings.map(r=>Number(r.rating)).filter(Number.isFinite);
   const average=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
   const mine=ratings.find(r=>r.voter_id===sessionUser?.id);
-  const current=mine?Number(mine.rating):6;
+  const current=mine?Number(mine.rating):null;
   const averageText=average==null?"—":average.toFixed(1).replace(".",",");
   const averageStyle=average==null?"":' style="--rating-bg:'+mcRatingColor(average)+';--rating-fg:'+mcRatingTextColor(average)+'"';
-  const currentColor=mcRatingColor(current);
+  const currentColor=current==null?"#e4e6e5":mcRatingColor(current);
+  const currentFg=current==null?"#6e7579":mcRatingTextColor(current);
   const events=mcRatingEventIcons(playerId);
   return '<div class="mc-rating-row" data-rating-row="'+playerId+'">'+
     '<div class="mc-rating-player">'+
@@ -1311,8 +1324,11 @@ function mcRenderRatingRow(item){
       '<small>'+values.length+' '+(values.length===1?"voto":"voti")+'</small>'+
     '</div>'+
     '<label class="mc-rating-vote">'+
-      '<span>Il tuo voto <b data-mc-rating-value="'+playerId+'" class="'+(mine?"":"empty")+'" style="--rating-color:'+currentColor+'">'+(mine?String(Number(mine.rating)).replace(".",","):"—")+'</b></span>'+
-      '<input type="range" min="1" max="10" step="0.5" value="'+current+'" data-mc-rating-player="'+playerId+'" style="--rating-color:'+currentColor+'" '+(!sessionUser?"disabled":"")+'>'+
+      '<span>Il tuo voto</span>'+
+      '<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" maxlength="4" '+
+        'value="'+(current==null?"":String(current).replace(".",","))+'" '+
+        'placeholder="1–10" data-mc-rating-player="'+playerId+'" '+
+        'style="--rating-bg:'+currentColor+';--rating-fg:'+currentFg+'" '+(!sessionUser?"disabled":"")+'>'+
     '</label>'+
   '</div>';
 }
@@ -1341,27 +1357,57 @@ function mcRenderRating(){
     column("Panchina",bench,"bench")+
   '</div>';
 
-  $$("[data-mc-rating-player]").forEach(slider=>{
-    const playerId=slider.dataset.mcRatingPlayer;
-    const valueLabel=$('[data-mc-rating-value="'+playerId+'"]');
-    const paint=()=>{
-      const value=Number(slider.value);
-      const color=mcRatingColor(value);
-      slider.style.setProperty("--rating-color",color);
-      valueLabel.style.setProperty("--rating-color",color);
-      valueLabel.textContent=String(value).replace(".",",");
-      valueLabel.classList.remove("empty");
+  $$("[data-mc-rating-player]").forEach(input=>{
+    const playerId=input.dataset.mcRatingPlayer;
+    let timer=null;
+    const paint=value=>{
+      if(value==null){
+        input.style.setProperty("--rating-bg","#fff");
+        input.style.setProperty("--rating-fg","#25282a");
+        input.classList.remove("valid");
+        return;
+      }
+      input.style.setProperty("--rating-bg",mcRatingColor(value));
+      input.style.setProperty("--rating-fg",mcRatingTextColor(value));
+      input.classList.add("valid");
     };
-    slider.oninput=paint;
-    slider.onchange=async()=>{paint();await mcSaveRating(playerId,slider.value,slider)};
-  });
+    const save=async(force=false)=>{
+      clearTimeout(timer);
+      const value=mcParseRatingInput(input.value);
+      paint(value);
+      if(value==null){
+        if(force&&input.value.trim())input.classList.add("invalid");
+        return;
+      }
+      input.classList.remove("invalid");
+      input.value=String(value).replace(".",",");
+      await mcSaveRating(playerId,value,input);
+    };
+    input.oninput=()=>{
+      input.value=input.value.replace(".",",").replace(/[^0-9,]/g,"").replace(/(,.*),/g,"$1");
+      const value=mcParseRatingInput(input.value);
+      paint(value);
+      input.classList.remove("invalid");
+      clearTimeout(timer);
+      if(value!=null)timer=setTimeout(()=>save(false),350);
+    };
+    input.onkeydown=e=>{
+      if(e.key==="Enter"){
+        e.preventDefault();
+        save(true);
+        input.blur();
+      }
+    };
+    input.onblur=()=>save(false);
+    paint(mcParseRatingInput(input.value));
+  });;
 }
 async function mcSaveRating(playerId,value,control){
   try{
     if(!mcIsPost())throw new Error("I rating sono disponibili solo a risultato definitivo.");
     if(!sessionUser)throw new Error("Accedi per assegnare un voto.");
-    const rating=Number(value);
-    if(!Number.isFinite(rating)||rating<1||rating>10||rating*2!==Math.trunc(rating*2))throw new Error("Voto non valido.");
+    const rating=mcParseRatingInput(value);
+    if(rating==null)throw new Error("Voto non valido: usa valori da 1 a 10 con incrementi di 0,5.");
     control.disabled=true;
     const existing=matchCenterState.ratings.find(r=>r.player_id===playerId&&r.voter_id===sessionUser.id);
     const result=existing
@@ -1371,10 +1417,24 @@ async function mcSaveRating(playerId,value,control){
     const refreshed=await db.from("app_match_ratings").select("player_id,rating,voter_id").eq("match_id",matchCenterState.match.id);
     if(refreshed.error)throw refreshed.error;
     matchCenterState.ratings=refreshed.data||[];
-    mcRenderRating();
+    const row=$('[data-rating-row="'+playerId+'"]');
+    if(row){
+      const ratings=matchCenterState.ratings.filter(r=>r.player_id===playerId);
+      const values=ratings.map(r=>Number(r.rating)).filter(Number.isFinite);
+      const average=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
+      const avg=row.querySelector(".mc-rating-average-value"),count=row.querySelector(".mc-rating-average small");
+      if(avg){
+        avg.textContent=average==null?"—":average.toFixed(1).replace(".",",");
+        avg.classList.toggle("empty",average==null);
+        avg.style.setProperty("--rating-bg",average==null?"#e4e6e5":mcRatingColor(average));
+        avg.style.setProperty("--rating-fg",average==null?"#90969a":mcRatingTextColor(average));
+      }
+      if(count)count.textContent=values.length+" "+(values.length===1?"voto":"voti");
+    }
+    control.disabled=false;
   }catch(err){
+    if(control)control.disabled=false;
     alert(err.message||String(err));
-    mcRenderRating();
   }
 }
 function mcPlayerEventSummary(playerId){
