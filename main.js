@@ -1710,7 +1710,12 @@ async function loadDashboard(){
   const scoreRows=[...finished.slice(-2).reverse(),...upcoming.slice(0,3)].slice(0,5);
   $("#homeScores").innerHTML=scoreRows.length?scoreRows.map(renderHomeScoreRow).join(""):'<div class="home-empty">Nessuna partita disponibile</div>';
 
-  $$("#homeView [data-go-calendar]").forEach(b=>b.onclick=()=>setAppView("calendar"));
+  $("#homeView [data-match-center]").forEach(el=>{
+    const open=()=>openMatchDetail(fixtures.find(f=>f.id===el.dataset.matchCenter));
+    el.onclick=open;
+    el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}};
+  });
+  $("#homeView [data-go-calendar]").forEach(b=>b.onclick=()=>setAppView("calendar"));
   $$("#homeView [data-go-competition]").forEach(b=>b.onclick=()=>setAppView("competitions"));
   $$("#homeView [data-go-roster]").forEach(b=>b.onclick=()=>setAppView("roster"));
 }
@@ -1745,7 +1750,7 @@ function renderHomeMetrics(t){
 
 function renderHomeMatch(f,showScore){
   const home=teamVisual(f.home_team),away=teamVisual(f.away_team);
-  return `<div class="home-match-strip">
+  return `<div class="home-match-strip mc-openable" data-match-center="${f.id}" role="button" tabindex="0" aria-label="Apri dettaglio partita ${esc(home.name)} - ${esc(away.name)}">
     <div class="home-match-side">${fixtureLogo(f.home_team)}<span>${esc(home.short)}</span></div>
     <strong>${showScore?`${f.home_score} - ${f.away_score}`:"VS"}</strong>
     <div class="home-match-side">${fixtureLogo(f.away_team)}<span>${esc(away.short)}</span></div>
@@ -1811,12 +1816,12 @@ function renderHomeCalendar(dateValue,fixtures){
 
     const title=esc(match.fixture.home_team+" - "+match.fixture.away_team);
     if(match.opponent?.logo){
-      cells.push(`<span class="calendar-day match-day logo-day" title="${title}">
+      cells.push(`<span class="calendar-day match-day logo-day mc-openable" data-match-center="${match.fixture.id}" role="button" tabindex="0" title="${title}">
         <img src="${esc(match.opponent.logo)}" alt="${esc(match.opponent.name||"Avversaria")}">
         <i>${d}</i>
       </span>`);
     }else{
-      cells.push(`<span class="calendar-day match-day compact-day" title="${title}">${d}</span>`);
+      cells.push(`<span class="calendar-day match-day compact-day mc-openable" data-match-center="${match.fixture.id}" role="button" tabindex="0" title="${title}">${d}</span>`);
     }
   }
 
@@ -1827,7 +1832,7 @@ function renderHomeCalendar(dateValue,fixtures){
 
 function renderHomeNextMatch(f){
   const opponent=isOwnTeamName(f.home_team)?teamVisual(f.away_team):teamVisual(f.home_team);
-  return `<div class="home-next-line"><div><span>Prossima partita</span><strong>${esc(opponent.name)}</strong></div><div><span>Data</span><strong>${localDateTime(f.kickoff_at)}</strong></div></div>`;
+  return `<div class="home-next-line mc-openable" data-match-center="${f.id}" role="button" tabindex="0" aria-label="Apri dettaglio prossima partita contro ${esc(opponent.name)}"><div><span>Prossima partita</span><strong>${esc(opponent.name)}</strong></div><div><span>Data</span><strong>${localDateTime(f.kickoff_at)}</strong></div></div>`;
 }
 
 function dashboardStandingWindow(rows,size=5){
@@ -1884,7 +1889,7 @@ function renderHomeScoreRow(f){
     ?`<img src="${esc(away.logo)}" alt="">`
     :`<span class="score-crest-fallback">${esc(away.short)}</span>`;
 
-  return `<div class="home-score-row">
+  return `<div class="home-score-row mc-openable" data-match-center="${f.id}" role="button" tabindex="0" aria-label="Apri dettaglio partita ${esc(home.name)} - ${esc(away.name)}">
     <div class="score-core">
       <span class="score-team-name score-home-name">${esc(home.short||home.name)}</span>
       <span class="score-crest">${homeLogo}</span>
