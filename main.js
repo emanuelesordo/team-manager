@@ -136,7 +136,7 @@ window.addEventListener("error",e=>{
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const fmt=d=>d?new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):"—";
 const statusLabel={active:"Attiva",future:"Futura",archived:"Archiviata"};
-let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,competitionHubId=null,competitionFixtureFilter="all",calendarRows=[],teamMatches=[],calendarCompetitionIds=new Set(),players=[],rosterRows=[],playerStats=[],selectedPlayerId=null,selectedMatchId=null,rosterRole="ALL",dashboardStandingRows=[];
+let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,competitionHubId=null,competitionFixtureFilter="all",calendarRows=[],teamMatches=[],calendarCompetitionIds=new Set(),players=[],rosterRows=[],playerStats=[],selectedPlayerId=null,selectedMatchId=null,rosterRole="ALL",dashboardStandingRows=[],dashboardCountdownTimer=null;
 
 async function loadAuthState(){
   const {data:{session}}=await db.auth.getSession();
@@ -195,9 +195,11 @@ function setAppView(name){
   const views=["home","setup","competitions","calendar","roster","matches","events","stats"];
   views.forEach(v=>$("#"+v+"View")?.classList.toggle("hidden",v!==name));
   $$(".side-link[data-app-view]").forEach(b=>b.classList.toggle("active",b.dataset.appView===name));
-  const titles={home:"Dashboard",competitions:"Competizioni",calendar:"Calendario",roster:"Rosa squadra",matches:"Gestione partita",events:"Eventi partita",stats:"Statistiche",setup:"Setup"};
-  $("#topbarTitle").textContent=titles[name]||"Team Manager";
-  $("#topbarSubtitle").textContent=currentSeason?("Stagione "+currentSeason.name):"";
+  document.title=(name==="home"?"Dashboard":name[0].toUpperCase()+name.slice(1))+" · "+(team?.name||"Team Manager");
+  if(name!=="home"&&dashboardCountdownTimer){
+    clearInterval(dashboardCountdownTimer);
+    dashboardCountdownTimer=null;
+  }
   if(name==="home")loadDashboard();
   if(name==="competitions")loadCompetitionHub();
   if(name==="calendar")loadCalendarHub();
@@ -232,7 +234,17 @@ async function loadAll(){
 function renderSeasonSelector(){
   $("#seasonSelector").innerHTML=seasons.map(s=>`<option value="${s.id}" ${s.id===currentSeason?.id?"selected":""}>${esc(s.name)}</option>`).join("");
 }
-$("#seasonSelector").onchange=e=>{currentSeason=seasons.find(s=>s.id===e.target.value)||null;competitionHubId=null;calendarCompetitionIds=new Set();team=null;loadCompetitions();refreshCalendarCompetition();ensureMainTeam();$("#topbarSubtitle").textContent=currentSeason?("Stagione "+currentSeason.name):"";const visible=["home","competitions","calendar","roster","matches","events","stats"].find(v=>!$("#"+v+"View")?.classList.contains("hidden"));if(visible)setAppView(visible)};
+$("#seasonSelector").onchange=e=>{
+  currentSeason=seasons.find(s=>s.id===e.target.value)||null;
+  competitionHubId=null;
+  calendarCompetitionIds=new Set();
+  team=null;
+  loadCompetitions();
+  refreshCalendarCompetition();
+  ensureMainTeam();
+  const visible=["home","competitions","calendar","roster","matches","events","stats","setup"].find(v=>!$("#"+v+"View")?.classList.contains("hidden"));
+  if(visible)setAppView(visible);
+};
 function renderSeasons(){
   $("#seasonGrid").innerHTML=seasons.map(s=>`<article class="card ${s.id===currentSeason?.id?"active":""}">
     <div class="card-head"><div class="card-title">${esc(s.name)}</div><span class="badge ${s.status}">${statusLabel[s.status]||s.status}</span></div>
@@ -846,88 +858,221 @@ async function ownFixtures(){const r=await db.from("app_competition_fixtures").s
 function fixtureOutcome(f){if(f.status!=="finished")return null;const ownHome=isOwnTeamName(f.home_team),gf=ownHome?f.home_score:f.away_score,ga=ownHome?f.away_score:f.home_score;return {gf,ga,result:gf>ga?"W":gf<ga?"L":"D"}}
 function fixtureLogo(name){const v=teamVisual(name);return v.logo?`<img src="${esc(v.logo)}" alt="">`:`<span>${esc(v.short)}</span>`}
 async function loadDashboard(){
-  await loadCoreSeasonData();await loadCompetitions();
-  const fixtures=await ownFixtures(),now=new Date();
-  const upcoming=fixtures.filter(f=>new Date(f.kickoff_at)>=now&&f.status!=="finished").sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
-  const finished=fixtures.filter(f=>f.status==="finished"&&new Date(f.kickoff_at)<=now).sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
-  const next=upcoming[0],last=finished[finished.length-1];
-  const s=finished.reduce((a,f)=>{const o=fixtureOutcome(f);if(!o)return a;a.played++;a.gf+=o.gf;a.ga+=o.ga;if(o.result==="W")a.w++;else if(o.result==="D")a.d++;else a.l++;return a},{played:0,w:0,d:0,l:0,gf:0,ga:0});
+  await loadCoreSeasonData();
+  await loadCompetitions();
+
+  const fixtures=await ownFixtures();
+  const now=Date.now();
+
+  const finished=fixtures
+    .filter(f=>f.status==="finished"&&new Date(f.kickoff_at).getTime()<=now)
+    .sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
+
+  const upcoming=fixtures
+    .filter(f=>f.status!=="finished"&&new Date(f.kickoff_at).getTime()>now)
+    .sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
+
+  const last=finished.at(-1)||null;
+  const next=upcoming[0]||null;
+
+  const totals=finished.reduce((a,f)=>{
+    const o=fixtureOutcome(f);
+    if(!o)return a;
+    a.played++;
+    a.gf+=o.gf;
+    a.ga+=o.ga;
+    if(o.result==="W")a.w++;
+    else if(o.result==="D")a.d++;
+    else a.l++;
+    return a;
+  },{played:0,w:0,d:0,l:0,gf:0,ga:0});
 
   $("#dashboardHero").innerHTML=`
     <section class="hero-card glass">
-      <div class="hero-head"><div><h2>Ultima partita</h2>${last?`<div class="hero-meta">${esc(competitions.find(c=>c.id===last.competition_id)?.name||"")} · Giornata ${last.round_no}<br>${localDateTime(last.kickoff_at)}</div>`:""}</div>${last?'<span class="badge">Conclusa</span>':""}</div>
+      <div class="hero-head">
+        <div>
+          <h2>Ultima partita</h2>
+          ${last?dashboardHeroMeta(last):""}
+        </div>
+        ${last?'<span class="badge">Conclusa</span>':""}
+      </div>
       ${last?dashboardMatchCard(last,true):'<div class="empty-state">Nessuna partita conclusa</div>'}
     </section>
+
     <section class="hero-card glass">
-      <h2>Prossima partita</h2>
-      ${next?`<div class="hero-meta">${esc(competitions.find(c=>c.id===next.competition_id)?.name||"")} · Giornata ${next.round_no}<br>${localDateTime(next.kickoff_at)}</div>`:""}
+      <div class="hero-head">
+        <div>
+          <h2>Prossima partita</h2>
+          ${next?dashboardHeroMeta(next):""}
+        </div>
+      </div>
       ${next?dashboardMatchCard(next,false):'<div class="empty-state">Nessuna partita programmata</div>'}
-      ${next?'<button class="cta" type="button" data-go-calendar>Vedi dettagli</button>':""}
+      ${next?'<div id="kickoffCountdown" class="kickoff-countdown"></div>':""}
     </section>`;
 
   const kpis=[
-    [s.played,"Partite giocate","var(--blue)"],
-    [s.w,"Vittorie","var(--green)"],
-    [s.d,"Pareggi","var(--amber)"],
-    [s.l,"Sconfitte","var(--red)"],
-    [s.gf,"Gol fatti","var(--blue)"],
-    [s.ga,"Gol subiti","var(--red)"]
+    [totals.played,"Partite giocate","var(--blue)"],
+    [totals.w,"Vittorie","var(--green)"],
+    [totals.d,"Pareggi","var(--amber)"],
+    [totals.l,"Sconfitte","var(--red)"],
+    [totals.gf,"Gol fatti","var(--blue)"],
+    [totals.ga,"Gol subiti","var(--red)"]
   ];
-  $("#dashboardKpis").innerHTML=kpis.map(k=>`<div class="kpi glass"><b style="color:${k[2]}">${k[0]}</b><span>${k[1]}</span></div>`).join("");
 
-  $("#dashboardRecent").innerHTML=finished.slice(-3).reverse().map(dashboardCompactMatchRow).join("")||'<div class="empty-state">Nessuna partita</div>';
-  $("#dashboardUpcoming").innerHTML=upcoming.slice(0,3).map(dashboardCompactMatchRow).join("")||'<div class="empty-state">Nessuna partita</div>';
+  $("#dashboardKpis").innerHTML=kpis.map(k=>`
+    <div class="kpi glass">
+      <b style="color:${k[2]}">${k[0]}</b>
+      <span>${k[1]}</span>
+    </div>`).join("");
+
+  $("#dashboardRecent").innerHTML=finished.slice(-4).reverse().map(dashboardCompactMatchRow).join("")
+    ||'<div class="empty-state">Nessuna partita conclusa</div>';
+
+  $("#dashboardUpcoming").innerHTML=upcoming.slice(0,4).map(dashboardCompactMatchRow).join("")
+    ||'<div class="empty-state">Nessuna partita programmata</div>';
 
   const league=competitions.find(c=>c.kind==="league")||competitions[0];
   dashboardStandingRows=[];
   if(league){
-    const st=await db.from("app_competition_standings").select("*").eq("season_id",currentSeason.id).eq("competition_id",league.id);
-    dashboardStandingRows=(st.data||[]).sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference||b.goals_for-a.goals_for);
+    const st=await db.from("app_competition_standings")
+      .select("*")
+      .eq("season_id",currentSeason.id)
+      .eq("competition_id",league.id);
+
+    dashboardStandingRows=(st.data||[])
+      .sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference||b.goals_for-a.goals_for||String(a.team).localeCompare(String(b.team),"it"));
   }
-  fitDashboardStandings();
-  requestAnimationFrame(()=>{
-    fitDashboardStandings();
-    $$("#dashboardHero [data-go-calendar]").forEach(b=>b.onclick=()=>setAppView("calendar"));
-  });
+  renderDashboardStandings();
+
+  if(dashboardCountdownTimer)clearInterval(dashboardCountdownTimer);
+  dashboardCountdownTimer=null;
+  if(next){
+    updateKickoffCountdown(next.kickoff_at);
+    dashboardCountdownTimer=setInterval(()=>updateKickoffCountdown(next.kickoff_at),1000);
+  }
 }
-function dashboardMatchCard(f,showScore){
-  const h=teamVisual(f.home_team),a=teamVisual(f.away_team);
-  return `<div class="vs">
-    <div class="team">${fixtureLogo(f.home_team)}<strong>${esc(h.name)}</strong></div>
-    <span class="score">${showScore?esc(f.home_score)+" - "+esc(f.away_score):"–"}</span>
-    <div class="team">${fixtureLogo(f.away_team)}<strong>${esc(a.name)}</strong></div>
-  </div>`;
-}
-function dashboardCompactMatchRow(f){
-  const opp=isOwnTeamName(f.home_team)?teamVisual(f.away_team):teamVisual(f.home_team);
+
+function dashboardHeroMeta(f){
   const comp=competitions.find(c=>c.id===f.competition_id);
-  const done=f.status==="finished";
-  const date=new Date(f.kickoff_at);
-  const score=done?`${f.home_score}-${f.away_score}`:new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(date);
-  return `<div class="match-row">
-    <div class="date">${new Intl.DateTimeFormat("it-IT",{day:"2-digit"}).format(date)}<small>${new Intl.DateTimeFormat("it-IT",{month:"short"}).format(date).replace(".","").toUpperCase()}</small></div>
-    ${opp.logo?`<img class="row-crest" src="${esc(opp.logo)}" alt="">`:`<span class="row-crest fallback">${esc(opp.short)}</span>`}
-    <div><strong>${esc(isOwnTeamName(f.home_team)?(team?.short_name||"CAS")+" - "+opp.short:opp.short+" - "+(team?.short_name||"CAS"))}</strong><small>${esc(comp?.name||"")} · Giornata ${f.round_no}</small></div>
-    <time>${esc(score)}</time>
+  return `<div class="hero-meta">${esc(comp?.name||"")} · Giornata ${f.round_no}<br>${localDateTime(f.kickoff_at)}</div>`;
+}
+
+function dashboardMatchCard(f,showScore){
+  const home=teamVisual(f.home_team);
+  const away=teamVisual(f.away_team);
+  return `<div class="vs">
+    <div class="team">
+      ${fixtureLogo(f.home_team)}
+      <strong>${esc(home.name)}</strong>
+    </div>
+    <span class="score">${showScore?esc(f.home_score)+" - "+esc(f.away_score):"–"}</span>
+    <div class="team">
+      ${fixtureLogo(f.away_team)}
+      <strong>${esc(away.name)}</strong>
+    </div>
   </div>`;
 }
-function fitDashboardStandings(){
-  const card=$("#dashboardStandingsCard"),box=$("#dashboardStandings");
-  if(!card||!box)return;
-  const head=card.querySelector(".card-head");
-  const usable=Math.max(90,card.clientHeight-(head?.offsetHeight||0)-8);
-  const rowHeight=31;
-  const count=Math.max(3,Math.min(dashboardStandingRows.length,Math.floor(usable/rowHeight)));
-  const rows=dashboardStandingRows.slice(0,count);
-  box.innerHTML=rows.length?`<table><thead><tr><th>#</th><th>Squadra</th><th>G</th><th>Pt</th></tr></thead><tbody>${rows.map((r,i)=>`<tr class="${isOwnTeamName(r.team)?"me":""}"><td>${i+1}</td><td><span class="tn">${dashboardTeamBadge(r.team)}${esc(r.team)}</span></td><td>${r.played}</td><td>${r.points}</td></tr>`).join("")}</tbody></table>`:'<div class="empty-state">Nessuna classifica</div>';
+
+function updateKickoffCountdown(kickoffAt){
+  const el=$("#kickoffCountdown");
+  if(!el)return;
+  const ms=new Date(kickoffAt).getTime()-Date.now();
+
+  if(ms<=0){
+    el.innerHTML='<span>Fischio d’inizio</span><strong>ORA</strong>';
+    if(dashboardCountdownTimer){
+      clearInterval(dashboardCountdownTimer);
+      dashboardCountdownTimer=null;
+    }
+    return;
+  }
+
+  const total=Math.floor(ms/1000);
+  const d=Math.floor(total/86400);
+  const h=Math.floor((total%86400)/3600);
+  const m=Math.floor((total%3600)/60);
+  const s=total%60;
+
+  el.innerHTML=`<span>Fischio d’inizio tra</span><strong>${d?d+"g ":""}${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}</strong>`;
 }
+
+function dashboardCompactMatchRow(f){
+  const opponent=isOwnTeamName(f.home_team)?teamVisual(f.away_team):teamVisual(f.home_team);
+  const comp=competitions.find(c=>c.id===f.competition_id);
+  const date=new Date(f.kickoff_at);
+  const done=f.status==="finished";
+  const result=done
+    ?`${f.home_score}-${f.away_score}`
+    :new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(date);
+  const caselle=team?.short_name||"CAS";
+  const matchup=isOwnTeamName(f.home_team)?caselle+" - "+opponent.short:opponent.short+" - "+caselle;
+
+  return `<div class="match-row">
+    <div class="date">
+      ${new Intl.DateTimeFormat("it-IT",{day:"2-digit"}).format(date)}
+      <small>${new Intl.DateTimeFormat("it-IT",{month:"short"}).format(date).replace(".","").toUpperCase()}</small>
+    </div>
+    ${opponent.logo
+      ?`<img class="row-crest" src="${esc(opponent.logo)}" alt="">`
+      :`<span class="row-crest fallback">${esc(opponent.short)}</span>`}
+    <div class="match-row-copy">
+      <strong>${esc(matchup)}</strong>
+      <small>${esc(comp?.name||"")} · Giornata ${f.round_no}</small>
+    </div>
+    <time>${esc(result)}</time>
+  </div>`;
+}
+
+function dashboardStandingWindow(rows,size=5){
+  if(rows.length<=size)return rows;
+
+  const ownIndex=rows.findIndex(r=>isOwnTeamName(r.team));
+  if(ownIndex<0)return rows.slice(0,size);
+
+  let start=ownIndex-2;
+  let end=ownIndex+3;
+
+  if(start<0){
+    end=Math.min(rows.length,end-start);
+    start=0;
+  }
+  if(end>rows.length){
+    start=Math.max(0,start-(end-rows.length));
+    end=rows.length;
+  }
+
+  return rows.slice(start,end);
+}
+
+function renderDashboardStandings(){
+  const box=$("#dashboardStandings");
+  if(!box)return;
+
+  const rows=dashboardStandingWindow(dashboardStandingRows,5);
+  box.innerHTML=rows.length?`
+    <table>
+      <thead><tr><th>#</th><th>Squadra</th><th>G</th><th>Pt</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>{
+          const rank=dashboardStandingRows.indexOf(r)+1;
+          return `<tr class="${isOwnTeamName(r.team)?"me":""}">
+            <td>${rank}</td>
+            <td><span class="tn">${dashboardTeamBadge(r.team)}${esc(r.team)}</span></td>
+            <td>${r.played}</td>
+            <td>${r.points}</td>
+          </tr>`;
+        }).join("")}
+      </tbody>
+    </table>`
+    :'<div class="empty-state">Nessuna classifica</div>';
+}
+
 function dashboardTeamBadge(name){
   const v=teamVisual(name);
-  return v.logo?`<img class="crest" src="${esc(v.logo)}" alt="">`:`<span class="crest crest-fallback">${esc(v.short)}</span>`;
+  return v.logo
+    ?`<img class="crest" src="${esc(v.logo)}" alt="">`
+    :`<span class="crest crest-fallback">${esc(v.short)}</span>`;
 }
-window.addEventListener("resize",fitDashboardStandings);
-$$("[data-go-calendar]").forEach(b=>b.onclick=()=>setAppView("calendar"));
-$$("[data-go-competition]").forEach(b=>b.onclick=()=>setAppView("competitions"));
 
 async function loadRosterView(){await loadCoreSeasonData();renderRosterTabs();renderRosterTable();renderPlayerDetail()}
 function renderRosterTabs(){const roles=[["ALL","Tutti"],["P","Portieri"],["D","Difensori"],["C","Centrocampisti"],["A","Attaccanti"]];$("#rosterRoleTabs").innerHTML=roles.map(([v,l])=>`<button class="${rosterRole===v?"active":""}" data-roster-role="${v}">${l}</button>`).join("");$$("[data-roster-role]").forEach(b=>b.onclick=()=>{rosterRole=b.dataset.rosterRole;renderRosterTabs();renderRosterTable()})}
@@ -951,7 +1096,6 @@ function toggleNewEventSecondary(){const t=document.querySelector('input[name="n
 $$('input[name="newEventType"]').forEach(x=>x.onchange=toggleNewEventSecondary);
 $("#eventComposeForm").onsubmit=async e=>{e.preventDefault();$("#eventComposeError").classList.add("hidden");try{if(!sessionUser)throw new Error("Accedi per aggiungere eventi.");const type=document.querySelector('input[name="newEventType"]:checked').value,p={match_id:selectedMatchId,event_type:type,minute:+$("#newEventMinute").value,player_id:$("#newEventPlayer").value||null,secondary_player_id:type==="substitution"?($("#newEventSecondary").value||null):null,payload:{},proposed_by:sessionUser.id,validation_status:"proposed",team_side:$("#newEventSide").value};const r=await db.from("app_match_events").insert(p).select("*").single();assertSaved(r,"Evento");$("#eventComposeForm").reset();await loadEventsView()}catch(err){$("#eventComposeError").textContent=err.message||String(err);$("#eventComposeError").classList.remove("hidden")}};
 async function loadStatsView(){await loadCoreSeasonData();const fixtures=await ownFixtures(),finished=fixtures.filter(f=>f.status==="finished"),t=finished.reduce((a,f)=>{const o=fixtureOutcome(f);if(!o)return a;a.m++;a.gf+=o.gf;a.ga+=o.ga;if(o.result==="W")a.w++;else if(o.result==="D")a.d++;else a.l++;return a},{m:0,w:0,d:0,l:0,gf:0,ga:0});$("#statsKpis").innerHTML=[["Partite",t.m],["Vittorie",t.w],["Gol fatti",t.gf],["Gol subiti",t.ga]].map(([l,v])=>`<div class="kpi-card"><strong>${v}</strong><span>${l}</span></div>`).join("");const sorted=[...playerStats].sort((a,b)=>(b.appearances||0)-(a.appearances||0)||(b.goals||0)-(a.goals||0));$("#statsPlayers").innerHTML=`<table class="data-table"><thead><tr><th>Giocatore</th><th>Pres.</th><th>Tit.</th><th>Gol</th><th>Assist</th><th>Gialli</th><th>Rossi</th></tr></thead><tbody>${sorted.map(p=>`<tr><td><strong>${esc(p.last_name+" "+p.first_name)}</strong></td><td>${p.appearances||0}</td><td>${p.starts||0}</td><td>${p.goals||0}</td><td>${p.assists||0}</td><td>${p.yellow_cards||0}</td><td>${p.red_cards||0}</td></tr>`).join("")}</tbody></table>`;$("#statsScorers").innerHTML=[...playerStats].sort((a,b)=>(b.goals||0)-(a.goals||0)).slice(0,8).map((p,i)=>`<div class="scorer-row"><span>${i+1}</span><strong>${esc(p.last_name+" "+p.first_name)}</strong><b>${p.goals||0}</b></div>`).join("")}
-$("#globalSearch").oninput=e=>{if(!$("#rosterView").classList.contains("hidden")){$("#rosterSearch").value=e.target.value;renderRosterTable()}};
 
 async function boot(){
   try{
