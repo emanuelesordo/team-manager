@@ -781,16 +781,6 @@ function teamProjectionModel(standings,fixtures,competition){
   return {projected,reliability:Math.min(95,reliability),remaining:remaining.length,simCount};
 }
 
-function projectionWindow(rows,size=5){
-  if(rows.length<=size)return rows;
-  const own=rows.findIndex(r=>isOwnTeamName(r.team));
-  if(own<0)return rows.slice(0,size);
-  let start=own-2,end=own+3;
-  if(start<0){end=Math.min(rows.length,end-start);start=0}
-  if(end>rows.length){start=Math.max(0,start-(end-rows.length));end=rows.length}
-  return rows.slice(start,end);
-}
-
 function renderCompetitionProjection(standings,fixtures,competition){
   const box=$("#competitionProjection"),rel=$("#projectionReliability"),meta=$("#projectionScenarioMeta");
   if(!box||!rel||!meta)return;
@@ -802,7 +792,7 @@ function renderCompetitionProjection(standings,fixtures,competition){
   }
 
   const model=teamProjectionModel(standings,fixtures,competition);
-  const rows=projectionWindow(model.projected,5);
+  const rows=model.projected;
   const reliabilityLabel=model.reliability<25?"molto bassa":model.reliability<45?"bassa":model.reliability<65?"media":model.reliability<82?"buona":"alta";
   rel.textContent=`Affidabilità ${reliabilityLabel} · ${model.reliability}%`;
   meta.textContent=`${model.remaining} partite · ${model.simCount.toLocaleString("it-IT")} scenari`;
@@ -848,12 +838,14 @@ function renderCompetitionFixtures(rows){
   const rounds=[...grouped.entries()]
     .map(([round,list])=>{
       const ordered=[...list].sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
-      const times=ordered.map(x=>new Date(x.kickoff_at).getTime()).filter(Number.isFinite);
+      const times=ordered.map(x=>new Date(x.kickoff_at).getTime()).filter(Number.isFinite).sort((a,b)=>a-b);
+      const referenceAt=times.length?times[Math.floor((times.length-1)/2)]:Infinity;
       return {
         round,
         list:ordered,
-        firstAt:times.length?Math.min(...times):Infinity,
-        lastAt:times.length?Math.max(...times):-Infinity
+        firstAt:times.length?times[0]:Infinity,
+        lastAt:times.length?times[times.length-1]:-Infinity,
+        referenceAt
       };
     })
     .sort((a,b)=>a.round-b.round);
@@ -862,17 +854,14 @@ function renderCompetitionFixtures(rows){
   const focusLabel=$("#competitionFixtureFocusLabel");
   const now=Date.now();
 
-  // Finestra iniziale guidata dalle date reali, non dal numero di giornata:
-  // ultimo turno interamente passato sopra, primo turno futuro subito sotto.
-  const pastIndexes=rounds
-    .map((x,index)=>({index,lastAt:x.lastAt}))
-    .filter(x=>Number.isFinite(x.lastAt)&&x.lastAt<now);
-  const futureIndexes=rounds
-    .map((x,index)=>({index,firstAt:x.firstAt}))
-    .filter(x=>Number.isFinite(x.firstAt)&&x.firstAt>=now);
-
-  const lastPastIndex=pastIndexes.length?pastIndexes[pastIndexes.length-1].index:-1;
-  const nextFutureIndex=futureIndexes.length?futureIndexes[0].index:-1;
+  // La giornata viene collocata usando la data mediana delle sue partite:
+  // un eventuale recupero/posticipo non sposta artificialmente tutto il turno.
+  const lastPastIndex=rounds.reduce((best,x,index)=>
+    Number.isFinite(x.referenceAt)&&x.referenceAt<now?index:best,-1
+  );
+  const nextFutureIndex=rounds.findIndex((x,index)=>
+    Number.isFinite(x.referenceAt)&&x.referenceAt>=now&&(lastPastIndex<0||index>lastPastIndex)
+  );
 
   let focusIndex=-1;
   if(lastPastIndex>=0)focusIndex=lastPastIndex;
@@ -884,10 +873,10 @@ function renderCompetitionFixtures(rows){
 
   if(focusLabel){
     if(!rounds.length)focusLabel.textContent="";
-    else if(lastPastIndex>=0&&nextFutureIndex>=0&&lastPastIndex!==nextFutureIndex){
-      focusLabel.textContent=`Ultimo ${rounds[lastPastIndex].round} · Prossimo ${rounds[nextFutureIndex].round}`;
-    }else if(nextRound)focusLabel.textContent=`Prossimo ${nextRound.round}`;
-    else focusLabel.textContent=`Ultimo ${focusRound?.round??""}`;
+    else if(lastPastIndex>=0&&nextFutureIndex>=0){
+      focusLabel.textContent=`Ultimo turno ${rounds[lastPastIndex].round} · Prossimo ${rounds[nextFutureIndex].round}`;
+    }else if(nextRound)focusLabel.textContent=`Prossimo turno ${nextRound.round}`;
+    else focusLabel.textContent=`Ultimo turno ${focusRound?.round??""}`;
   }
 
   grid.innerHTML=rounds.length
