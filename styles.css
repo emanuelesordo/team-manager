@@ -3891,3 +3891,43 @@ dialog form{padding:16px}
 .mc-general-timeline .mc-recovery-chip{
   margin:1px auto 3px;
 }
+
+
+/* Match Center: one shared row per minute across both teams */
+.mc-minute-group{
+  align-items:center!important;
+  min-height:0!important;
+  padding-block:1px!important;
+}
+.mc-minute-group .mc-event-half{
+  align-self:stretch;
+}
+.mc-minute-stack{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:1px;
+}
+.mc-event-half-home .mc-minute-stack{
+  align-items:flex-end;
+}
+.mc-event-half-away .mc-minute-stack{
+  align-items:flex-start;
+}
+.mc-minute-event,
+.mc-substitution-pair{
+  min-height:16px;
+  display:flex;
+  align-items:center;
+  border-radius:5px;
+  cursor:pointer;
+}
+.mc-minute-event:hover,
+.mc-substitution-pair:hover{
+  background:rgba(31,143,215,.035);
+}
+.mc-minute-group>time{
+  align-self:center!important;
+  justify-self:center;
+}
