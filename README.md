@@ -117,3 +117,15 @@ Regole già implementate:
 - nel cambio l'uscente è obbligatorio, l'entrante facoltativo: è ammessa l'uscita senza ingresso;
 - espulsione avversaria supportata senza anagrafica avversaria;
 - in post i gol inseriti non possono superare il risultato ufficiale della fixture.
+
+
+### Divisa Match Center
+La squadra principale dispone di una configurazione divisa persistita su `teams`:
+- `kit_style`: tinta unita, bande verticali/orizzontali, metà/metà o diagonale;
+- `kit_primary_color`;
+- `kit_secondary_color`;
+- `kit_number_color`.
+
+Il Setup Squadra consente di modificare e vedere in anteprima la divisa. Nel Match Center i giocatori sono rappresentati da maglia e numero, con rating medio da `app_match_ratings` e indicatori per gol, assist, entrata/uscita e cartellini. La vista Generale usa la composizione effettivamente in campo dopo aver applicato sostituzioni ed espulsioni.
+
+Lo storico eventi usa un layout match-report: eventi casa/ospite sui due lati, minuto centrale, parziale sui gol e separatori di fine partita/recupero.
