@@ -3788,3 +3788,106 @@ dialog form{padding:16px}
     max-width:none;
   }
 }
+
+
+/* Match Center: denser timeline + grouped substitutions */
+.mc-general-timeline .mc-event-row{
+  min-height:18px;
+  padding-block:1px;
+  margin:0;
+}
+.mc-general-timeline .mc-event-content{
+  gap:3px;
+}
+.mc-general-timeline .mc-event-names{
+  line-height:1.05;
+}
+.mc-general-timeline .mc-event-names strong{
+  line-height:1.05;
+}
+.mc-general-timeline .mc-event-names small{
+  line-height:1.05;
+}
+.mc-general-timeline .mc-event-row>time{
+  align-self:center;
+  line-height:1;
+}
+
+.mc-substitution-group{
+  align-items:center!important;
+  min-height:0!important;
+  padding-block:1px!important;
+}
+.mc-substitution-group .mc-event-half{
+  align-self:stretch;
+}
+.mc-substitution-stack{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:1px;
+}
+.mc-event-half-home .mc-substitution-stack{
+  align-items:flex-end;
+}
+.mc-event-half-away .mc-substitution-stack{
+  align-items:flex-start;
+}
+.mc-substitution-pair{
+  min-height:16px;
+  display:flex;
+  align-items:center;
+  border-radius:5px;
+  cursor:pointer;
+}
+.mc-substitution-pair:hover{
+  background:rgba(31,143,215,.035);
+}
+.mc-substitution-pair .mc-event-content{
+  gap:3px;
+}
+.mc-substitution-pair .mc-event-symbol.substitution{
+  width:18px;
+  height:16px;
+}
+.mc-substitution-pair .mc-event-symbol.substitution i,
+.mc-substitution-pair .mc-event-symbol.substitution b{
+  font-size:10px;
+}
+.mc-substitution-group>time{
+  align-self:center!important;
+  justify-self:center;
+}
+
+/* Cards in exact 2:3 ratio */
+.mc-timeline-card-stack{
+  flex:0 0 10px;
+  width:10px;
+  height:12px;
+}
+.mc-timeline-card-stack i{
+  width:8px!important;
+  height:12px!important;
+  min-width:8px!important;
+  min-height:12px!important;
+  max-width:8px!important;
+  max-height:12px!important;
+  border-radius:1px!important;
+}
+.mc-timeline-card-stack.is-accumulation{
+  width:14px;
+  flex-basis:14px;
+}
+
+/* Tighter separators to match denser chronology */
+.mc-general-timeline .mc-period-separator{
+  min-height:20px;
+  margin:2px 0;
+}
+.mc-general-timeline .mc-recovery-divider{
+  margin-block:2px;
+}
+.mc-general-timeline .mc-recovery-chip{
+  margin:1px auto 3px;
+}
