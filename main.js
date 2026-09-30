@@ -891,7 +891,7 @@ function renderCompetitionFixtures(rows){
     :'<div class="muted">Calendario non disponibile.</div>';
 
   $$("[data-fixture-score]").forEach(b=>b.onclick=()=>openFixture(rows.find(r=>r.id===b.dataset.fixtureScore)));
-  $("[data-match-center-score]").forEach(b=>b.onclick=async e=>{e.stopPropagation();const fixture=rows.find(r=>r.id===b.dataset.matchCenterScore);await openMatchDetail(fixture);if(fixture?.status!=="finished"&&fixture?.home_score!=null&&fixture?.away_score!=null)mcOpenFinalScore()});
+  $$("[data-match-center-score]").forEach(b=>b.onclick=async e=>{e.stopPropagation();const fixture=rows.find(r=>r.id===b.dataset.matchCenterScore);await openMatchDetail(fixture);if(fixture?.status!=="finished"&&fixture?.home_score!=null&&fixture?.away_score!=null)mcOpenFinalScore()});
   $$("[data-match-center]").forEach(row=>row.onclick=e=>{if(e.target.closest("button"))return;openMatchDetail(rows.find(r=>r.id===row.dataset.matchCenter))});
 
   if(focusIndex>=0){
