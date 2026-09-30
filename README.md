@@ -129,3 +129,7 @@ La squadra principale dispone di una configurazione divisa persistita su `teams`
 Il Setup Squadra consente di modificare e vedere in anteprima la divisa. Nel Match Center i giocatori sono rappresentati da maglia e numero, con rating medio da `app_match_ratings` e indicatori per gol, assist, entrata/uscita e cartellini. La vista Generale usa la composizione effettivamente in campo dopo aver applicato sostituzioni ed espulsioni.
 
 Lo storico eventi usa un layout match-report: eventi casa/ospite sui due lati, minuto centrale, parziale sui gol e separatori di fine partita/recupero.
+
+
+#### Refactor UI Match Center
+Il Match Center usa un unico blocco CSS dedicato, senza override progressivi. La Generale è organizzata in tre aree: storico eventi, campo e panchina/non convocati. Lo storico usa spaziatura e blocchi evento senza separatori orizzontali ripetuti; il campo isola completamente le regole delle maglie dalle vecchie regole globali `.pitch-player`.
