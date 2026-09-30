@@ -1007,7 +1007,7 @@ function mcHeaderEventItems(side){
     .filter(e=>e.team_side===eventSide&&(e.event_type==="goal"||e.event_type==="red_card"))
     .sort((a,b)=>(a.minute??999)-(b.minute??999))
     .map(e=>{
-      const minute=e.minute==null?"":e.minute+(e.stoppage_minute?"+".concat(e.stoppage_minute):"")+"'";
+      const minute=e.minute==null?"":mcDisplayMinute(e);
       if(e.event_type==="red_card"){
         const who=eventSide==="team"?mcPlayerName(e.player_id):"Espulsione";
         return '<span class="red"><b>■</b> '+esc(who)+' '+minute+'</span>';
@@ -1215,7 +1215,7 @@ function mcTimeline(target,limit,filters=null){
     }
 
     const isHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
-    const minute=e.minute==null?"–":e.minute+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
+    const minute=mcDisplayMinute(e);
     const partial=e.event_type==="goal"?(scoreAt.get(e)||""):"";
 
     let main="",secondary="";
