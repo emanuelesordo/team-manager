@@ -3943,3 +3943,38 @@ dialog form{padding:16px}
 .mc-general-timeline .mc-minute-event .mc-timeline-card-stack{
   margin-inline:3px;
 }
+
+
+/* Match Center: explicit visual separation between minute blocks */
+.mc-general-timeline > .mc-minute-group{
+  margin:8px 0!important;
+}
+.mc-general-timeline > .mc-minute-group:first-child{
+  margin-top:4px!important;
+}
+.mc-general-timeline > .mc-minute-group + .mc-minute-group{
+  margin-top:10px!important;
+}
+.mc-general-timeline .mc-minute-stack{
+  gap:1px!important;
+}
+
+/* Keep card labels clearly detached from the card icon */
+.mc-general-timeline .mc-minute-event .mc-event-content{
+  gap:6px!important;
+}
+.mc-general-timeline .mc-minute-event .mc-timeline-card-stack{
+  margin:0!important;
+}
+.mc-event-half-home .mc-timeline-card-stack i{
+  left:calc(var(--card-index,0) * 2px)!important;
+}
+.mc-event-half-away .mc-timeline-card-stack i{
+  left:calc(var(--card-index,0) * -2px)!important;
+}
+.mc-event-half-home .mc-timeline-card-stack.is-accumulation{
+  margin-right:4px!important;
+}
+.mc-event-half-away .mc-timeline-card-stack.is-accumulation{
+  margin-left:4px!important;
+}
