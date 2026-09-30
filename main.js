@@ -1022,7 +1022,7 @@ async function mcSyncProvisionalScore(){
   if($("#calendarHubList"))renderCalendarRows();
 }
 function mcBenchFinalReasonOptions(value=""){
-  return [["injury","Infortunio"],["technical","Scelta tecnica"],["changes_finished","Cambi finiti"],["physical","Problema fisico"],["other","Altro"]]
+  return [["injury","Infortunio"],["technical_choice","Scelta tecnica"],["changes_finished","Cambi finiti"],["physical","Problema fisico"],["other","Altro"]]
     .map(([v,l])=>'<option value="'+v+'" '+(value===v?"selected":"")+'>'+l+'</option>').join("");
 }
 function mcFinalScoreDialog(){
@@ -1897,7 +1897,7 @@ function mcRenderGeneralBench(){
 
   const renderRow=(x,status)=>{
     const p=mcPlayer(x.player_id),injured=!!mcInjury(x.player_id)||x.unavailability_reason==="injury";
-    const finalStatus=x.unavailability_reason==="injury"?"Infortunio":x.unavailability_reason==="technical"?"Scelta tecnica":x.unavailability_reason==="changes_finished"?"Cambi finiti":x.unavailability_reason==="physical"?"Problema fisico":status;
+    const finalStatus=x.unavailability_reason==="injury"?"Infortunio":x.unavailability_reason==="technical_choice"?"Scelta tecnica":x.unavailability_reason==="changes_finished"?"Cambi finiti":x.unavailability_reason==="physical"?"Problema fisico":status;
     return '<div class="mc-general-bench-row"><span class="num">'+(x.shirt_number??p?.shirt_number??"–")+'</span><span class="mc-bench-player-copy"><strong>'+esc(mcPlayerName(x.player_id))+(injured?'<i class="mc-injury-icon" title="Infortunio">✚</i>':'')+'</strong><small>'+esc(finalStatus||roleLabel(p?.generic_role_manual))+'</small></span>'+(!mcIsPost()?mcPlayerQuickButtons(x.player_id,"bench"):"")+'</div>';
   };
   const unusedHtml=unused.map(x=>renderRow(x,roleLabel(mcPlayer(x.player_id)?.generic_role_manual))).join("");
