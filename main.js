@@ -1453,8 +1453,10 @@ function mcSetPlayerQuickKind(kind){
     }else{
       html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickSelect(fieldRows,"mcQuickPlayer","Seleziona marcatore")+'</label><label>Assistman>'+mcQuickSelect(fieldRows,"mcQuickOther","Nessun assist")+'</label></div>';
     }
-    const goalType=editing?.payload?.goal_type||"action";
-    html+='<label>Tipologia<select id="mcQuickSubtype"><option value="action" '+(goalType==="action"?"selected":"")+'>Azione</option><option value="penalty" '+(goalType==="penalty"?"selected":"")+'>Rigore</option><option value="free_kick" '+(goalType==="free_kick"?"selected":"")+'>Punizione</option><option value="own_goal" '+(goalType==="own_goal"?"selected":"")+'>Autogol</option></select></label>';
+    if(side!=="opponent"){
+      const goalType=editing?.payload?.goal_type||"action";
+      html+='<label>Tipologia<select id="mcQuickSubtype"><option value="action" '+(goalType==="action"?"selected":"")+'>Azione</option><option value="penalty" '+(goalType==="penalty"?"selected":"")+'>Rigore</option><option value="free_kick" '+(goalType==="free_kick"?"selected":"")+'>Punizione</option><option value="own_goal" '+(goalType==="own_goal"?"selected":"")+'>Autogol</option></select></label>';
+    }
   }else{
     if(side==="team"&&(source==="timeline"||source==="edit")){
       html+='<label>Giocatore>'+mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore",editing?.player_id||"")+'</label>';
