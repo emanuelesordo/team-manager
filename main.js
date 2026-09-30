@@ -1161,6 +1161,19 @@ function mcDisplayMinute(e){
   const minute=base+Number(e.minute||0);
   return minute+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
 }
+function mcIsAddedTimeEvent(e){
+  if(e?.event_type==="period_end"||e?.minute==null)return false;
+  return Number(e.minute)>mcPeriodMinutes();
+}
+function mcRecoveryDividerLabel(period,recoveryByPeriod,events){
+  const explicit=recoveryByPeriod.get(period)?.minutes;
+  if(Number(explicit)>0)return "RECUPERO +"+Number(explicit)+"'";
+  const over=events
+    .filter(e=>mcEventPeriod(e)===period&&mcIsAddedTimeEvent(e))
+    .map(e=>Number(e.minute)-mcPeriodMinutes())
+    .filter(n=>Number.isFinite(n)&&n>0);
+  return over.length?"RECUPERO +"+Math.max(...over)+"'":"RECUPERO";
+}
 function mcTimeline(target,limit,filters=null){
   const all=[...matchCenterState.events].sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0));
   const ownHome=isOwnTeamName(matchCenterState.fixture.home_team);
@@ -1204,9 +1217,15 @@ function mcTimeline(target,limit,filters=null){
 
   let halfInserted=false;
   const hasSecondHalf=all.some(e=>e.event_type!=="period_end"&&mcEventPeriod(e)==="second_half")||recoveryByPeriod.has("first_half");
+  const periodsWithAddedTime=new Set(regular.filter(mcIsAddedTimeEvent).map(mcEventPeriod));
+  const recoveryDividerInserted=new Set();
 
   regular.forEach((e,index)=>{
     const period=mcEventPeriod(e);
+    if(periodsWithAddedTime.has(period)&&!mcIsAddedTimeEvent(e)&&!recoveryDividerInserted.has(period)){
+      rows.push('<div class="mc-recovery-divider"><span></span><strong>'+esc(mcRecoveryDividerLabel(period,recoveryByPeriod,regular))+'</strong><span></span></div>');
+      recoveryDividerInserted.add(period);
+    }
     if(!halfInserted&&hasSecondHalf&&period==="first_half"){
       rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><span></span></div>');
       const rec1=recoveryByPeriod.get("first_half");
