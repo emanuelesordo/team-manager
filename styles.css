@@ -1969,8 +1969,8 @@ dialog form{padding:16px}
 
 .mc-event-row{
   display:grid;
-  grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);
-  gap:7px;
+  grid-template-columns:minmax(0,1fr) 12px minmax(0,1fr);
+  gap:4px;
   align-items:center;
   min-height:32px;
   padding:3px 5px;
@@ -1980,19 +1980,18 @@ dialog form{padding:16px}
   transition:background .12s ease;
 }
 .mc-event-row:hover{background:#eef0f1}
-.mc-event-row time{
+.mc-event-center{
+  width:4px;
+  height:4px;
   justify-self:center;
-  color:#292c2e;
-  font-size:8px;
-  line-height:1;
-  font-weight:900;
-  font-variant-numeric:tabular-nums;
-  white-space:nowrap;
+  border-radius:50%;
+  background:#d8dbdd;
 }
 .mc-event-half{
   min-width:0;
   display:flex;
   align-items:center;
+  gap:5px;
 }
 .mc-event-half-home{
   justify-content:flex-end;
@@ -2002,14 +2001,26 @@ dialog form{padding:16px}
   justify-content:flex-start;
   text-align:left;
 }
+.mc-event-half time{
+  flex:0 0 auto;
+  width:28px;
+  color:#292c2e;
+  font-size:8px;
+  line-height:1;
+  font-weight:900;
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.mc-event-half-home time{text-align:left}
+.mc-event-half-away time{text-align:right}
 .mc-event-content{
   min-width:0;
   display:flex;
   align-items:center;
   gap:5px;
 }
-.mc-event-half-home .mc-event-content{flex-direction:row-reverse}
-.mc-event-half-away .mc-event-content{flex-direction:row}
+.mc-event-half-home .mc-event-content{flex-direction:row}
+.mc-event-half-away .mc-event-content{flex-direction:row-reverse}
 
 .mc-event-symbol{
   flex:0 0 auto;
@@ -2090,11 +2101,13 @@ dialog form{padding:16px}
 
 @media(max-width:700px){
   .mc-event-row{
-    grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr);
-    gap:3px;
+    grid-template-columns:minmax(0,1fr) 8px minmax(0,1fr);
+    gap:2px;
     min-height:30px;
     padding-inline:2px;
   }
+  .mc-event-half{gap:3px}
+  .mc-event-half time{width:24px}
   .mc-event-names strong,
   .mc-event-names small{font-size:7px}
   .mc-goal-score{min-width:30px;height:18px;padding-inline:4px;font-size:7px}
