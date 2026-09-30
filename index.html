@@ -110,6 +110,10 @@
         <div id="teamLogoPreview" class="logo-preview">Logo</div>
         <label class="upload">Logo<input id="teamLogoFile" type="file" accept="image/*"></label>
       </div>
+      <div class="compact-grid">
+        <label>Nome stadio / campo<input id="teamVenueName" placeholder="Es. Comunale di Caselle"></label>
+        <label>Indirizzo<input id="teamVenueAddress" placeholder="Via, civico, città"></label>
+      </div>
       <div class="compact-grid colors">
         <label>Colore 1<input id="teamColor1" type="color"></label>
         <label>Colore 2<input id="teamColor2" type="color"></label>
@@ -323,6 +327,10 @@
       <label>Nome<input id="opponentName" required></label>
       <label>Nome breve<input id="opponentShort"></label>
     </div>
+    <div class="compact-grid">
+      <label>Nome stadio / campo<input id="opponentVenueName" placeholder="Es. Campo Comunale"></label>
+      <label>Indirizzo<input id="opponentVenueAddress" placeholder="Via, civico, città"></label>
+    </div>
     <div class="logo-row">
       <div id="opponentLogoPreview" class="logo-preview">Logo</div>
       <label class="upload">Logo<input id="opponentLogoFile" type="file" accept="image/*"></label>
@@ -388,7 +396,10 @@
       <label>Trasferta<input id="fixtureAway" list="fixtureTeamNames" required></label>
     </div>
     <datalist id="fixtureTeamNames"></datalist>
-    <label>Campo<input id="fixtureVenue"></label>
+    <div class="compact-grid">
+      <label>Nome stadio / campo<input id="fixtureVenueName"></label>
+      <label>Indirizzo campo<input id="fixtureVenueAddress"></label>
+    </div>
     <div class="compact-grid">
       <label>Gol casa<input id="fixtureHomeScore" type="number" min="0"></label>
       <label>Gol trasferta<input id="fixtureAwayScore" type="number" min="0"></label>
