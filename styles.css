@@ -3682,3 +3682,33 @@ dialog form{padding:16px}
   text-decoration:underline;
   text-underline-offset:2px;
 }
+
+
+/* Match Center card event proportions */
+.mc-event-content .mc-event-symbol.card{
+  flex:0 0 8px!important;
+  width:8px!important;
+  min-width:8px!important;
+  max-width:8px!important;
+  height:14px!important;
+  min-height:14px!important;
+  max-height:14px!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:1px!important;
+  box-shadow:none!important;
+  aspect-ratio:auto!important;
+}
+.mc-card-choice{
+  flex-wrap:wrap;
+}
+.mc-card-choice .accumulation{
+  flex:1 1 100%;
+}
+.mc-card-choice .accumulation i{
+  width:7px;
+  height:12px;
+  border-radius:1px;
+  box-shadow:4px 0 0 rgba(223,75,83,.45);
+}
