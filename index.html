@@ -434,28 +434,11 @@
         </div>
       </div>
       <div id="mcMeta" class="mc-meta"></div>
-      <nav class="mc-tabs">
-        <button type="button" class="active" data-mc-tab="general">Generale</button>
-        <button type="button" data-mc-tab="availability">Disponibilità</button>
-        <button type="button" data-mc-tab="formation">Formazione</button>
-        <button type="button" data-mc-tab="events">Eventi</button>
-      </nav>
     </header>
     <div class="mc-body">
       <section data-mc-panel="general">
         <div class="mc-general-grid">
           <div class="mc-general-left">
-            <section id="mcGeneralQuickCard" class="mc-card mc-quick-card">
-              <div class="mc-card-head"><strong>Azioni rapide</strong></div>
-              <div class="mc-quick-actions">
-                <button type="button" data-mc-quick="goal"><span>⚽</span><b>Gol</b></button>
-                <button type="button" data-mc-quick="yellow_card"><span>▮</span><b>Ammonizione</b></button>
-                <button type="button" data-mc-quick="blue_card"><span class="mc-blue-symbol">▮</span><b>Cartellino blu</b></button>
-                <button type="button" data-mc-quick="red_card"><span>▮</span><b>Espulsione</b></button>
-                <button type="button" data-mc-quick="substitution"><span>↔</span><b>Sostituzione</b></button>
-                <button type="button" data-mc-quick="events"><span>◷</span><b>Altri eventi</b></button>
-              </div>
-            </section>
             <section class="mc-card mc-history-card">
               <div class="mc-card-head"><strong id="mcHistoryTitle">Cronologia partita</strong><span id="mcGoalProgress"></span></div>
               <div class="mc-event-filters" aria-label="Filtra eventi">
@@ -469,7 +452,7 @@
             </section>
           </div>
           <section class="mc-card mc-field-card">
-            <div class="mc-card-head"><strong>Formazione in campo</strong><div class="mc-field-tools"><span id="mcGeneralFormationMeta"></span><button id="mcGeneralModify" type="button" class="secondary" data-mc-open-tab="formation">Modifica</button></div></div>
+            <div class="mc-card-head"><strong>Formazione in campo</strong><div class="mc-field-tools"><span id="mcGeneralFormationMeta"></span></div></div>
             <div id="mcGeneralPitch" class="mc-pitch mc-general-pitch"></div>
           </section>
           <div class="mc-general-right">
@@ -482,40 +465,6 @@
               <div id="mcGeneralBench" class="mc-general-bench"></div>
             </section>
           </div>
-        </div>
-      </section>
-      <section data-mc-panel="availability" class="hidden">
-        <section class="mc-card"><div class="mc-card-head"><div><strong>Disponibilità</strong><small>Squalifica = non convocabile · Infortunio = segnalazione</small></div></div><div id="mcAvailabilityList"></div></section>
-      </section>
-      <section data-mc-panel="formation" class="hidden">
-        <div class="mc-formation-grid">
-          <section class="mc-card"><div class="mc-card-head"><strong>Rosa da assegnare</strong></div><div id="mcFormationPool"></div></section>
-          <section class="mc-card"><div class="mc-card-head"><strong>XI titolare</strong><div><select id="mcFormationSelect"><option>4-4-2</option><option>4-3-3</option><option>3-5-2</option></select><button id="mcSaveFormation" type="button" class="secondary">Salva</button></div></div><div id="mcFormationPitch" class="football-pitch mc-full-pitch"></div></section>
-          <section class="mc-card"><div class="mc-card-head"><strong>Panchina</strong></div><div id="mcFormationBench"></div></section>
-        </div>
-        <details class="mc-card mc-not-called"><summary>Non convocati / non assegnati</summary><div id="mcNotCalled"></div></details>
-      </section>
-      <section data-mc-panel="events" class="hidden">
-        <div class="mc-events-grid">
-          <section class="mc-card"><div class="mc-card-head"><strong>Timeline</strong><div class="mc-card-head-actions"><span id="mcEventsCount"></span><button id="mcCsiImportBtn" type="button" class="secondary small">Aggiorna da CSI</button></div></div><div id="mcEventsTimeline"></div></section>
-          <section class="mc-card">
-            <div class="mc-card-head"><strong>Console evento</strong><span id="mcEligibilityHint"></span></div>
-            <div class="mc-event-integrity">
-              <strong>Controlli</strong>
-              <div id="mcIntegrity" class="mc-integrity mc-integrity-compact"></div>
-            </div>
-            <div id="mcLiveControls" class="mc-live-controls hidden"><label>Recupero <input id="mcRecoveryMinutes" type="number" min="0" value="0"></label><div><button type="button" data-mc-live="start_first">Inizia 1°T</button><button type="button" data-mc-live="end_first">Fine 1°T</button><button type="button" data-mc-live="start_second">Inizia 2°T</button><button type="button" data-mc-live="end_match">Fine partita</button></div></div>
-            <form id="mcEventForm">
-              <label>Evento<select id="mcEventType"><option value="goal">Gol</option><option value="substitution">Cambio / uscita</option><option value="yellow_card">Giallo</option><option value="blue_card">Blu / sospensione temporanea</option><option value="red_card">Rosso / espulsione</option></select></label>
-              <div class="compact-grid"><label>Minuto<input id="mcEventMinute" type="number" min="0" placeholder="libero"></label><label>Recupero<input id="mcEventStoppage" type="number" min="0" placeholder="+"></label></div>
-              <label>Squadra<select id="mcEventSide"><option value="team">Calcio Caselle</option><option value="opponent">Avversario</option></select></label>
-              <label id="mcEventPlayerWrap">Giocatore<select id="mcEventPlayer"></select></label>
-              <label id="mcEventSecondaryWrap">Assist / entra<select id="mcEventSecondary"></select></label>
-              <label>Tipologia<select id="mcEventSubtype"></select></label>
-              <p id="mcEventError" class="form-error hidden"></p>
-              <button class="primary wide" type="submit">Inserisci evento</button>
-            </form>
-          </section>
         </div>
       </section>
     </div>
