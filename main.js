@@ -142,19 +142,21 @@ window.addEventListener("error",e=>{
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const fmt=d=>d?new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):"—";
 const statusLabel={active:"Attiva",future:"Futura",archived:"Archiviata"};
-let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,competitionHubId=null,competitionFixtureFilter="all",calendarRows=[],teamMatches=[],calendarCompetitionIds=new Set(),players=[],rosterRows=[],playerStats=[],selectedPlayerId=null,selectedMatchId=null,rosterRole="ALL",dashboardStandingRows=[],dashboardCountdownTimer=null,loggedPlayer=null;
+let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,currentUserRole=null,competitionHubId=null,competitionFixtureFilter="all",calendarRows=[],teamMatches=[],calendarCompetitionIds=new Set(),players=[],rosterRows=[],playerStats=[],rosterMatchPlayers=[],rosterInjuries=[],selectedPlayerId=null,selectedMatchId=null,rosterRole="ALL",rosterSort={key:"surname",dir:"asc"},dashboardStandingRows=[],dashboardCountdownTimer=null,loggedPlayer=null;
 
 async function loadAuthState(){
   const {data:{session}}=await db.auth.getSession();
   sessionUser=session?.user||null;
   if(!sessionUser){
+    currentUserRole=null;
     $("#authState").textContent="Non autenticato";
     $("#authState").className="auth-state error";
     $("#authButton").textContent="Accedi";
     return;
   }
   const role=await db.from("app_user_roles").select("role").eq("user_id",sessionUser.id).maybeSingle();
-  $("#authState").textContent=role.data?.role==="admin"?"Admin":"Autenticato";
+  currentUserRole=role.data?.role||null;
+  $("#authState").textContent=currentUserRole==="admin"?"Admin":"Autenticato";
   $("#authState").className="auth-state ok";
   $("#authButton").textContent="Esci";
 }
@@ -175,6 +177,7 @@ $("#authButton").onclick=async()=>{
   if(sessionUser){
     await db.auth.signOut();
     sessionUser=null;
+    currentUserRole=null;
     await loadAuthState();
     return;
   }
@@ -1640,15 +1643,21 @@ function opponentVisualById(id){return opponents.find(x=>x.id===id)||null}
 function matchLabel(m){const o=opponentVisualById(m.opponent_id);return m.home_away==="home"?(team?.short_name||"CAS")+" - "+(o?.short_name||o?.name||"Avv."):(o?.short_name||o?.name||"Avv.")+" - "+(team?.short_name||"CAS")}
 async function loadCoreSeasonData(){
   await ensureMainTeam();if(!currentSeason)return;
-  const [roster,stats,matchesResult,allPlayers]=await Promise.all([
+  const [roster,stats,matchesResult,allPlayers,injuriesResult]=await Promise.all([
     db.from("app_roster").select("*").eq("season_id",currentSeason.id),
     db.from("app_player_season_stats").select("*").eq("season_id",currentSeason.id),
     db.from("app_matches").select("*").eq("season_id",currentSeason.id).order("kickoff_at",{ascending:true}),
-    db.from("players").select("*").eq("team_id",currentSeason.team_id).order("last_name",{ascending:true})
+    db.from("players").select("*").eq("team_id",currentSeason.team_id).order("last_name",{ascending:true}),
+    db.from("injuries").select("*").eq("season_id",currentSeason.id).order("injury_date",{ascending:false})
   ]);
   const playerMap=new Map((allPlayers.data||[]).map(p=>[p.id,p]));
   rosterRows=(roster.data||[]).map(r=>({...r,...playerMap.get(r.player_id)}));
-  playerStats=stats.data||[];teamMatches=matchesResult.data||[];players=allPlayers.data||[];
+  playerStats=stats.data||[];teamMatches=matchesResult.data||[];players=allPlayers.data||[];rosterInjuries=injuriesResult.data||[];
+  const matchIds=teamMatches.map(m=>m.id);
+  if(matchIds.length){
+    const mp=await db.from("app_match_players").select("match_id,player_id,shirt_number").in("match_id",matchIds);
+    rosterMatchPlayers=mp.data||[];
+  }else rosterMatchPlayers=[];
   if(!selectedPlayerId&&rosterRows[0])selectedPlayerId=rosterRows[0].player_id;
   if(!selectedMatchId&&teamMatches.length){const upcoming=teamMatches.find(m=>new Date(m.kickoff_at)>=new Date());selectedMatchId=(upcoming||teamMatches[teamMatches.length-1]).id}
 }
@@ -1891,14 +1900,137 @@ function renderHomeScoreRow(f){
 async function loadRosterView(){await loadCoreSeasonData();renderRosterTabs();renderRosterTable();renderPlayerDetail()}
 function renderRosterTabs(){const roles=[["ALL","Tutti"],["P","Portieri"],["D","Difensori"],["C","Centrocampisti"],["A","Attaccanti"]];$("#rosterRoleTabs").innerHTML=roles.map(([v,l])=>`<button class="${rosterRole===v?"active":""}" data-roster-role="${v}">${l}</button>`).join("");$$("[data-roster-role]").forEach(b=>b.onclick=()=>{rosterRole=b.dataset.rosterRole;renderRosterTabs();renderRosterTable()})}
 function rosterStat(id){return playerStats.find(x=>x.player_id===id)||{}}
-function renderRosterTable(){const q=$("#rosterSearch").value.trim().toLowerCase();const rows=rosterRows.filter(p=>(rosterRole==="ALL"||p.generic_role_manual===rosterRole)&&(!q||(p.first_name+" "+p.last_name).toLowerCase().includes(q)));$("#rosterTable").innerHTML=`<table class="data-table"><thead><tr><th>#</th><th>Giocatore</th><th>Ruolo</th><th>Età</th><th>Pres.</th><th>Gol</th><th>Stato</th></tr></thead><tbody>${rows.map(p=>{const s=rosterStat(p.player_id);return `<tr class="${selectedPlayerId===p.player_id?"selected":""}" data-player-row="${p.player_id}"><td>${p.shirt_number??"–"}</td><td><div class="player-cell"><span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`${esc(p.first_name[0]||"")}${esc(p.last_name[0]||"")}`}</span><strong>${esc(p.last_name+" "+p.first_name)}</strong></div></td><td><span class="role-badge ${roleClass(p.generic_role_manual)}">${roleLabel(p.generic_role_manual)}</span></td><td>${ageFromBirth(p.birth_date)}</td><td>${s.appearances??0}</td><td>${s.goals??0}</td><td><span class="status-dot active"></span></td></tr>`}).join("")}</tbody></table>`;$$("[data-player-row]").forEach(r=>r.onclick=()=>{selectedPlayerId=r.dataset.playerRow;renderRosterTable();renderPlayerDetail()})}
+function rosterShirtNumber(p){
+  const counts=new Map();
+  rosterMatchPlayers.filter(x=>x.player_id===p.player_id&&x.shirt_number!=null).forEach(x=>{const n=Number(x.shirt_number);counts.set(n,(counts.get(n)||0)+1)});
+  if(!counts.size)return p.shirt_number??"–";
+  const max=Math.max(...counts.values());
+  return Math.max(...[...counts.entries()].filter(([,count])=>count===max).map(([n])=>n));
+}
+function rosterRoleRank(code){return {P:0,D:1,C:2,A:3}[code]??9}
+function rosterSortValue(p,key){
+  const s=rosterStat(p.player_id);
+  if(key==="shirt")return Number(rosterShirtNumber(p))||0;
+  if(key==="surname")return (p.last_name+" "+p.first_name).toLocaleLowerCase("it");
+  if(key==="role")return rosterRoleRank(p.generic_role_manual);
+  if(key==="age")return Number(ageFromBirth(p.birth_date))||-1;
+  if(key==="appearances")return Number(s.appearances)||0;
+  if(key==="goals")return Number(s.goals)||0;
+  if(key==="rating")return Number(s.avg_rating)||-1;
+  if(key==="status")return p.active===false?0:1;
+  return "";
+}
+function rosterSortRows(rows){
+  return [...rows].sort((a,b)=>{
+    const av=rosterSortValue(a,rosterSort.key),bv=rosterSortValue(b,rosterSort.key);
+    let cmp=typeof av==="string"?av.localeCompare(bv,"it",{sensitivity:"base"}):av-bv;
+    if(!cmp)cmp=(a.last_name+" "+a.first_name).localeCompare(b.last_name+" "+b.first_name,"it",{sensitivity:"base"});
+    return rosterSort.dir==="asc"?cmp:-cmp;
+  });
+}
+function rosterSortHead(key,label){
+  const active=rosterSort.key===key,arrow=active?(rosterSort.dir==="asc"?" ↑":" ↓"):"";
+  return `<button type="button" class="table-sort ${active?"active":""}" data-roster-sort="${key}">${label}${arrow}</button>`;
+}
+function renderRosterTable(){
+  const q=$("#rosterSearch").value.trim().toLowerCase();
+  const filtered=rosterRows.filter(p=>(rosterRole==="ALL"||p.generic_role_manual===rosterRole)&&(!q||(p.first_name+" "+p.last_name).toLowerCase().includes(q)));
+  const rows=rosterSortRows(filtered);
+  $("#rosterTable").innerHTML=`<table class="data-table roster-data-table"><thead><tr>
+    <th>${rosterSortHead("shirt","#")}</th><th>${rosterSortHead("surname","Giocatore")}</th><th>${rosterSortHead("role","Ruolo")}</th>
+    <th>${rosterSortHead("age","Età")}</th><th>${rosterSortHead("appearances","Pres.")}</th><th>${rosterSortHead("goals","Gol")}</th>
+    <th>${rosterSortHead("rating","Rating")}</th><th>${rosterSortHead("status","Stato")}</th>
+  </tr></thead><tbody>${rows.map(p=>{const s=rosterStat(p.player_id);return `<tr class="${selectedPlayerId===p.player_id?"selected":""}" data-player-row="${p.player_id}">
+    <td>${rosterShirtNumber(p)}</td>
+    <td><div class="player-cell"><span class="avatar">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`${esc(p.first_name[0]||"")}${esc(p.last_name[0]||"")}`}</span><strong>${esc(p.last_name+" "+p.first_name)}</strong></div></td>
+    <td><span class="role-badge ${roleClass(p.generic_role_manual)}">${roleLabel(p.generic_role_manual)}</span></td>
+    <td>${ageFromBirth(p.birth_date)}</td><td>${s.appearances??0}</td><td>${s.goals??0}</td><td>${s.avg_rating!=null?Number(s.avg_rating).toFixed(1):"—"}</td>
+    <td><span class="status-dot ${p.active===false?"inactive":"active"}" title="${p.active===false?"Inattivo":"Attivo"}"></span></td>
+  </tr>`}).join("")}</tbody></table>`;
+  $$("[data-player-row]").forEach(r=>r.onclick=()=>{selectedPlayerId=r.dataset.playerRow;renderRosterTable();renderPlayerDetail()});
+  $$("[data-roster-sort]").forEach(b=>b.onclick=e=>{e.stopPropagation();const key=b.dataset.rosterSort;if(rosterSort.key===key)rosterSort.dir=rosterSort.dir==="asc"?"desc":"asc";else rosterSort={key,dir:key==="surname"||key==="role"?"asc":"desc"};renderRosterTable()});
+}
 $("#rosterSearch").oninput=renderRosterTable;
-function renderPlayerDetail(){const p=rosterRows.find(x=>x.player_id===selectedPlayerId);if(!p){$("#playerDetail").innerHTML='<div class="empty-state">Seleziona un giocatore</div>';return}const s=rosterStat(p.player_id);$("#playerDetail").innerHTML=`<div class="detail-profile"><div class="detail-avatar">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`${esc(p.first_name[0]||"")}${esc(p.last_name[0]||"")}`}</div><div><strong>${esc(p.first_name+" "+p.last_name)}</strong><span>${roleLabel(p.generic_role_manual)}</span></div><b>${p.shirt_number??"–"}</b></div><div class="detail-tabs"><span class="active">Dettagli</span><span>Statistiche</span><span>Stagioni</span></div><dl class="detail-list"><div><dt>Data di nascita</dt><dd>${p.birth_date?fmt(p.birth_date):"—"}</dd></div><div><dt>Nazionalità</dt><dd>${esc(p.nationality_code||"—")}</dd></div><div><dt>Altezza</dt><dd>${p.height_cm?p.height_cm+" cm":"—"}</dd></div><div><dt>Piede</dt><dd>${esc(p.preferred_foot||"—")}</dd></div></dl><div class="mini-stat-grid"><div><strong>${s.appearances??0}</strong><span>Presenze</span></div><div><strong>${s.goals??0}</strong><span>Gol</span></div><div><strong>${s.assists??0}</strong><span>Assist</span></div></div>`}
-$("#addPlayerBtn").onclick=()=>{$("#playerForm").reset();$("#playerFormError").classList.add("hidden");$("#playerDialog").showModal()};
+function injuryStatusLabel(v){return ({active:"Attivo",recovering:"Recupero",recovered:"Recuperato",closed:"Chiuso",resolved:"Risolto"}[String(v||"").toLowerCase()]||v||"—")}
+function renderPlayerDetail(){
+  const p=rosterRows.find(x=>x.player_id===selectedPlayerId);
+  if(!p){$("#playerDetail").innerHTML='<div class="empty-state">Seleziona un giocatore</div>';return}
+  const s=rosterStat(p.player_id),injuries=rosterInjuries.filter(x=>x.player_id===p.player_id).sort((a,b)=>String(b.injury_date).localeCompare(String(a.injury_date)));
+  const admin=currentUserRole==="admin";
+  $("#playerDetail").innerHTML=`<div class="detail-profile"><div class="detail-avatar">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`${esc(p.first_name[0]||"")}${esc(p.last_name[0]||"")}`}</div><div><strong>${esc(p.first_name+" "+p.last_name)}</strong><span>${roleLabel(p.generic_role_manual)}</span></div><b>${rosterShirtNumber(p)}</b></div>
+  ${admin?`<div class="player-admin-actions"><button type="button" class="secondary" data-edit-player="${p.player_id}">Modifica dati</button><button type="button" class="secondary" data-add-injury="${p.player_id}">+ Infortunio</button></div>`:""}
+  <div class="detail-tabs"><span class="active">Dettagli</span></div>
+  <dl class="detail-list"><div><dt>Data di nascita</dt><dd>${p.birth_date?fmt(p.birth_date):"—"}</dd></div><div><dt>Nazionalità</dt><dd>${esc(p.nationality_code||"—")}</dd></div><div><dt>Altezza</dt><dd>${p.height_cm?p.height_cm+" cm":"—"}</dd></div><div><dt>Piede</dt><dd>${esc(p.preferred_foot||"—")}</dd></div></dl>
+  <div class="mini-stat-grid four"><div><strong>${s.appearances??0}</strong><span>Presenze</span></div><div><strong>${s.goals??0}</strong><span>Gol</span></div><div><strong>${s.assists??0}</strong><span>Assist</span></div><div><strong>${s.avg_rating!=null?Number(s.avg_rating).toFixed(1):"—"}</strong><span>Rating</span></div></div>
+  <div class="injury-history"><div class="card-section-head"><strong>Storico infortuni</strong><span>${injuries.length}</span></div>
+  ${injuries.length?injuries.map(x=>`<div class="injury-history-row"><div><strong>${esc(x.public_summary||"Infortunio")}</strong><small>${fmt(x.injury_date)} · ${esc(injuryStatusLabel(x.status))}</small><small>Previsto: ${x.expected_return?fmt(x.expected_return):"—"} · Rientro: ${x.actual_return?fmt(x.actual_return):"—"}</small></div>${admin?`<button type="button" class="icon-btn injury-edit" data-edit-injury="${x.id}" title="Modifica">✎</button>`:""}</div>`).join(""):'<div class="empty-state compact">Nessun infortunio registrato</div>'}</div>`;
+  if(admin){
+    $("[data-edit-player]")?.addEventListener("click",()=>openPlayerDialog(p));
+    $("[data-add-injury]")?.addEventListener("click",()=>openInjuryDialog(p.player_id));
+    $$("[data-edit-injury]").forEach(b=>b.onclick=()=>openInjuryDialog(p.player_id,rosterInjuries.find(x=>x.id===b.dataset.editInjury)));
+  }
+}
+function openPlayerDialog(p=null){
+  const editing=!!p;
+  $("#playerForm").reset();$("#playerFormError").classList.add("hidden");
+  $("#playerEditId").value=p?.player_id||"";
+  $("#playerDialogTitle").textContent=editing?"Modifica giocatore":"Nuovo giocatore";
+  $("#newPlayerFirst").value=p?.first_name||"";
+  $("#newPlayerLast").value=p?.last_name||"";
+  $("#newPlayerRole").value=p?.generic_role_manual||"P";
+  $("#newPlayerNumber").value=p?.shirt_number??"";
+  $("#newPlayerBirth").value=p?.birth_date||"";
+  $("#newPlayerNationality").value=p?.nationality_code||"";
+  $("#newPlayerHeight").value=p?.height_cm??"";
+  $("#newPlayerFoot").value=p?.preferred_foot||"";
+  $("#newPlayerPhoto").value=p?.photo_url||"";
+  $("#newPlayerNotes").value=p?.public_notes||"";
+  $("#playerDialog").showModal();
+}
+$("#addPlayerBtn").onclick=()=>openPlayerDialog();
 $$("[data-close-player]").forEach(b=>b.onclick=()=>$("#playerDialog").close());
-$("#playerForm").onsubmit=async e=>{e.preventDefault();try{if(!sessionUser)throw new Error("Accedi per aggiungere un giocatore.");const p={team_id:currentSeason.team_id,first_name:$("#newPlayerFirst").value.trim(),last_name:$("#newPlayerLast").value.trim(),generic_role_manual:$("#newPlayerRole").value};const pr=await db.from("players").insert(p).select("*").single();assertSaved(pr,"Giocatore");const rr=await db.from("app_roster").insert({season_id:currentSeason.id,player_id:pr.data.id,shirt_number:$("#newPlayerNumber").value?+$("#newPlayerNumber").value:null,active:true}).select("*").single();assertSaved(rr,"Rosa");$("#playerDialog").close();await loadRosterView()}catch(err){$("#playerFormError").textContent=err.message||String(err);$("#playerFormError").classList.remove("hidden")}};
-async function loadMatchesView(){await loadCoreSeasonData();if(!selectedMatchId&&teamMatches[0])selectedMatchId=teamMatches[0].id;const match=teamMatches.find(x=>x.id===selectedMatchId);if(!match){$("#matchManagerTop").innerHTML='<div class="empty-state">Nessuna partita</div>';return}renderMatchManagerTop(match);const mp=await db.from("app_match_players").select("*").eq("match_id",match.id);renderMatchSelection(match,mp.data||[])}
-function renderMatchManagerTop(match){const o=opponentVisualById(match.opponent_id);$("#matchManagerTop").innerHTML=`<div class="match-select-wrap"><select id="matchManagerSelect">${teamMatches.map(m=>`<option value="${m.id}" ${m.id===match.id?"selected":""}>${localDateTime(m.kickoff_at)} · ${esc(matchLabel(m))}</option>`).join("")}</select></div><div class="match-score-head"><strong>${esc(team?.short_name||"CAS")}</strong><b>${match.home_score} : ${match.away_score}</b><strong>${esc(o?.short_name||o?.name||"AVV")}</strong></div>`;$("#matchManagerSelect").onchange=e=>{selectedMatchId=e.target.value;loadMatchesView()};$("#matchFormation").value=match.formation||"4-4-2"}
+$("#playerForm").onsubmit=async e=>{
+  e.preventDefault();
+  try{
+    if(!sessionUser)throw new Error("Accedi per salvare un giocatore.");
+    const id=$("#playerEditId").value;
+    if(id&&currentUserRole!=="admin")throw new Error("Solo un admin può modificare i dati della rosa.");
+    const payload={team_id:currentSeason.team_id,first_name:$("#newPlayerFirst").value.trim(),last_name:$("#newPlayerLast").value.trim(),generic_role_manual:$("#newPlayerRole").value,birth_date:$("#newPlayerBirth").value||null,nationality_code:$("#newPlayerNationality").value.trim().toUpperCase()||null,height_cm:$("#newPlayerHeight").value?+$("#newPlayerHeight").value:null,preferred_foot:$("#newPlayerFoot").value||null,photo_url:$("#newPlayerPhoto").value.trim()||null,public_notes:$("#newPlayerNotes").value.trim()||null};
+    if(id){
+      const pr=await db.from("players").update(payload).eq("id",id).select("*").maybeSingle();assertSaved(pr,"Giocatore");
+      const roster=rosterRows.find(x=>x.player_id===id),num=$("#newPlayerNumber").value?+$("#newPlayerNumber").value:null;
+      if(roster?.id){const rr=await db.from("app_roster").update({shirt_number:num}).eq("id",roster.id).select("*").maybeSingle();assertSaved(rr,"Rosa")}
+    }else{
+      const pr=await db.from("players").insert(payload).select("*").single();assertSaved(pr,"Giocatore");
+      const rr=await db.from("app_roster").insert({season_id:currentSeason.id,player_id:pr.data.id,shirt_number:$("#newPlayerNumber").value?+$("#newPlayerNumber").value:null,active:true}).select("*").single();assertSaved(rr,"Rosa");
+      selectedPlayerId=pr.data.id;
+    }
+    $("#playerDialog").close();await loadRosterView();
+  }catch(err){$("#playerFormError").textContent=err.message||String(err);$("#playerFormError").classList.remove("hidden")}
+};
+function openInjuryDialog(playerId,injury=null){
+  if(currentUserRole!=="admin")return;
+  $("#injuryForm").reset();$("#injuryFormError").classList.add("hidden");
+  $("#injuryEditId").value=injury?.id||"";$("#injuryPlayerId").value=playerId;
+  $("#injuryDialogTitle").textContent=injury?"Modifica infortunio":"Nuovo infortunio";
+  $("#injuryDate").value=injury?.injury_date||new Date().toISOString().slice(0,10);
+  $("#injuryStatus").value=injury?.status||"active";
+  $("#injuryExpectedReturn").value=injury?.expected_return||"";
+  $("#injuryActualReturn").value=injury?.actual_return||"";
+  $("#injurySummary").value=injury?.public_summary||"";
+  $("#injuryDialog").showModal();
+}
+$$("[data-close-injury]").forEach(b=>b.onclick=()=>$("#injuryDialog").close());
+$("#injuryForm").onsubmit=async e=>{
+  e.preventDefault();
+  try{
+    if(!sessionUser||currentUserRole!=="admin")throw new Error("Solo un admin può gestire gli infortuni.");
+    const id=$("#injuryEditId").value,payload={team_id:currentSeason.team_id,season_id:currentSeason.id,player_id:$("#injuryPlayerId").value,status:$("#injuryStatus").value,injury_date:$("#injuryDate").value,expected_return:$("#injuryExpectedReturn").value||null,actual_return:$("#injuryActualReturn").value||null,public_summary:$("#injurySummary").value.trim()||null};
+    const r=id?await db.from("injuries").update(payload).eq("id",id).select("*").maybeSingle():await db.from("injuries").insert({...payload,created_by:sessionUser.id}).select("*").single();
+    assertSaved(r,"Infortunio");$("#injuryDialog").close();await loadRosterView();
+  }catch(err){$("#injuryFormError").textContent=err.message||String(err);$("#injuryFormError").classList.remove("hidden")}
+};
+
 function renderMatchSelection(match,rows){const map=new Map(rows.map(x=>[x.player_id,x])),starters=rows.filter(x=>x.started).sort((a,b)=>(a.tactical_slot||99)-(b.tactical_slot||99)),bench=rows.filter(x=>x.selection_status==="bench");$("#matchRosterList").innerHTML=rosterRows.map(p=>{const x=map.get(p.player_id),state=x?.started?"starter":x?.selection_status==="bench"?"bench":"available";return `<div class="match-roster-row"><span class="num">${x?.shirt_number??p.shirt_number??"–"}</span><strong>${esc(p.last_name)}</strong><span class="role-badge ${roleClass(p.generic_role_manual)}">${roleLabel(p.generic_role_manual)}</span><div class="select-actions"><button data-set-selection="${p.player_id}:starter" class="${state==="starter"?"on":""}">T</button><button data-set-selection="${p.player_id}:bench" class="${state==="bench"?"on":""}">P</button><button data-set-selection="${p.player_id}:available" class="${state==="available"?"on":""}">F</button></div></div>`}).join("");$$("[data-set-selection]").forEach(b=>b.onclick=()=>setMatchSelection(match.id,b.dataset.setSelection,map));const positions=[[50,90],[25,72],[42,72],[58,72],[75,72],[18,50],[39,50],[61,50],[82,50],[38,26],[62,26]];$("#matchPitch").innerHTML=starters.slice(0,11).map((x,i)=>{const p=rosterRows.find(r=>r.player_id===x.player_id),pos=positions[i]||[50,50];return `<div class="pitch-player" style="left:${pos[0]}%;top:${pos[1]}%"><span>${x.shirt_number??p?.shirt_number??"–"}</span><strong>${esc(p?.last_name||playerNameById(x.player_id))}</strong></div>`}).join("");$("#matchBench").innerHTML=bench.map(x=>{const p=rosterRows.find(r=>r.player_id===x.player_id);return `<div class="bench-row"><span>${x.shirt_number??p?.shirt_number??"–"}</span><strong>${esc(p?.last_name||playerNameById(x.player_id))}</strong><small>${roleLabel(p?.generic_role_manual)}</small></div>`}).join("")||'<div class="empty-state">Panchina vuota</div>'}
 async function setMatchSelection(matchId,spec,map){try{if(!sessionUser)throw new Error("Accedi per modificare la formazione.");const [playerId,state]=spec.split(":"),existing=map.get(playerId),payload={selection_status:state,started:state==="starter"};let r;if(existing)r=await db.from("app_match_players").update(payload).eq("id",existing.id).select("*").maybeSingle();else r=await db.from("app_match_players").insert({match_id:matchId,player_id:playerId,...payload}).select("*").single();assertSaved(r,"Convocazione");await loadMatchesView()}catch(err){alert(err.message||String(err))}}
 $("#saveFormationBtn").onclick=async()=>{try{if(!sessionUser)throw new Error("Accedi per salvare il modulo.");const r=await db.from("app_matches").update({formation:$("#matchFormation").value}).eq("id",selectedMatchId).select("*").maybeSingle();assertSaved(r,"Modulo");await loadMatchesView()}catch(err){alert(err.message||String(err))}};
