@@ -891,7 +891,7 @@ function renderCompetitionFixtures(rows){
     :'<div class="muted">Calendario non disponibile.</div>';
 
   $$("[data-fixture-score]").forEach(b=>b.onclick=()=>openFixture(rows.find(r=>r.id===b.dataset.fixtureScore)));
-  $$("[data-match-center-score]").forEach(b=>b.onclick=e=>{e.stopPropagation();openMatchDetail(rows.find(r=>r.id===b.dataset.matchCenterScore))});
+  $("[data-match-center-score]").forEach(b=>b.onclick=async e=>{e.stopPropagation();const fixture=rows.find(r=>r.id===b.dataset.matchCenterScore);await openMatchDetail(fixture);if(fixture?.status!=="finished"&&fixture?.home_score!=null&&fixture?.away_score!=null)mcOpenFinalScore()});
   $$("[data-match-center]").forEach(row=>row.onclick=e=>{if(e.target.closest("button"))return;openMatchDetail(rows.find(r=>r.id===row.dataset.matchCenter))});
 
   if(focusIndex>=0){
@@ -1008,7 +1008,7 @@ function mcEventScore(){
   return ownHome?{home:teamGoals,away:oppGoals}:{home:oppGoals,away:teamGoals};
 }
 function mcHasProvisionalScore(){
-  return !mcIsPost()&&matchCenterState.events.some(e=>e.event_type==="goal"&&e.validation_status!=="rejected");
+  return !mcIsPost()&&matchCenterState.events.some(e=>e.event_type!=="period_end"&&e.validation_status!=="rejected");
 }
 async function mcSyncProvisionalScore(){
   if(!matchCenterState.fixture||mcIsPost()||!matchCenterState.events.some(e=>e.event_type!=="period_end"))return;
@@ -1112,7 +1112,7 @@ function mcHeader(){
     c?.name?'<span><b>◆</b>'+esc(c.name)+'</span>':"",
     (f.venue_name||f.venue_address||f.venue)?'<span><b>⌖</b>'+esc([f.venue_name,f.venue_address].filter(Boolean).join(' · ')||f.venue)+'</span>':""
   ].filter(Boolean).join("");
-  $("#mcState").textContent=mcIsLive()?"LIVE":mcIsPost()?"FINALE":"PRE";$("#mcLiveControls")?.classList.toggle("hidden",!m||mcIsPost());
+  $("#mcState").textContent=mcIsPost()?"FINALE":(mcIsLive()||mcHasProvisionalScore())?"LIVE":"PRE";$("#mcLiveControls")?.classList.toggle("hidden",!m||mcIsPost());
   clearInterval(matchCenterTimer);const timer=$("#mcTimer");
   if(mcIsLive()){timer.classList.remove("hidden");const tick=()=>{const sec=Math.max(0,Math.floor((Date.now()-new Date(m.live_started_at).getTime())/1000));timer.textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0")};tick();matchCenterTimer=setInterval(tick,1000)}else timer.classList.add("hidden");
 }
