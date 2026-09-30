@@ -3301,3 +3301,21 @@ dialog form{padding:16px}
     grid-template-columns:repeat(4,40px);
   }
 }
+
+
+/* Match Center: keep all quick-event icons on one row */
+.mc-player-event-tabs{
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  align-items:center;
+  gap:4px;
+  width:max-content;
+}
+.mc-player-event-tabs button{
+  flex:0 0 42px;
+}
+@media(max-width:700px){
+  .mc-player-event-tabs button{
+    flex-basis:40px;
+  }
+}
