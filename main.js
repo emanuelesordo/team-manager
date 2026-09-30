@@ -2945,6 +2945,7 @@ $("#fixtureSaveEventBtn").onclick=async()=>{
     const r=await db.from("app_fixture_events").insert(payload).select("*").single();
     const saved=assertSaved(r,"Evento");
     fixtureEditorEvents.push(saved);
+    await fixtureInvalidateFinalResultIfGoal(eventType);
     $("#fixtureEventMinute").value="";
     $("#fixtureEventStoppage").value="";
     $("#fixtureEventComposer").classList.add("hidden");
@@ -2953,12 +2954,28 @@ $("#fixtureSaveEventBtn").onclick=async()=>{
     error.textContent=err.message||String(err);error.classList.remove("hidden");
   }
 };
+async function fixtureInvalidateFinalResultIfGoal(eventType){
+  if(eventType!=="goal"||fixtureEditorCurrent?.status!=="finished")return;
+  const r=await db.from("app_competition_fixtures")
+    .update({status:"scheduled",manual_result_override:true})
+    .eq("id",fixtureEditorCurrent.id)
+    .select("*")
+    .maybeSingle();
+  const saved=assertSaved(r,"Riapertura risultato");
+  fixtureEditorCurrent=saved;
+  $("#fixtureStatus").value="scheduled";
+  fixtureUpdateBubble();
+  await renderCompetitionHub();
+}
+
 async function fixtureDeleteEvent(id){
   try{
     if(!sessionUser)throw new Error("Accedi per eliminare eventi.");
+    const deleted=fixtureEditorEvents.find(e=>String(e.id)===String(id));
     const r=await db.from("app_fixture_events").delete().eq("id",id);
     if(r.error)throw r.error;
     fixtureEditorEvents=fixtureEditorEvents.filter(e=>String(e.id)!==String(id));
+    await fixtureInvalidateFinalResultIfGoal(deleted?.event_type);
     fixtureRenderEvents();
   }catch(err){
     $("#fixtureError").textContent=err.message||String(err);
