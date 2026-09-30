@@ -4869,3 +4869,116 @@ dialog form{padding:16px}
     container-type:normal;
   }
 }
+
+
+/* Match Center RATING: 11 XI rows, shared /12 rhythm, no row cards */
+.mc-rating-column-list{
+  display:grid!important;
+  grid-template-rows:none!important;
+  grid-auto-rows:calc((100% - 44px)/12)!important;
+  gap:4px!important;
+  align-content:start!important;
+  overflow:hidden!important;
+}
+.mc-rating-starters .mc-rating-column-list,
+.mc-rating-bench .mc-rating-column-list{
+  grid-template-rows:none!important;
+  grid-auto-rows:calc((100% - 44px)/12)!important;
+}
+.mc-rating-column-list>.mc-rating-row{
+  min-height:0!important;
+  height:auto!important;
+  max-height:none!important;
+  padding:2px 7px!important;
+  gap:8px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+  container-type:normal!important;
+  transition:background-color .12s ease!important;
+}
+.mc-rating-column-list>.mc-rating-row:hover,
+.mc-rating-column-list>.mc-rating-row:focus-within{
+  background:rgba(31,143,215,.055)!important;
+}
+.mc-rating-player{
+  grid-template-columns:24px minmax(0,1fr)!important;
+  gap:7px!important;
+}
+.mc-rating-player>.num{
+  width:24px!important;
+  height:24px!important;
+  border-radius:7px!important;
+  font-size:8px!important;
+}
+.mc-rating-player-copy{
+  gap:1px!important;
+}
+.mc-rating-name-line{
+  gap:8px!important;
+}
+.mc-rating-name-line>strong{
+  font-size:8px!important;
+}
+.mc-rating-player-copy>small{
+  font-size:6px!important;
+}
+.mc-rating-events{
+  gap:3px!important;
+}
+.mc-rating-event.goal,
+.mc-rating-event.assist{
+  width:11px!important;
+  height:11px!important;
+  font-size:8px!important;
+}
+.mc-rating-event.sub-in,
+.mc-rating-event.sub-out{
+  font-size:10px!important;
+}
+.mc-rating-event.card{
+  width:6px!important;
+  height:9px!important;
+}
+.mc-rating-average-value{
+  min-width:36px!important;
+  height:25px!important;
+  padding-inline:6px!important;
+  font-size:9px!important;
+}
+.mc-rating-average small{
+  font-size:6px!important;
+}
+.mc-rating-vote{
+  gap:2px!important;
+  font-size:6px!important;
+}
+.mc-rating-vote input[type="text"]{
+  height:27px!important;
+  padding-inline:7px!important;
+  font-size:9px!important;
+}
+
+/* The left side contains exactly the 11 starters; the unused /12 slice remains as breathing room */
+.mc-rating-starters .mc-rating-column-list{
+  padding-bottom:0!important;
+}
+.mc-rating-bench .mc-rating-column-list{
+  padding-bottom:0!important;
+}
+
+@media(max-width:640px){
+  .mc-rating-column-list,
+  .mc-rating-starters .mc-rating-column-list,
+  .mc-rating-bench .mc-rating-column-list{
+    grid-auto-rows:auto!important;
+    overflow:visible!important;
+  }
+  .mc-rating-column-list>.mc-rating-row{
+    min-height:48px!important;
+    height:auto!important;
+    padding:5px 6px!important;
+  }
+}
