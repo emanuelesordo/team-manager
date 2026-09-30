@@ -1680,54 +1680,60 @@ function mcPositionPlayerQuickEvent(anchor){
   const vx=vv?.offsetLeft||0,vy=vv?.offsetTop||0;
   const vw=vv?.width||window.innerWidth,vh=vv?.height||window.innerHeight;
   const sr=shell.getBoundingClientRect(),a=anchor.getBoundingClientRect();
-  const margin=10,gap=12;
+  const margin=10,gap=10;
 
-  // Boundary = visible part of the Match Center card, never the entire page.
   const boundLeft=Math.max(vx,sr.left)+margin;
   const boundTop=Math.max(vy,sr.top)+margin;
   const boundRight=Math.min(vx+vw,sr.right)-margin;
   const boundBottom=Math.min(vy+vh,sr.bottom)-margin;
   const boundWidth=Math.max(0,boundRight-boundLeft);
   const boundHeight=Math.max(0,boundBottom-boundTop);
-  if(boundWidth<120||boundHeight<120)return;
+  if(boundWidth<160||boundHeight<160)return;
 
-  pop.style.position="fixed";
-  pop.style.right="auto";
-  pop.style.bottom="auto";
-  pop.style.width=Math.min(430,boundWidth)+"px";
-  pop.style.maxWidth=boundWidth+"px";
-  pop.style.maxHeight=boundHeight+"px";
-  pop.style.overflowY="auto";
+  // Let CSS size the content naturally first, then compact only when actually needed.
+  pop.classList.remove("compact");
+  pop.style.removeProperty("--mc-pop-scale");
+  const preferredWidth=Math.min(boundWidth,window.matchMedia("(max-width:700px)").matches?520:460);
+  pop.style.setProperty("--mc-pop-width",preferredWidth+"px");
 
-  const w=Math.min(pop.offsetWidth||430,boundWidth);
-  const naturalH=Math.min(pop.scrollHeight||pop.offsetHeight||330,boundHeight);
+  let layoutW=pop.offsetWidth||preferredWidth;
+  let layoutH=pop.scrollHeight||pop.offsetHeight||320;
+
+  if(layoutH>boundHeight){
+    pop.classList.add("compact");
+    layoutW=pop.offsetWidth||preferredWidth;
+    layoutH=pop.scrollHeight||pop.offsetHeight||280;
+  }
+
+  // Last-resort scaling keeps the whole bubble visible without internal scrolling.
+  const scale=Math.min(1,boundWidth/layoutW,boundHeight/layoutH);
+  const safeScale=Math.max(.72,scale);
+  pop.style.setProperty("--mc-pop-scale",String(safeScale));
+
+  const renderedW=layoutW*safeScale;
+  const renderedH=layoutH*safeScale;
   const anchorCenter=Math.max(boundLeft,Math.min(boundRight,a.left+a.width/2));
 
-  let left=anchorCenter-w/2;
-  left=Math.max(boundLeft,Math.min(boundRight-w,left));
+  let left=anchorCenter-renderedW/2;
+  left=Math.max(boundLeft,Math.min(boundRight-renderedW,left));
 
   const roomBelow=boundBottom-(a.bottom+gap);
   const roomAbove=a.top-gap-boundTop;
   const useAbove=roomAbove>roomBelow;
-  const available=Math.max(80,useAbove?roomAbove:roomBelow);
-  const renderedH=Math.min(naturalH,available,boundHeight);
-
-  pop.style.maxHeight=Math.max(80,renderedH)+"px";
-
   let top=useAbove?a.top-gap-renderedH:a.bottom+gap;
   top=Math.max(boundTop,Math.min(boundBottom-renderedH,top));
 
-  pop.style.left=left+"px";
-  pop.style.top=top+"px";
+  pop.style.setProperty("--mc-pop-left",left+"px");
+  pop.style.setProperty("--mc-pop-top",top+"px");
   pop.classList.toggle("above",useAbove);
 
   const arrow=pop.querySelector(".mc-player-event-arrow");
   if(arrow){
-    const arrowLeft=anchorCenter-left;
-    arrow.style.left=Math.max(18,Math.min(w-18,arrowLeft))+"px";
+    const arrowLeft=(anchorCenter-left)/safeScale;
+    arrow.style.left=Math.max(18,Math.min(layoutW-18,arrowLeft))+"px";
     const attached=useAbove
-      ?Math.abs((top+renderedH+gap)-a.top)<18
-      :Math.abs((top-gap)-a.bottom)<18;
+      ?Math.abs((top+renderedH+gap)-a.top)<20
+      :Math.abs((top-gap)-a.bottom)<20;
     arrow.style.display=attached?"":"none";
   }
 }
