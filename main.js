@@ -1148,11 +1148,9 @@ function mcTimeline(target,limit,filters=null){
 
     rows.push(
       '<div class="mc-event-row mc-event-'+(isHome?"home":"away")+'">'+
-        '<time class="mc-minute-home">'+(isHome?minute:"")+'</time>'+
-        '<div class="mc-event-side mc-event-side-home">'+(isHome?content:"")+'</div>'+
-        '<div class="mc-event-axis"></div>'+
-        '<div class="mc-event-side mc-event-side-away">'+(isHome?"":content)+'</div>'+
-        '<time class="mc-minute-away">'+(isHome?"":minute)+'</time>'+
+        '<div class="mc-event-half mc-event-half-home">'+(isHome?content:"")+'</div>'+
+        '<time>'+minute+'</time>'+
+        '<div class="mc-event-half mc-event-half-away">'+(isHome?"":content)+'</div>'+
       '</div>'
     );
   });
