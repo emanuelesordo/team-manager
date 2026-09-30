@@ -10,13 +10,8 @@ Webapp **one-team based** per gestione squadra, calendario, formazione, eventi e
 - Nessuna statistica inventata: si mostrano solo metriche presenti o derivabili dai dati reali.
 
 ## UI
-Design allineato al mockup "Gestione Squadra":
-- palette azzurro/bianco;
-- sidebar compatta;
-- topbar minima;
-- card chiare arrotondate;
-- layout densi;
-- responsive mobile.
+
+La Home usa direttamente la struttura HTML fornita dall'utente come base operativa: shell glass, sidebar, topbar, hero, KPI, righe partita e tabella classifica. I dati demo presenti nel file originale non vengono usati: tutti i contenuti sono popolati dal database Supabase.
 
 ## Moduli
 ### Home
