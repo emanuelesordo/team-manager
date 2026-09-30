@@ -1089,7 +1089,7 @@ function mcCurrentFieldRows(){
       if(e.player_id)map.delete(e.player_id);
       if(e.secondary_player_id){
         const source=mcMatchPlayer(e.secondary_player_id)||{player_id:e.secondary_player_id,selection_status:"bench"};
-        const inheritedSlot=e.payload?.tactical_slot??outgoing?.tactical_slot??source.tactical_slot??null;
+        const inheritedSlot=source.tactical_slot??e.payload?.tactical_slot??outgoing?.tactical_slot??null;
         map.set(e.secondary_player_id,{...source,started:true,tactical_slot:inheritedSlot});
       }
     }
@@ -1281,7 +1281,8 @@ function mcTimeline(target,limit,filters=null){
   regular.forEach((e,index)=>{
     const period=mcEventPeriod(e);
     if(periodsWithAddedTime.has(period)&&!mcIsAddedTimeEvent(e)&&!recoveryDividerInserted.has(period)){
-      rows.push('<div class="mc-recovery-divider"><span></span><strong>'+esc(mcRecoveryDividerLabel(period,recoveryByPeriod,regular))+'</strong><span></span></div>');
+      const recoveryEvent=recoveryByPeriod.get(period)?.event;
+      rows.push('<div class="mc-recovery-divider" '+(recoveryEvent?'data-mc-event-id="'+esc(recoveryEvent.id)+'" role="button" tabindex="0"':'')+'><span></span><strong>'+esc(mcRecoveryDividerLabel(period,recoveryByPeriod,regular))+'</strong><span></span></div>');
       recoveryDividerInserted.add(period);
     }
     if(!halfInserted&&hasSecondHalf&&period==="first_half"){
@@ -1635,6 +1636,13 @@ async function mcSubmitPlayerQuickEvent(e){
       const outgoingSlot=outgoingRow?.tactical_slot??(displayedSlot>0?displayedSlot:null);
       const payload={...base,event_type:"substitution",player_id:outgoing,secondary_player_id:incoming,payload:{period,tactical_slot:outgoingSlot},substitution_reason:$("#mcQuickSubtype").value};
       if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
+      if(incoming&&outgoingSlot){
+        const incomingMp=mcMatchPlayer(incoming);
+        if(incomingMp){
+          const slotSave=await db.from("app_match_players").update({tactical_slot:outgoingSlot}).eq("id",incomingMp.id).select("*").maybeSingle();
+          assertSaved(slotSave,"Posizione subentrante");
+        }
+      }
     }else if(kind==="goal"){
       const sub=$("#mcQuickSubtype").value;
       let scorer=null,assist=null;
