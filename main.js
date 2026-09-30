@@ -1459,12 +1459,16 @@ function csiMappedId(player){return player?csiImportState.mapping.get(csiAliasKe
 async function csiImportOwn(fixture){
   await csiSaveAliases();
   const m=await csiEnsureOwnMatch(fixture),preview=csiImportState.preview,ownHome=isOwnTeamName(fixture.home_team);
-  const old=await db.from("app_match_events").select("id,source_event_key").eq("match_id",m.id).eq("source","csi");
-  const keys=new Set((old.data||[]).map(x=>x.source_event_key));
+  const old=await db.from("app_match_events").select("*").eq("match_id",m.id);
+  const keys=new Set((old.data||[]).filter(x=>x.source==="csi").map(x=>x.source_event_key));
   const rows=[];
   for(const e of preview.events||[]){
     if(!["goal","substitution","yellow_card","blue_card","red_card"].includes(e.type)||keys.has(e.source_event_key))continue;
     const teamSide=((e.side==="home")===ownHome)?"team":"opponent";
+    const sameImported=(old.data||[]).some(x=>x.source==="csi"&&x.event_type===e.type&&String(x.source_raw?.period||"")===String(e.period||"")&&String(x.source_raw?.side||"")===String(e.side||"")&&String(x.source_raw?.raw_text||"")===String(e.raw_text||""));
+    if(sameImported)continue;
+    const manualOverride=(old.data||[]).some(x=>x.source!=="csi"&&x.validation_status!=="rejected"&&x.event_type===e.type&&x.team_side===teamSide&&Number(x.minute??-1)===Number(e.minute??-1));
+    if(manualOverride)continue;
     const payload={period:e.period,source_official:true,csi_score:e.score||null,csi_raw_minute:e.minute,csi_raw_text:e.raw_text};
     if(e.type==="blue_card")payload.temporary_suspension_minutes=10;
     rows.push({match_id:m.id,event_type:e.type,minute:e.minute,stoppage_minute:null,team_side:teamSide,player_id:teamSide==="team"?csiMappedId(e.player):null,secondary_player_id:teamSide==="team"?csiMappedId(e.secondary_player):null,payload,substitution_reason:null,proposed_by:sessionUser.id,validation_status:"official",source:"csi",source_event_key:e.source_event_key,source_raw:{period:e.period,side:e.side,minute:e.minute,raw_text:e.raw_text,score:e.score,player:e.player,secondary_player:e.secondary_player}});
@@ -1498,6 +1502,8 @@ $("#csiConfirmImportBtn").onclick=async()=>{
       await csiImportOwn(saved);
     }else{
       await csiImportOtherFixture(saved);
+      const linkSave=await db.from("app_competition_fixtures").update({source_url:csiImportState.preview.url,source_imported_at:new Date().toISOString()}).eq("id",saved.id).select("*").maybeSingle();
+      if(!linkSave.error&&linkSave.data)saved=linkSave.data;
     }
     $("#csiImportDialog").close();
     if($("#fixtureDialog").open)$("#fixtureDialog").close();
