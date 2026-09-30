@@ -1370,6 +1370,31 @@ function mcRecoveryDividerLabel(period,recoveryByPeriod,events){
     .filter(n=>Number.isFinite(n)&&n>0);
   return over.length?"RECUPERO +"+Math.max(...over)+"'":"RECUPERO";
 }
+function mcTimelineCardHistory(event,events){
+  const isAccumulation=event?.event_type==="red_card"&&(event.payload?.card_type==="second_yellow_blue"||event.payload?.card_type==="second_card");
+  if(!isAccumulation)return [];
+  const eventOrder=mcEventOrder(event);
+  const eventCreated=new Date(event.created_at||0).getTime();
+  return events.filter(x=>{
+    if(!(x.event_type==="yellow_card"||x.event_type==="blue_card")||x.team_side!==event.team_side||x.validation_status==="rejected")return false;
+    const xo=mcEventOrder(x),xc=new Date(x.created_at||0).getTime();
+    const before=xo<eventOrder||(xo===eventOrder&&xc<=eventCreated);
+    if(!before)return false;
+    if(event.team_side==="opponent"){
+      const shirt=String(event.payload?.opponent_shirt_number||"");
+      return !!shirt&&String(x.payload?.opponent_shirt_number||"")===shirt;
+    }
+    return !!event.player_id&&x.player_id===event.player_id;
+  }).sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0)).slice(-2);
+}
+function mcTimelineCardIcon(event,events){
+  const color=event.event_type==="yellow_card"?"yellow":event.event_type==="blue_card"?"blue":"red";
+  const prior=mcTimelineCardHistory(event,events);
+  const cards=[...prior.map(x=>x.event_type==="blue_card"?"blue":"yellow"),color];
+  return '<span class="mc-timeline-card-stack '+(prior.length?"is-accumulation":"")+'" aria-hidden="true">'+
+    cards.map((cls,index)=>'<i class="'+cls+'" style="--card-index:'+index+'"></i>').join("")+
+  '</span>';
+}
 function mcTimeline(target,limit,filters=null){
   const all=[...matchCenterState.events].sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0));
   const ownHome=isOwnTeamName(matchCenterState.fixture.home_team);
@@ -1458,11 +1483,7 @@ function mcTimeline(target,limit,filters=null){
       ?'<span class="mc-event-symbol goal">⚽</span>'
       :e.event_type==="substitution"
         ?'<span class="mc-event-symbol substitution"><i class="sub-out">←</i><b class="sub-in">→</b></span>'
-        :e.event_type==="yellow_card"
-          ?'<span class="mc-event-symbol card yellow"></span>'
-          :e.event_type==="blue_card"
-            ?'<span class="mc-event-symbol card blue"></span>'
-            :'<span class="mc-event-symbol card red"></span>';
+        :mcTimelineCardIcon(e,all);
 
     const names='<span class="mc-event-names"><strong>'+esc(main)+'</strong>'+(secondary?'<small>'+esc(secondary)+'</small>':"")+'</span>';
     const score=partial?'<span class="mc-goal-score">'+esc(partial)+'</span>':"";
@@ -1629,40 +1650,49 @@ function mcClosePlayerQuickEvent(){
   $("#mcPlayerQuickPopover")?.classList.add("hidden");
 }
 function mcPositionPlayerQuickEvent(anchor){
-  const pop=$("#mcPlayerQuickPopover");
-  if(!pop||!anchor||pop.classList.contains("hidden"))return;
+  const pop=$("#mcPlayerQuickPopover"),shell=$("#matchDetailDialog .match-center-shell");
+  if(!pop||!anchor||!shell||pop.classList.contains("hidden"))return;
 
   const vv=window.visualViewport;
   const vx=vv?.offsetLeft||0,vy=vv?.offsetTop||0;
   const vw=vv?.width||window.innerWidth,vh=vv?.height||window.innerHeight;
+  const sr=shell.getBoundingClientRect(),a=anchor.getBoundingClientRect();
   const margin=10,gap=12;
-  const a=anchor.getBoundingClientRect();
+
+  // Boundary = visible part of the Match Center card, never the entire page.
+  const boundLeft=Math.max(vx,sr.left)+margin;
+  const boundTop=Math.max(vy,sr.top)+margin;
+  const boundRight=Math.min(vx+vw,sr.right)-margin;
+  const boundBottom=Math.min(vy+vh,sr.bottom)-margin;
+  const boundWidth=Math.max(0,boundRight-boundLeft);
+  const boundHeight=Math.max(0,boundBottom-boundTop);
+  if(boundWidth<120||boundHeight<120)return;
 
   pop.style.position="fixed";
   pop.style.right="auto";
   pop.style.bottom="auto";
-  pop.style.maxWidth=Math.max(220,vw-margin*2)+"px";
-  pop.style.maxHeight=Math.max(180,vh-margin*2)+"px";
+  pop.style.width=Math.min(430,boundWidth)+"px";
+  pop.style.maxWidth=boundWidth+"px";
+  pop.style.maxHeight=boundHeight+"px";
   pop.style.overflowY="auto";
 
-  const w=Math.min(pop.offsetWidth||430,vw-margin*2);
-  const naturalH=pop.scrollHeight||pop.offsetHeight||330;
-  const anchorCenter=a.left+a.width/2;
+  const w=Math.min(pop.offsetWidth||430,boundWidth);
+  const naturalH=Math.min(pop.scrollHeight||pop.offsetHeight||330,boundHeight);
+  const anchorCenter=Math.max(boundLeft,Math.min(boundRight,a.left+a.width/2));
 
   let left=anchorCenter-w/2;
-  left=Math.max(vx+margin,Math.min(vx+vw-w-margin,left));
+  left=Math.max(boundLeft,Math.min(boundRight-w,left));
 
-  const roomBelow=vy+vh-margin-(a.bottom+gap);
-  const roomAbove=a.top-gap-(vy+margin);
-  const useAbove=roomAbove>roomBelow&&roomAbove>=Math.min(naturalH,220);
-  const available=Math.max(180,useAbove?roomAbove:roomBelow);
-  const maxH=Math.min(naturalH,available,vh-margin*2);
+  const roomBelow=boundBottom-(a.bottom+gap);
+  const roomAbove=a.top-gap-boundTop;
+  const useAbove=roomAbove>roomBelow;
+  const available=Math.max(80,useAbove?roomAbove:roomBelow);
+  const renderedH=Math.min(naturalH,available,boundHeight);
 
-  pop.style.maxHeight=Math.max(180,maxH)+"px";
+  pop.style.maxHeight=Math.max(80,renderedH)+"px";
 
-  const renderedH=Math.min(pop.scrollHeight||naturalH,Math.max(180,maxH));
   let top=useAbove?a.top-gap-renderedH:a.bottom+gap;
-  top=Math.max(vy+margin,Math.min(vy+vh-renderedH-margin,top));
+  top=Math.max(boundTop,Math.min(boundBottom-renderedH,top));
 
   pop.style.left=left+"px";
   pop.style.top=top+"px";
@@ -1672,10 +1702,10 @@ function mcPositionPlayerQuickEvent(anchor){
   if(arrow){
     const arrowLeft=anchorCenter-left;
     arrow.style.left=Math.max(18,Math.min(w-18,arrowLeft))+"px";
-    const anchored=useAbove
+    const attached=useAbove
       ?Math.abs((top+renderedH+gap)-a.top)<18
       :Math.abs((top-gap)-a.bottom)<18;
-    arrow.style.display=anchored?"":"none";
+    arrow.style.display=attached?"":"none";
   }
 }
 function mcCaptureQuickDraft(){
