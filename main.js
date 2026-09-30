@@ -992,7 +992,7 @@ function renderCalendarRows(){
 function playerOptions(selected){
   return '<option value="">—</option>'+players.map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.last_name+" "+p.first_name)}</option>`).join("");
 }
-let matchCenterState={fixture:null,match:null,matchPlayers:[],events:[],ratings:[],injuries:[],suspensions:[],tab:"general"};
+let matchCenterState={fixture:null,match:null,matchPlayers:[],events:[],ratings:[],injuries:[],suspensions:[],tab:"general",editMode:false};
 let matchCenterTimer=null;
 function mcPlayer(id){return rosterRows.find(p=>p.player_id===id)||players.find(p=>p.id===id)||null}
 function mcPlayerName(id){const p=mcPlayer(id);return p?(p.last_name+" "+p.first_name):"—"}
@@ -1000,6 +1000,53 @@ function mcMatchPlayer(id){return matchCenterState.matchPlayers.find(x=>x.player
 function mcIsPost(){return matchCenterState.fixture?.status==="finished"||matchCenterState.match?.status==="finished"||!!matchCenterState.match?.finalized_at}
 function mcIsLive(){const m=matchCenterState.match;return !!(m&&m.live_started_at&&!m.finalized_at&&m.status!=="finished")}
 function mcSetTab(tab){matchCenterState.tab="general"}
+
+function mcFinalLocked(){return mcIsPost()&&!matchCenterState.editMode}
+function mcEnableEditMode(){
+  if(!mcIsPost())return;
+  matchCenterState.editMode=true;
+  mcRenderAll();
+}
+async function mcEditFixtureMeta(kind){
+  try{
+    if(!sessionUser)throw new Error("Accedi per modificare i dati della partita.");
+    const f=matchCenterState.fixture,m=matchCenterState.match;
+    let patch={},matchPatch={};
+    if(kind==="kickoff"){
+      const value=prompt("Data e ora partita (AAAA-MM-GGTHH:MM)",toLocalInputValue(f.kickoff_at));
+      if(value===null)return;
+      const d=new Date(value);
+      if(Number.isNaN(d.getTime()))throw new Error("Data o ora non valida.");
+      patch.kickoff_at=d.toISOString();matchPatch.kickoff_at=patch.kickoff_at;
+    }else if(kind==="venue_name"){
+      const value=prompt("Campo",f.venue_name||"");
+      if(value===null)return;
+      patch.venue_name=value.trim()||null;
+      patch.venue=fixtureVenueLegacy(patch.venue_name,f.venue_address||null);
+      matchPatch.venue_name=patch.venue_name;matchPatch.venue=patch.venue;
+    }else if(kind==="venue_address"){
+      const value=prompt("Indirizzo",f.venue_address||(!f.venue_name?f.venue||"":""));
+      if(value===null)return;
+      patch.venue_address=value.trim()||null;
+      patch.venue=fixtureVenueLegacy(f.venue_name||null,patch.venue_address);
+      matchPatch.venue_address=patch.venue_address;matchPatch.venue=patch.venue;
+    }else return;
+    const fr=await db.from("app_competition_fixtures").update(patch).eq("id",f.id).select("*").maybeSingle();
+    matchCenterState.fixture=assertSaved(fr,"Dati partita");
+    const local=calendarRows.find(x=>x.id===f.id);
+    if(local)Object.assign(local,matchCenterState.fixture);
+    if(m){
+      const mr=await db.from("app_matches").update(matchPatch).eq("id",m.id).select("*").maybeSingle();
+      if(!mr.error&&mr.data){
+        matchCenterState.match=mr.data;
+        const tm=teamMatches.find(x=>x.id===m.id);
+        if(tm)Object.assign(tm,mr.data);
+      }
+    }
+    mcRenderAll();
+    if($("#calendarHubList"))renderCalendarRows();
+  }catch(err){alert(err.message||String(err))}
+}
 
 function mcEventScore(){
   const ownHome=isOwnTeamName(matchCenterState.fixture?.home_team);
@@ -1035,7 +1082,7 @@ function mcFinalScoreDialog(){
   return pop;
 }
 function mcOpenFinalScore(){
-  if(mcIsPost())return;
+  if(mcIsPost()&&!matchCenterState.editMode)return;
   const score=mcEventScore(),active=new Set(mcCurrentFieldRows().map(x=>x.player_id));
   const entered=new Set(matchCenterState.events.filter(e=>e.team_side==="team"&&e.event_type==="substitution").map(e=>e.secondary_player_id).filter(Boolean));
   const unused=matchCenterState.matchPlayers.filter(x=>x.selection_status==="bench"&&!active.has(x.player_id)&&!entered.has(x.player_id));
@@ -1072,6 +1119,7 @@ async function mcConfirmFinalScore(){
     matchCenterState.match=assertSaved(mr,"Partita");
     const local=calendarRows.find(x=>x.id===matchCenterState.fixture.id);
     if(local)Object.assign(local,matchCenterState.fixture);
+    matchCenterState.editMode=false;
     pop.classList.add("hidden");
     await mcReload();
     renderCalendarRows();
@@ -1102,16 +1150,19 @@ function mcHeader(){
   $("#mcHomeMatchEvents").innerHTML=mcHeaderEventItems("home");
   $("#mcAwayMatchEvents").innerHTML=mcHeaderEventItems("away");
   const eventScore=mcEventScore();
-  const displayScore=mcIsPost()?{home:Number(f.home_score??eventScore.home),away:Number(f.away_score??eventScore.away)}:eventScore;
+  const displayScore=(mcIsPost()&&!matchCenterState.editMode)?{home:Number(f.home_score??eventScore.home),away:Number(f.away_score??eventScore.away)}:eventScore;
   $("#mcScore").textContent=displayScore.home+" - "+displayScore.away;
-  $("#mcScore").classList.toggle("provisional",mcHasProvisionalScore());
-  $("#mcScore").title=mcIsPost()?"Risultato definitivo":"Clicca per rendere definitivo il risultato";
-  $("#mcScore").onclick=mcIsPost()?null:mcOpenFinalScore;
+  $("#mcScore").classList.toggle("provisional",mcHasProvisionalScore()||matchCenterState.editMode);
+  $("#mcScore").classList.toggle("editing",matchCenterState.editMode);
+  $("#mcScore").title=mcIsPost()?(matchCenterState.editMode?"Clicca per confermare nuovamente il risultato":"Clicca per abilitare la modifica"):"Clicca per rendere definitivo il risultato";
+  $("#mcScore").onclick=mcIsPost()?(matchCenterState.editMode?mcOpenFinalScore:mcEnableEditMode):mcOpenFinalScore;
   $("#mcMeta").innerHTML=[
-    '<span><b>▣</b>'+esc(localDateTime(f.kickoff_at))+'</span>',
+    '<button type="button" class="mc-meta-edit" data-mc-meta-edit="kickoff"><b>▣</b>'+esc(localDateTime(f.kickoff_at))+'</button>',
     c?.name?'<span><b>◆</b>'+esc(c.name)+'</span>':"",
-    (f.venue_name||f.venue_address||f.venue)?'<span><b>⌖</b>'+esc([f.venue_name,f.venue_address].filter(Boolean).join(' · ')||f.venue)+'</span>':""
+    f.venue_name?'<button type="button" class="mc-meta-edit" data-mc-meta-edit="venue_name"><b>⌖</b>'+esc(f.venue_name)+'</button>':"",
+    (f.venue_address||(!f.venue_name&&f.venue))?'<button type="button" class="mc-meta-edit" data-mc-meta-edit="venue_address"><b>⌖</b>'+esc(f.venue_address||f.venue)+'</button>':""
   ].filter(Boolean).join("");
+  $("[data-mc-meta-edit]").forEach(b=>b.onclick=()=>mcEditFixtureMeta(b.dataset.mcMetaEdit));
   $("#mcState").textContent=mcIsPost()?"FINALE":(mcIsLive()||mcHasProvisionalScore())?"LIVE":"PRE";$("#mcLiveControls")?.classList.toggle("hidden",!m||mcIsPost());
   clearInterval(matchCenterTimer);const timer=$("#mcTimer");
   if(mcIsLive()){timer.classList.remove("hidden");const tick=()=>{const sec=Math.max(0,Math.floor((Date.now()-new Date(m.live_started_at).getTime())/1000));timer.textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(sec%60).padStart(2,"0")};tick();matchCenterTimer=setInterval(tick,1000)}else timer.classList.add("hidden");
@@ -1219,7 +1270,7 @@ function mcPitch(target,rows,remove){
       '<span class="kit-shirt kit-'+esc(kit.style)+'" style="--kit-primary:'+esc(kit.primary)+';--kit-secondary:'+esc(kit.secondary)+';--kit-number:'+esc(kit.number)+'"><b>'+(x.shirt_number??p?.shirt_number??"–")+'</b></span>'+
       '<strong>'+esc(p?.last_name||"—")+'</strong>'+
       '<span class="pitch-events pitch-events-bottom">'+bottomBadges+'</span>'+
-      (!remove?mcPlayerQuickButtons(x.player_id,"pitch"):"")+
+      (!remove&&!mcFinalLocked()?mcPlayerQuickButtons(x.player_id,"pitch"):"")+
       (remove?'<button type="button" data-mc-unassign="'+x.player_id+'">×</button>':"")+
     '</div>';
   }).join("");
@@ -1355,7 +1406,7 @@ function mcTimeline(target,limit,filters=null){
   const rec2=recoveryByPeriod.get("second_half");
   if(mcIsPost()){
     const f=matchCenterState.fixture;
-    rows.push('<div class="mc-ft-frame"><span>FT</span><strong>'+esc(f.home_score??0)+' - '+esc(f.away_score??0)+'</strong></div>');
+    rows.push('<div class="mc-period-separator mc-ft"><span></span><strong>FT '+esc(f.home_score??0)+' - '+esc(f.away_score??0)+'</strong><span></span></div>');
     if(rec2?.minutes&&!periodsWithAddedTime.has("second_half"))rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
   }else if(rec2?.minutes&&!periodsWithAddedTime.has("second_half")){
     rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
@@ -1373,7 +1424,7 @@ function mcTimeline(target,limit,filters=null){
       recoveryDividerInserted.add(period);
     }
     if(!halfInserted&&hasSecondHalf&&period==="first_half"){
-      rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><button type="button" class="mc-period-add" data-mc-timeline-add-period="first_half" title="Aggiungi evento 1° tempo">+</button><span></span></div>');
+      rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong>'+(!mcFinalLocked()?'<button type="button" class="mc-period-add" data-mc-timeline-add-period="first_half" title="Aggiungi evento 1° tempo">+</button>':'')+'<span></span></div>');
       const rec1=recoveryByPeriod.get("first_half");
       if(rec1?.minutes&&!periodsWithAddedTime.has("first_half"))rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec1.event.id)+'" role="button" tabindex="0">Recupero 1T +'+rec1.minutes+'\'</div>');
       halfInserted=true;
@@ -1413,7 +1464,7 @@ function mcTimeline(target,limit,filters=null){
     const names='<span class="mc-event-names"><strong>'+esc(main)+'</strong>'+(secondary?'<small>'+esc(secondary)+'</small>':"")+'</span>';
     const score=partial?'<span class="mc-goal-score">'+esc(partial)+'</span>':"";
     const content='<span class="mc-event-content">'+icon+score+names+'</span>';
-    const add=index===0?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
+    const add=index===0&&!mcFinalLocked()?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
 
     rows.push(
       '<div class="mc-event-row mc-event-'+(isHome?"home":"away")+(index===0?" mc-event-latest":"")+'" data-mc-event-id="'+esc(e.id)+'" role="button" tabindex="0">'+
@@ -1425,17 +1476,18 @@ function mcTimeline(target,limit,filters=null){
   });
 
   if(!halfInserted&&hasSecondHalf){
-    rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><button type="button" class="mc-period-add" data-mc-timeline-add-period="first_half" title="Aggiungi evento 1° tempo">+</button><span></span></div>');
+    rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong>'+(!mcFinalLocked()?'<button type="button" class="mc-period-add" data-mc-timeline-add-period="first_half" title="Aggiungi evento 1° tempo">+</button>':'')+'<span></span></div>');
     const rec1=recoveryByPeriod.get("first_half");
     if(rec1?.minutes)rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec1.event.id)+'" role="button" tabindex="0">Recupero 1T +'+rec1.minutes+'\'</div>');
   }
 
   const box=$(target);
-  box.innerHTML=rows.length?rows.join(""):'<div class="empty-state mc-timeline-empty">Nessun evento<button type="button" class="mc-timeline-add empty-add" data-mc-timeline-add title="Aggiungi evento">+</button></div>';
+  box.innerHTML=rows.length?rows.join(""):'<div class="empty-state mc-timeline-empty">Nessun evento'+(!mcFinalLocked()?'<button type="button" class="mc-timeline-add empty-add" data-mc-timeline-add title="Aggiungi evento">+</button>':'')+'</div>';
   const add=box.querySelector("[data-mc-timeline-add]");
   if(add)add.onclick=e=>{e.stopPropagation();mcOpenTimelineQuickEvent(add,hasSecondHalf?"second_half":"first_half")};
   box.querySelectorAll("[data-mc-timeline-add-period]").forEach(btn=>btn.onclick=e=>{e.stopPropagation();mcOpenTimelineQuickEvent(btn,btn.dataset.mcTimelineAddPeriod)});
   box.querySelectorAll("[data-mc-event-id]").forEach(row=>{
+    if(mcFinalLocked()){row.removeAttribute("tabindex");row.removeAttribute("role");row.onclick=null;row.onkeydown=null;return}
     const open=()=>mcOpenTimelineEventEditor(row.dataset.mcEventId,row);
     row.onclick=e=>{if(e.target.closest("[data-mc-timeline-add]"))return;open()};
     row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}};
@@ -1898,7 +1950,7 @@ function mcRenderGeneralBench(){
   const renderRow=(x,status)=>{
     const p=mcPlayer(x.player_id),injured=!!mcInjury(x.player_id)||x.unavailability_reason==="injury";
     const finalStatus=x.unavailability_reason==="injury"?"Infortunio":x.unavailability_reason==="technical_choice"?"Scelta tecnica":x.unavailability_reason==="changes_finished"?"Cambi finiti":x.unavailability_reason==="physical"?"Problema fisico":status;
-    return '<div class="mc-general-bench-row"><span class="num">'+(x.shirt_number??p?.shirt_number??"–")+'</span><span class="mc-bench-player-copy"><strong>'+esc(mcPlayerName(x.player_id))+(injured?'<i class="mc-injury-icon" title="Infortunio">✚</i>':'')+'</strong><small>'+esc(finalStatus||roleLabel(p?.generic_role_manual))+'</small></span>'+(!mcIsPost()?mcPlayerQuickButtons(x.player_id,"bench"):"")+'</div>';
+    return '<div class="mc-general-bench-row"><span class="num">'+(x.shirt_number??p?.shirt_number??"–")+'</span><span class="mc-bench-player-copy"><strong>'+esc(mcPlayerName(x.player_id))+(injured?'<i class="mc-injury-icon" title="Infortunio">✚</i>':'')+'</strong><small>'+esc(finalStatus||roleLabel(p?.generic_role_manual))+'</small></span>'+(!mcFinalLocked()?mcPlayerQuickButtons(x.player_id,"bench"):"")+'</div>';
   };
   const unusedHtml=unused.map(x=>renderRow(x,roleLabel(mcPlayer(x.player_id)?.generic_role_manual))).join("");
   const returnedHtml=returned.map(x=>{
@@ -1977,7 +2029,7 @@ async function openMatchDetail(fixture){
     db.from("injuries").select("*").eq("season_id",currentSeason.id),
     db.from("suspensions").select("*").eq("season_id",currentSeason.id)
   ]);
-  matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general"};
+  matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general",editMode:false};
   $("#matchDetailFixtureId").value=fixture.id;
   $("#matchDetailMatchId").value=match?.id||"";
   $("#matchDetailDialog").showModal();
