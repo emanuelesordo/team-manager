@@ -983,10 +983,36 @@ function renderHomeCalendar(dateValue,fixtures){
   const focus=new Date(dateValue),year=focus.getFullYear(),month=focus.getMonth();
   const first=new Date(year,month,1),days=new Date(year,month+1,0).getDate(),start=(first.getDay()+6)%7;
   const matchDays=new Map();
-  fixtures.filter(f=>{const d=new Date(f.kickoff_at);return d.getFullYear()===year&&d.getMonth()===month}).forEach(f=>matchDays.set(new Date(f.kickoff_at).getDate(),f));
+
+  fixtures
+    .filter(f=>{const d=new Date(f.kickoff_at);return d.getFullYear()===year&&d.getMonth()===month})
+    .forEach(f=>{
+      const day=new Date(f.kickoff_at).getDate();
+      const opponentName=isOwnTeamName(f.home_team)?f.away_team:f.home_team;
+      matchDays.set(day,{fixture:f,opponent:teamVisual(opponentName)});
+    });
+
   const cells=[];
-  for(let i=0;i<start;i++)cells.push('<span></span>');
-  for(let d=1;d<=days;d++){const f=matchDays.get(d);cells.push(`<span class="${f?"has-match":""}" title="${f?esc(f.home_team+" - "+f.away_team):""}">${d}${f?'<i></i>':""}</span>`)}
+  for(let i=0;i<start;i++)cells.push('<span class="calendar-empty"></span>');
+
+  for(let d=1;d<=days;d++){
+    const match=matchDays.get(d);
+    if(!match){
+      cells.push(`<span class="calendar-day">${d}</span>`);
+      continue;
+    }
+
+    const title=esc(match.fixture.home_team+" - "+match.fixture.away_team);
+    if(match.opponent?.logo){
+      cells.push(`<span class="calendar-day match-day logo-day" title="${title}">
+        <img src="${esc(match.opponent.logo)}" alt="${esc(match.opponent.name||"Avversaria")}">
+        <i>${d}</i>
+      </span>`);
+    }else{
+      cells.push(`<span class="calendar-day match-day compact-day" title="${title}">${d}</span>`);
+    }
+  }
+
   return `<div class="home-calendar-title">${new Intl.DateTimeFormat("it-IT",{month:"long",year:"numeric"}).format(focus)}</div>
     <div class="home-calendar-week"><b>L</b><b>M</b><b>M</b><b>G</b><b>V</b><b>S</b><b>D</b></div>
     <div class="home-calendar-grid">${cells.join("")}</div>`;
@@ -1023,13 +1049,24 @@ function renderHomeScoreRow(f){
   const home=teamVisual(f.home_team),away=teamVisual(f.away_team);
   const done=f.status==="finished";
   const value=done?`${f.home_score} - ${f.away_score}`:new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(new Date(f.kickoff_at));
+
+  const homeLogo=home.logo
+    ?`<img src="${esc(home.logo)}" alt="">`
+    :`<span class="score-crest-fallback">${esc(home.short)}</span>`;
+  const awayLogo=away.logo
+    ?`<img src="${esc(away.logo)}" alt="">`
+    :`<span class="score-crest-fallback">${esc(away.short)}</span>`;
+
   return `<div class="home-score-row">
-    <div>${fixtureLogo(f.home_team)}<span>${esc(home.short)}</span></div>
+    <div class="score-team-name score-home-name">${esc(home.short||home.name)}</div>
+    <div class="score-crest">${homeLogo}</div>
     <strong>${esc(value)}</strong>
-    <div>${fixtureLogo(f.away_team)}<span>${esc(away.short)}</span></div>
+    <div class="score-crest">${awayLogo}</div>
+    <div class="score-team-name score-away-name">${esc(away.short||away.name)}</div>
     <small>${done?"FIN":"PROSSIMA"}</small>
   </div>`;
 }
+
 
 async function loadRosterView(){await loadCoreSeasonData();renderRosterTabs();renderRosterTable();renderPlayerDetail()}
 function renderRosterTabs(){const roles=[["ALL","Tutti"],["P","Portieri"],["D","Difensori"],["C","Centrocampisti"],["A","Attaccanti"]];$("#rosterRoleTabs").innerHTML=roles.map(([v,l])=>`<button class="${rosterRole===v?"active":""}" data-roster-role="${v}">${l}</button>`).join("");$$("[data-roster-role]").forEach(b=>b.onclick=()=>{rosterRole=b.dataset.rosterRole;renderRosterTabs();renderRosterTable()})}
