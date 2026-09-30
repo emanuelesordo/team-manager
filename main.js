@@ -1061,6 +1061,13 @@ function mcPitch(target,rows,remove){
   }).join("");
 }
 
+function mcTimelinePlayerName(id){
+  const p=mcPlayer(id);
+  if(!p)return "—";
+  const initial=(p.first_name||"").trim().charAt(0);
+  const surname=(p.last_name||"").trim();
+  return [initial?initial+".":"",surname].filter(Boolean).join(" ")||mcPlayerName(id);
+}
 function mcTimeline(target,limit,filters=null){
   const all=[...matchCenterState.events].sort((a,b)=>(a.minute??999)-(b.minute??999)||new Date(a.created_at||0)-new Date(b.created_at||0));
   const ownHome=isOwnTeamName(matchCenterState.fixture.home_team);
@@ -1103,12 +1110,11 @@ function mcTimeline(target,limit,filters=null){
   }
 
   let halfInserted=false;
-  const hasFirstHalf=all.some(e=>e.event_type!=="period_end"&&Number(e.minute??999)<=45);
   const hasSecondHalf=all.some(e=>e.event_type!=="period_end"&&Number(e.minute??999)>45);
 
   regular.forEach(e=>{
     const minuteNumber=Number(e.minute??999);
-    if(!halfInserted&&hasFirstHalf&&hasSecondHalf&&minuteNumber<=45){
+    if(!halfInserted&&hasSecondHalf&&minuteNumber<=45){
       rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><span></span></div>');
       const rec1=recoveryByPeriod.get("first_half")||0;
       if(rec1)rows.push('<div class="mc-recovery-chip">Minuti di recupero '+rec1+'</div>');
@@ -1122,18 +1128,18 @@ function mcTimeline(target,limit,filters=null){
     let main="",secondary="";
     if(e.event_type==="goal"){
       if(e.team_side==="team"){
-        main=mcPlayerName(e.player_id);
-        secondary=e.secondary_player_id?mcPlayerName(e.secondary_player_id):"";
+        main=mcTimelinePlayerName(e.player_id);
+        secondary=e.secondary_player_id?mcTimelinePlayerName(e.secondary_player_id):"";
       }else{
         main="Gol avversario";
       }
     }else if(e.event_type==="substitution"){
-      main=e.secondary_player_id?mcPlayerName(e.secondary_player_id):"Nessun ingresso";
-      secondary=mcPlayerName(e.player_id);
+      main=e.secondary_player_id?mcTimelinePlayerName(e.secondary_player_id):"Nessun ingresso";
+      secondary=mcTimelinePlayerName(e.player_id);
     }else if(e.event_type==="yellow_card"){
-      main=e.team_side==="team"?mcPlayerName(e.player_id):"Ammonizione avversaria";
+      main=e.team_side==="team"?mcTimelinePlayerName(e.player_id):"Ammonizione avversaria";
     }else if(e.event_type==="red_card"){
-      main=e.team_side==="team"?mcPlayerName(e.player_id):"Espulsione avversaria";
+      main=e.team_side==="team"?mcTimelinePlayerName(e.player_id):"Espulsione avversaria";
     }
 
     const icon=e.event_type==="goal"
@@ -1156,6 +1162,12 @@ function mcTimeline(target,limit,filters=null){
       '</div>'
     );
   });
+
+  if(!halfInserted&&hasSecondHalf){
+    rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><span></span></div>');
+    const rec1=recoveryByPeriod.get("first_half")||0;
+    if(rec1)rows.push('<div class="mc-recovery-chip">Minuti di recupero '+rec1+'</div>');
+  }
 
   $(target).innerHTML=rows.length?rows.join(""):'<div class="empty-state">Nessun evento</div>';
 }
