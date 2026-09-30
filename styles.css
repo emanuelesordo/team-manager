@@ -880,3 +880,240 @@ dialog form{padding:16px}
   .side-link .nav-icon{width:17px;height:17px}
   #dashboardStandings tbody tr{height:auto}
 }
+
+/* ===== Home layout refinement: identity, cards swap, scores, standings ===== */
+
+/* More breathing room: the crest can never visually collide with the team name. */
+.home-team-overview{
+  padding:4px 0 14px;
+}
+.home-team-identity{
+  display:grid;
+  grid-template-rows:104px auto auto;
+  justify-items:center;
+  align-content:start;
+  text-align:center;
+  row-gap:8px;
+  min-height:148px;
+}
+.home-team-mark{
+  width:78px;
+  height:96px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+}
+.home-team-mark img{
+  display:block;
+  width:74px;
+  height:90px;
+  max-width:74px;
+  max-height:90px;
+  object-fit:contain;
+  object-position:center;
+}
+.home-team-identity>strong{
+  position:relative;
+  z-index:2;
+  display:block;
+  margin:0;
+  padding:0 8px;
+  max-width:100%;
+  font-size:14px;
+  line-height:1.15;
+  font-weight:850;
+  white-space:nowrap;
+  background:transparent;
+}
+.home-team-identity>small{
+  display:block;
+  margin:0;
+  font-size:9px;
+  line-height:1;
+  color:#697078;
+}
+
+/* Swap bottom cards: Scores center, full Standings on the wider right column. */
+.home-scores-panel{
+  grid-column:2;
+  grid-row:2;
+  display:flex;
+  flex-direction:column;
+}
+.home-standings-panel{
+  grid-column:3;
+  grid-row:2;
+  display:flex;
+  flex-direction:column;
+}
+
+/* Scores: compact centred cluster, status kept apart at the right edge. */
+#homeScores{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:stretch;
+}
+.home-score-row{
+  position:relative;
+  flex:1 1 0;
+  min-height:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:8px;
+  padding:3px 0;
+  border-bottom:1px solid rgba(15,20,23,.08);
+}
+.home-score-row:last-child{border-bottom:0}
+.score-core{
+  justify-self:center;
+  width:min(100%,250px);
+  display:grid;
+  grid-template-columns:minmax(34px,1fr) 26px 50px 26px minmax(34px,1fr);
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+}
+.score-team-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:clamp(7px,.53vw,9px);
+  line-height:1;
+  font-weight:850;
+}
+.score-home-name{text-align:right}
+.score-away-name{text-align:left}
+.score-crest{
+  width:26px;
+  height:26px;
+  display:grid;
+  place-items:center;
+}
+.score-crest img{
+  display:block;
+  width:24px;
+  height:24px;
+  object-fit:contain;
+}
+.score-crest-fallback{
+  width:22px;
+  height:22px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#e5e5e5;
+  color:#111;
+  font-size:6px;
+  font-weight:850;
+}
+.score-core>strong{
+  text-align:center;
+  font-size:clamp(10px,.78vw,13px);
+  line-height:1;
+  font-weight:900;
+  white-space:nowrap;
+}
+.home-score-row>small{
+  justify-self:end;
+  min-width:43px;
+  text-align:right;
+  color:#787e82;
+  font-size:7px;
+  line-height:1;
+  font-weight:850;
+  white-space:nowrap;
+}
+
+/* Standings: 5 rows always fill the available card, with complete league data. */
+.home-standings-panel .home-panel-head{
+  flex:0 0 auto;
+}
+#dashboardStandings{
+  flex:1 1 auto;
+  min-height:0;
+  display:flex;
+  overflow:hidden;
+}
+#dashboardStandings table{
+  width:100%;
+  height:100%;
+  min-height:0;
+  table-layout:fixed;
+  border-collapse:collapse;
+}
+#dashboardStandings thead{
+  height:26px;
+}
+#dashboardStandings tbody{
+  height:calc(100% - 26px);
+}
+#dashboardStandings tbody tr{
+  height:20%;
+}
+#dashboardStandings th{
+  padding:3px 3px;
+  color:#71777b;
+  font-size:clamp(5.5px,.38vw,7px);
+  line-height:1;
+  vertical-align:middle;
+  white-space:nowrap;
+}
+#dashboardStandings td{
+  padding:3px 3px;
+  color:#24282b;
+  font-size:clamp(7.5px,.52vw,10px);
+  line-height:1.05;
+  vertical-align:middle;
+  white-space:nowrap;
+}
+#dashboardStandings th:first-child,
+#dashboardStandings td:first-child{width:22px}
+#dashboardStandings th:nth-child(2),
+#dashboardStandings td:nth-child(2){width:auto;text-align:left}
+#dashboardStandings th:nth-child(n+3),
+#dashboardStandings td:nth-child(n+3){width:27px;text-align:center}
+#dashboardStandings th:nth-child(9),
+#dashboardStandings td:nth-child(9){width:31px}
+#dashboardStandings th:nth-child(10),
+#dashboardStandings td:nth-child(10){width:29px}
+#dashboardStandings .tn{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  overflow:hidden;
+  font-size:clamp(7.5px,.55vw,10px);
+  font-weight:800;
+}
+#dashboardStandings .tn .crest{
+  width:clamp(14px,.95vw,19px);
+  height:clamp(14px,.95vw,19px);
+  flex:0 0 auto;
+  object-fit:contain;
+}
+#dashboardStandings .standing-team-name{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+#dashboardStandings td:last-child b{
+  font-weight:900;
+}
+#dashboardStandings tr.me td{
+  background:#d8d8d8;
+  font-weight:850;
+}
+
+@media(max-width:1120px){
+  .home-scores-panel{grid-column:1;grid-row:3}
+  .home-standings-panel{grid-column:2;grid-row:3}
+  #dashboardStandings tbody tr{height:auto}
+}
+@media(max-width:780px){
+  .home-scores-panel,.home-standings-panel{grid-column:1;grid-row:auto}
+}
