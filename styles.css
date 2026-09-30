@@ -2821,3 +2821,216 @@ dialog form{padding:16px}
   .roster-data-table{min-width:650px}
   .mini-stat-grid.four{grid-template-columns:repeat(2,1fr)}
 }
+
+
+/* Match Center: player-level quick events */
+.mc-player-quick{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:3px;
+}
+.mc-player-quick button{
+  width:24px;
+  height:24px;
+  padding:0;
+  border:1px solid rgba(15,20,23,.08);
+  border-radius:8px;
+  display:grid;
+  place-items:center;
+  background:#fff;
+  color:#1f2529;
+  font-size:11px;
+  line-height:1;
+  box-shadow:0 2px 7px rgba(0,0,0,.05);
+}
+.mc-player-quick button:hover{background:#eaf5ff;border-color:#b9ddf7}
+.mc-player-quick button i{
+  width:7px;
+  height:13px;
+  border-radius:1px;
+  background:#e2b700;
+}
+.mc-player-quick-pitch{
+  position:absolute;
+  top:54px;
+  left:50%;
+  z-index:8;
+  transform:translateX(-50%);
+  padding:3px;
+  border-radius:10px;
+  background:rgba(255,255,255,.88);
+  box-shadow:0 4px 12px rgba(0,0,0,.10);
+  opacity:.18;
+  transition:opacity .12s ease;
+}
+.pitch-player.modern:hover .mc-player-quick-pitch,
+.mc-player-quick-pitch:focus-within{opacity:1}
+.mc-player-quick-pitch button{width:20px;height:20px;border-radius:6px;font-size:9px}
+.mc-player-quick-pitch button i{width:6px;height:11px}
+
+.mc-general-bench-row{
+  grid-template-columns:30px minmax(0,1fr) auto;
+}
+.mc-bench-player-copy{
+  min-width:0;
+  display:grid;
+  gap:2px;
+}
+.mc-general-bench-row .mc-bench-player-copy small{
+  justify-self:start;
+  max-width:100%;
+}
+.mc-general-bench-row .mc-player-quick{
+  justify-self:end;
+}
+.mc-general-bench-row .mc-player-quick button{
+  width:26px;
+  height:26px;
+}
+
+.mc-player-event-popover{
+  position:absolute;
+  z-index:60;
+  width:min(430px,calc(100% - 20px));
+  padding:13px;
+  border:1px solid rgba(55,128,180,.14);
+  border-radius:18px;
+  background:rgba(248,253,255,.98);
+  box-shadow:0 20px 55px rgba(25,82,120,.22),0 1px 0 #fff inset;
+  backdrop-filter:blur(16px);
+}
+.mc-player-event-popover.hidden{display:none!important}
+.mc-player-event-arrow{
+  position:absolute;
+  top:-8px;
+  left:50%;
+  width:16px;
+  height:16px;
+  transform:translateX(-50%) rotate(45deg);
+  background:rgba(248,253,255,.98);
+  border-left:1px solid rgba(55,128,180,.14);
+  border-top:1px solid rgba(55,128,180,.14);
+}
+.mc-player-event-popover.above .mc-player-event-arrow{
+  top:auto;
+  bottom:-8px;
+  transform:translateX(-50%) rotate(225deg);
+}
+.mc-player-event-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:8px;
+}
+.mc-player-event-head strong{font-size:13px;font-weight:900}
+.mc-player-event-head button{
+  width:28px;height:28px;border:0;border-radius:10px;background:#e7f4fc;color:#17567d;font-size:18px;
+}
+.mc-player-event-tabs{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:4px;
+  padding:3px;
+  margin-bottom:10px;
+  border-radius:11px;
+  background:#f0f5f8;
+}
+.mc-player-event-tabs button{
+  min-height:32px;
+  border:0;
+  border-radius:8px;
+  background:transparent;
+  color:#557086;
+  font-size:9px;
+  font-weight:850;
+}
+.mc-player-event-tabs button.active{
+  background:linear-gradient(135deg,#27b4ff,#087be9);
+  color:#fff;
+  box-shadow:0 4px 10px rgba(9,126,230,.22);
+}
+#mcPlayerQuickFields{
+  display:grid;
+  gap:9px;
+}
+#mcPlayerQuickFields>label,
+.mc-player-event-grid>label{
+  display:grid;
+  gap:4px;
+  color:#60778a;
+  font-size:8px;
+  font-weight:800;
+}
+#mcPlayerQuickFields select,
+#mcPlayerQuickFields input{
+  width:100%;
+  min-height:34px;
+  padding:7px 9px;
+  border:1px solid #d8e7f1;
+  border-radius:10px;
+  background:#fff;
+  color:#23313b;
+  font-size:9px;
+  font-weight:750;
+}
+.mc-player-event-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:9px;
+}
+.mc-player-event-grid.players{align-items:end}
+.mc-quick-player-chip{
+  min-height:38px;
+  padding:6px 9px;
+  display:grid;
+  align-content:center;
+  gap:1px;
+  border:1px solid #d8e7f1;
+  border-radius:10px;
+  background:#fff;
+}
+.mc-quick-player-chip b{font-size:9px;color:#243746}
+.mc-quick-player-chip small{font-size:7px;color:#718796}
+.mc-card-choice{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:5px;
+}
+.mc-card-choice button{
+  min-height:34px;
+  border:1px solid #d8e7f1;
+  border-radius:10px;
+  background:#fff;
+  color:#536979;
+  font-size:8px;
+  font-weight:850;
+}
+.mc-card-choice button i{
+  display:inline-block;
+  width:7px;
+  height:13px;
+  margin-right:5px;
+  border-radius:1px;
+  vertical-align:middle;
+}
+.mc-card-choice .yellow i{background:#e2b700}
+.mc-card-choice .blue i{background:#2f76d2}
+.mc-card-choice .red i{background:#df4b53}
+.mc-card-choice button.active{border-color:#209cf0;background:#eaf6ff;color:#146899}
+.mc-player-event-actions{
+  display:grid;
+  grid-template-columns:1fr 1.08fr;
+  gap:8px;
+  margin-top:11px;
+}
+.mc-player-event-actions button{min-height:38px}
+@media(max-width:700px){
+  .mc-player-quick-pitch{opacity:1;top:50px}
+  .mc-player-event-popover{position:fixed;left:8px!important;right:8px;width:auto;top:auto!important;bottom:8px}
+  .mc-player-event-arrow{display:none}
+  .mc-player-event-grid{grid-template-columns:1fr}
+  .mc-general-bench-row{grid-template-columns:28px minmax(0,1fr) auto;gap:5px}
+  .mc-general-bench-row .mc-player-quick button{width:24px;height:24px}
+}
