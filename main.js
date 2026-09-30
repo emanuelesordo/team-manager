@@ -1069,10 +1069,24 @@ function mcTimeline(target,limit,filters=null){
 
   all.forEach(e=>{
     if(e.event_type==="goal"){
-      const eventIsHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
-      if(eventIsHome)homeGoals++;else awayGoals++;
+      const isHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
+      if(isHome)homeGoals++;else awayGoals++;
       scoreAt.set(e,homeGoals+" - "+awayGoals);
     }
+  });
+
+  const halfScore=(()=>{
+    let h=0,a=0;
+    all.filter(e=>e.event_type==="goal"&&Number(e.minute??999)<=45).forEach(e=>{
+      const isHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
+      if(isHome)h++;else a++;
+    });
+    return h+" - "+a;
+  })();
+
+  const recoveryByPeriod=new Map();
+  all.filter(e=>e.event_type==="period_end").forEach(e=>{
+    recoveryByPeriod.set(e.payload?.period||"",Number(e.payload?.recovery_minutes??e.stoppage_minute??0));
   });
 
   let regular=all.filter(e=>e.event_type!=="period_end");
@@ -1083,47 +1097,64 @@ function mcTimeline(target,limit,filters=null){
   const rows=[];
   if(mcIsPost()){
     const f=matchCenterState.fixture;
-    rows.push('<div class="mc-timeline-system mc-ft"><span></span><strong>FT '+esc(f.home_score??0)+' - '+esc(f.away_score??0)+'</strong><span></span></div>');
+    rows.push('<div class="mc-period-separator mc-ft"><span></span><strong>FT '+esc(f.home_score??0)+' - '+esc(f.away_score??0)+'</strong><span></span></div>');
+    const rec2=recoveryByPeriod.get("second_half")||0;
+    if(rec2)rows.push('<div class="mc-recovery-chip">Minuti di recupero '+rec2+'</div>');
   }
 
-  const periodEvents=[...all].filter(e=>e.event_type==="period_end").reverse();
-  periodEvents.forEach(e=>{
-    const recovery=Number(e.payload?.recovery_minutes??e.stoppage_minute??0);
-    const label=e.payload?.period==="first_half"?"Intervallo":"Fine tempo";
-    rows.push('<div class="mc-timeline-system"><span></span><strong>'+esc(label)+(recovery?' · recupero '+recovery+"'":"")+'</strong><span></span></div>');
-  });
+  let halfInserted=false;
 
   regular.forEach(e=>{
-    const eventIsHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
+    const minuteNumber=Number(e.minute??999);
+    if(!halfInserted&&minuteNumber<=45&&regular.some(x=>Number(x.minute??999)>45)){
+      rows.push('<div class="mc-period-separator"><span></span><strong>HT '+halfScore+'</strong><span></span></div>');
+      const rec1=recoveryByPeriod.get("first_half")||0;
+      if(rec1)rows.push('<div class="mc-recovery-chip">Minuti di recupero '+rec1+'</div>');
+      halfInserted=true;
+    }
+
+    const isHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
     const minute=e.minute==null?"–":e.minute+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
-    const icon=e.event_type==="goal"?"⚽":e.event_type==="substitution"?"↔":e.event_type==="yellow_card"?"🟨":"🟥";
     const partial=e.event_type==="goal"?(scoreAt.get(e)||""):"";
 
-    let main="",detail="";
+    let main="",secondary="";
     if(e.event_type==="goal"){
       if(e.team_side==="team"){
         main=mcPlayerName(e.player_id);
-        if(e.secondary_player_id)detail="Assist: "+mcPlayerName(e.secondary_player_id);
-      }else main="Gol avversario";
+        secondary=e.secondary_player_id?mcPlayerName(e.secondary_player_id):"";
+      }else{
+        main="Gol avversario";
+      }
     }else if(e.event_type==="substitution"){
-      const out=mcPlayerName(e.player_id);
-      const incoming=e.secondary_player_id?mcPlayerName(e.secondary_player_id):"Nessun ingresso";
-      main="🔴 "+out;
-      detail="🟢 "+incoming;
+      main=e.secondary_player_id?mcPlayerName(e.secondary_player_id):"Nessun ingresso";
+      secondary=mcPlayerName(e.player_id);
     }else if(e.event_type==="yellow_card"){
       main=e.team_side==="team"?mcPlayerName(e.player_id):"Ammonizione avversaria";
     }else if(e.event_type==="red_card"){
       main=e.team_side==="team"?mcPlayerName(e.player_id):"Espulsione avversaria";
     }
 
-    const content='<span class="mc-event-icon">'+icon+'</span><div class="mc-event-copy"><strong>'+esc(main)+'</strong>'+(detail?'<small>'+esc(detail)+'</small>':"")+'</div>';
-    rows.push('<div class="mc-event-row mc-event-'+(eventIsHome?"home":"away")+'">'+
-      '<b class="mc-event-partial mc-event-partial-home">'+(eventIsHome&&partial?partial:"")+'</b>'+
-      '<div class="mc-event-side mc-event-side-home">'+(eventIsHome?content:"")+'</div>'+
-      '<time>'+minute+'</time>'+
-      '<div class="mc-event-side mc-event-side-away">'+(eventIsHome?"":content)+'</div>'+
-      '<b class="mc-event-partial mc-event-partial-away">'+(!eventIsHome&&partial?partial:"")+'</b>'+
-    '</div>');
+    const icon=e.event_type==="goal"
+      ?'<span class="mc-event-symbol goal">⚽</span>'
+      :e.event_type==="substitution"
+        ?'<span class="mc-event-symbol substitution"><i>↪</i><b>↩</b></span>'
+        :e.event_type==="yellow_card"
+          ?'<span class="mc-event-symbol card yellow"></span>'
+          :'<span class="mc-event-symbol card red"></span>';
+
+    const names='<span class="mc-event-names"><strong>'+esc(main)+'</strong>'+(secondary?'<small>'+esc(secondary)+'</small>':"")+'</span>';
+    const score=partial?'<span class="mc-goal-score">'+esc(partial)+'</span>':"";
+    const content='<span class="mc-event-content">'+icon+score+names+'</span>';
+
+    rows.push(
+      '<div class="mc-event-row mc-event-'+(isHome?"home":"away")+'">'+
+        '<time class="mc-minute-home">'+(isHome?minute:"")+'</time>'+
+        '<div class="mc-event-side mc-event-side-home">'+(isHome?content:"")+'</div>'+
+        '<div class="mc-event-axis"></div>'+
+        '<div class="mc-event-side mc-event-side-away">'+(isHome?"":content)+'</div>'+
+        '<time class="mc-minute-away">'+(isHome?"":minute)+'</time>'+
+      '</div>'
+    );
   });
 
   $(target).innerHTML=rows.length?rows.join(""):'<div class="empty-state">Nessun evento</div>';
