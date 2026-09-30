@@ -1951,7 +1951,7 @@ function renderRosterTable(){
   $$("[data-roster-sort]").forEach(b=>b.onclick=e=>{e.stopPropagation();const key=b.dataset.rosterSort;if(rosterSort.key===key)rosterSort.dir=rosterSort.dir==="asc"?"desc":"asc";else rosterSort={key,dir:key==="surname"||key==="role"?"asc":"desc"};renderRosterTable()});
 }
 $("#rosterSearch").oninput=renderRosterTable;
-function injuryStatusLabel(v){return ({active:"Attivo",recovering:"Recupero",recovered:"Recuperato",closed:"Chiuso",resolved:"Risolto"}[String(v||"").toLowerCase()]||v||"—")}
+function injuryStatusLabel(v){return ({active:"Attivo",recovering:"Recupero",fit:"Recuperato",closed:"Chiuso",resolved:"Risolto"}[String(v||"").toLowerCase()]||v||"—")}
 function renderPlayerDetail(){
   const p=rosterRows.find(x=>x.player_id===selectedPlayerId);
   if(!p){$("#playerDetail").innerHTML='<div class="empty-state">Seleziona un giocatore</div>';return}
