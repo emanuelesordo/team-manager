@@ -255,20 +255,40 @@ function renderSeasons(){
 
 async function loadTeam(){
   if(!currentSeason)return;
-  const r=await db.from("teams").select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color").eq("id",currentSeason.team_id).maybeSingle();
+  const r=await db.from("teams").select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color,kit_style,kit_primary_color,kit_secondary_color,kit_number_color").eq("id",currentSeason.team_id).maybeSingle();
   if(r.error){$("#teamMessage").textContent="Accedi come staff per modificare la squadra.";$("#teamMessage").classList.remove("hidden");return}
   team=r.data; if(!team)return; updateAppBrand();
   $("#teamName").value=team.name||"";$("#teamShort").value=(team.short_name||"").slice(0,3).toUpperCase();
   $("#teamColor1").value=team.primary_color||"#111827";$("#teamColor2").value=team.secondary_color||"#ffffff";$("#teamColor3").value=team.accent_color||"#2563eb";
+  $("#teamKitStyle").value=team.kit_style||"solid";$("#teamKitPrimary").value=team.kit_primary_color||team.primary_color||"#f4d318";$("#teamKitSecondary").value=team.kit_secondary_color||team.secondary_color||"#111111";$("#teamKitNumber").value=team.kit_number_color||"#111111";
   $("#teamLogoPreview").innerHTML=team.logo_url?`<img src="${esc(team.logo_url)}" alt="">`:"Logo";
+  renderTeamKitPreview();
 }
 $("#teamShort").oninput=e=>e.target.value=e.target.value.toUpperCase().slice(0,3);
 $("#teamLogoFile").onchange=async e=>{const file=e.target.files[0];if(!file)return;const colors=await extractColors(file);if(colors[0])$("#teamColor1").value=colors[0];if(colors[1])$("#teamColor2").value=colors[1];if(colors[2])$("#teamColor3").value=colors[2];$("#teamLogoPreview").innerHTML=`<img src="${URL.createObjectURL(file)}" alt="">`};
 async function extractColors(file){return new Promise(resolve=>{const img=new Image();img.onload=()=>{const c=document.createElement("canvas");c.width=c.height=64;const x=c.getContext("2d");x.drawImage(img,0,0,64,64);const d=x.getImageData(0,0,64,64).data,m=new Map();for(let i=0;i<d.length;i+=16){if(d[i+3]<180)continue;const r=Math.round(d[i]/32)*32,g=Math.round(d[i+1]/32)*32,b=Math.round(d[i+2]/32)*32;if(r>240&&g>240&&b>240)continue;const k=[Math.min(r,255),Math.min(g,255),Math.min(b,255)].join(",");m.set(k,(m.get(k)||0)+1)}const arr=[...m].sort((a,b)=>b[1]-a[1]).slice(0,3).map(([k])=>"#"+k.split(",").map(n=>(+n).toString(16).padStart(2,"0")).join(""));resolve(arr)};img.src=URL.createObjectURL(file)})}
+function teamKitConfig(){
+  return {
+    style:$("#teamKitStyle")?.value||team?.kit_style||"solid",
+    primary:$("#teamKitPrimary")?.value||team?.kit_primary_color||team?.primary_color||"#f4d318",
+    secondary:$("#teamKitSecondary")?.value||team?.kit_secondary_color||team?.secondary_color||"#111111",
+    number:$("#teamKitNumber")?.value||team?.kit_number_color||"#111111"
+  };
+}
+function renderTeamKitPreview(){
+  const box=$("#teamKitPreview");if(!box)return;
+  const k=teamKitConfig();
+  box.innerHTML='<span class="kit-shirt kit-'+esc(k.style)+'" style="--kit-primary:'+esc(k.primary)+';--kit-secondary:'+esc(k.secondary)+';--kit-number:'+esc(k.number)+'"><b>8</b></span>';
+}
+["teamKitStyle","teamKitPrimary","teamKitSecondary","teamKitNumber"].forEach(id=>{
+  $("#"+id)?.addEventListener("input",renderTeamKitPreview);
+  $("#"+id)?.addEventListener("change",renderTeamKitPreview);
+});
+
 $("#teamForm").onsubmit=async e=>{e.preventDefault();if(!team)return;let logo=team.logo_url;const file=$("#teamLogoFile").files[0];if(file){const canvas=document.createElement("canvas"),img=new Image();await new Promise(res=>{img.onload=res;img.src=URL.createObjectURL(file)});const scale=Math.min(1,1200/Math.max(img.width,img.height));canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);const blob=await new Promise(res=>canvas.toBlob(res,"image/png"));const path=`${team.id}/logo.png`;const up=await db.storage.from("team-assets").upload(path,blob,{contentType:"image/png",upsert:true});if(up.error)return teamMsg(up.error.message,true);logo=db.storage.from("team-assets").getPublicUrl(path).data.publicUrl+"?t="+Date.now()}
-  const payload={name:$("#teamName").value.trim(),short_name:$("#teamShort").value.trim().toUpperCase(),logo_url:logo,primary_color:$("#teamColor1").value,secondary_color:$("#teamColor2").value,accent_color:$("#teamColor3").value,inherit_organization_branding:false};
+  const payload={name:$("#teamName").value.trim(),short_name:$("#teamShort").value.trim().toUpperCase(),logo_url:logo,primary_color:$("#teamColor1").value,secondary_color:$("#teamColor2").value,accent_color:$("#teamColor3").value,kit_style:$("#teamKitStyle").value,kit_primary_color:$("#teamKitPrimary").value,kit_secondary_color:$("#teamKitSecondary").value,kit_number_color:$("#teamKitNumber").value,inherit_organization_branding:false};
   try{
-    const r=await db.from("teams").update(payload).eq("id",team.id).select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color").maybeSingle();
+    const r=await db.from("teams").update(payload).eq("id",team.id).select("id,name,short_name,logo_url,primary_color,secondary_color,accent_color,kit_style,kit_primary_color,kit_secondary_color,kit_number_color").maybeSingle();
     assertSaved(r,"Squadra");
     teamMsg("Salvato.");
     await loadTeam();
