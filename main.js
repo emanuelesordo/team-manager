@@ -1270,13 +1270,51 @@ function mcSetPostView(view){
   matchCenterState.postView=view==="rating"&&mcIsPost()?"rating":"match";
   mcRenderAll();
 }
-function mcRatingOptions(selected){
-  let html='<option value="">Vota</option>';
-  for(let v=1;v<=10;v+=.5){
-    const label=Number.isInteger(v)?String(v):v.toFixed(1).replace(".",",");
-    html+='<option value="'+v+'" '+(Number(selected)===v?"selected":"")+'>'+label+'</option>';
-  }
-  return html;
+function mcRatingEventIcons(playerId){
+  return [...matchCenterState.events]
+    .filter(e=>e.team_side==="team"&&(e.player_id===playerId||e.secondary_player_id===playerId))
+    .sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0))
+    .map(e=>{
+      const minute=mcDisplayMinute(e);
+      if(e.event_type==="goal"&&e.player_id===playerId)return '<span class="mc-rating-event goal" title="Gol · '+esc(minute)+'">⚽</span>';
+      if(e.event_type==="goal"&&e.secondary_player_id===playerId)return '<span class="mc-rating-event assist" title="Assist · '+esc(minute)+'">👟</span>';
+      if(e.event_type==="substitution"&&e.secondary_player_id===playerId)return '<span class="mc-rating-event sub-in" title="Entrato · '+esc(minute)+'">↗</span>';
+      if(e.event_type==="substitution"&&e.player_id===playerId)return '<span class="mc-rating-event sub-out" title="Uscito · '+esc(minute)+'">↘</span>';
+      if(e.event_type==="yellow_card"&&e.player_id===playerId)return '<span class="mc-rating-event card yellow" title="Giallo · '+esc(minute)+'"></span>';
+      if(e.event_type==="blue_card"&&e.player_id===playerId)return '<span class="mc-rating-event card blue" title="Blu · '+esc(minute)+'"></span>';
+      if(e.event_type==="red_card"&&e.player_id===playerId)return '<span class="mc-rating-event card red" title="Rosso · '+esc(minute)+'"></span>';
+      return "";
+    }).join("");
+}
+function mcRenderRatingRow(item){
+  const {playerId,minutes}=item;
+  const player=mcPlayer(playerId),matchPlayer=mcMatchPlayer(playerId);
+  const ratings=matchCenterState.ratings.filter(r=>r.player_id===playerId);
+  const values=ratings.map(r=>Number(r.rating)).filter(Number.isFinite);
+  const average=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
+  const mine=ratings.find(r=>r.voter_id===sessionUser?.id);
+  const current=mine?Number(mine.rating):6;
+  const averageText=average==null?"—":average.toFixed(1).replace(".",",");
+  const averageStyle=average==null?"":' style="--rating-bg:'+mcRatingColor(average)+';--rating-fg:'+mcRatingTextColor(average)+'"';
+  const currentColor=mcRatingColor(current);
+  const events=mcRatingEventIcons(playerId);
+  return '<div class="mc-rating-row" data-rating-row="'+playerId+'">'+
+    '<div class="mc-rating-player">'+
+      '<span class="num">'+esc(matchPlayer?.shirt_number??player?.shirt_number??"–")+'</span>'+
+      '<span class="mc-rating-player-copy">'+
+        '<span class="mc-rating-name-line"><strong>'+esc(mcPlayerName(playerId))+'</strong><span class="mc-rating-events">'+events+'</span></span>'+
+        '<small>'+Math.round(minutes)+"' giocati"+'</small>'+
+      '</span>'+
+    '</div>'+
+    '<div class="mc-rating-average">'+
+      '<span class="mc-rating-average-value '+(average==null?"empty":"")+'"'+averageStyle+'>'+averageText+'</span>'+
+      '<small>'+values.length+' '+(values.length===1?"voto":"voti")+'</small>'+
+    '</div>'+
+    '<label class="mc-rating-vote">'+
+      '<span>Il tuo voto <b data-mc-rating-value="'+playerId+'" class="'+(mine?"":"empty")+'" style="--rating-color:'+currentColor+'">'+(mine?String(Number(mine.rating)).replace(".",","):"—")+'</b></span>'+
+      '<input type="range" min="1" max="10" step="0.5" value="'+current+'" data-mc-rating-player="'+playerId+'" style="--rating-color:'+currentColor+'" '+(!sessionUser?"disabled":"")+'>'+
+    '</label>'+
+  '</div>';
 }
 function mcRenderRating(){
   const list=$("#mcRatingList"),count=$("#mcRatingCount");
@@ -1286,42 +1324,45 @@ function mcRenderRating(){
     count.textContent="";
     return;
   }
+
   const participants=mcRatingParticipants();
+  const starters=participants.filter(x=>mcMatchPlayer(x.playerId)?.started);
+  const bench=participants.filter(x=>!mcMatchPlayer(x.playerId)?.started);
   count.textContent=participants.length+" giocatori";
-  list.innerHTML=participants.map(({playerId,minutes})=>{
-    const player=mcPlayer(playerId),ratings=matchCenterState.ratings.filter(r=>r.player_id===playerId);
-    const values=ratings.map(r=>Number(r.rating)).filter(Number.isFinite);
-    const average=values.length?values.reduce((a,b)=>a+b,0)/values.length:null;
-    const mine=ratings.find(r=>r.voter_id===sessionUser?.id);
-    const averageText=average==null?"—":average.toFixed(1).replace(".",",");
-    const averageStyle=average==null?"":' style="--rating-bg:'+mcRatingColor(average)+';--rating-fg:'+mcRatingTextColor(average)+'"';
-    const myValue=mine?Number(mine.rating):"";
-    const myStyle=myValue===""?"":' style="--rating-bg:'+mcRatingColor(myValue)+';--rating-fg:'+mcRatingTextColor(myValue)+'"';
-    return '<div class="mc-rating-row" data-rating-row="'+playerId+'">'+
-      '<div class="mc-rating-player"><span class="num">'+esc(mcMatchPlayer(playerId)?.shirt_number??player?.shirt_number??"–")+'</span>'+
-        '<span><strong>'+esc(mcPlayerName(playerId))+'</strong><small>'+Math.round(minutes)+"' giocati"+'</small></span></div>'+
-      '<div class="mc-rating-average"><span class="mc-rating-average-value '+(average==null?"empty":"")+'"'+averageStyle+'>'+averageText+'</span>'+
-        '<small>'+values.length+' '+(values.length===1?"voto":"voti")+'</small></div>'+
-      '<label class="mc-rating-vote">Il tuo voto<select data-mc-rating-player="'+playerId+'"'+myStyle+'>'+mcRatingOptions(myValue)+'</select></label>'+
-    '</div>';
-  }).join("")||'<div class="empty-state">Nessun giocatore entrato.</div>';
-  document.querySelectorAll("[data-mc-rating-player]").forEach(select=>{
+
+  const column=(title,items,kind)=>
+    '<section class="mc-rating-column mc-rating-'+kind+'">'+
+      '<div class="mc-rating-column-head"><strong>'+title+'</strong><span>'+items.length+'</span></div>'+
+      '<div class="mc-rating-column-list">'+(items.map(mcRenderRatingRow).join("")||'<div class="empty-state">Nessun giocatore.</div>')+'</div>'+
+    '</section>';
+
+  list.innerHTML='<div class="mc-rating-columns">'+
+    column("Titolari",starters,"starters")+
+    column("Panchina",bench,"bench")+
+  '</div>';
+
+  $$("[data-mc-rating-player]").forEach(slider=>{
+    const playerId=slider.dataset.mcRatingPlayer;
+    const valueLabel=$('[data-mc-rating-value="'+playerId+'"]');
     const paint=()=>{
-      const value=Number(select.value);
-      if(!value){select.style.removeProperty("--rating-bg");select.style.removeProperty("--rating-fg")}
-      else{select.style.setProperty("--rating-bg",mcRatingColor(value));select.style.setProperty("--rating-fg",mcRatingTextColor(value))}
+      const value=Number(slider.value);
+      const color=mcRatingColor(value);
+      slider.style.setProperty("--rating-color",color);
+      valueLabel.style.setProperty("--rating-color",color);
+      valueLabel.textContent=String(value).replace(".",",");
+      valueLabel.classList.remove("empty");
     };
-    paint();
-    select.onchange=async()=>{paint();await mcSaveRating(select.dataset.mcRatingPlayer,select.value,select)};
+    slider.oninput=paint;
+    slider.onchange=async()=>{paint();await mcSaveRating(playerId,slider.value,slider)};
   });
 }
-async function mcSaveRating(playerId,value,select){
+async function mcSaveRating(playerId,value,control){
   try{
     if(!mcIsPost())throw new Error("I rating sono disponibili solo a risultato definitivo.");
     if(!sessionUser)throw new Error("Accedi per assegnare un voto.");
     const rating=Number(value);
     if(!Number.isFinite(rating)||rating<1||rating>10||rating*2!==Math.trunc(rating*2))throw new Error("Voto non valido.");
-    select.disabled=true;
+    control.disabled=true;
     const existing=matchCenterState.ratings.find(r=>r.player_id===playerId&&r.voter_id===sessionUser.id);
     const result=existing
       ?await db.from("app_match_ratings").update({rating}).eq("match_id",matchCenterState.match.id).eq("player_id",playerId).eq("voter_id",sessionUser.id).select("*").maybeSingle()
