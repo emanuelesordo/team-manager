@@ -1037,7 +1037,27 @@ function renderDashboardStandings(){
   const box=$("#dashboardStandings");
   if(!box)return;
   const rows=dashboardStandingWindow(dashboardStandingRows,5);
-  box.innerHTML=rows.length?`<table><thead><tr><th>#</th><th>Squadra</th><th>G</th><th>Pt</th></tr></thead><tbody>${rows.map(r=>{const rank=dashboardStandingRows.indexOf(r)+1;return `<tr class="${isOwnTeamName(r.team)?"me":""}"><td>${rank}</td><td><span class="tn">${dashboardTeamBadge(r.team)}${esc(r.team)}</span></td><td>${r.played}</td><td>${r.points}</td></tr>`}).join("")}</tbody></table>`:'<div class="home-empty">Nessuna classifica</div>';
+  box.innerHTML=rows.length?`<table>
+    <thead><tr>
+      <th>#</th><th>Squadra</th><th>G</th><th>V</th><th>N</th><th>P</th><th>GF</th><th>GS</th><th>Diff</th><th>Pt</th>
+    </tr></thead>
+    <tbody>${rows.map(r=>{
+      const rank=dashboardStandingRows.indexOf(r)+1;
+      const diff=Number(r.goal_difference||0);
+      return `<tr class="${isOwnTeamName(r.team)?"me":""}">
+        <td>${rank}</td>
+        <td><span class="tn">${dashboardTeamBadge(r.team)}<span class="standing-team-name">${esc(r.team)}</span></span></td>
+        <td>${r.played||0}</td>
+        <td>${r.won||0}</td>
+        <td>${r.drawn||0}</td>
+        <td>${r.lost||0}</td>
+        <td>${r.goals_for||0}</td>
+        <td>${r.goals_against||0}</td>
+        <td>${diff>0?"+":""}${diff}</td>
+        <td><b>${r.points||0}</b></td>
+      </tr>`;
+    }).join("")}</tbody>
+  </table>`:'<div class="home-empty">Nessuna classifica</div>';
 }
 
 function dashboardTeamBadge(name){
@@ -1058,11 +1078,13 @@ function renderHomeScoreRow(f){
     :`<span class="score-crest-fallback">${esc(away.short)}</span>`;
 
   return `<div class="home-score-row">
-    <div class="score-team-name score-home-name">${esc(home.short||home.name)}</div>
-    <div class="score-crest">${homeLogo}</div>
-    <strong>${esc(value)}</strong>
-    <div class="score-crest">${awayLogo}</div>
-    <div class="score-team-name score-away-name">${esc(away.short||away.name)}</div>
+    <div class="score-core">
+      <span class="score-team-name score-home-name">${esc(home.short||home.name)}</span>
+      <span class="score-crest">${homeLogo}</span>
+      <strong>${esc(value)}</strong>
+      <span class="score-crest">${awayLogo}</span>
+      <span class="score-team-name score-away-name">${esc(away.short||away.name)}</span>
+    </div>
     <small>${done?"FIN":"PROSSIMA"}</small>
   </div>`;
 }
