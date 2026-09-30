@@ -94,15 +94,25 @@ button{cursor:pointer}
   padding:4px 2px 10px;
 }
 .side-logo{
-  width:50px;height:50px;
-  display:grid;place-items:center;
+  width:72px;
+  height:64px;
+  display:grid;
+  place-items:center;
   overflow:hidden;
   background:transparent;
   border:0;
   border-radius:12px;
   font-weight:900;
 }
-.side-logo img{width:100%;height:100%;object-fit:contain}
+.side-logo img{
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:72px;
+  max-height:64px;
+  object-fit:contain;
+  object-position:center;
+}
 .side-brand strong{
   max-width:100%;
   color:var(--ink);
@@ -428,20 +438,88 @@ label{
 .competition-split{display:grid;grid-template-columns:minmax(350px,.88fr) minmax(0,1.35fr);gap:10px;align-items:start}
 .competition-half{min-width:0}
 .standings-card{position:sticky;top:0;overflow:hidden;display:flex;flex-direction:column;gap:10px;padding:10px}
-.fixtures-card{padding:10px;overflow:hidden}
+.competition-fixtures-column{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+}
+.fixtures-card{
+  flex:1 1 auto;
+  padding:10px;
+  overflow:hidden;
+}
 .standings-wrap{overflow:auto}
-.mini-calendar-tools{display:flex;justify-content:flex-end;margin-bottom:6px}
+.mini-calendar-tools{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  min-height:32px;
+  margin:0 4px 6px;
+}
 .round-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
 .mini-round{min-width:0;padding:6px;border:1px solid var(--line);border-radius:10px;background:#fff}
 .mini-round-label{margin-bottom:3px;color:var(--muted);font-size:7px;font-weight:800;text-transform:uppercase}
-.mini-fixture{display:grid;grid-template-columns:1fr 26px 1fr;align-items:center;gap:3px;min-height:22px}
-.mini-team{display:flex;align-items:center;gap:3px;min-width:0}
-.mini-team:last-child{justify-content:flex-end}
-.mini-team img,.mini-team i{
-  width:15px;height:15px;object-fit:contain;display:grid;place-items:center;font-size:6px;font-style:normal;font-weight:800
+.mini-fixture{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);
+  align-items:center;
+  gap:4px;
+  min-height:22px;
 }
-.mini-team b{font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.score-link{border:1px solid var(--line);border-radius:999px;background:#f2f2f2;color:#111;padding:2px 5px;font-size:8px;font-weight:800}
+.mini-team{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  min-width:0;
+}
+.mini-team:first-child{
+  flex-direction:row-reverse;
+  justify-content:flex-start;
+}
+.mini-team:last-child{
+  justify-content:flex-start;
+}
+.mini-team img,.mini-team i{
+  width:16px;
+  height:16px;
+  flex:0 0 16px;
+  object-fit:contain;
+  display:grid;
+  place-items:center;
+  font-size:6px;
+  font-style:normal;
+  font-weight:800;
+}
+.mini-team i{
+  border-radius:50%;
+  background:#ededed;
+}
+.mini-team b{
+  min-width:0;
+  font-size:8px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.score-link{
+  width:28px;
+  min-width:28px;
+  padding:0;
+  border:0;
+  border-radius:0;
+  outline:0;
+  background:transparent;
+  box-shadow:none;
+  color:#111;
+  text-align:center;
+  font-size:8px;
+  font-weight:900;
+}
+.score-link:hover,.score-link:focus-visible{
+  background:transparent;
+  box-shadow:none;
+  text-decoration:underline;
+}
 
 /* Calendar */
 .competition-filter-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
@@ -625,9 +703,14 @@ dialog form{padding:16px}
 
 /* ===== Home precision pass ===== */
 .side-link .nav-icon{
+  grid-area:1 / 1;
   width:18px;
   height:18px;
   display:block;
+  justify-self:center;
+  align-self:center;
+  margin:0;
+  pointer-events:none;
   fill:none;
   stroke:currentColor;
   stroke-width:1.65;
@@ -1204,3 +1287,22 @@ dialog form{padding:16px}
 .projection-delta.up{color:#27844e}
 .projection-delta.down{color:#bd4e59}
 .projection-delta.flat{color:#8a8f92}
+
+.standings-table .standing-team{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+}
+.standings-table .standing-team .crest{
+  width:20px;
+  height:20px;
+  flex:0 0 20px;
+  object-fit:contain;
+}
+.standings-table .standing-team>span:last-child{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
