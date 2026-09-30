@@ -1373,6 +1373,8 @@ function mcRecoveryDividerLabel(period,recoveryByPeriod,events){
 function mcTimelineCardHistory(event,events){
   const isAccumulation=event?.event_type==="red_card"&&(event.payload?.card_type==="second_yellow_blue"||event.payload?.card_type==="second_card");
   if(!isAccumulation)return [];
+  const persisted=Array.isArray(event.payload?.accumulated_cards)?event.payload.accumulated_cards:[];
+  if(persisted.length)return persisted.slice(-2).map(event_type=>({event_type}));
   const eventOrder=mcEventOrder(event);
   const eventCreated=new Date(event.created_at||0).getTime();
   return events.filter(x=>{
@@ -1917,35 +1919,52 @@ async function mcSubmitPlayerQuickEvent(e){
       const shirtRaw=$("#mcQuickOpponentShirt")?.value?.trim()||"";
       const opponentShirt=side==="opponent"&&shirtRaw?String(Math.max(1,Math.min(99,Number(shirtRaw)))):null;
       if(side==="opponent"&&cardMode==="second_card"&&!opponentShirt)throw new Error("Per il rosso per somma indica il numero di maglia avversario.");
-      const cardType=cardMode==="second_card"?"second_card":type==="red_card"?"direct":type==="blue_card"?"blue":"yellow";
-      const cardPayload={...base,event_type:type,player_id:playerId,secondary_player_id:null,payload:{period,card_type:cardType,...(opponentShirt?{opponent_shirt_number:opponentShirt}:{}),...(type==="blue_card"?{temporary_suspension_minutes:10}:{})},substitution_reason:null};
+
+      const sameSubject=x=>{
+        if(String(x.id)===String(editingId||"")||x.team_side!==side||x.validation_status==="rejected")return false;
+        if(side==="opponent")return !!opponentShirt&&String(x.payload?.opponent_shirt_number||"")===opponentShirt;
+        return !!playerId&&x.player_id===playerId;
+      };
+      const cautions=matchCenterState.events
+        .filter(x=>sameSubject(x)&&(x.event_type==="yellow_card"||x.event_type==="blue_card"))
+        .sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0));
+      const existingRed=matchCenterState.events.some(x=>sameSubject(x)&&x.event_type==="red_card");
+
+      const explicitAccumulation=side==="opponent"&&cardMode==="second_card";
+      const automaticAccumulation=(type==="yellow_card"||type==="blue_card")&&cautions.length>=1&&!existingRed;
+      const shouldUnify=explicitAccumulation||automaticAccumulation;
+
+      let eventType=type;
+      let cardType=type==="red_card"?"direct":type==="blue_card"?"blue":"yellow";
+      let accumulatedCards=null;
+      if(shouldUnify){
+        eventType="red_card";
+        cardType=explicitAccumulation?"second_card":"second_yellow_blue";
+        const previous=cautions.slice(-2).map(x=>x.event_type);
+        accumulatedCards=explicitAccumulation?previous.slice(-2):[...previous.slice(-1),type];
+      }
+
+      const eventPayload={
+        ...base,
+        event_type:eventType,
+        player_id:playerId,
+        secondary_player_id:null,
+        payload:{
+          period,
+          card_type:cardType,
+          ...(shouldUnify?{automatic:!explicitAccumulation,trigger_event_type:type,accumulated_cards:accumulatedCards,unified:true}:{}),
+          ...(opponentShirt?{opponent_shirt_number:opponentShirt}:{}),
+          ...(eventType==="blue_card"?{temporary_suspension_minutes:10}:{})
+        },
+        substitution_reason:null
+      };
+
       if(editingId){
         const old=matchCenterState.events.find(x=>String(x.id)===String(editingId));
         await mcDeleteAutomaticRedFor(old);
-        await mcUpdateDirectEvent(editingId,cardPayload);
-      }else await mcInsertDirectEvent(cardPayload);
-
-      if(side==="team"&&(type==="yellow_card"||type==="blue_card")){
-        const previous=matchCenterState.events.filter(x=>String(x.id)!==String(editingId||"")&&x.player_id===playerId&&x.team_side==="team"&&(x.event_type==="yellow_card"||x.event_type==="blue_card")&&x.validation_status!=="rejected").length;
-        const alreadyRed=matchCenterState.events.some(x=>String(x.id)!==String(editingId||"")&&x.player_id===playerId&&x.team_side==="team"&&x.event_type==="red_card"&&x.validation_status!=="rejected"&&!x.payload?.automatic);
-        if(previous>=1&&!alreadyRed){
-          await mcInsertDirectEvent({...base,event_type:"red_card",player_id:playerId,secondary_player_id:null,payload:{period,card_type:"second_yellow_blue",automatic:true,trigger_event_type:type},substitution_reason:null});
-        }
-      }
-
-      if(side==="opponent"&&opponentShirt&&(type==="yellow_card"||type==="blue_card")){
-        const previous=matchCenterState.events.filter(x=>
-          String(x.id)!==String(editingId||"")&&x.team_side==="opponent"&&
-          (x.event_type==="yellow_card"||x.event_type==="blue_card")&&
-          String(x.payload?.opponent_shirt_number||"")===opponentShirt&&x.validation_status!=="rejected"
-        ).length;
-        const alreadyRed=matchCenterState.events.some(x=>
-          String(x.id)!==String(editingId||"")&&x.team_side==="opponent"&&x.event_type==="red_card"&&
-          String(x.payload?.opponent_shirt_number||"")===opponentShirt&&x.validation_status!=="rejected"
-        );
-        if(previous>=1&&!alreadyRed){
-          await mcInsertDirectEvent({...base,event_type:"red_card",player_id:null,secondary_player_id:null,payload:{period,card_type:"second_yellow_blue",automatic:true,trigger_event_type:type,opponent_shirt_number:opponentShirt},substitution_reason:null});
-        }
+        await mcUpdateDirectEvent(editingId,eventPayload);
+      }else{
+        await mcInsertDirectEvent(eventPayload);
       }
     }
     mcClosePlayerQuickEvent();
