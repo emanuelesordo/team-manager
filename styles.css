@@ -5144,3 +5144,175 @@ dialog form{padding:16px}
     max-width:44px!important;
   }
 }
+
+
+/* Match Center RATING: balanced 11-row layout */
+.mc-rating-column{
+  grid-template-rows:auto auto minmax(0,1fr)!important;
+}
+.mc-rating-fields-head{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 58px minmax(112px,.78fr);
+  align-items:center;
+  gap:8px;
+  min-height:24px;
+  padding:0 7px;
+  color:#8b9296;
+  font-size:6px;
+  font-weight:850;
+  letter-spacing:.01em;
+}
+.mc-rating-fields-head span:nth-child(2){
+  text-align:center;
+}
+.mc-rating-fields-head strong{
+  height:20px;
+  display:grid;
+  place-items:center;
+  border-radius:7px;
+  background:rgba(31,143,215,.055);
+  color:#6f7b82;
+  font-size:6px;
+  font-weight:900;
+}
+.mc-rating-column-list,
+.mc-rating-starters .mc-rating-column-list,
+.mc-rating-bench .mc-rating-column-list{
+  height:100%!important;
+  display:grid!important;
+  grid-template-rows:repeat(11,minmax(0,1fr))!important;
+  grid-auto-rows:minmax(0,1fr)!important;
+  gap:2px!important;
+  align-content:stretch!important;
+  overflow:hidden!important;
+}
+.mc-rating-column-list>.mc-rating-row{
+  min-height:0!important;
+  height:100%!important;
+  padding:2px 7px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 58px minmax(112px,.78fr)!important;
+  align-items:center!important;
+  gap:8px!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+.mc-rating-column-list>.mc-rating-row:hover,
+.mc-rating-column-list>.mc-rating-row:focus-within{
+  background:rgba(31,143,215,.045)!important;
+}
+.mc-rating-player,
+.mc-rating-average,
+.mc-rating-vote{
+  align-self:center!important;
+}
+.mc-rating-player{
+  grid-template-columns:25px minmax(0,1fr)!important;
+  gap:7px!important;
+}
+.mc-rating-player>.num{
+  width:25px!important;
+  height:25px!important;
+  border-radius:7px!important;
+  background:#fff!important;
+  box-shadow:inset 0 0 0 1px rgba(32,39,43,.06);
+}
+.mc-rating-player-copy{
+  gap:1px!important;
+}
+.mc-rating-name-line{
+  gap:8px!important;
+}
+.mc-rating-name-line>strong{
+  font-size:8px!important;
+}
+.mc-rating-player-copy>small{
+  font-size:6px!important;
+}
+.mc-rating-average{
+  justify-items:center!important;
+}
+.mc-rating-average-value{
+  min-width:34px!important;
+  height:19px!important;
+  padding:0 6px!important;
+  border:1.25px solid var(--rating-bg,#d7dcdf)!important;
+  border-radius:999px!important;
+  background:#fff!important;
+  color:#202326!important;
+  font-size:8px!important;
+  font-weight:950!important;
+  line-height:1!important;
+}
+.mc-rating-average-value.empty{
+  border-color:#d7dcdf!important;
+  background:#fff!important;
+  color:#8f9598!important;
+}
+.mc-rating-average small{
+  margin-top:1px;
+  font-size:5px!important;
+}
+.mc-rating-vote{
+  height:100%;
+  display:grid!important;
+  place-items:center!important;
+  padding:0 5px!important;
+  border-radius:7px!important;
+  background:rgba(31,143,215,.035)!important;
+}
+.mc-rating-vote input[type="text"]{
+  width:min(72px,100%)!important;
+  height:22px!important;
+  padding:0 6px!important;
+  border:1.25px solid var(--rating-color,#d7dcdf)!important;
+  border-radius:999px!important;
+  background:#fff!important;
+  color:var(--rating-fg,#202326)!important;
+  box-shadow:none!important;
+  font-size:8px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+.mc-rating-vote input[type="text"].valid{
+  box-shadow:none!important;
+}
+.mc-rating-vote input[type="text"]:focus{
+  outline:none!important;
+  box-shadow:0 0 0 2px rgba(31,143,215,.10)!important;
+}
+.mc-rating-vote input[type="text"].invalid{
+  border-color:#b51f3d!important;
+  box-shadow:0 0 0 2px rgba(181,31,61,.08)!important;
+}
+
+@media(max-width:640px){
+  .mc-rating-fields-head{
+    display:none;
+  }
+  .mc-rating-column{
+    grid-template-rows:auto minmax(0,1fr)!important;
+  }
+  .mc-rating-column-list,
+  .mc-rating-starters .mc-rating-column-list,
+  .mc-rating-bench .mc-rating-column-list{
+    height:auto!important;
+    grid-template-rows:none!important;
+    grid-auto-rows:auto!important;
+    overflow:visible!important;
+  }
+  .mc-rating-column-list>.mc-rating-row{
+    min-height:48px!important;
+    height:auto!important;
+    grid-template-columns:minmax(0,1fr) 48px 78px!important;
+    padding:4px 5px!important;
+    gap:5px!important;
+  }
+  .mc-rating-vote{
+    padding-inline:3px!important;
+  }
+}
