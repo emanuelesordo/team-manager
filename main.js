@@ -1089,7 +1089,7 @@ function mcCurrentFieldRows(){
       if(e.player_id)map.delete(e.player_id);
       if(e.secondary_player_id){
         const source=mcMatchPlayer(e.secondary_player_id)||{player_id:e.secondary_player_id,selection_status:"bench"};
-        const inheritedSlot=e.payload?.tactical_slot??outgoing?.tactical_slot??source.tactical_slot??null;
+        const inheritedSlot=source.tactical_slot??e.payload?.tactical_slot??outgoing?.tactical_slot??null;
         map.set(e.secondary_player_id,{...source,started:true,tactical_slot:inheritedSlot});
       }
     }
@@ -1628,7 +1628,10 @@ async function mcSubmitPlayerQuickEvent(e){
         if(!outgoing)throw new Error("Seleziona il giocatore uscente.");
       }
       const outgoingRow=mcCurrentFieldRows().find(x=>String(x.player_id)===String(outgoing));
-      const payload={...base,event_type:"substitution",player_id:outgoing,secondary_player_id:incoming,payload:{period,tactical_slot:outgoingRow?.tactical_slot??null},substitution_reason:$("#mcQuickSubtype").value};
+      const pitchEls=[...$("#mcGeneralPitch").querySelectorAll("[data-mc-pitch-player]")];
+      const displayedSlot=pitchEls.findIndex(el=>String(el.dataset.mcPitchPlayer)===String(outgoing))+1;
+      const outgoingSlot=outgoingRow?.tactical_slot??(displayedSlot>0?displayedSlot:null);
+      const payload={...base,event_type:"substitution",player_id:outgoing,secondary_player_id:incoming,payload:{period,tactical_slot:outgoingSlot},substitution_reason:$("#mcQuickSubtype").value};
       if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
     }else if(kind==="goal"){
       const sub=$("#mcQuickSubtype").value;
