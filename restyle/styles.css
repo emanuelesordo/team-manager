@@ -1,4 +1,4 @@
-@import url("../styles.css");
+@import url("../styles.css") layer(legacy);
 
 :root{
   color-scheme:dark;
@@ -413,4 +413,154 @@ a{color:#8a72ff}
   .main{padding:0 8px 76px}
   .restyle-topbar{padding:0 12px}
   .restyle-top-actions .restyle-live-dot{display:none}
+}
+
+
+/* === RESTYLE ISOLATION GUARD === */
+body.restyle-v2{
+  background:
+    radial-gradient(900px 520px at 92% 0%,rgba(101,50,194,.17),transparent 60%),
+    radial-gradient(800px 480px at 18% 8%,rgba(66,70,200,.10),transparent 58%),
+    linear-gradient(180deg,#090812 0%,#0b0915 100%);
+  color:var(--text);
+}
+body.restyle-v2 .app-shell{
+  max-width:1680px;
+  padding:20px 26px;
+  grid-template-columns:var(--side) minmax(0,1fr);
+  gap:16px;
+}
+body.restyle-v2 .workspace{
+  height:100%;
+  min-width:0;
+  min-height:0;
+  display:grid;
+  grid-template-rows:68px minmax(0,1fr);
+  gap:12px;
+}
+body.restyle-v2 .main{
+  height:auto;
+  min-height:0;
+  overflow:auto;
+  padding:0 2px 2px;
+  background:transparent;
+}
+body.restyle-v2 .side-nav{
+  min-height:0;
+  padding:22px 12px 14px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  background:linear-gradient(180deg,#100d1a 0%,#0f0c18 100%);
+  border:1px solid var(--line);
+  border-radius:22px;
+  box-shadow:var(--shadow);
+}
+body.restyle-v2 .side-menu{
+  flex:1;
+  min-height:0;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  align-items:stretch;
+}
+body.restyle-v2 .side-link{
+  width:100%;
+  height:42px;
+  min-height:42px;
+  padding:0 12px;
+  border:0;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:11px;
+  background:transparent;
+  color:#8f899f;
+  font-size:11px;
+  font-weight:680;
+  transform:none;
+}
+body.restyle-v2 .side-link.active{
+  background:linear-gradient(90deg,#5a43d9 0%,#6e43db 65%,#5936b2 100%);
+  color:#fff;
+  box-shadow:0 10px 26px rgba(82,58,201,.23);
+}
+body.restyle-v2 .glass,
+body.restyle-v2 .ui-card,
+body.restyle-v2 .card,
+body.restyle-v2 .sheet,
+body.restyle-v2 .competition-half,
+body.restyle-v2 .match-manager-top,
+body.restyle-v2 .list-card,
+body.restyle-v2 .hero-card,
+body.restyle-v2 .kpi,
+body.restyle-v2 .home-panel{
+  background:linear-gradient(180deg,rgba(24,19,37,.96),rgba(19,15,30,.96));
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+body.restyle-v2 .home-reference-grid{
+  background:transparent;
+  gap:12px;
+}
+body.restyle-v2 .home-panel,
+body.restyle-v2 .ui-card,
+body.restyle-v2 .competition-third{
+  border-radius:14px;
+}
+body.restyle-v2 .competition-third{
+  background:linear-gradient(180deg,#171220,#13101c);
+  border:1px solid var(--line);
+  box-shadow:var(--shadow);
+}
+body.restyle-v2 input,
+body.restyle-v2 select,
+body.restyle-v2 textarea{
+  background:#12101c;
+  color:#e9e6f0;
+  border-color:var(--line);
+}
+body.restyle-v2 table,
+body.restyle-v2 th,
+body.restyle-v2 td,
+body.restyle-v2 tr{
+  background-color:transparent;
+  border-color:var(--line);
+}
+body.restyle-v2 th{color:#736d80}
+body.restyle-v2 td{color:#d9d4e3}
+
+@media(max-width:980px){
+  body.restyle-v2 .app-shell{padding:10px;gap:10px}
+  body.restyle-v2 .workspace{grid-template-rows:56px minmax(0,1fr)}
+  body.restyle-v2 .side-link{justify-content:center;font-size:0;padding:0}
+}
+@media(max-width:700px){
+  body.restyle-v2 .app-shell{padding:0;display:block}
+  body.restyle-v2 .workspace{height:100dvh;grid-template-rows:54px minmax(0,1fr) 66px}
+  body.restyle-v2 .side-nav{
+    position:fixed;
+    left:8px;right:8px;bottom:8px;
+    width:auto;height:58px;min-height:58px;
+    z-index:100;
+    padding:6px 8px;
+    border-radius:15px;
+    flex-direction:row;
+    align-items:center;
+  }
+  body.restyle-v2 .side-menu{
+    flex-direction:row;
+    overflow:visible;
+    width:100%;
+    justify-content:space-around;
+  }
+  body.restyle-v2 .side-link{
+    width:44px;height:44px;min-height:44px;
+    border-radius:11px;
+  }
+  body.restyle-v2 .main{padding:0 8px 76px}
 }
