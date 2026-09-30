@@ -1459,76 +1459,67 @@ function mcTimeline(target,limit,filters=null){
       halfInserted=true;
     }
 
+    const sameMoment=x=>
+      x&&
+      mcEventPeriod(x)===period&&
+      Number(x.minute)===Number(e.minute)&&
+      Number(x.stoppage_minute||0)===Number(e.stoppage_minute||0);
+
+    const grouped=[];
+    let j=index;
+    while(j<regular.length&&sameMoment(regular[j])){grouped.push(regular[j]);j++}
+
     const minute=mcDisplayMinute(e);
     const add=index===0?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
 
-    if(e.event_type==="substitution"){
-      const sameMoment=x=>
-        x?.event_type==="substitution"&&
-        mcEventPeriod(x)===period&&
-        Number(x.minute)===Number(e.minute)&&
-        Number(x.stoppage_minute||0)===Number(e.stoppage_minute||0);
-      const grouped=[];
-      let j=index;
-      while(j<regular.length&&sameMoment(regular[j])){grouped.push(regular[j]);j++}
+    const renderMomentEvent=x=>{
+      const isHome=(x.team_side==="team"&&ownHome)||(x.team_side==="opponent"&&!ownHome);
+      const partial=x.event_type==="goal"?(scoreAt.get(x)||""):"";
+      let main="",secondary="",icon="";
 
-      const renderPair=x=>{
-        const isHome=(x.team_side==="team"&&ownHome)||(x.team_side==="opponent"&&!ownHome);
-        const main=x.secondary_player_id?mcTimelinePlayerName(x.secondary_player_id):"Nessun ingresso";
-        const secondary=x.player_id?mcTimelinePlayerName(x.player_id):"Uscita da completare";
-        const icon='<span class="mc-event-symbol substitution"><i class="sub-out">←</i><b class="sub-in">→</b></span>';
-        const names='<span class="mc-event-names"><strong>'+esc(main)+'</strong><small>'+esc(secondary)+'</small></span>';
-        const content='<span class="mc-event-content">'+icon+names+'</span>';
-        return {isHome,html:'<div class="mc-substitution-pair" data-mc-event-id="'+esc(x.id)+'" role="button" tabindex="0">'+content+'</div>'};
+      if(x.event_type==="goal"){
+        if(x.team_side==="team"){
+          main=x.player_id?mcTimelinePlayerName(x.player_id):"Gol";
+          secondary=x.secondary_player_id?mcTimelinePlayerName(x.secondary_player_id):"";
+        }else{
+          main="Gol avversario";
+        }
+        icon='<span class="mc-event-symbol goal">⚽</span>';
+      }else if(x.event_type==="substitution"){
+        main=x.secondary_player_id?mcTimelinePlayerName(x.secondary_player_id):"Nessun ingresso";
+        secondary=x.player_id?mcTimelinePlayerName(x.player_id):"Uscita da completare";
+        icon='<span class="mc-event-symbol substitution"><i class="sub-out">←</i><b class="sub-in">→</b></span>';
+      }else if(x.event_type==="yellow_card"||x.event_type==="blue_card"||x.event_type==="red_card"){
+        const shirt=x.payload?.opponent_shirt_number;
+        main=x.team_side==="team"
+          ?(x.player_id?mcTimelinePlayerName(x.player_id):"Giocatore")
+          :(shirt?"#"+shirt:"Avversario");
+        icon=mcTimelineCardIcon(x,all);
+      }
+
+      const names='<span class="mc-event-names"><strong>'+esc(main)+'</strong>'+(secondary?'<small>'+esc(secondary)+'</small>':"")+'</span>';
+      const score=partial?'<span class="mc-goal-score">'+esc(partial)+'</span>':"";
+      const content='<span class="mc-event-content">'+icon+score+names+'</span>';
+      const cls=x.event_type==="substitution"?" mc-substitution-pair":" mc-minute-event";
+      return {
+        isHome,
+        html:'<div class="'+cls.trim()+'" data-mc-event-id="'+esc(x.id)+'" role="button" tabindex="0">'+content+'</div>'
       };
+    };
 
-      const pairs=grouped.map(renderPair);
-      const home=pairs.filter(x=>x.isHome).map(x=>x.html).join("");
-      const away=pairs.filter(x=>!x.isHome).map(x=>x.html).join("");
-
-      rows.push(
-        '<div class="mc-event-row mc-substitution-group'+(index===0?" mc-event-latest":"")+'">'+
-          '<div class="mc-event-half mc-event-half-home"><div class="mc-substitution-stack">'+home+'</div></div>'+
-          '<time>'+minute+'</time>'+add+
-          '<div class="mc-event-half mc-event-half-away"><div class="mc-substitution-stack">'+away+'</div></div>'+
-        '</div>'
-      );
-      index=j;
-      continue;
-    }
-
-    const isHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
-    const partial=e.event_type==="goal"?(scoreAt.get(e)||""):"";
-
-    let main="",secondary="";
-    if(e.event_type==="goal"){
-      if(e.team_side==="team"){
-        main=e.player_id?mcTimelinePlayerName(e.player_id):"Gol";
-        secondary=e.secondary_player_id?mcTimelinePlayerName(e.secondary_player_id):"";
-      }else main="Gol avversario";
-    }else if(e.event_type==="yellow_card"||e.event_type==="blue_card"||e.event_type==="red_card"){
-      const shirt=e.payload?.opponent_shirt_number;
-      main=e.team_side==="team"
-        ?(e.player_id?mcTimelinePlayerName(e.player_id):"Giocatore")
-        :(shirt?"#"+shirt:"Avversario");
-    }
-
-    const icon=e.event_type==="goal"
-      ?'<span class="mc-event-symbol goal">⚽</span>'
-      :mcTimelineCardIcon(e,all);
-
-    const names='<span class="mc-event-names"><strong>'+esc(main)+'</strong>'+(secondary?'<small>'+esc(secondary)+'</small>':"")+'</span>';
-    const score=partial?'<span class="mc-goal-score">'+esc(partial)+'</span>':"";
-    const content='<span class="mc-event-content">'+icon+score+names+'</span>';
+    const rendered=grouped.map(renderMomentEvent);
+    const home=rendered.filter(x=>x.isHome).map(x=>x.html).join("");
+    const away=rendered.filter(x=>!x.isHome).map(x=>x.html).join("");
 
     rows.push(
-      '<div class="mc-event-row mc-event-'+(isHome?"home":"away")+(index===0?" mc-event-latest":"")+'" data-mc-event-id="'+esc(e.id)+'" role="button" tabindex="0">'+
-        '<div class="mc-event-half mc-event-half-home">'+(isHome?content:"")+'</div>'+
+      '<div class="mc-event-row mc-minute-group'+(grouped.some(x=>x.event_type==="substitution")?" mc-substitution-group":"")+(index===0?" mc-event-latest":"")+'">'+
+        '<div class="mc-event-half mc-event-half-home"><div class="mc-minute-stack">'+home+'</div></div>'+
         '<time>'+minute+'</time>'+add+
-        '<div class="mc-event-half mc-event-half-away">'+(isHome?"":content)+'</div>'+
+        '<div class="mc-event-half mc-event-half-away"><div class="mc-minute-stack">'+away+'</div></div>'+
       '</div>'
     );
-    index++;
+
+    index=j;
   }
 
   if(!halfInserted&&hasSecondHalf){
