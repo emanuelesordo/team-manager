@@ -1243,7 +1243,7 @@ function mcTimeline(target,limit,filters=null){
     const add=index===0?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
 
     rows.push(
-      '<div class="mc-event-row mc-event-'+(isHome?"home":"away")+(index===0?" mc-event-latest":"")+'">'+
+      '<div class="mc-event-row mc-event-'+(isHome?"home":"away")+(index===0?" mc-event-latest":"")+'" data-mc-event-id="'+esc(e.id)+'" role="button" tabindex="0">'+
         '<div class="mc-event-half mc-event-half-home">'+(isHome?content:"")+'</div>'+
         '<time>'+minute+'</time>'+add+
         '<div class="mc-event-half mc-event-half-away">'+(isHome?"":content)+'</div>'+
@@ -1261,6 +1261,11 @@ function mcTimeline(target,limit,filters=null){
   box.innerHTML=rows.length?rows.join(""):'<div class="empty-state mc-timeline-empty">Nessun evento<button type="button" class="mc-timeline-add empty-add" data-mc-timeline-add title="Aggiungi evento">+</button></div>';
   const add=box.querySelector("[data-mc-timeline-add]");
   if(add)add.onclick=e=>{e.stopPropagation();mcOpenTimelineQuickEvent(add)};
+  box.querySelectorAll("[data-mc-event-id]").forEach(row=>{
+    const open=()=>mcOpenTimelineEventEditor(row.dataset.mcEventId,row);
+    row.onclick=e=>{if(e.target.closest("[data-mc-timeline-add]"))return;open()};
+    row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}};
+  });
 }
 
 function mcCardStackIcon(){
@@ -1292,22 +1297,23 @@ function mcQuickEventShell(){
       '<button type="button" data-quick-kind="card" title="Cartellino">'+mcCardStackIcon()+'</button>'+
     '</div>'+
     '<form id="mcPlayerQuickForm"><div id="mcPlayerQuickFields"></div><p id="mcPlayerQuickError" class="form-error hidden"></p>'+
-      '<div class="mc-player-event-actions"><button type="button" class="secondary" id="mcPlayerQuickCancel">Annulla</button><button type="submit" class="primary">Salva evento</button></div>'+
+      '<div class="mc-player-event-actions"><button type="button" class="danger hidden" id="mcPlayerQuickDelete">Elimina</button><button type="button" class="secondary" id="mcPlayerQuickCancel">Annulla</button><button type="submit" class="primary">Salva evento</button></div>'+
     '</form>';
   $("#matchDetailDialog .match-center-shell").appendChild(pop);
   $("#mcPlayerQuickClose").onclick=mcClosePlayerQuickEvent;
   $("#mcPlayerQuickCancel").onclick=mcClosePlayerQuickEvent;
+  $("#mcPlayerQuickDelete").onclick=mcDeleteTimelineEvent;
   $$("[data-quick-kind]").forEach(b=>b.onclick=e=>{e.stopPropagation();mcSetPlayerQuickKind(b.dataset.quickKind)});
   $("#mcPlayerQuickForm").onsubmit=mcSubmitPlayerQuickEvent;
   pop.onclick=e=>e.stopPropagation();
   document.addEventListener("click",e=>{
     if(pop.classList.contains("hidden"))return;
-    if(e.target.closest("#mcPlayerQuickPopover")||e.target.closest("[data-mc-player-event]")||e.target.closest("[data-mc-timeline-add]"))return;
+    if(e.target.closest("#mcPlayerQuickPopover")||e.target.closest("[data-mc-player-event]")||e.target.closest("[data-mc-timeline-add]")||e.target.closest("[data-mc-event-id]"))return;
     mcClosePlayerQuickEvent();
   });
   return pop;
 }
-let mcPlayerQuickState={playerId:null,kind:null,anchor:null,source:"player"};
+let mcPlayerQuickState={playerId:null,kind:null,anchor:null,source:"player",editingEventId:null};
 function mcQuickPeriodDefault(){
   const p=matchCenterState.match?.live_period;
   return p==="second_half"?"second_half":"first_half";
@@ -1327,7 +1333,17 @@ function mcQuickPlayerChip(id,label){
   return '<div class="mc-quick-player-chip"><b>'+esc(p?.last_name||mcPlayerName(id))+'</b><small>'+esc(label||roleLabel(p?.generic_role_manual))+'</small></div>';
 }
 function mcQuickSelect(rows,id,placeholder,selected=""){
-  return '<select id="'+id+'"><option value="">'+esc(placeholder)+'</option>'+rows.map(p=>'<option value="'+p.player_id+'" '+(p.player_id===selected?"selected":"")+'>'+esc(mcPlayerName(p.player_id))+'</option>').join("")+'</select>';
+  return '<select id="'+id+'"><option value="">'+esc(placeholder)+'</option>'+rows.map(p=>'<option value="'+p.player_id+'" '+(String(p.player_id)===String(selected)?"selected":"")+'>'+esc(mcPlayerName(p.player_id))+'</option>').join("")+'</select>';
+}
+function mcQuickAllParticipantRows(){
+  const seen=new Set();
+  return [
+    ...matchCenterState.matchPlayers,
+    ...matchCenterState.events.flatMap(e=>[
+      e.player_id?{player_id:e.player_id}:null,
+      e.secondary_player_id?{player_id:e.secondary_player_id}:null
+    ]).filter(Boolean)
+  ].filter(x=>x?.player_id&&!seen.has(x.player_id)&&seen.add(x.player_id));
 }
 function mcQuickBenchRows(activeIds){
   return matchCenterState.matchPlayers.filter(x=>x.selection_status==="bench"&&!activeIds.has(x.player_id));
@@ -1337,21 +1353,34 @@ function mcQuickAllSelectableRows(){
   const activeIds=new Set(field.map(x=>x.player_id));
   const bench=mcQuickBenchRows(activeIds);
   const seen=new Set();
-  return [...field,...bench].filter(x=>x?.player_id&&!seen.has(x.player_id)&&seen.add(x.player_id));
+  return [...field,...bench,...mcQuickAllParticipantRows()].filter(x=>x?.player_id&&!seen.has(x.player_id)&&seen.add(x.player_id));
 }
 function mcOpenPlayerQuickEvent(playerId,kind,anchor){
-  mcPlayerQuickState={playerId,kind,anchor,source:"player"};
+  mcPlayerQuickState={playerId,kind,anchor,source:"player",editingEventId:null};
   const pop=mcQuickEventShell();
   pop.classList.add("direct-player");
   pop.classList.remove("hidden");
+  $("#mcPlayerQuickDelete").classList.add("hidden");
   mcSetPlayerQuickKind(kind);
   requestAnimationFrame(()=>mcPositionPlayerQuickEvent(anchor));
 }
 function mcOpenTimelineQuickEvent(anchor){
-  mcPlayerQuickState={playerId:null,kind:"substitution",anchor,source:"timeline"};
+  mcPlayerQuickState={playerId:null,kind:"substitution",anchor,source:"timeline",editingEventId:null};
   const pop=mcQuickEventShell();
   pop.classList.remove("direct-player","hidden");
+  $("#mcPlayerQuickDelete").classList.add("hidden");
   mcSetPlayerQuickKind("substitution");
+  requestAnimationFrame(()=>mcPositionPlayerQuickEvent(anchor));
+}
+function mcOpenTimelineEventEditor(eventId,anchor){
+  const event=matchCenterState.events.find(x=>String(x.id)===String(eventId));
+  if(!event||event.event_type==="period_end")return;
+  const kind=event.event_type==="substitution"?"substitution":event.event_type==="goal"?"goal":"card";
+  mcPlayerQuickState={playerId:event.player_id||null,kind,anchor,source:"edit",editingEventId:event.id};
+  const pop=mcQuickEventShell();
+  pop.classList.remove("direct-player","hidden");
+  $("#mcPlayerQuickDelete").classList.remove("hidden");
+  mcSetPlayerQuickKind(kind);
   requestAnimationFrame(()=>mcPositionPlayerQuickEvent(anchor));
 }
 function mcClosePlayerQuickEvent(){
@@ -1379,11 +1408,13 @@ function mcPositionPlayerQuickEvent(anchor){
 function mcSetPlayerQuickKind(kind){
   mcPlayerQuickState.kind=kind;
   const source=mcPlayerQuickState.source,id=mcPlayerQuickState.playerId,p=id?mcPlayer(id):null;
+  const editing=source==="edit"?matchCenterState.events.find(x=>String(x.id)===String(mcPlayerQuickState.editingEventId)):null;
   const fieldRows=mcCurrentFieldRows(),activeIds=new Set(fieldRows.map(x=>x.player_id)),isActive=id?activeIds.has(id):false;
   $$("[data-quick-kind]").forEach(b=>b.classList.toggle("active",b.dataset.quickKind===kind));
   const label=kind==="substitution"?"Cambio":kind==="goal"?"Gol":"Cartellino";
-  $("#mcPlayerQuickTitle").textContent=source==="player"?(label+" · "+(p?.last_name||mcPlayerName(id))):("Aggiungi evento · "+label);
-  const period=mcQuickPeriodDefault(),minute=mcQuickMinuteValue();
+  $("#mcPlayerQuickTitle").textContent=source==="edit"?("Modifica evento · "+label):source==="player"?(label+" · "+(p?.last_name||mcPlayerName(id))):("Aggiungi evento · "+label);
+  const period=editing?(editing.payload?.period||mcEventPeriod(editing)):mcQuickPeriodDefault();
+  const minute=editing?(editing.minute??""):mcQuickMinuteValue();
   const timing='<div class="mc-player-event-grid"><label>Tempo<select id="mcQuickPeriod">'+mcQuickPeriodOptions(period)+'</select></label><label>Minuto<input id="mcQuickMinute" type="number" min="0" max="120" value="'+minute+'" placeholder="—"></label></div>';
   let html=timing;
   const benchRows=mcQuickBenchRows(activeIds);
@@ -1395,22 +1426,31 @@ function mcSetPlayerQuickKind(kind){
       }else{
         html+='<div class="mc-player-event-grid players"><label>Giocatore entra>'+mcQuickPlayerChip(id,"Entra")+'</label><label>Giocatore esce>'+mcQuickSelect(fieldRows.filter(x=>x.player_id!==id),"mcQuickOther","Seleziona giocatore")+'</label></div>';
       }
+    }else if(source==="edit"){
+      const rows=mcQuickAllSelectableRows();
+      html+='<div class="mc-player-event-grid players"><label>Giocatore esce>'+mcQuickSelect(rows,"mcQuickPlayer","Seleziona giocatore",editing?.player_id||"")+'</label><label>Giocatore entra>'+mcQuickSelect(rows.filter(x=>String(x.player_id)!==String(editing?.player_id||"")),"mcQuickOther","Nessun ingresso",editing?.secondary_player_id||"")+'</label></div>';
     }else{
       html+='<div class="mc-player-event-grid players"><label>Giocatore esce>'+mcQuickSelect(fieldRows,"mcQuickPlayer","Seleziona giocatore")+'</label><label>Giocatore entra>'+mcQuickSelect(benchRows,"mcQuickOther","Seleziona giocatore")+'</label></div>';
     }
-    html+='<label>Motivo cambio<select id="mcQuickSubtype"><option value="technical">Scelta tecnica</option><option value="injury">Infortunio</option><option value="tactical">Tattico</option><option value="other">Altro</option></select></label>';
+    const reason=editing?.substitution_reason||"technical";
+    html+='<label>Motivo cambio<select id="mcQuickSubtype"><option value="technical" '+(reason==="technical"?"selected":"")+'>Scelta tecnica</option><option value="injury" '+(reason==="injury"?"selected":"")+'>Infortunio</option><option value="tactical" '+(reason==="tactical"?"selected":"")+'>Tattico</option><option value="other" '+(reason==="other"?"selected":"")+'>Altro</option></select></label>';
   }else if(kind==="goal"){
     if(source==="player"){
       html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickPlayerChip(id,"Marcatore")+'</label><label>Assistman>'+mcQuickSelect(fieldRows.filter(x=>x.player_id!==id),"mcQuickOther","Nessun assist")+'</label></div>';
+    }else if(source==="edit"){
+      const rows=mcQuickAllSelectableRows();
+      html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickSelect(rows,"mcQuickPlayer","Seleziona marcatore",editing?.player_id||"")+'</label><label>Assistman>'+mcQuickSelect(rows.filter(x=>String(x.player_id)!==String(editing?.player_id||"")),"mcQuickOther","Nessun assist",editing?.secondary_player_id||"")+'</label></div>';
     }else{
       html+='<div class="mc-player-event-grid players"><label>Marcatore>'+mcQuickSelect(fieldRows,"mcQuickPlayer","Seleziona marcatore")+'</label><label>Assistman>'+mcQuickSelect(fieldRows,"mcQuickOther","Nessun assist")+'</label></div>';
     }
-    html+='<label>Tipologia<select id="mcQuickSubtype"><option value="action">Azione</option><option value="penalty">Rigore</option><option value="free_kick">Punizione</option><option value="own_goal">Autogol</option></select></label>';
+    const goalType=editing?.payload?.goal_type||"action";
+    html+='<label>Tipologia<select id="mcQuickSubtype"><option value="action" '+(goalType==="action"?"selected":"")+'>Azione</option><option value="penalty" '+(goalType==="penalty"?"selected":"")+'>Rigore</option><option value="free_kick" '+(goalType==="free_kick"?"selected":"")+'>Punizione</option><option value="own_goal" '+(goalType==="own_goal"?"selected":"")+'>Autogol</option></select></label>';
   }else{
-    if(source==="timeline"){
-      html+='<label>Giocatore>'+mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore")+'</label>';
+    if(source==="timeline"||source==="edit"){
+      html+='<label>Giocatore>'+mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore",editing?.player_id||"")+'</label>';
     }
-    html+='<label>Cartellino<div class="mc-card-choice"><button type="button" class="active yellow" data-quick-card="yellow_card"><i></i>Giallo</button><button type="button" class="red" data-quick-card="red_card"><i></i>Rosso</button><button type="button" class="blue" data-quick-card="blue_card"><i></i>Blu</button></div></label><input id="mcQuickCardType" type="hidden" value="yellow_card">';
+    const cardType=editing?.event_type||"yellow_card";
+    html+='<label>Cartellino<div class="mc-card-choice"><button type="button" class="yellow '+(cardType==="yellow_card"?"active":"")+'" data-quick-card="yellow_card"><i></i>Giallo</button><button type="button" class="red '+(cardType==="red_card"?"active":"")+'" data-quick-card="red_card"><i></i>Rosso</button><button type="button" class="blue '+(cardType==="blue_card"?"active":"")+'" data-quick-card="blue_card"><i></i>Blu</button></div></label><input id="mcQuickCardType" type="hidden" value="'+cardType+'">';
   }
   $("#mcPlayerQuickFields").innerHTML=html;
   $$("[data-quick-card]").forEach(b=>b.onclick=e=>{e.stopPropagation();$$("[data-quick-card]").forEach(x=>x.classList.remove("active"));b.classList.add("active");$("#mcQuickCardType").value=b.dataset.quickCard});
@@ -1421,13 +1461,44 @@ async function mcInsertDirectEvent(payload){
   const r=await db.from("app_match_events").insert(payload).select("*").single();
   return assertSaved(r,"Evento");
 }
+async function mcUpdateDirectEvent(eventId,payload){
+  const r=await db.from("app_match_events").update(payload).eq("id",eventId).select("*").maybeSingle();
+  return assertSaved(r,"Evento");
+}
+async function mcDeleteAutomaticRedFor(event){
+  if(!event||!(event.event_type==="yellow_card"||event.event_type==="blue_card"))return;
+  const period=event.payload?.period||mcEventPeriod(event);
+  const auto=matchCenterState.events.find(x=>
+    x.event_type==="red_card"&&x.player_id===event.player_id&&x.payload?.automatic===true&&
+    (x.minute??null)===(event.minute??null)&&(x.payload?.period||mcEventPeriod(x))===period
+  );
+  if(auto)await db.from("app_match_events").delete().eq("id",auto.id);
+}
+async function mcDeleteTimelineEvent(){
+  try{
+    const id=mcPlayerQuickState.editingEventId;
+    if(!id)return;
+    if(!sessionUser)throw new Error("Accedi per eliminare eventi.");
+    const event=matchCenterState.events.find(x=>String(x.id)===String(id));
+    if(!event)return;
+    if(!confirm("Eliminare definitivamente questo evento?"))return;
+    await mcDeleteAutomaticRedFor(event);
+    const r=await db.from("app_match_events").delete().eq("id",id);
+    if(r.error)throw r.error;
+    mcClosePlayerQuickEvent();
+    await mcReload();
+  }catch(err){
+    const error=$("#mcPlayerQuickError");
+    if(error){error.textContent=err.message||String(err);error.classList.remove("hidden")}
+  }
+}
 async function mcSubmitPlayerQuickEvent(e){
   e.preventDefault();
   const error=$("#mcPlayerQuickError");error.classList.add("hidden");
   try{
     if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");
     if(!sessionUser)throw new Error("Accedi per inserire eventi.");
-    const source=mcPlayerQuickState.source,kind=mcPlayerQuickState.kind,period=$("#mcQuickPeriod").value;
+    const source=mcPlayerQuickState.source,kind=mcPlayerQuickState.kind,editingId=mcPlayerQuickState.editingEventId,period=$("#mcQuickPeriod").value;
     const rawMinute=$("#mcQuickMinute").value,minute=rawMinute===""?null:Number(rawMinute);
     const base={match_id:matchCenterState.match.id,minute,stoppage_minute:null,team_side:"team",proposed_by:sessionUser.id,validation_status:"proposed"};
 
@@ -1439,26 +1510,33 @@ async function mcSubmitPlayerQuickEvent(e){
         outgoing=isActive?id:other;incoming=isActive?other:id;
       }else{
         outgoing=$("#mcQuickPlayer").value||null;incoming=$("#mcQuickOther").value||null;
-        if(!outgoing||!incoming)throw new Error("Seleziona giocatore uscente ed entrante.");
+        if(!outgoing)throw new Error("Seleziona il giocatore uscente.");
       }
-      await mcInsertDirectEvent({...base,event_type:"substitution",player_id:outgoing,secondary_player_id:incoming,payload:{period},substitution_reason:$("#mcQuickSubtype").value});
+      const payload={...base,event_type:"substitution",player_id:outgoing,secondary_player_id:incoming,payload:{period},substitution_reason:$("#mcQuickSubtype").value};
+      if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
     }else if(kind==="goal"){
       const scorer=source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer").value||null);
       if(!scorer)throw new Error("Seleziona il marcatore.");
       const activeIds=new Set(mcCurrentFieldRows().map(x=>x.player_id));
-      if(!activeIds.has(scorer))throw new Error("Il marcatore deve essere in campo al momento del gol.");
+      if(!editingId&&!activeIds.has(scorer))throw new Error("Il marcatore deve essere in campo al momento del gol.");
       const sub=$("#mcQuickSubtype").value,assist=$("#mcQuickOther").value||null;
       if(assist===scorer)throw new Error("Marcatore e assistman non possono coincidere.");
-      if(mcIsPost()){const g=mcGoalInfo();if(g.team>=g.expectedTeam)throw new Error("Numero di gol già coerente con il risultato ufficiale.");}
-      await mcInsertDirectEvent({...base,event_type:"goal",player_id:scorer,secondary_player_id:assist,payload:{period,goal_type:sub},substitution_reason:null});
+      if(mcIsPost()&&!editingId){const g=mcGoalInfo();if(g.team>=g.expectedTeam)throw new Error("Numero di gol già coerente con il risultato ufficiale.");}
+      const payload={...base,event_type:"goal",player_id:scorer,secondary_player_id:assist,payload:{period,goal_type:sub},substitution_reason:null};
+      if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
     }else{
       const playerId=source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer").value||null);
       if(!playerId)throw new Error("Seleziona il giocatore.");
       const type=$("#mcQuickCardType").value||"yellow_card";
-      await mcInsertDirectEvent({...base,event_type:type,player_id:playerId,secondary_player_id:null,payload:{period,card_type:type==="red_card"?"direct":type==="blue_card"?"blue":"yellow",...(type==="blue_card"?{temporary_suspension_minutes:10}:{})},substitution_reason:null});
+      const cardPayload={...base,event_type:type,player_id:playerId,secondary_player_id:null,payload:{period,card_type:type==="red_card"?"direct":type==="blue_card"?"blue":"yellow",...(type==="blue_card"?{temporary_suspension_minutes:10}:{})},substitution_reason:null};
+      if(editingId){
+        const old=matchCenterState.events.find(x=>String(x.id)===String(editingId));
+        await mcDeleteAutomaticRedFor(old);
+        await mcUpdateDirectEvent(editingId,cardPayload);
+      }else await mcInsertDirectEvent(cardPayload);
       if(type==="yellow_card"||type==="blue_card"){
-        const previous=matchCenterState.events.filter(x=>x.player_id===playerId&&x.team_side==="team"&&(x.event_type==="yellow_card"||x.event_type==="blue_card")&&x.validation_status!=="rejected").length;
-        const alreadyRed=matchCenterState.events.some(x=>x.player_id===playerId&&x.team_side==="team"&&x.event_type==="red_card"&&x.validation_status!=="rejected");
+        const previous=matchCenterState.events.filter(x=>String(x.id)!==String(editingId||"")&&x.player_id===playerId&&x.team_side==="team"&&(x.event_type==="yellow_card"||x.event_type==="blue_card")&&x.validation_status!=="rejected").length;
+        const alreadyRed=matchCenterState.events.some(x=>String(x.id)!==String(editingId||"")&&x.player_id===playerId&&x.team_side==="team"&&x.event_type==="red_card"&&x.validation_status!=="rejected"&&!x.payload?.automatic);
         if(previous>=1&&!alreadyRed){
           await mcInsertDirectEvent({...base,event_type:"red_card",player_id:playerId,secondary_player_id:null,payload:{period,card_type:"second_yellow_blue",automatic:true,trigger_event_type:type},substitution_reason:null});
         }
