@@ -136,7 +136,7 @@ window.addEventListener("error",e=>{
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
 const fmt=d=>d?new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"short",year:"numeric"}).format(new Date(d+"T12:00:00")):"—";
 const statusLabel={active:"Attiva",future:"Futura",archived:"Archiviata"};
-let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,competitionHubId=null,competitionFixtureFilter="all",calendarRows=[],teamMatches=[],calendarCompetitionIds=new Set(),players=[],rosterRows=[],playerStats=[],selectedPlayerId=null,selectedMatchId=null,rosterRole="ALL",dashboardStandingRows=[],dashboardCountdownTimer=null;
+let seasons=[],competitions=[],opponents=[],currentSeason=null,team=null,wizardStep=1,draftCompetitions=[],wizardOpponentIds=new Set(),sessionUser=null,competitionHubId=null,competitionFixtureFilter="all",calendarRows=[],teamMatches=[],calendarCompetitionIds=new Set(),players=[],rosterRows=[],playerStats=[],selectedPlayerId=null,selectedMatchId=null,rosterRole="ALL",dashboardStandingRows=[],dashboardCountdownTimer=null,loggedPlayer=null;
 
 async function loadAuthState(){
   const {data:{session}}=await db.auth.getSession();
@@ -863,15 +863,8 @@ async function loadDashboard(){
 
   const fixtures=await ownFixtures();
   const now=Date.now();
-
-  const finished=fixtures
-    .filter(f=>f.status==="finished"&&new Date(f.kickoff_at).getTime()<=now)
-    .sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
-
-  const upcoming=fixtures
-    .filter(f=>f.status!=="finished"&&new Date(f.kickoff_at).getTime()>now)
-    .sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
-
+  const finished=fixtures.filter(f=>f.status==="finished"&&new Date(f.kickoff_at).getTime()<=now).sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
+  const upcoming=fixtures.filter(f=>f.status!=="finished"&&new Date(f.kickoff_at).getTime()>now).sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
   const last=finished.at(-1)||null;
   const next=upcoming[0]||null;
 
@@ -884,194 +877,158 @@ async function loadDashboard(){
     if(o.result==="W")a.w++;
     else if(o.result==="D")a.d++;
     else a.l++;
+    if(o.ga===0)a.clean++;
     return a;
-  },{played:0,w:0,d:0,l:0,gf:0,ga:0});
+  },{played:0,w:0,d:0,l:0,gf:0,ga:0,clean:0});
 
-  $("#dashboardHero").innerHTML=`
-    <section class="hero-card glass">
-      <div class="hero-head">
-        <div>
-          <h2>Ultima partita</h2>
-          ${last?dashboardHeroMeta(last):""}
-        </div>
-        ${last?'<span class="badge">Conclusa</span>':""}
-      </div>
-      ${last?dashboardMatchCard(last,true):'<div class="empty-state">Nessuna partita conclusa</div>'}
-    </section>
+  $("#homeTeamOverview").innerHTML=renderHomeTeamIdentity();
+  $("#homeTeamMetrics").innerHTML=renderHomeMetrics(totals);
+  $("#homeLastMatch").innerHTML=last?renderHomeMatch(last,true):'<div class="home-empty">Nessuna partita conclusa</div>';
+  $("#homeFormChart").innerHTML=renderHomeForm(finished.slice(-7));
 
-    <section class="hero-card glass">
-      <div class="hero-head">
-        <div>
-          <h2>Prossima partita</h2>
-          ${next?dashboardHeroMeta(next):""}
-        </div>
-      </div>
-      ${next?dashboardMatchCard(next,false):'<div class="empty-state">Nessuna partita programmata</div>'}
-      ${next?'<div id="kickoffCountdown" class="kickoff-countdown"></div>':""}
-    </section>`;
+  await loadLoggedPlayer();
+  $("#homePlayerStats").innerHTML=renderLoggedPlayerCard();
 
-  const kpis=[
-    [totals.played,"Partite giocate","var(--blue)"],
-    [totals.w,"Vittorie","var(--green)"],
-    [totals.d,"Pareggi","var(--amber)"],
-    [totals.l,"Sconfitte","var(--red)"],
-    [totals.gf,"Gol fatti","var(--blue)"],
-    [totals.ga,"Gol subiti","var(--red)"]
-  ];
-
-  $("#dashboardKpis").innerHTML=kpis.map(k=>`
-    <div class="kpi glass">
-      <b style="color:${k[2]}">${k[0]}</b>
-      <span>${k[1]}</span>
-    </div>`).join("");
-
-  $("#dashboardRecent").innerHTML=finished.slice(-4).reverse().map(dashboardCompactMatchRow).join("")
-    ||'<div class="empty-state">Nessuna partita conclusa</div>';
-
-  $("#dashboardUpcoming").innerHTML=upcoming.slice(0,4).map(dashboardCompactMatchRow).join("")
-    ||'<div class="empty-state">Nessuna partita programmata</div>';
+  $("#homeMiniCalendar").innerHTML=renderHomeCalendar(next?.kickoff_at||new Date(),fixtures);
+  $("#homeNextMatch").innerHTML=next?renderHomeNextMatch(next):'<div class="home-empty">Nessuna partita programmata</div>';
 
   const league=competitions.find(c=>c.kind==="league")||competitions[0];
   dashboardStandingRows=[];
   if(league){
-    const st=await db.from("app_competition_standings")
-      .select("*")
-      .eq("season_id",currentSeason.id)
-      .eq("competition_id",league.id);
-
-    dashboardStandingRows=(st.data||[])
-      .sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference||b.goals_for-a.goals_for||String(a.team).localeCompare(String(b.team),"it"));
+    const st=await db.from("app_competition_standings").select("*").eq("season_id",currentSeason.id).eq("competition_id",league.id);
+    dashboardStandingRows=(st.data||[]).sort((a,b)=>b.points-a.points||b.goal_difference-a.goal_difference||b.goals_for-a.goals_for||String(a.team).localeCompare(String(b.team),"it"));
   }
   renderDashboardStandings();
 
-  if(dashboardCountdownTimer)clearInterval(dashboardCountdownTimer);
-  dashboardCountdownTimer=null;
-  if(next){
-    updateKickoffCountdown(next.kickoff_at);
-    dashboardCountdownTimer=setInterval(()=>updateKickoffCountdown(next.kickoff_at),1000);
+  const scoreRows=[...finished.slice(-2).reverse(),...upcoming.slice(0,3)].slice(0,5);
+  $("#homeScores").innerHTML=scoreRows.length?scoreRows.map(renderHomeScoreRow).join(""):'<div class="home-empty">Nessuna partita disponibile</div>';
+
+  $$("#homeView [data-go-calendar]").forEach(b=>b.onclick=()=>setAppView("calendar"));
+  $$("#homeView [data-go-competition]").forEach(b=>b.onclick=()=>setAppView("competitions"));
+  $$("#homeView [data-go-roster]").forEach(b=>b.onclick=()=>setAppView("roster"));
+}
+
+async function loadLoggedPlayer(){
+  loggedPlayer=null;
+  if(!sessionUser||!currentSeason)return;
+  const role=await db.from("app_user_roles").select("player_id").eq("user_id",sessionUser.id).maybeSingle();
+  const playerId=role.data?.player_id||null;
+  if(!playerId)return;
+  const p=players.find(x=>x.id===playerId)||null;
+  if(!p)return;
+  const roster=rosterRows.find(x=>x.player_id===playerId)||{};
+  const stats=playerStats.find(x=>x.player_id===playerId)||{};
+  loggedPlayer={...p,...roster,stats};
+}
+
+function renderHomeTeamIdentity(){
+  const logo=team?.logo_url?`<img src="${esc(team.logo_url)}" alt="">`:`<span>${esc(team?.short_name||"CAS")}</span>`;
+  return `<div class="home-team-identity"><div class="home-team-mark">${logo}</div><strong>${esc(team?.name||"Squadra")}</strong><small>${esc(currentSeason?.name||"")}</small></div>`;
+}
+
+function renderHomeMetrics(t){
+  const ppg=t.played?((t.w*3+t.d)/t.played).toFixed(1):"0.0";
+  return `<div class="home-metric-list">
+    <div><span>Record</span><b>${t.w} W</b><i>${t.d} D</i><i>${t.l} L</i></div>
+    <div><span>Points / Game</span><b>PPG ${ppg}</b></div>
+    <div><span>Goals</span><b>GF ${t.gf}</b><i>GA ${t.ga}</i></div>
+    <div><span>Clean Sheets</span><b>CS ${t.clean}</b></div>
+  </div>`;
+}
+
+function renderHomeMatch(f,showScore){
+  const home=teamVisual(f.home_team),away=teamVisual(f.away_team);
+  return `<div class="home-match-strip">
+    <div class="home-match-side">${fixtureLogo(f.home_team)}<span>${esc(home.short)}</span></div>
+    <strong>${showScore?`${f.home_score} - ${f.away_score}`:"VS"}</strong>
+    <div class="home-match-side">${fixtureLogo(f.away_team)}<span>${esc(away.short)}</span></div>
+  </div>`;
+}
+
+function renderHomeForm(rows){
+  if(!rows.length)return '<div class="home-empty">Nessun dato</div>';
+  const pts=rows.map(f=>{const o=fixtureOutcome(f);return o?.result==="W"?3:o?.result==="D"?1:0});
+  const gf=rows.map(f=>fixtureOutcome(f)?.gf||0);
+  const width=320,height=90,pad=10;
+  const max=Math.max(3,...gf,...pts);
+  const path=arr=>arr.map((v,i)=>{const x=pad+(i*(width-pad*2)/Math.max(1,arr.length-1));const y=height-pad-(v/max)*(height-pad*2);return `${i?"L":"M"}${x.toFixed(1)},${y.toFixed(1)}`}).join(" ");
+  return `<svg viewBox="0 0 ${width} ${height}" class="home-form-svg" aria-label="Forma recente">
+    <path d="${path(pts)}" class="home-form-line points"/>
+    <path d="${path(gf)}" class="home-form-line goals"/>
+    ${rows.map((r,i)=>`<text x="${(pad+i*(width-pad*2)/Math.max(1,rows.length-1)).toFixed(1)}" y="${height-1}" text-anchor="middle">G${i+1}</text>`).join("")}
+  </svg>
+  <div class="home-form-legend"><span class="points">Punti</span><span class="goals">Gol fatti</span></div>`;
+}
+
+function renderLoggedPlayerCard(){
+  if(!loggedPlayer){
+    return `<div class="home-player-empty"><div class="home-player-placeholder">—</div><strong>Profilo non associato</strong><small>L'utente autenticato non è collegato a un giocatore.</small></div>`;
   }
-}
-
-function dashboardHeroMeta(f){
-  const comp=competitions.find(c=>c.id===f.competition_id);
-  return `<div class="hero-meta">${esc(comp?.name||"")} · Giornata ${f.round_no}<br>${localDateTime(f.kickoff_at)}</div>`;
-}
-
-function dashboardMatchCard(f,showScore){
-  const home=teamVisual(f.home_team);
-  const away=teamVisual(f.away_team);
-  return `<div class="vs">
-    <div class="team">
-      ${fixtureLogo(f.home_team)}
-      <strong>${esc(home.name)}</strong>
-    </div>
-    <span class="score">${showScore?esc(f.home_score)+" - "+esc(f.away_score):"–"}</span>
-    <div class="team">
-      ${fixtureLogo(f.away_team)}
-      <strong>${esc(away.name)}</strong>
+  const p=loggedPlayer,s=p.stats||{};
+  const photo=p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`<span>${esc((p.first_name||"?")[0]+(p.last_name||"?")[0])}</span>`;
+  return `<div class="home-player-card">
+    <div class="home-player-photo">${photo}</div>
+    <strong>${esc(p.first_name+" "+p.last_name)}</strong>
+    <small>#${p.shirt_number??"—"} · ${roleLabel(p.generic_role_manual)}</small>
+    <div class="home-player-stats">
+      <div><span>Presenze</span><b>${s.appearances||0}</b></div>
+      <div><span>Minuti</span><b>${s.minutes||0}</b></div>
+      <div><span>Gol + Assist</span><b>${(s.goals||0)+(s.assists||0)}</b></div>
+      <div><span>Rating</span><b>${s.avg_rating??"—"}</b></div>
     </div>
   </div>`;
 }
 
-function updateKickoffCountdown(kickoffAt){
-  const el=$("#kickoffCountdown");
-  if(!el)return;
-  const ms=new Date(kickoffAt).getTime()-Date.now();
-
-  if(ms<=0){
-    el.innerHTML='<span>Fischio d’inizio</span><strong>ORA</strong>';
-    if(dashboardCountdownTimer){
-      clearInterval(dashboardCountdownTimer);
-      dashboardCountdownTimer=null;
-    }
-    return;
-  }
-
-  const total=Math.floor(ms/1000);
-  const d=Math.floor(total/86400);
-  const h=Math.floor((total%86400)/3600);
-  const m=Math.floor((total%3600)/60);
-  const s=total%60;
-
-  el.innerHTML=`<span>Fischio d’inizio tra</span><strong>${d?d+"g ":""}${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}</strong>`;
+function renderHomeCalendar(dateValue,fixtures){
+  const focus=new Date(dateValue),year=focus.getFullYear(),month=focus.getMonth();
+  const first=new Date(year,month,1),days=new Date(year,month+1,0).getDate(),start=(first.getDay()+6)%7;
+  const matchDays=new Map();
+  fixtures.filter(f=>{const d=new Date(f.kickoff_at);return d.getFullYear()===year&&d.getMonth()===month}).forEach(f=>matchDays.set(new Date(f.kickoff_at).getDate(),f));
+  const cells=[];
+  for(let i=0;i<start;i++)cells.push('<span></span>');
+  for(let d=1;d<=days;d++){const f=matchDays.get(d);cells.push(`<span class="${f?"has-match":""}" title="${f?esc(f.home_team+" - "+f.away_team):""}">${d}${f?'<i></i>':""}</span>`)}
+  return `<div class="home-calendar-title">${new Intl.DateTimeFormat("it-IT",{month:"long",year:"numeric"}).format(focus)}</div>
+    <div class="home-calendar-week"><b>L</b><b>M</b><b>M</b><b>G</b><b>V</b><b>S</b><b>D</b></div>
+    <div class="home-calendar-grid">${cells.join("")}</div>`;
 }
 
-function dashboardCompactMatchRow(f){
+function renderHomeNextMatch(f){
   const opponent=isOwnTeamName(f.home_team)?teamVisual(f.away_team):teamVisual(f.home_team);
-  const comp=competitions.find(c=>c.id===f.competition_id);
-  const date=new Date(f.kickoff_at);
-  const done=f.status==="finished";
-  const result=done
-    ?`${f.home_score}-${f.away_score}`
-    :new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(date);
-  const caselle=team?.short_name||"CAS";
-  const matchup=isOwnTeamName(f.home_team)?caselle+" - "+opponent.short:opponent.short+" - "+caselle;
-
-  return `<div class="match-row">
-    <div class="date">
-      ${new Intl.DateTimeFormat("it-IT",{day:"2-digit"}).format(date)}
-      <small>${new Intl.DateTimeFormat("it-IT",{month:"short"}).format(date).replace(".","").toUpperCase()}</small>
-    </div>
-    ${opponent.logo
-      ?`<img class="row-crest" src="${esc(opponent.logo)}" alt="">`
-      :`<span class="row-crest fallback">${esc(opponent.short)}</span>`}
-    <div class="match-row-copy">
-      <strong>${esc(matchup)}</strong>
-      <small>${esc(comp?.name||"")} · Giornata ${f.round_no}</small>
-    </div>
-    <time>${esc(result)}</time>
-  </div>`;
+  return `<div class="home-next-line"><div><span>Prossima partita</span><strong>${esc(opponent.name)}</strong></div><div><span>Data</span><strong>${localDateTime(f.kickoff_at)}</strong></div></div>`;
 }
 
 function dashboardStandingWindow(rows,size=5){
   if(rows.length<=size)return rows;
-
   const ownIndex=rows.findIndex(r=>isOwnTeamName(r.team));
   if(ownIndex<0)return rows.slice(0,size);
-
-  let start=ownIndex-2;
-  let end=ownIndex+3;
-
-  if(start<0){
-    end=Math.min(rows.length,end-start);
-    start=0;
-  }
-  if(end>rows.length){
-    start=Math.max(0,start-(end-rows.length));
-    end=rows.length;
-  }
-
+  let start=ownIndex-2,end=ownIndex+3;
+  if(start<0){end=Math.min(rows.length,end-start);start=0}
+  if(end>rows.length){start=Math.max(0,start-(end-rows.length));end=rows.length}
   return rows.slice(start,end);
 }
 
 function renderDashboardStandings(){
   const box=$("#dashboardStandings");
   if(!box)return;
-
   const rows=dashboardStandingWindow(dashboardStandingRows,5);
-  box.innerHTML=rows.length?`
-    <table>
-      <thead><tr><th>#</th><th>Squadra</th><th>G</th><th>Pt</th></tr></thead>
-      <tbody>
-        ${rows.map(r=>{
-          const rank=dashboardStandingRows.indexOf(r)+1;
-          return `<tr class="${isOwnTeamName(r.team)?"me":""}">
-            <td>${rank}</td>
-            <td><span class="tn">${dashboardTeamBadge(r.team)}${esc(r.team)}</span></td>
-            <td>${r.played}</td>
-            <td>${r.points}</td>
-          </tr>`;
-        }).join("")}
-      </tbody>
-    </table>`
-    :'<div class="empty-state">Nessuna classifica</div>';
+  box.innerHTML=rows.length?`<table><thead><tr><th>#</th><th>Squadra</th><th>G</th><th>Pt</th></tr></thead><tbody>${rows.map(r=>{const rank=dashboardStandingRows.indexOf(r)+1;return `<tr class="${isOwnTeamName(r.team)?"me":""}"><td>${rank}</td><td><span class="tn">${dashboardTeamBadge(r.team)}${esc(r.team)}</span></td><td>${r.played}</td><td>${r.points}</td></tr>`}).join("")}</tbody></table>`:'<div class="home-empty">Nessuna classifica</div>';
 }
 
 function dashboardTeamBadge(name){
   const v=teamVisual(name);
-  return v.logo
-    ?`<img class="crest" src="${esc(v.logo)}" alt="">`
-    :`<span class="crest crest-fallback">${esc(v.short)}</span>`;
+  return v.logo?`<img class="crest" src="${esc(v.logo)}" alt="">`:`<span class="crest crest-fallback">${esc(v.short)}</span>`;
+}
+
+function renderHomeScoreRow(f){
+  const home=teamVisual(f.home_team),away=teamVisual(f.away_team);
+  const done=f.status==="finished";
+  const value=done?`${f.home_score} - ${f.away_score}`:new Intl.DateTimeFormat("it-IT",{hour:"2-digit",minute:"2-digit"}).format(new Date(f.kickoff_at));
+  return `<div class="home-score-row">
+    <div>${fixtureLogo(f.home_team)}<span>${esc(home.short)}</span></div>
+    <strong>${esc(value)}</strong>
+    <div>${fixtureLogo(f.away_team)}<span>${esc(away.short)}</span></div>
+    <small>${done?"FIN":"PROSSIMA"}</small>
+  </div>`;
 }
 
 async function loadRosterView(){await loadCoreSeasonData();renderRosterTabs();renderRosterTable();renderPlayerDetail()}
