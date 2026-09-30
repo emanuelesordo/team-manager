@@ -3191,3 +3191,37 @@ dialog form{padding:16px}
     grid-template-columns:repeat(3,40px);
   }
 }
+
+
+/* Match Center timeline event editing */
+.mc-event-row[data-mc-event-id]{
+  cursor:pointer;
+}
+.mc-event-row[data-mc-event-id]:hover{
+  background:rgba(31,143,215,.035);
+}
+.mc-player-event-actions{
+  grid-template-columns:auto 1fr 1.08fr;
+}
+.mc-player-event-actions .danger{
+  min-width:82px;
+  border:1px solid #efc8cc;
+  border-radius:10px;
+  background:#fff3f4;
+  color:#b63d49;
+  font-weight:850;
+}
+.mc-player-event-actions .danger:hover{
+  background:#ffe7e9;
+}
+.mc-player-event-actions .danger.hidden{
+  display:none!important;
+}
+@media(max-width:520px){
+  .mc-player-event-actions{
+    grid-template-columns:1fr 1fr;
+  }
+  .mc-player-event-actions .danger:not(.hidden){
+    grid-column:1/-1;
+  }
+}
