@@ -374,9 +374,37 @@
     <div class="mc-body">
       <section data-mc-panel="general">
         <div class="mc-general-grid">
-          <section class="mc-card"><div class="mc-card-head"><strong>Formazione</strong><span id="mcGeneralFormationMeta"></span></div><div id="mcGeneralPitch" class="mc-pitch"></div><div class="mc-subtitle">Panchina</div><div id="mcGeneralBench" class="mc-chip-list"></div></section>
-          <section class="mc-card"><div class="mc-card-head"><strong>Riepilogo eventi</strong><span id="mcGoalProgress"></span></div><div id="mcGeneralEvents"></div></section>
-          <section class="mc-card"><div class="mc-card-head"><strong>Controlli</strong></div><div id="mcIntegrity" class="mc-integrity"></div></section>
+          <div class="mc-general-left">
+            <section class="mc-card mc-quick-card">
+              <div class="mc-card-head"><strong>Azioni rapide</strong></div>
+              <div class="mc-quick-actions">
+                <button type="button" data-mc-quick="goal"><span>⚽</span><b>Gol</b></button>
+                <button type="button" data-mc-quick="yellow_card"><span>▮</span><b>Ammonizione</b></button>
+                <button type="button" data-mc-quick="red_card"><span>▮</span><b>Espulsione</b></button>
+                <button type="button" data-mc-quick="substitution"><span>↔</span><b>Sostituzione</b></button>
+                <button type="button" data-mc-quick="events"><span>◷</span><b>Altri eventi</b></button>
+              </div>
+            </section>
+            <section class="mc-card mc-history-card">
+              <div class="mc-card-head"><strong id="mcHistoryTitle">Cronologia partita</strong><span id="mcGoalProgress"></span></div>
+              <div id="mcGeneralEvents" class="mc-general-timeline"></div>
+              <div id="mcIntegrity" class="mc-integrity mc-integrity-compact"></div>
+            </section>
+          </div>
+          <section class="mc-card mc-field-card">
+            <div class="mc-card-head"><strong>Formazione in campo</strong><div class="mc-field-tools"><span id="mcGeneralFormationMeta"></span><button type="button" class="secondary" data-mc-open-tab="formation">Modifica</button></div></div>
+            <div id="mcGeneralPitch" class="mc-pitch mc-general-pitch"></div>
+          </section>
+          <div class="mc-general-right">
+            <div class="mc-side-team-toggle">
+              <button type="button" class="active" data-mc-bench-side="team">Calcio Caselle</button>
+              <button type="button" data-mc-bench-side="opponent">Avversario</button>
+            </div>
+            <section class="mc-card mc-bench-card">
+              <div class="mc-card-head"><strong>Panchina</strong><span id="mcBenchSideLabel"></span></div>
+              <div id="mcGeneralBench" class="mc-general-bench"></div>
+            </section>
+          </div>
         </div>
       </section>
       <section data-mc-panel="availability" class="hidden">
