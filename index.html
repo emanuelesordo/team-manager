@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ececec">
   <title>Team Manager</title>
-  <link rel="stylesheet" href="./styles.css">
+  <style id="appStyles"></style>
 </head>
 <body>
 <div class="app-shell">
@@ -544,6 +544,9 @@
       const keys=await caches.keys();
       await Promise.all(keys.map(k=>caches.delete(k)));
     }
+    const cssRes=await fetch("./styles.css",{cache:"no-store"});
+    if(!cssRes.ok) throw new Error("styles.css HTTP "+cssRes.status);
+    document.querySelector("#appStyles").textContent=await cssRes.text();
     const res=await fetch("./main.js",{cache:"no-store"});
     if(!res.ok) throw new Error("main.js HTTP "+res.status);
     const code=await res.text();
