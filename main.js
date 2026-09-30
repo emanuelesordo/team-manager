@@ -1039,7 +1039,7 @@ function mcSuspension(id){const d=new Date(matchCenterState.fixture.kickoff_at).
 function mcActiveIds(minute){
   if(minute===""||minute==null)return new Set(rosterRows.map(p=>p.player_id));
   const raw=Number(minute);
-  const targetOrder=matchCenterState.match?.live_period==="second_half"?mcPeriodMinutes()+raw:raw;
+  const targetOrder=mcMomentOrder(matchCenterState.match?.live_period==="second_half"?"second_half":"first_half",raw);
   const active=new Set(matchCenterState.matchPlayers.filter(x=>x.started).map(x=>x.player_id));
   matchCenterState.events
     .filter(e=>e.minute!=null&&mcEventOrder(e)<targetOrder)
@@ -1051,7 +1051,7 @@ function mcEligible(kind,minute,side){
   if(side==="opponent")return [];if(minute==="")return rosterRows;
   if(kind==="card")return rosterRows.filter(p=>{const mp=mcMatchPlayer(p.player_id);return !!(mp&&(mp.started||mp.selection_status==="bench"))});
   const active=mcActiveIds(minute);
-  if(kind==="incoming"){const targetOrder=matchCenterState.match?.live_period==="second_half"?mcPeriodMinutes()+Number(minute):Number(minute);const exited=new Set(matchCenterState.events.filter(e=>e.team_side==="team"&&e.minute!=null&&mcEventOrder(e)<targetOrder&&(e.event_type==="substitution"||e.event_type==="red_card")).map(e=>e.player_id));return rosterRows.filter(p=>{const mp=mcMatchPlayer(p.player_id);return mp?.selection_status==="bench"&&!active.has(p.player_id)&&!exited.has(p.player_id)})}
+  if(kind==="incoming"){const targetOrder=mcMomentOrder(matchCenterState.match?.live_period==="second_half"?"second_half":"first_half",Number(minute));const exited=new Set(matchCenterState.events.filter(e=>e.team_side==="team"&&e.minute!=null&&mcEventOrder(e)<targetOrder&&(e.event_type==="substitution"||e.event_type==="red_card")).map(e=>e.player_id));return rosterRows.filter(p=>{const mp=mcMatchPlayer(p.player_id);return mp?.selection_status==="bench"&&!active.has(p.player_id)&&!exited.has(p.player_id)})}
   return rosterRows.filter(p=>active.has(p.player_id));
 }
 function mcOptions(rows,empty){return `<option value="">${empty}</option>`+rows.map(p=>`<option value="${p.player_id}">${esc(p.last_name+" "+p.first_name)}</option>`).join("")}
@@ -1089,7 +1089,7 @@ function mcCurrentFieldRows(){
       if(e.player_id)map.delete(e.player_id);
       if(e.secondary_player_id){
         const source=mcMatchPlayer(e.secondary_player_id)||{player_id:e.secondary_player_id,selection_status:"bench"};
-        const inheritedSlot=source.tactical_slot??e.payload?.tactical_slot??outgoing?.tactical_slot??null;
+        const inheritedSlot=e.payload?.tactical_slot??outgoing?.tactical_slot??source.tactical_slot??null;
         map.set(e.secondary_player_id,{...source,started:true,tactical_slot:inheritedSlot});
       }
     }
@@ -1140,7 +1140,6 @@ function mcPitch(target,rows,remove){
 }
 let mcPitchQuickHideTimer=null;
 function mcBindPitchInteractions(target,ordered){
-  const rowsById=new Map(ordered.map((x,i)=>[String(x.player_id),{...x,_display_slot:i+1}]));
   const players=[...target.querySelectorAll("[data-mc-pitch-player]")];
   players.forEach(el=>{
     el.addEventListener("mouseenter",()=>{
@@ -1153,35 +1152,36 @@ function mcBindPitchInteractions(target,ordered){
       mcPitchQuickHideTimer=setTimeout(()=>el.classList.remove("quick-visible"),3000);
     });
     el.addEventListener("dragstart",e=>{
+      if(e.target.closest(".mc-player-quick")){e.preventDefault();return}
       e.dataTransfer.setData("text/plain",el.dataset.mcPitchPlayer);
       e.dataTransfer.effectAllowed="move";
       el.classList.add("dragging");
     });
-    el.addEventListener("dragend",()=>el.classList.remove("dragging"));
+    el.addEventListener("dragend",()=>players.forEach(x=>x.classList.remove("dragging","drag-over")));
     el.addEventListener("dragover",e=>{e.preventDefault();e.dataTransfer.dropEffect="move";el.classList.add("drag-over")});
     el.addEventListener("dragleave",()=>el.classList.remove("drag-over"));
     el.addEventListener("drop",async e=>{
       e.preventDefault();el.classList.remove("drag-over");
       const sourceId=e.dataTransfer.getData("text/plain"),targetId=el.dataset.mcPitchPlayer;
       if(!sourceId||sourceId===targetId)return;
-      const sourceRow=rowsById.get(String(sourceId)),targetRow=rowsById.get(String(targetId));
-      if(!sourceRow||!targetRow)return;
-      await mcSwapPitchSlots(sourceRow,targetRow);
+      const ids=ordered.slice(0,11).map(x=>String(x.player_id));
+      const a=ids.indexOf(String(sourceId)),b=ids.indexOf(String(targetId));
+      if(a<0||b<0)return;
+      [ids[a],ids[b]]=[ids[b],ids[a]];
+      await mcPersistPitchOrder(ids);
     });
   });
 }
-async function mcSwapPitchSlots(a,b){
+async function mcPersistPitchOrder(playerIds){
   try{
     if(!sessionUser)throw new Error("Accedi per modificare la posizione.");
-    const amp=mcMatchPlayer(a.player_id),bmp=mcMatchPlayer(b.player_id);
-    if(!amp||!bmp)throw new Error("Giocatore non associato alla partita.");
-    const aSlot=Number(a.tactical_slot)||Number(a._display_slot)||1;
-    const bSlot=Number(b.tactical_slot)||Number(b._display_slot)||1;
-    const [ra,rb]=await Promise.all([
-      db.from("app_match_players").update({tactical_slot:bSlot}).eq("id",amp.id).select("*").maybeSingle(),
-      db.from("app_match_players").update({tactical_slot:aSlot}).eq("id",bmp.id).select("*").maybeSingle()
-    ]);
-    assertSaved(ra,"Posizione");assertSaved(rb,"Posizione");
+    const updates=playerIds.map((playerId,index)=>{
+      const mp=mcMatchPlayer(playerId);
+      if(!mp)return Promise.resolve({data:null,error:new Error("Giocatore non associato alla partita.")});
+      return db.from("app_match_players").update({tactical_slot:index+1}).eq("id",mp.id).select("*").maybeSingle();
+    });
+    const results=await Promise.all(updates);
+    results.forEach(r=>assertSaved(r,"Posizione"));
     await mcReload();
   }catch(err){alert(err.message||String(err))}
 }
@@ -1203,13 +1203,15 @@ function mcEventPeriod(e){
   const m=Number(e?.minute);
   return Number.isFinite(m)&&m>mcPeriodMinutes()?"second_half":"first_half";
 }
+function mcMomentOrder(period,minute,stoppage=0){
+  const m=Number(minute);
+  if(!Number.isFinite(m))return period==="second_half"?1999:999;
+  return (period==="second_half"?1000:0)+m+(Number(stoppage)||0)/100;
+}
 function mcEventOrder(e){
-  if(e?.event_type==="period_end")return mcEventPeriod(e)==="second_half"?9998:4999;
-  const m=Number(e?.minute);
-  if(!Number.isFinite(m))return 9999;
-  const p=mcEventPeriod(e);
-  if(e?.payload?.period==="second_half")return mcPeriodMinutes()+m+(Number(e.stoppage_minute)||0)/100;
-  return m+(Number(e.stoppage_minute)||0)/100;
+  const period=mcEventPeriod(e);
+  if(e?.event_type==="period_end")return period==="second_half"?1998:998;
+  return mcMomentOrder(period,e?.minute,e?.stoppage_minute);
 }
 function mcDisplayMinute(e){
   if(e?.minute==null)return "–";
@@ -1261,19 +1263,19 @@ function mcTimeline(target,limit,filters=null){
   regular=[...regular].reverse();
   if(limit)regular=regular.slice(0,limit);
 
+  const periodsWithAddedTime=new Set(regular.filter(mcIsAddedTimeEvent).map(mcEventPeriod));
   const rows=[];
   const rec2=recoveryByPeriod.get("second_half");
   if(mcIsPost()){
     const f=matchCenterState.fixture;
     rows.push('<div class="mc-period-separator mc-ft"><span></span><strong>FT '+esc(f.home_score??0)+' - '+esc(f.away_score??0)+'</strong><span></span></div>');
-    if(rec2?.minutes)rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
-  }else if(rec2?.minutes){
+    if(rec2?.minutes&&!periodsWithAddedTime.has("second_half"))rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
+  }else if(rec2?.minutes&&!periodsWithAddedTime.has("second_half")){
     rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
   }
 
   let halfInserted=false;
   const hasSecondHalf=all.some(e=>e.event_type!=="period_end"&&mcEventPeriod(e)==="second_half")||recoveryByPeriod.has("first_half");
-  const periodsWithAddedTime=new Set(regular.filter(mcIsAddedTimeEvent).map(mcEventPeriod));
   const recoveryDividerInserted=new Set();
 
   regular.forEach((e,index)=>{
@@ -1285,7 +1287,7 @@ function mcTimeline(target,limit,filters=null){
     if(!halfInserted&&hasSecondHalf&&period==="first_half"){
       rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><span></span></div>');
       const rec1=recoveryByPeriod.get("first_half");
-      if(rec1?.minutes)rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec1.event.id)+'" role="button" tabindex="0">Recupero 1T +'+rec1.minutes+'\'</div>');
+      if(rec1?.minutes&&!periodsWithAddedTime.has("first_half"))rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec1.event.id)+'" role="button" tabindex="0">Recupero 1T +'+rec1.minutes+'\'</div>');
       halfInserted=true;
     }
 
@@ -1497,7 +1499,7 @@ function mcSetPlayerQuickKind(kind){
   $$("[data-quick-kind]").forEach(b=>b.classList.toggle("active",b.dataset.quickKind===kind));
   const label=kind==="substitution"?"Cambio":kind==="goal"?"Gol":kind==="recovery"?"Recupero":"Cartellino";
   $("#mcPlayerQuickTitle").textContent=source==="edit"?("Modifica evento · "+label):source==="player"?(label+" · "+(p?.last_name||mcPlayerName(id))):("Aggiungi evento · "+label);
-  const side=source==="player"?"team":(editing?.team_side||mcPlayerQuickState.side||"team");
+  const side=source==="player"?"team":(mcPlayerQuickState.side||editing?.team_side||"team");
   mcPlayerQuickState.side=side;
   const period=editing?(editing.payload?.period||mcEventPeriod(editing)):mcQuickPeriodDefault();
   const minute=editing?(editing.minute??""):mcQuickMinuteValue();
