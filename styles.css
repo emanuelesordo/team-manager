@@ -3616,3 +3616,42 @@ dialog form{padding:16px}
   }
   .mc-final-bench label{grid-template-columns:1fr}
 }
+
+
+/* Match Center finalized/edit mode + editable metadata */
+.mc-meta .mc-meta-edit{
+  appearance:none;
+  border:0;
+  padding:2px 4px;
+  margin:0;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  border-radius:6px;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  font-weight:inherit;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.mc-meta .mc-meta-edit:hover{
+  background:rgba(20,28,34,.055);
+  color:#4d565c;
+}
+.mc-meta .mc-meta-edit b{
+  color:#8a8f92;
+  font-size:9px;
+}
+#mcScore{
+  cursor:pointer;
+}
+#mcScore.editing{
+  outline:1px dashed rgba(22,126,199,.45);
+  outline-offset:5px;
+  border-radius:5px;
+}
+.mc-period-separator.mc-ft{
+  margin-top:4px;
+  margin-bottom:8px;
+}
