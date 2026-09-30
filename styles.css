@@ -3732,3 +3732,59 @@ dialog form{padding:16px}
     max-height:calc(100dvh - 16px);
   }
 }
+
+
+/* Match Center: compact timeline cards + card-bounded event popover */
+.mc-timeline-card-stack{
+  position:relative;
+  flex:0 0 10px;
+  width:10px;
+  height:15px;
+  display:inline-block;
+  overflow:visible;
+}
+.mc-timeline-card-stack i{
+  position:absolute;
+  left:calc(var(--card-index,0) * -2px);
+  top:calc(var(--card-index,0) * 1px);
+  width:7px!important;
+  height:13px!important;
+  min-width:7px!important;
+  min-height:13px!important;
+  max-width:7px!important;
+  max-height:13px!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:1px!important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.6);
+}
+.mc-timeline-card-stack i.yellow{background:#e4b800!important}
+.mc-timeline-card-stack i.blue{background:#2f76d2!important}
+.mc-timeline-card-stack i.red{background:#df4b53!important}
+.mc-timeline-card-stack.is-accumulation{
+  width:14px;
+  flex-basis:14px;
+}
+.mc-timeline-card-stack.is-accumulation i:nth-last-child(1){
+  z-index:3;
+}
+.mc-timeline-card-stack.is-accumulation i:nth-last-child(2){
+  z-index:2;
+}
+.mc-timeline-card-stack.is-accumulation i:nth-last-child(3){
+  z-index:1;
+}
+
+.mc-player-event-popover{
+  box-sizing:border-box;
+  overscroll-behavior:contain;
+}
+@media(max-width:700px){
+  .mc-player-event-popover{
+    right:auto!important;
+    bottom:auto!important;
+    width:auto;
+    max-width:none;
+  }
+}
