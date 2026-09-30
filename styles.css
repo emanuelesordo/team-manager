@@ -1950,7 +1950,8 @@ dialog form{padding:16px}
   font-weight:900;
   white-space:nowrap;
 }
-.mc-period-separator.mc-ft>strong{
+.mc-period-separator.mc-ft>strong,
+.mc-period-separator.mc-ht>strong{
   color:#272a2c;
   font-size:9px;
 }
@@ -1984,7 +1985,7 @@ dialog form{padding:16px}
   justify-self:center;
   text-align:center;
   color:#25282a;
-  font-size:9px;
+  font-size:8px;
   line-height:1;
   font-weight:900;
   font-variant-numeric:tabular-nums;
@@ -2068,16 +2069,16 @@ dialog form{padding:16px}
 
 .mc-goal-score{
   flex:0 0 auto;
-  min-width:44px;
-  height:24px;
-  padding:0 8px;
+  min-width:36px;
+  height:20px;
+  padding:0 6px;
   border:2px solid #5267ff;
   border-radius:999px;
   display:grid;
   place-items:center;
   background:#fbfbff;
   color:#202326;
-  font-size:11px;
+  font-size:8px;
   line-height:1;
   font-weight:950;
   font-variant-numeric:tabular-nums;
@@ -2102,8 +2103,8 @@ dialog form{padding:16px}
 }
 .mc-event-names strong{
   color:#25282a;
-  font-size:10px;
-  font-weight:900;
+  font-size:7px;
+  font-weight:800;
 }
 .mc-event-names small{
   color:#a0a3a6;
@@ -2118,10 +2119,10 @@ dialog form{padding:16px}
     min-height:38px;
     padding:4px 2px;
   }
-  .mc-event-row>time{font-size:9px}
-  .mc-event-names strong,
-  .mc-event-names small{font-size:10px}
-  .mc-goal-score{min-width:42px;height:23px;padding-inline:7px;font-size:11px;border-width:1.5px}
+  .mc-event-row>time{font-size:8px}
+  .mc-event-names strong{font-size:8px}
+  .mc-event-names small{font-size:7px}
+  .mc-goal-score{min-width:34px;height:19px;padding-inline:5px;font-size:8px;border-width:1.25px}
   .mc-event-symbol{width:19px;height:19px;font-size:14px}
   .mc-event-symbol.substitution{width:20px;height:20px}
   .mc-event-symbol.substitution i,
