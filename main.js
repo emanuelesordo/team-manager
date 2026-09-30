@@ -1193,15 +1193,17 @@ function mcTimeline(target,limit,filters=null){
   if(limit)regular=regular.slice(0,limit);
 
   const rows=[];
+  const rec2=recoveryByPeriod.get("second_half");
   if(mcIsPost()){
     const f=matchCenterState.fixture;
     rows.push('<div class="mc-period-separator mc-ft"><span></span><strong>FT '+esc(f.home_score??0)+' - '+esc(f.away_score??0)+'</strong><span></span></div>');
-    const rec2=recoveryByPeriod.get("second_half");
     if(rec2?.minutes)rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
+  }else if(rec2?.minutes){
+    rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
   }
 
   let halfInserted=false;
-  const hasSecondHalf=all.some(e=>e.event_type!=="period_end"&&mcEventPeriod(e)==="second_half");
+  const hasSecondHalf=all.some(e=>e.event_type!=="period_end"&&mcEventPeriod(e)==="second_half")||recoveryByPeriod.has("first_half");
 
   regular.forEach((e,index)=>{
     const period=mcEventPeriod(e);
