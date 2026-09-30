@@ -1155,6 +1155,12 @@ function mcEventOrder(e){
   if(e?.payload?.period==="second_half")return mcPeriodMinutes()+m+(Number(e.stoppage_minute)||0)/100;
   return m+(Number(e.stoppage_minute)||0)/100;
 }
+function mcDisplayMinute(e){
+  if(e?.minute==null)return "–";
+  const base=mcEventPeriod(e)==="second_half"?mcPeriodMinutes():0;
+  const minute=base+Number(e.minute||0);
+  return minute+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
+}
 function mcTimeline(target,limit,filters=null){
   const all=[...matchCenterState.events].sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0));
   const ownHome=isOwnTeamName(matchCenterState.fixture.home_team);
@@ -1178,7 +1184,7 @@ function mcTimeline(target,limit,filters=null){
 
   const recoveryByPeriod=new Map();
   all.filter(e=>e.event_type==="period_end").forEach(e=>{
-    recoveryByPeriod.set(e.payload?.period||"",Number(e.payload?.recovery_minutes??e.stoppage_minute??0));
+    recoveryByPeriod.set(e.payload?.period||"",{minutes:Number(e.payload?.recovery_minutes??e.stoppage_minute??0),event:e});
   });
 
   let regular=all.filter(e=>e.event_type!=="period_end");
@@ -1190,8 +1196,8 @@ function mcTimeline(target,limit,filters=null){
   if(mcIsPost()){
     const f=matchCenterState.fixture;
     rows.push('<div class="mc-period-separator mc-ft"><span></span><strong>FT '+esc(f.home_score??0)+' - '+esc(f.away_score??0)+'</strong><span></span></div>');
-    const rec2=recoveryByPeriod.get("second_half")||0;
-    if(rec2)rows.push('<div class="mc-recovery-chip">Minuti di recupero '+rec2+'</div>');
+    const rec2=recoveryByPeriod.get("second_half");
+    if(rec2?.minutes)rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
   }
 
   let halfInserted=false;
@@ -1201,8 +1207,8 @@ function mcTimeline(target,limit,filters=null){
     const period=mcEventPeriod(e);
     if(!halfInserted&&hasSecondHalf&&period==="first_half"){
       rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><span></span></div>');
-      const rec1=recoveryByPeriod.get("first_half")||0;
-      if(rec1)rows.push('<div class="mc-recovery-chip">Minuti di recupero '+rec1+'</div>');
+      const rec1=recoveryByPeriod.get("first_half");
+      if(rec1?.minutes)rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec1.event.id)+'" role="button" tabindex="0">Recupero 1T +'+rec1.minutes+'\'</div>');
       halfInserted=true;
     }
 
@@ -1253,8 +1259,8 @@ function mcTimeline(target,limit,filters=null){
 
   if(!halfInserted&&hasSecondHalf){
     rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><span></span></div>');
-    const rec1=recoveryByPeriod.get("first_half")||0;
-    if(rec1)rows.push('<div class="mc-recovery-chip">Minuti di recupero '+rec1+'</div>');
+    const rec1=recoveryByPeriod.get("first_half");
+    if(rec1?.minutes)rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec1.event.id)+'" role="button" tabindex="0">Recupero 1T +'+rec1.minutes+'\'</div>');
   }
 
   const box=$(target);
@@ -1295,6 +1301,7 @@ function mcQuickEventShell(){
       '<button type="button" data-quick-kind="substitution" title="Cambio">↔</button>'+
       '<button type="button" data-quick-kind="goal" title="Gol">⚽</button>'+
       '<button type="button" data-quick-kind="card" title="Cartellino">'+mcCardStackIcon()+'</button>'+
+      '<button type="button" data-quick-kind="recovery" title="Recupero">+′</button>'+
     '</div>'+
     '<form id="mcPlayerQuickForm"><div id="mcPlayerQuickFields"></div><p id="mcPlayerQuickError" class="form-error hidden"></p>'+
       '<div class="mc-player-event-actions"><button type="button" class="danger hidden" id="mcPlayerQuickDelete">Elimina</button><button type="button" class="secondary" id="mcPlayerQuickCancel">Annulla</button><button type="submit" class="primary">Salva evento</button></div>'+
@@ -1374,8 +1381,8 @@ function mcOpenTimelineQuickEvent(anchor){
 }
 function mcOpenTimelineEventEditor(eventId,anchor){
   const event=matchCenterState.events.find(x=>String(x.id)===String(eventId));
-  if(!event||event.event_type==="period_end")return;
-  const kind=event.event_type==="substitution"?"substitution":event.event_type==="goal"?"goal":"card";
+  if(!event)return;
+  const kind=event.event_type==="substitution"?"substitution":event.event_type==="goal"?"goal":event.event_type==="period_end"?"recovery":"card";
   mcPlayerQuickState={playerId:event.player_id||null,kind,anchor,source:"edit",editingEventId:event.id,side:event.team_side||"team"};
   const pop=mcQuickEventShell();
   pop.classList.remove("direct-player","hidden");
@@ -1411,18 +1418,22 @@ function mcSetPlayerQuickKind(kind){
   const editing=source==="edit"?matchCenterState.events.find(x=>String(x.id)===String(mcPlayerQuickState.editingEventId)):null;
   const fieldRows=mcCurrentFieldRows(),activeIds=new Set(fieldRows.map(x=>x.player_id)),isActive=id?activeIds.has(id):false;
   $$("[data-quick-kind]").forEach(b=>b.classList.toggle("active",b.dataset.quickKind===kind));
-  const label=kind==="substitution"?"Cambio":kind==="goal"?"Gol":"Cartellino";
+  const label=kind==="substitution"?"Cambio":kind==="goal"?"Gol":kind==="recovery"?"Recupero":"Cartellino";
   $("#mcPlayerQuickTitle").textContent=source==="edit"?("Modifica evento · "+label):source==="player"?(label+" · "+(p?.last_name||mcPlayerName(id))):("Aggiungi evento · "+label);
   const side=source==="player"?"team":(editing?.team_side||mcPlayerQuickState.side||"team");
   mcPlayerQuickState.side=side;
   const period=editing?(editing.payload?.period||mcEventPeriod(editing)):mcQuickPeriodDefault();
   const minute=editing?(editing.minute??""):mcQuickMinuteValue();
   const timing='<div class="mc-player-event-grid"><label>Tempo<select id="mcQuickPeriod">'+mcQuickPeriodOptions(period)+'</select></label><label>Minuto<input id="mcQuickMinute" type="number" min="0" max="120" value="'+minute+'" placeholder="—"></label></div>';
-  const sidePicker=source==="player"?"":'<div class="mc-side-choice"><button type="button" class="'+(side==="team"?"active":"")+'" data-quick-side="team">Caselle</button><button type="button" class="'+(side==="opponent"?"active":"")+'" data-quick-side="opponent">Avversario</button></div>';
-  let html=sidePicker+timing;
+  const sidePicker=(source==="player"||kind==="recovery")?"":'<div class="mc-side-choice"><button type="button" class="'+(side==="team"?"active":"")+'" data-quick-side="team">Caselle</button><button type="button" class="'+(side==="opponent"?"active":"")+'" data-quick-side="opponent">Avversario</button></div>';
+  let html=kind==="recovery"?"":sidePicker+timing;
   const benchRows=mcQuickBenchRows(activeIds);
 
-  if(kind==="substitution"){
+  if(kind==="recovery"){
+    const recoveryPeriod=editing?(editing.payload?.period||"first_half"):mcQuickPeriodDefault();
+    const recoveryMinutes=editing?Number(editing.payload?.recovery_minutes??editing.stoppage_minute??0):0;
+    html='<div class="mc-player-event-grid"><label>Tempo<select id="mcQuickPeriod">'+mcQuickPeriodOptions(recoveryPeriod)+'</select></label><label>Recupero (minuti)<input id="mcQuickRecovery" type="number" min="0" max="30" value="'+recoveryMinutes+'"></label></div>';
+  }else if(kind==="substitution"){
     if(side==="opponent"){
       html+='<div class="mc-opponent-disabled">Cambio avversario non disponibile senza rosa avversaria.</div>';
     }else
@@ -1512,6 +1523,19 @@ async function mcSubmitPlayerQuickEvent(e){
     if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");
     if(!sessionUser)throw new Error("Accedi per inserire eventi.");
     const source=mcPlayerQuickState.source,kind=mcPlayerQuickState.kind,editingId=mcPlayerQuickState.editingEventId,side=source==="player"?"team":(mcPlayerQuickState.side||"team"),period=$("#mcQuickPeriod").value;
+
+    if(kind==="recovery"){
+      const recovery=Math.max(0,Number($("#mcQuickRecovery").value||0));
+      const existing=matchCenterState.events.find(x=>x.event_type==="period_end"&&(x.payload?.period||"")===period&&String(x.id)!==String(editingId||""));
+      const payload={match_id:matchCenterState.match.id,event_type:"period_end",minute:null,stoppage_minute:recovery,team_side:"team",player_id:null,secondary_player_id:null,payload:{period,recovery_minutes:recovery},substitution_reason:null,proposed_by:sessionUser.id,validation_status:"proposed"};
+      if(editingId)await mcUpdateDirectEvent(editingId,payload);
+      else if(existing)await mcUpdateDirectEvent(existing.id,payload);
+      else await mcInsertDirectEvent(payload);
+      mcClosePlayerQuickEvent();
+      await mcReload();
+      return;
+    }
+
     const rawMinute=$("#mcQuickMinute").value,minute=rawMinute===""?null:Number(rawMinute);
     const base={match_id:matchCenterState.match.id,minute,stoppage_minute:null,team_side:side,proposed_by:sessionUser.id,validation_status:"proposed"};
 
