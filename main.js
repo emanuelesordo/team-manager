@@ -1269,7 +1269,7 @@ function mcRenderFormation(){const starters=matchCenterState.matchPlayers.filter
 function mcRenderEvents(){mcTimeline("#mcEventsTimeline",0);$("#mcEventsCount").textContent=matchCenterState.events.length+" eventi";mcRenderIntegrity();mcRefreshComposer()}
 function mcRenderAll(){mcHeader();mcRenderGeneral();mcRenderAvailability();mcRenderFormation();mcRenderEvents()}
 async function mcReload(){if(!matchCenterState.match){matchCenterState.ratings=[];mcRenderAll();return}const [mp,ev,rt]=await Promise.all([db.from("app_match_players").select("*").eq("match_id",matchCenterState.match.id),db.from("app_match_events").select("*").eq("match_id",matchCenterState.match.id).order("minute",{ascending:true}),db.from("app_match_ratings").select("player_id,rating").eq("match_id",matchCenterState.match.id)]);matchCenterState.matchPlayers=mp.data||[];matchCenterState.events=ev.data||[];matchCenterState.ratings=rt.data||[];mcRenderAll()}
-async function openMatchDetail(fixture){if(!fixture||!(isOwnTeamName(fixture.home_team)||isOwnTeamName(fixture.away_team)))return;clearInterval(matchCenterTimer);await loadCoreSeasonData();await loadCompetitions();await ensureMainTeam();const match=linkedMatchForFixture(fixture);const [inj,sus]=await Promise.all([db.from("injuries").select("*").eq("season_id",currentSeason.id),db.from("suspensions").select("*").eq("season_id",currentSeason.id)]);matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general"};$("#matchDetailFixtureId").value=fixture.id;$("#matchDetailMatchId").value=match?.id||"";$("#matchDetailDialog").showModal();$$("[data-mc-tab]").forEach(b=>b.onclick=()=>mcSetTab(b.dataset.mcTab));$("#mcSaveFormation").onclick=mcSaveFormation;$("#mcEventType").onchange=mcRefreshComposer;$("#mcEventMinute").oninput=mcRefreshComposer;$("#mcEventSide").onchange=mcRefreshComposer;$("#mcEventForm").onsubmit=mcSubmitEvent;$("#mcCsiImportBtn").onclick=()=>openCsiImport(fixture);$("[data-mc-live]").forEach(b=>b.onclick=()=>mcLiveAction(b.dataset.mcLive));await mcReload();mcSetTab("general")}
+async function openMatchDetail(fixture){if(!fixture||!(isOwnTeamName(fixture.home_team)||isOwnTeamName(fixture.away_team)))return;clearInterval(matchCenterTimer);await loadCoreSeasonData();await loadCompetitions();await ensureMainTeam();const match=linkedMatchForFixture(fixture);const [inj,sus]=await Promise.all([db.from("injuries").select("*").eq("season_id",currentSeason.id),db.from("suspensions").select("*").eq("season_id",currentSeason.id)]);matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general"};$("#matchDetailFixtureId").value=fixture.id;$("#matchDetailMatchId").value=match?.id||"";$("#matchDetailDialog").showModal();$$("[data-mc-tab]").forEach(b=>b.onclick=()=>mcSetTab(b.dataset.mcTab));$("#mcSaveFormation").onclick=mcSaveFormation;$("#mcEventType").onchange=mcRefreshComposer;$("#mcEventMinute").oninput=mcRefreshComposer;$("#mcEventSide").onchange=mcRefreshComposer;$("#mcEventForm").onsubmit=mcSubmitEvent;$("#mcCsiImportBtn").onclick=()=>requestCsiSync("fixture",fixture);$("[data-mc-live]").forEach(b=>b.onclick=()=>mcLiveAction(b.dataset.mcLive));await mcReload();mcSetTab("general")}
 $$( "[data-close-match-detail]" ).forEach(b=>b.onclick=()=>{clearInterval(matchCenterTimer);$("#matchDetailDialog").close()});
 async function mcSaveAvailability(id){try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");if(!sessionUser)throw new Error("Accedi per modificare.");const row=$(`[data-mc-avail="${id}"]`),reason=row.querySelector("[data-reason]").value,note=row.querySelector("[data-note]").value.trim(),old=mcMatchPlayer(id),p=reason?{selection_status:"unavailable",started:false,unavailability_reason:reason,unavailability_note:note||null}:{selection_status:"available",started:false,unavailability_reason:null,unavailability_note:null};const r=old?await db.from("app_match_players").update(p).eq("id",old.id).select("*").maybeSingle():await db.from("app_match_players").insert({match_id:matchCenterState.match.id,player_id:id,...p}).select("*").single();assertSaved(r,"Disponibilità");await mcReload()}catch(e){alert(e.message||String(e))}}
 async function mcSaveNotCalled(id){const sel=$(`[data-nc="${id}"]`),row=$(`[data-mc-avail="${id}"]`);if(row){row.querySelector("[data-reason]").value=sel.value;return mcSaveAvailability(id)}}
@@ -1512,13 +1512,34 @@ $("#csiConfirmImportBtn").onclick=async()=>{
   }catch(err){$("#csiImportError").textContent=err.message||String(err);$("#csiImportError").classList.remove("hidden")}
 };
 
+async function requestCsiSync(scope,fixture=null){
+  try{
+    if(!sessionUser)throw new Error("Accedi per aggiornare i dati CSI.");
+    const competitionId=fixture?.competition_id||competitionHubId;
+    if(!competitionId)throw new Error("Competizione non selezionata.");
+    const pendingQ=await db.from("app_csi_sync_requests").select("id,scope,fixture_id,status").eq("competition_id",competitionId).in("status",["pending","running"]);
+    if(pendingQ.error)throw pendingQ.error;
+    const duplicate=(pendingQ.data||[]).some(r=>scope==="competition"?r.scope==="competition":r.scope==="competition"||(r.scope==="fixture"&&r.fixture_id===fixture?.id));
+    if(duplicate){
+      alert("Aggiornamento CSI già in coda o in esecuzione.");
+      return;
+    }
+    const payload={competition_id:competitionId,fixture_id:scope==="fixture"?fixture.id:null,scope,status:"pending",requested_by:sessionUser.id};
+    const r=await db.from("app_csi_sync_requests").insert(payload).select("id").single();
+    assertSaved(r,"Richiesta aggiornamento CSI");
+    alert(scope==="fixture"?"Aggiornamento CSI della partita messo in coda.":"Aggiornamento CSI dell'intero calendario messo in coda.");
+  }catch(err){alert(err.message||String(err))}
+}
+const csiGlobalSyncBtn=$("#csiGlobalSyncBtn");
+if(csiGlobalSyncBtn)csiGlobalSyncBtn.onclick=()=>requestCsiSync("competition");
+
 function openFixture(f=null){
   $("#fixtureForm").reset();
   $("#fixtureError").classList.add("hidden");
   $("#fixtureId").value=f?.id||"";
   $("#fixtureDialogTitle").textContent=f?"Modifica partita":"Nuova partita";
   $("#fixtureCsiImportBtn").disabled=!f;
-  $("#fixtureCsiImportBtn").onclick=()=>f&&openCsiImport(f);
+  $("#fixtureCsiImportBtn").onclick=()=>f&&requestCsiSync("fixture",f);
   $("#fixtureRound").value=f?.round_no||1;
   $("#fixtureKickoff").value=toLocalInputValue(f?.kickoff_at);
   $("#fixtureStatus").value=f?.status||"scheduled";
