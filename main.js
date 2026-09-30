@@ -764,28 +764,10 @@ function renderCompetitionProjection(standings,fixtures,competition){
   );
 }
 
-function competitionFixtureTeam(name,side){
-  const t=teamVisual(name);
-  const crest=t.logo
-    ?`<img src="${esc(t.logo)}" alt="">`
-    :`<i>${esc(t.short)}</i>`;
-  return {
-    name:`<span class="fixture-team-name fixture-${side}-name" title="${esc(t.name)}">${esc(t.short)}</span>`,
-    crest:`<span class="fixture-team-crest">${crest}</span>`
-  };
-}
-
 function renderCompetitionFixtures(rows){
-  const source=competitionFixtureFilter==="mine"
-    ?rows.filter(r=>isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team))
-    :rows;
-
+  const source=competitionFixtureFilter==="mine"?rows.filter(r=>isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)):rows;
   const grouped=new Map();
-  source.forEach(r=>{
-    if(!grouped.has(r.round_no))grouped.set(r.round_no,[]);
-    grouped.get(r.round_no).push(r);
-  });
-
+  source.forEach(r=>{if(!grouped.has(r.round_no))grouped.set(r.round_no,[]);grouped.get(r.round_no).push(r)});
   const rounds=[...grouped.entries()].sort((a,b)=>a[0]-b[0]);
   const roundCount=Math.max(1,rounds.length);
   const maxMatches=Math.max(1,...rounds.map(([,list])=>list.length));
@@ -793,27 +775,17 @@ function renderCompetitionFixtures(rows){
   grid.style.setProperty("--round-count",roundCount);
   grid.style.setProperty("--max-matches",maxMatches);
   grid.classList.toggle("dense-rounds",roundCount>10||maxMatches>6);
-
-  grid.innerHTML=`<div class="round-grid">${rounds.map(([round,list])=>`
+  $("#competitionFixtures").innerHTML=`<div class="round-grid">${rounds.map(([round,list])=>`
     <section class="mini-round">
       <div class="mini-round-label">${round}</div>
-      ${list.map(r=>{
-        const home=competitionFixtureTeam(r.home_team,"home");
-        const away=competitionFixtureTeam(r.away_team,"away");
-        const score=r.status==="finished"?esc(r.home_score)+"-"+esc(r.away_score):"–";
-        return `<div class="mini-fixture ${isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)?"own-fixture":""}">
-          ${home.name}
-          ${home.crest}
-          <button type="button" class="score-link" data-fixture-score="${r.id}">${score}</button>
-          ${away.crest}
-          ${away.name}
-        </div>`;
-      }).join("")}
+      ${list.map(r=>`<div class="mini-fixture ${isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team)?"own-fixture":""}">
+        ${compactTeamHtml(r.home_team)}
+        <button type="button" class="score-link" data-fixture-score="${r.id}">${r.status==="finished"?esc(r.home_score)+"-"+esc(r.away_score):"–"}</button>
+        ${compactTeamHtml(r.away_team)}
+      </div>`).join("")}
     </section>`).join("")}</div>`||'<div class="muted">Calendario non disponibile.</div>';
-
   $$("[data-fixture-score]").forEach(b=>b.onclick=()=>openFixture(rows.find(r=>r.id===b.dataset.fixtureScore)));
 }
-
 
 function toLocalInputValue(value){
   if(!value)return "";
