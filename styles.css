@@ -3260,3 +3260,44 @@ dialog form{padding:16px}
   font-weight:750;
   line-height:1.35;
 }
+
+
+/* Match Center: tighter substitution icon + recovery tab */
+.mc-event-symbol.substitution{
+  width:18px;
+  height:18px;
+}
+.mc-event-symbol.substitution i,
+.mc-event-symbol.substitution b{
+  left:2px;
+  font-size:11px;
+  line-height:1;
+}
+.mc-event-symbol.substitution .sub-out{top:1px}
+.mc-event-symbol.substitution .sub-in{bottom:1px}
+.mc-player-event-tabs{
+  grid-template-columns:repeat(4,42px);
+}
+.mc-recovery-chip[data-mc-event-id]{
+  cursor:pointer;
+}
+.mc-recovery-chip[data-mc-event-id]:hover{
+  background:#e4e8ea;
+  color:#24292d;
+}
+@media(max-width:700px){
+  .mc-event-symbol.substitution{
+    width:16px;
+    height:16px;
+  }
+  .mc-event-symbol.substitution i,
+  .mc-event-symbol.substitution b{
+    left:2px;
+    font-size:10px;
+  }
+  .mc-event-symbol.substitution .sub-out{top:0}
+  .mc-event-symbol.substitution .sub-in{bottom:0}
+  .mc-player-event-tabs{
+    grid-template-columns:repeat(4,40px);
+  }
+}
