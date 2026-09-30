@@ -10,7 +10,7 @@
 </head>
 <body>
 <div class="app-shell">
-  <aside class="side-nav">
+  <aside class="side-nav glass">
     <div class="side-brand"><span id="sideTeamLogo" class="side-logo">TM</span><strong id="sideTeamName">Squadra</strong></div>
     <nav class="side-menu">
       <button class="side-link active" data-app-view="home"><span>⌂</span>Home</button>
@@ -24,7 +24,7 @@
     </nav>
   </aside>
   <section class="workspace">
-    <header class="topbar">
+    <header class="topbar glass">
       <div class="topbar-copy"><strong id="topbarTitle">Dashboard</strong><small id="topbarSubtitle"></small></div>
       <div class="topbar-actions">
         <input id="globalSearch" class="top-search" placeholder="Cerca...">
@@ -38,17 +38,17 @@
     <div id="dashboardHero" class="dashboard-hero"></div>
     <div id="dashboardKpis" class="kpi-grid"></div>
     <div class="dashboard-bottom">
-      <section class="ui-card dashboard-list-card">
-        <div class="card-section-head"><strong>Ultime partite</strong></div>
-        <div id="dashboardRecent"></div>
+      <section class="list-card glass dashboard-list-card">
+        <div class="card-head"><strong>Ultime partite</strong></div>
+        <div id="dashboardRecent" class="scroll"></div>
       </section>
-      <section class="ui-card dashboard-list-card">
-        <div class="card-section-head"><strong>Prossime partite</strong><button class="ghost-link" type="button" data-go-calendar>Calendario</button></div>
-        <div id="dashboardUpcoming"></div>
+      <section class="list-card glass dashboard-list-card">
+        <div class="card-head"><strong>Prossime partite</strong><button class="ghost-link" type="button" data-go-calendar>Calendario</button></div>
+        <div id="dashboardUpcoming" class="scroll"></div>
       </section>
-      <section id="dashboardStandingsCard" class="ui-card dashboard-standings-card">
-        <div class="card-section-head"><strong>Classifica</strong><button class="ghost-link" type="button" data-go-competition>Completa</button></div>
-        <div id="dashboardStandings"></div>
+      <section id="dashboardStandingsCard" class="list-card glass dashboard-standings-card">
+        <div class="card-head"><strong>Classifica</strong><button class="ghost-link" type="button" data-go-competition>Completa</button></div>
+        <div id="dashboardStandings" class="scroll"></div>
       </section>
     </div>
   </section>
