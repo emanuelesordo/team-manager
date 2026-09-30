@@ -691,17 +691,19 @@ label{
 .mini-round{
   flex:0 0 auto;
   min-width:0;
-  padding:7px;
-  border:1px solid var(--line);
-  border-radius:10px;
-  background:#fff;
+  padding:7px 2px 8px;
+  border:0;
+  border-bottom:1px solid var(--line);
+  border-radius:0;
+  background:transparent;
   display:flex;
   flex-direction:column;
   overflow:hidden;
 }
+.mini-round:last-child{border-bottom:0}
 .mini-round.current-window{
-  border-color:#b8b8b8;
-  box-shadow:0 5px 12px rgba(0,0,0,.055);
+  border-bottom-color:#b8b8b8;
+  box-shadow:none;
 }
 .mini-round-label{
   flex:0 0 auto;
