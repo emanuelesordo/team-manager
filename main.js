@@ -537,10 +537,10 @@ async function loadCompetitionHub(){
       aria-selected="${c.id===competitionHubId?"true":"false"}">${esc(c.name)}</button>
   `).join("");
 
-  $("[data-competition-hub]").forEach(b=>b.onclick=async()=>{
+  $$("[data-competition-hub]").forEach(b=>b.onclick=async()=>{
     if(b.dataset.competitionHub===competitionHubId)return;
     competitionHubId=b.dataset.competitionHub;
-    $("[data-competition-hub]").forEach(x=>{
+    $$("[data-competition-hub]").forEach(x=>{
       const active=x.dataset.competitionHub===competitionHubId;
       x.classList.toggle("active",active);
       x.setAttribute("aria-selected",active?"true":"false");
