@@ -1062,10 +1062,13 @@ function mcEventScore(){
   },{home:0,away:0});
 }
 function mcHasProvisionalScore(){
-  return !mcIsPost()&&matchCenterState.events.some(e=>e.event_type!=="period_end"&&e.validation_status!=="rejected");
+  if(mcIsPost())return false;
+  if(!mcOwnFixture()&&matchCenterState.fixture?.home_score!=null&&matchCenterState.fixture?.away_score!=null)return true;
+  return matchCenterState.events.some(e=>e.event_type!=="period_end"&&e.validation_status!=="rejected");
 }
 async function mcSyncProvisionalScore(){
   if(!matchCenterState.fixture||mcIsPost()||!matchCenterState.events.some(e=>e.event_type!=="period_end"))return;
+  if(!mcOwnFixture()&&!matchCenterState.events.some(e=>e.event_type==="goal"))return;
   const score=mcEventScore();
   matchCenterState.fixture.home_score=score.home;
   matchCenterState.fixture.away_score=score.away;
@@ -1090,8 +1093,8 @@ function mcFinalScoreDialog(){
 }
 function mcOpenExternalFinalScore(){
   const pop=mcFinalScoreDialog(),score=mcEventScore(),f=matchCenterState.fixture;
-  const suggestedHome=matchCenterState.editMode&&f.home_score!=null?Number(f.home_score):score.home;
-  const suggestedAway=matchCenterState.editMode&&f.away_score!=null?Number(f.away_score):score.away;
+  const suggestedHome=f.home_score!=null?Number(f.home_score):score.home;
+  const suggestedAway=f.away_score!=null?Number(f.away_score):score.away;
   pop.innerHTML='<div class="mc-final-score-head"><div><strong>Conferma risultato</strong><small>Il punteggio deve coincidere con gli eventi gol registrati.</small></div><button type="button" data-close-final-score>×</button></div>'+
     '<div class="mc-external-final-score"><input id="mcExternalFinalHome" type="number" min="0" value="'+suggestedHome+'"><span>–</span><input id="mcExternalFinalAway" type="number" min="0" value="'+suggestedAway+'"></div>'+
     '<p id="mcFinalScoreError" class="form-error hidden"></p>'+
@@ -1182,7 +1185,12 @@ function mcHeader(){
   $("#mcHomeMatchEvents").innerHTML=mcHeaderEventItems("home");
   $("#mcAwayMatchEvents").innerHTML=mcHeaderEventItems("away");
   const eventScore=mcEventScore();
-  const displayScore=(mcIsPost()&&!matchCenterState.editMode)?{home:Number(f.home_score??eventScore.home),away:Number(f.away_score??eventScore.away)}:eventScore;
+  const externalStored=!mcOwnFixture()&&f.home_score!=null&&f.away_score!=null&&!matchCenterState.events.some(e=>e.event_type==="goal")
+    ?{home:Number(f.home_score),away:Number(f.away_score)}
+    :null;
+  const displayScore=(mcIsPost()&&!matchCenterState.editMode)
+    ?{home:Number(f.home_score??eventScore.home),away:Number(f.away_score??eventScore.away)}
+    :(externalStored||eventScore);
   $("#mcScore").textContent=displayScore.home+" - "+displayScore.away;
   $("#mcScore").classList.toggle("provisional",mcHasProvisionalScore()||matchCenterState.editMode);
   $("#mcScore").classList.toggle("editing",matchCenterState.editMode);
