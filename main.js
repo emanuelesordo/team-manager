@@ -4035,7 +4035,7 @@ function renderMobileMatchHero(last,next){
 function renderHomeMatch(f,showScore){
   const home=teamVisual(f.home_team),away=teamVisual(f.away_team);
   return `<div class="home-match-strip mc-openable" data-match-center="${f.id}" role="button" tabindex="0" aria-label="Apri dettaglio partita ${esc(home.name)} - ${esc(away.name)}">
-    <div class="home-match-side">${teamRatingBadge(f,f.home_team)}${fixtureLogo(f.home_team)}<span>${esc(home.short)}</span></div>
+    <div class="home-match-side">${fixtureLogo(f.home_team)}<span>${esc(home.short)}</span>${teamRatingBadge(f,f.home_team)}</div>
     <strong>${showScore?`${f.home_score} - ${f.away_score}`:"VS"}</strong>
     <div class="home-match-side">${fixtureLogo(f.away_team)}<span>${esc(away.short)}</span>${teamRatingBadge(f,f.away_team)}</div>
   </div>`;
