@@ -313,6 +313,16 @@
     <div class="dialog-actions"><button type="button" class="secondary" id="cancelRegisterButton">Annulla</button><button class="primary" type="submit" id="submitRegisterButton">Crea account</button></div>
   </form>
 </dialog>
+<dialog id="temporaryPasswordDialog" class="wizard">
+ <form id="temporaryPasswordForm" class="sheet">
+  <div class="dialog-head"><strong>Imposta la nuova password</strong></div>
+  <p class="muted">La password temporanea è valida per l'accesso iniziale dopo il ripristino. Scegli ora una password personale.</p>
+  <label>Nuova password<input id="temporaryNewPassword" type="password" minlength="8" autocomplete="new-password" required></label>
+  <label>Conferma password<input id="temporaryConfirmPassword" type="password" minlength="8" autocomplete="new-password" required></label>
+  <p id="temporaryPasswordError" class="form-message hidden"></p>
+  <div class="dialog-actions"><button type="button" id="temporaryLogout" class="secondary">Esci</button><button type="submit" class="primary">Conferma password</button></div>
+ </form>
+</dialog>
 <dialog id="profileDialog" class="wizard">
   <div class="sheet">
     <div class="dialog-head"><strong>Il mio profilo</strong><button type="button" class="icon-btn" id="closeProfileButton" aria-label="Chiudi">×</button></div>
@@ -323,6 +333,12 @@
     </section>
   </div>
 </dialog>
+<dialog id="profileResetResultDialog" class="wizard"><div class="sheet">
+ <div class="dialog-head"><strong>Ripristino effettuato</strong><button id="closeProfileResetResult" class="icon-btn" type="button" aria-label="Chiudi">×</button></div>
+ <p>Comunica questa password temporanea privatamente all'utente. Verrà richiesto di cambiarla al prossimo accesso.</p>
+ <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><code id="profileResetCode" style="overflow-wrap:anywhere"></code><button type="button" class="secondary" id="copyProfileResetCode">Copia</button></div>
+ <div class="dialog-actions"><button id="ackProfileResetResult" class="primary" type="button">Chiudi</button></div>
+</div></dialog>
 <dialog id="seasonWizard" class="wizard">
   <form id="wizardForm">
     <div class="dialog-head"><div><strong id="wizardTitle">Nuova stagione</strong><small id="wizardStepLabel">1/5 · Annata</small></div><button type="button" class="icon-btn" data-close-wizard>×</button></div>
