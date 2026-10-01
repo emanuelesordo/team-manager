@@ -200,7 +200,7 @@ $("#authForm").onsubmit=async e=>{
   await loadAuthState();
 };
 
-function setAppView(name){
+async function setAppView(name){
   const views=["home","setup","competitions","calendar","roster","matches","events","stats"];
   views.forEach(v=>$("#"+v+"View")?.classList.toggle("hidden",v!==name));
   $$(".side-link[data-app-view]").forEach(b=>b.classList.toggle("active",b.dataset.appView===name));
@@ -209,13 +209,13 @@ function setAppView(name){
     clearInterval(dashboardCountdownTimer);
     dashboardCountdownTimer=null;
   }
-  if(name==="home")loadDashboard();
-  if(name==="competitions")loadCompetitionHub();
-  if(name==="calendar")loadCalendarHub();
-  if(name==="roster")loadRosterView();
-  if(name==="matches")loadMatchesView();
-  if(name==="events")loadEventsView();
-  if(name==="stats")loadStatsView();
+  if(name==="home")await loadDashboard();
+  if(name==="competitions")await loadCompetitionHub();
+  if(name==="calendar")await loadCalendarHub();
+  if(name==="roster")await loadRosterView();
+  if(name==="matches")await loadMatchesView();
+  if(name==="events")await loadEventsView();
+  if(name==="stats")await loadStatsView();
 }
 $$(".side-link[data-app-view]").forEach(b=>b.onclick=()=>setAppView(b.dataset.appView));
 
@@ -3756,7 +3756,7 @@ async function boot(){
     await Promise.all([loadAuthState(),loadAll()]);
     await loadCompetitions();
     await ensureMainTeam();
-    setAppView("home");
+    await setAppView("home");
   }catch(err){
     console.error("BOOT ERROR",err);
     const msg=err?.message||String(err);
@@ -3764,4 +3764,4 @@ async function boot(){
     if($("#authState")&&$("#authState").textContent==="Sessione…"){$("#authState").textContent="Errore avvio";$("#authState").className="auth-state error"}
   }
 }
-boot();
+window.TM.bootReady=boot();
