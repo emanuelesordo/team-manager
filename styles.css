@@ -6447,3 +6447,50 @@ dialog form{padding:16px}
   .match-center-dialog .mc-general-bench-row .num{width:21px;height:21px;font-size:8px}
   .match-center-dialog .mc-bench-rating{min-width:26px;height:20px;font-size:9px}
 }
+
+/* Match Center – pannelli separati e marcatori simmetrici (ottobre 2026). */
+.match-center-dialog .mc-header-event-board{
+  width:min(920px,calc(100% - 80px));margin:0 auto 6px;
+  display:grid;grid-template-columns:minmax(0,1fr) 138px minmax(0,1fr);column-gap:18px;
+}
+.match-center-dialog .mc-header-events{min-height:0;display:flex;flex-direction:column;gap:4px;font-size:clamp(10px,1vw,12px);line-height:1.25;color:#3d4347}
+.match-center-dialog .mc-header-events-home{grid-column:1;align-items:flex-end}
+.match-center-dialog .mc-header-events-away{grid-column:3;align-items:flex-start}
+.match-center-dialog .mc-header-event{display:flex;align-items:baseline;gap:6px;width:max-content;max-width:100%;min-width:0;white-space:nowrap}
+.match-center-dialog .mc-header-events-home .mc-header-event{flex-direction:row-reverse}
+.match-center-dialog .mc-header-event-icon{display:block;flex:0 0 14px;text-align:center;font-size:11px}
+.match-center-dialog .mc-header-event.red .mc-header-event-icon{color:#d64651}
+.match-center-dialog .mc-header-event time{flex:none;color:#83898d;font-size:.9em;font-weight:800;font-variant-numeric:tabular-nums}
+.match-center-dialog .mc-header-event strong{font-size:inherit!important;font-weight:850;line-height:inherit;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.match-center-dialog .mc-team-copy{padding-top:5px}
+.match-center-dialog .mc-scoreboard{min-height:68px}
+.match-center-dialog .mc-post-tabs button{flex:1 1 0;min-width:0;max-width:200px}
+.match-center-dialog[data-mc-view="match"] .mc-field-card,
+.match-center-dialog[data-mc-view="match"] .mc-general-right{display:none!important}
+.match-center-dialog[data-mc-view="match"] .mc-general-grid{grid-template-columns:minmax(0,1fr)!important}
+.match-center-dialog[data-mc-view="formation"] .mc-general-left{display:none!important}
+.match-center-dialog[data-mc-view="formation"] .mc-general-grid{grid-template-columns:minmax(0,1.65fr) minmax(220px,.65fr)!important}
+.match-center-dialog[data-mc-view="formation"] .mc-field-card,
+.match-center-dialog[data-mc-view="formation"] .mc-general-right{display:flex!important}
+.match-center-dialog.mc-external-fixture .mc-post-tabs{display:none!important}
+.match-center-dialog.mc-external-fixture .mc-field-card,
+.match-center-dialog.mc-external-fixture .mc-general-right{display:none!important}
+@media(max-width:780px){
+ .match-center-dialog .mc-header-event-board{width:100%;grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);column-gap:5px;margin:1px auto 5px}
+ .match-center-dialog .mc-header-events{gap:4px;font-size:clamp(9px,2.5vw,11px)}
+ .match-center-dialog .mc-header-event{gap:3px;max-width:100%}
+ .match-center-dialog .mc-header-event-icon{flex-basis:12px;font-size:10px}
+ .match-center-dialog .mc-scoreboard{min-height:58px}
+ .match-center-dialog .mc-post-tabs{display:flex;gap:2px;margin-top:3px}
+ .match-center-dialog .mc-post-tabs button{font-size:clamp(9px,2.7vw,11px);padding-inline:2px;max-width:none}
+ .match-center-dialog .mobile-mc-tabs{display:none!important}
+ .match-center-dialog[data-mc-view="match"] .mc-general-grid{display:block!important;height:100%}
+ .match-center-dialog[data-mc-view="match"] .mc-general-left{display:flex!important;height:100%}
+ .match-center-dialog[data-mc-view="formation"] .mc-general-grid{display:flex!important;flex-direction:column;gap:6px;height:100%}
+ .match-center-dialog[data-mc-view="formation"] .mc-field-card{height:66%;flex:1 1 auto;min-height:0}
+ .match-center-dialog[data-mc-view="formation"] .mc-general-right{height:32%;flex:0 0 32%;min-height:100px}
+ .match-center-dialog[data-mc-view="formation"] .mc-side-team-toggle{display:flex}
+ .match-center-dialog[data-mc-view="formation"] .mc-bench-card{min-height:0;display:flex;flex-direction:column}
+ .match-center-dialog[data-mc-view="formation"] #mcGeneralBench{overflow-y:auto;min-height:0}
+ .match-center-dialog .mc-rating-panel:not(.hidden){display:block}
+}
