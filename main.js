@@ -3683,7 +3683,7 @@ $("#previewCalendarBtn").onclick=async()=>{const f=$("#calendarFile").files[0];i
 
 window.TM={
   db,esc,assertSaved,
-  loadAll,loadCompetitions,loadCompetitionHub,loadCalendarHub,ensureMainTeam,
+  loadAll,loadCompetitions,loadCompetitionHub,loadCalendarHub,loadStatsView,ensureMainTeam,
   setPanel,localDateTime,isOwnTeamName,teamVisual,linkedMatchForFixture,openMatchDetail,openFixture,
   getState:()=>({
     seasons,competitions,opponents,currentSeason,team,sessionUser,
@@ -3697,6 +3697,7 @@ function ageFromBirth(d){if(!d)return "—";const b=new Date(d+"T12:00:00"),n=ne
 function playerNameById(id){const p=rosterRows.find(x=>x.player_id===id)||players.find(x=>x.id===id);return p?(p.first_name+" "+p.last_name):"—"}
 function opponentVisualById(id){return opponents.find(x=>x.id===id)||null}
 function matchLabel(m){const o=opponentVisualById(m.opponent_id);return m.home_away==="home"?(team?.short_name||"CAS")+" - "+(o?.short_name||o?.name||"Avv."):(o?.short_name||o?.name||"Avv.")+" - "+(team?.short_name||"CAS")}
+let seasonTeamEvents=[];
 async function loadCoreSeasonData(){
   await ensureMainTeam();if(!currentSeason)return;
   const [roster,matchesResult,allPlayers,injuriesResult]=await Promise.all([
@@ -3720,6 +3721,7 @@ async function loadCoreSeasonData(){
   }
   if(mp.error||ev.error||rt.error)console.warn("Statistiche Match Center parziali",mp.error||ev.error||rt.error);
   rosterMatchPlayers=mp.data||[];
+  seasonTeamEvents=ev.data||[];
   const derived=window.TeamSeasonStats.aggregate({
     matches:teamMatches,matchPlayers:mp.data||[],events:ev.data||[],
     ratings:rt.data||[],competitions,players
@@ -4225,7 +4227,18 @@ function eventLabel(t){return t==="goal"?"Gol":t==="yellow_card"?"Cartellino gia
 function toggleNewEventSecondary(){const t=document.querySelector('input[name="newEventType"]:checked')?.value;$("#newEventSecondaryWrap").classList.toggle("hidden",t!=="substitution")}
 $$('input[name="newEventType"]').forEach(x=>x.onchange=toggleNewEventSecondary);
 $("#eventComposeForm").onsubmit=async e=>{e.preventDefault();$("#eventComposeError").classList.add("hidden");try{if(!sessionUser)throw new Error("Accedi per aggiungere eventi.");const type=document.querySelector('input[name="newEventType"]:checked').value,p={match_id:selectedMatchId,event_type:type,minute:+$("#newEventMinute").value,player_id:$("#newEventPlayer").value||null,secondary_player_id:type==="substitution"?($("#newEventSecondary").value||null):null,payload:{},proposed_by:sessionUser.id,validation_status:"proposed",team_side:$("#newEventSide").value};const r=await db.from("app_match_events").insert(p).select("*").single();assertSaved(r,"Evento");$("#eventComposeForm").reset();await loadEventsView()}catch(err){$("#eventComposeError").textContent=err.message||String(err);$("#eventComposeError").classList.remove("hidden")}};
-async function loadStatsView(){await loadCoreSeasonData();const fixtures=await ownFixtures(),finished=fixtures.filter(f=>f.status==="finished"),t=finished.reduce((a,f)=>{const o=fixtureOutcome(f);if(!o)return a;a.m++;a.gf+=o.gf;a.ga+=o.ga;if(o.result==="W")a.w++;else if(o.result==="D")a.d++;else a.l++;return a},{m:0,w:0,d:0,l:0,gf:0,ga:0});$("#statsKpis").innerHTML=[["Partite",t.m],["Vittorie",t.w],["Gol fatti",t.gf],["Gol subiti",t.ga]].map(([l,v])=>`<div class="kpi-card"><strong>${v}</strong><span>${l}</span></div>`).join("");const sorted=[...playerStats].sort((a,b)=>(b.appearances||0)-(a.appearances||0)||(b.goals||0)-(a.goals||0));const playerStatsReady=playerStats.filter(p=>p.appearances||p.starts||p.goals||p.assists||p.yellow_cards||p.blue_cards||p.red_cards||p.rated_matches);$("#statsPlayers").innerHTML=`<table class="data-table"><thead><tr><th>Giocatore</th><th>Pres.</th><th>Tit.</th><th>Min.</th><th>Gol</th><th>Assist</th><th>Voto</th><th>Gialli</th><th>Blu</th><th>Disc.</th><th>Rossi</th></tr></thead><tbody>${sorted.map(p=>`<tr><td><strong>${esc(p.last_name+" "+p.first_name)}</strong></td><td>${p.appearances||0}</td><td>${p.starts||0}</td><td>${p.minutes||0}</td><td>${p.goals||0}</td><td>${p.assists||0}</td><td>${p.avg_rating==null?"—":Number(p.avg_rating).toFixed(2).replace(".",",")}</td><td>${p.yellow_cards||0}</td><td>${p.blue_cards||0}</td><td><strong>${p.disciplinary_cards||0}</strong></td><td>${p.red_cards||0}</td></tr>`).join("")}</tbody></table>`;$("#statsScorers").innerHTML=[...playerStats].sort((a,b)=>(b.goals||0)-(a.goals||0)).slice(0,8).map((p,i)=>`<div class="scorer-row"><span>${i+1}</span><strong>${esc(p.last_name+" "+p.first_name)}</strong><b>${p.goals||0}</b></div>`).join("")}
+async function loadStatsView(){
+  await loadCoreSeasonData();
+  const target=$("#statsView");
+  if(!target)return;
+  const teamSummary=window.TeamSeasonStats.summarizeTeam({
+    matches:teamMatches,events:seasonTeamEvents,players,playerStats,competitions
+  });
+  window.TeamStatsDashboard.render({
+    target,team:teamSummary,playerStats,opponents,
+    seasonLabel:currentSeason?.name||""
+  });
+}
 
 async function boot(){
   // L'accesso non deve bloccare il caricamento dei dati pubblici.
