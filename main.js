@@ -2417,7 +2417,7 @@ function mcSetFormationScene(scene){
   mcGeneralBenchSide=scene==="not_called"?"not_called":"bench";
   const dlg=$("#matchDetailDialog");
   if(dlg)dlg.dataset.mcFormationScene=scene;
-  $(".mc-formation-toggle [data-mc-formation-scene]").forEach(button=>{
+  $$(".mc-formation-toggle [data-mc-formation-scene]").forEach(button=>{
     const active=button.dataset.mcFormationScene===scene;
     button.classList.toggle("active",active);
     button.setAttribute("aria-pressed",String(active));
@@ -2426,7 +2426,7 @@ function mcSetFormationScene(scene){
   if(label)label.textContent=scene==="pitch"?"Formazione in campo":scene==="bench"?"Panchina":"Tribuna · non convocati";
   if(scene!=="pitch"&&matchCenterState.fixture)mcRenderGeneralBench();
 }
-$("[data-mc-formation-scene]").forEach(button=>button.onclick=()=>mcSetFormationScene(button.dataset.mcFormationScene));
+$$("[data-mc-formation-scene]").forEach(button=>button.onclick=()=>mcSetFormationScene(button.dataset.mcFormationScene));
 let mcGeneralEventFilters=new Set(["goal","substitution","yellow_card","blue_card","red_card"]);
 function mcQuickAction(type){
   mcSetTab("events");
