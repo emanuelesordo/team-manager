@@ -546,6 +546,23 @@ function compactTeamHtml(name){
   const t=teamVisual(name);
   return `<span class="mini-team" title="${esc(t.name)}">${t.logo?`<img src="${esc(t.logo)}" alt="">`:`<i>${esc(t.short)}</i>`}<b>${esc(t.short)}</b></span>`;
 }
+let competitionViewTab="standings";
+function setCompetitionViewTab(view){
+  if(!["standings","projection","fixtures"].includes(view))return;
+  competitionViewTab=view;
+  const split=$("#competitionsView .competition-split");
+  if(split)split.dataset.activeCompetitionView=view;
+  $("[data-competition-view]").forEach(button=>{
+    const active=button.dataset.competitionView===view;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-selected",active?"true":"false");
+    button.tabIndex=active?0:-1;
+  });
+  const tools=$("#competitionsView .mini-calendar-tools");
+  if(tools)tools.classList.toggle("hidden",view!=="fixtures");
+  syncCompetitionViewportHeight();
+}
+$("[data-competition-view]").forEach(button=>button.onclick=()=>setCompetitionViewTab(button.dataset.competitionView));
 async function loadCompetitionHub(){
   await loadCompetitions();
   await ensureMainTeam();
@@ -580,9 +597,10 @@ async function loadCompetitionHub(){
   });
 
   await renderCompetitionHub();
+  setCompetitionViewTab(competitionViewTab);
   syncCompetitionViewportHeight();
 }
-$$("[data-comp-fixture-filter]").forEach(b=>b.onclick=()=>{
+$("[data-comp-fixture-filter]").forEach(b=>b.onclick=()=>{
   competitionFixtureFilter=b.dataset.compFixtureFilter;
   $$("[data-comp-fixture-filter]").forEach(x=>x.classList.toggle("active",x===b));
   renderCompetitionFixtures(window.__competitionFixtureRows||[]);
@@ -1649,10 +1667,8 @@ function mcEventOrder(e){
 function mcDisplayMinute(e){
   if(e?.minute==null)return "–";
   const period=mcEventPeriod(e);
-  const local=Number(e.minute||0);
-  if(!mcOwnFixture())return (period==="second_half"?"2T ":"1T ")+local+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
   const base=period==="second_half"?mcPeriodMinutes():0;
-  const minute=base+local;
+  const minute=base+Number(e.minute||0);
   return minute+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
 }
 function mcIsAddedTimeEvent(e){
