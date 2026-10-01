@@ -584,28 +584,24 @@
       <button type="button" class="icon-btn mc-close" data-close-match-detail>×</button>
       <div class="mc-scoreboard">
         <div class="mc-team mc-home">
-          <div class="mc-team-copy"><strong id="mcHomeName">Casa</strong><div id="mcHomeMatchEvents" class="mc-header-events"></div></div>
+          <div class="mc-team-copy"><strong id="mcHomeName">Casa</strong></div>
           <span id="mcHomeLogo" class="mc-logo"></span>
         </div>
         <div class="mc-score"><strong id="mcScore">–</strong><span id="mcState">PRE</span><span id="mcTimer" class="hidden">00:00</span></div>
         <div class="mc-team mc-away">
           <span id="mcAwayLogo" class="mc-logo"></span>
-          <div class="mc-team-copy"><strong id="mcAwayName">Ospite</strong><div id="mcAwayMatchEvents" class="mc-header-events"></div></div>
+          <div class="mc-team-copy"><strong id="mcAwayName">Ospite</strong></div>
         </div>
       </div>
+      <div class="mc-header-event-board"><div id="mcHomeMatchEvents" class="mc-header-events mc-header-events-home"></div><div id="mcAwayMatchEvents" class="mc-header-events mc-header-events-away"></div></div>
       <div id="mcMeta" class="mc-meta"></div>
       <nav id="mcPostTabs" class="mc-post-tabs hidden" aria-label="Vista partita conclusa">
-        <button type="button" class="active" data-mc-post-view="match">OVERVIEW</button>
-        <button type="button" data-mc-post-view="rating">RATING</button>
-        <button type="button" data-mc-post-view="vote">VOTA</button>
+        <button type="button" class="active" data-mc-post-view="match">EVENTI</button>
+        <button type="button" data-mc-post-view="formation">FORMAZIONE</button>
+        <button type="button" data-mc-post-view="rating">RATING · VOTA</button>
       </nav>
     </header>
     <div class="mc-body">
-      <nav class="mobile-mc-tabs" aria-label="Sezioni Match Center">
-        <button type="button" class="active" data-mobile-mc-tab="history" aria-pressed="true">Eventi</button>
-        <button type="button" data-mobile-mc-tab="pitch" aria-pressed="false">Campo</button>
-        <button type="button" data-mobile-mc-tab="bench" aria-pressed="false">Rosa</button>
-      </nav>
       <section data-mc-panel="general" data-mc-post-panel="match">
         <div class="mc-general-grid">
           <div class="mc-general-left">
