@@ -2980,6 +2980,7 @@ function fixtureRenderResultCheck(){
   const scoreReady=h!==""&&a!=="";
   const goals=fixtureScoreFromEvents();
   const eventsMatch=scoreReady&&Number(h)===goals.home&&Number(a)===goals.away;
+  const eventsExceed=scoreReady&&(goals.home>Number(h)||goals.away>Number(a));
   const hasGoalEvents=fixtureEditorEvents.some(e=>e.event_type==="goal");
   if(!scoreReady){
     box.className="fixture-result-check neutral";
@@ -2992,9 +2993,12 @@ function fixtureRenderResultCheck(){
   }else if(!hasGoalEvents){
     box.className="fixture-result-check warning";
     box.innerHTML=`<span>Eventi gol non ancora registrati · risultato ${esc(h)}–${esc(a)}</span><button type="button" data-open-fixture-events>Inserisci eventi</button>`;
-  }else if(!eventsMatch){
+  }else if(eventsExceed){
     box.className="fixture-result-check error";
-    box.innerHTML=`<span>Controllo non superato: eventi gol ${goals.home}–${goals.away}, risultato ${esc(h)}–${esc(a)}</span><button type="button" data-open-fixture-events>Correggi eventi</button>`;
+    box.innerHTML=`<span>Gol registrati ${goals.home}–${goals.away} superiori al risultato ${esc(h)}–${esc(a)}</span><button type="button" data-open-fixture-events>Correggi eventi</button>`;
+  }else if(!eventsMatch){
+    box.className="fixture-result-check warning";
+    box.innerHTML=`<span>Marcatori parziali (${goals.home}–${goals.away}): puoi confermare ${esc(h)}–${esc(a)}.</span>`;
   }else{
     box.className="fixture-result-check ok";
     box.innerHTML=`<span>✓ Punteggio coerente con gli eventi gol: ${goals.home}–${goals.away}</span>`;
@@ -3169,9 +3173,9 @@ async function fixtureSave({finalize=false}={}){
     if(!id)throw new Error("Salva prima la partita.");
     if(!scoreReady)throw new Error("Inserisci il risultato.");
     const goals=fixtureScoreFromEvents();
-    if(goals.home!==Number(homeScoreRaw)||goals.away!==Number(awayScoreRaw)){
+    if(goals.home>Number(homeScoreRaw)||goals.away>Number(awayScoreRaw)){
       fixtureSetTab("events");
-      throw new Error(`Il risultato non coincide con gli eventi gol: eventi ${goals.home}-${goals.away}, risultato ${homeScoreRaw}-${awayScoreRaw}.`);
+      throw new Error(`I gol registrati (${goals.home}-${goals.away}) superano il risultato (${homeScoreRaw}-${awayScoreRaw}).`);
     }
     status="finished";
     $("#fixtureStatus").value="finished";
@@ -3267,7 +3271,9 @@ function omcRefreshEventFormHint(){
   $("#omcEventMinute").max=String(regular+recovery);
   $("#omcEventHint").textContent=recoveryMode
     ?omcPeriodShort(period)+" · indica i minuti di recupero concessi (0–30)."
-    :omcPeriodShort(period)+" · minuto 0–"+regular+(recovery?" oppure fino a "+(regular+recovery)+" nel recupero +"+recovery+".":"; per oltrepassare "+regular+" registra prima il recupero.");
+    :$("#omcEventMinute").value.trim()===""
+      ?"Minuto facoltativo: se ignoto, lascia vuoto. L'evento apparirà con ? nella sequenza."
+      :omcPeriodShort(period)+" · minuto 0–"+regular+(recovery?" oppure fino a "+(regular+recovery)+" nel recupero +"+recovery+".":"; per oltrepassare "+regular+" registra prima il recupero.");
 }
 function omcOpenEventDialog(event=null,defaultPeriod="first_half"){
   if(mcOwnFixture())return;
@@ -3289,6 +3295,7 @@ function omcOpenEventDialog(event=null,defaultPeriod="first_half"){
 $$("[data-close-other-match-event]").forEach(b=>b.onclick=()=>$("#otherMatchEventDialog").close());
 $("#omcEventType").onchange=omcRefreshEventFormHint;
 $("#omcEventPeriod").onchange=omcRefreshEventFormHint;
+$("#omcEventMinute").oninput=omcRefreshEventFormHint;
 
 async function omcReopenIfNeeded(){
   if(matchCenterState.fixture?.status!=="finished")return;
