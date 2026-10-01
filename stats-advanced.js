@@ -28,4 +28,101 @@
     );
   }
   window.TeamStatsDashboard.render=render;
+
+  // Un solo carosello per gruppi tematici: nessuna tabella né scroll
+  // orizzontale della pagina. Tutti i widget preesistenti sono riutilizzati.
+  function organize(target){
+    const dashboard=target?.querySelector(".ts-dashboard");
+    const grid=dashboard?.querySelector(".ts-grid");
+    const metrics=dashboard?.querySelector(".ts-kpis");
+    if(!dashboard||!grid||!metrics)return;
+    const widgets=[...grid.children];
+    if(widgets.length!==19)return; // non perdere contenuti se il modello cambia
+    const chapters=[
+      {title:"Riepilogo",icon:"◉",items:[0,1,2,9],includeMetrics:true},
+      {title:"Gol",icon:"⚽",items:[3,4,5,10,11]},
+      {title:"Voti",icon:"★",items:[7,17,6]},
+      {title:"Impatto",icon:"↗",items:[18,16]},
+      {title:"Situazioni",icon:"▥",items:[12,13,14,15]},
+      {title:"Disciplina",icon:"▣",items:[8]}
+    ];
+    const nav=document.createElement("nav");
+    nav.className="ts-nav";
+    nav.setAttribute("aria-label","Categorie statistiche");
+    const stage=document.createElement("div");
+    stage.className="ts-stage";
+    const slides=document.createElement("div");
+    slides.className="ts-track-slides";
+    slides.setAttribute("aria-live","polite");
+    const elements=[];
+    chapters.forEach((chapter,i)=>{
+      const btn=document.createElement("button");
+      btn.type="button";btn.className="ts-nav-btn";
+      btn.innerHTML='<span class="ts-nav-icon" aria-hidden="true">'+chapter.icon+'</span><span>'+chapter.title+'</span>';
+      btn.setAttribute("aria-controls","ts-stat-slide-"+i);
+      nav.appendChild(btn);
+      const section=document.createElement("section");
+      section.className="ts-slide";
+      section.id="ts-stat-slide-"+i;
+      section.setAttribute("aria-label",chapter.title);
+      const body=document.createElement("div");
+      body.className="ts-chapter-grid";
+      if(chapter.includeMetrics)body.appendChild(metrics);
+      for(const index of chapter.items){
+        const widget=widgets[index];if(!widget)continue;
+        widget.classList.remove("wide");
+        body.appendChild(widget);
+      }
+      section.appendChild(body);
+      slides.appendChild(section);
+      elements.push({btn,section});
+    });
+    stage.appendChild(slides);
+    const footer=document.createElement("div");
+    footer.className="ts-page-controls";
+    footer.innerHTML='<button class="ts-page-prev" type="button" aria-label="Statistiche precedenti">‹</button><div class="ts-page-dots" aria-hidden="true"></div><button class="ts-page-next" type="button" aria-label="Statistiche successive">›</button>';
+    const dots=footer.querySelector(".ts-page-dots");
+    chapters.forEach(()=>{const dot=document.createElement("span");dots.appendChild(dot)});
+    grid.replaceWith(stage);
+    dashboard.insertBefore(nav,stage);
+    stage.after(footer);
+    let current=0,startX=null,startY=null;
+    function go(index){
+      current=(index+chapters.length)%chapters.length;
+      slides.style.transform="translateX(-"+(current*100)+"%)";
+      elements.forEach(({btn,section},i)=>{
+        const on=i===current;
+        btn.classList.toggle("active",on);
+        btn.setAttribute("aria-current",on?"page":"false");
+        section.setAttribute("aria-hidden",String(!on));
+        section.inert=!on;
+      });
+      [...dots.children].forEach((dot,i)=>dot.classList.toggle("active",i===current));
+      footer.querySelector(".ts-page-prev").disabled=current===0;
+      footer.querySelector(".ts-page-next").disabled=current===chapters.length-1;
+      const first=elements[current].btn;
+      if(first&&nav.scrollWidth>nav.clientWidth)first.scrollIntoView({behavior:"smooth",block:"nearest",inline:"nearest"});
+    }
+    elements.forEach(({btn},i)=>btn.addEventListener("click",()=>go(i)));
+    footer.querySelector(".ts-page-prev").onclick=()=>go(Math.max(0,current-1));
+    footer.querySelector(".ts-page-next").onclick=()=>go(Math.min(chapters.length-1,current+1));
+    stage.addEventListener("touchstart",e=>{
+      if(e.touches.length!==1)return;
+      startX=e.touches[0].clientX;startY=e.touches[0].clientY;
+    },{passive:true});
+    stage.addEventListener("touchend",e=>{
+      if(startX==null||!e.changedTouches.length)return;
+      const dx=e.changedTouches[0].clientX-startX,dy=e.changedTouches[0].clientY-startY;
+      startX=startY=null;
+      if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.4)go(Math.max(0,Math.min(chapters.length-1,current+(dx<0?1:-1))));
+    },{passive:true});
+    // Non forzare un'altezza fissa: soltanto il gruppo attivo occupa spazio.
+    go(0);
+  }
+  const groupRender=window.TeamStatsDashboard.render;
+  window.TeamStatsDashboard.render=function(input){
+    groupRender(input);
+    organize(input?.target);
+  };
+
 })();
