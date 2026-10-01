@@ -6417,3 +6417,33 @@ dialog form{padding:16px}
   #statsView .stats-layout>.ui-card{width:100%;min-width:0;overflow-x:clip}
   #statsView #statsPlayers,#statsView #statsScorers{min-width:0;max-width:100%}
 }
+
+/* Match Center: leggibilita marcatori, rating e campo/panchina mobile. */
+.match-center-dialog .mc-header-events{font-size:clamp(10px,1vw,13px);line-height:1.3;gap:4px;color:#50575a}
+.match-center-dialog .mc-header-goal{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px;white-space:normal;font-weight:800}
+.match-center-dialog .mc-header-goal strong{font-size:inherit;line-height:inherit;font-weight:900;overflow-wrap:anywhere;white-space:normal}
+.match-center-dialog .mc-header-goal-icon{font-size:10px}
+.match-center-dialog .mc-header-goal time{color:#757e82;font-size:.85em;font-weight:750}
+.match-center-dialog .mc-general-bench-row{grid-template-columns:30px minmax(0,1fr) auto auto}
+.match-center-dialog .mc-bench-rating{display:grid;place-items:center;border-radius:999px;min-width:28px;height:22px;padding:0 5px;font-size:10px;font-weight:900;font-variant-numeric:tabular-nums}
+.match-center-dialog .pitch-rating{color:inherit}
+@media(max-width:780px){
+  .match-center-dialog .mc-header-events{font-size:clamp(9px,2.55vw,11px);gap:3px;line-height:1.2}
+  .match-center-dialog .mc-team-copy{min-width:0;gap:5px}
+  .match-center-dialog .mc-header-goal-icon{font-size:9px}
+  .match-center-dialog .mc-scoreboard{grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr)}
+  .match-center-dialog .mc-post-tabs{display:flex;gap:2px}
+  .match-center-dialog .mc-post-tabs button{flex:1 1 0;min-width:0;padding-inline:5px;font-size:11px}
+  .match-center-dialog .mobile-mc-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .match-center-dialog .mobile-mc-tabs [data-mobile-mc-tab="bench"]{display:none}
+  .match-center-dialog[data-mobile-mc-active="pitch"] .mc-general-right{display:flex!important;height:31%;min-height:116px}
+  .match-center-dialog[data-mobile-mc-active="pitch"] .mc-field-card{height:67%;min-height:0;flex:1 1 auto}
+  .match-center-dialog[data-mobile-mc-active="pitch"] .mc-general-grid{display:flex;flex-direction:column;gap:6px}
+  .match-center-dialog[data-mobile-mc-active="pitch"] .mc-side-team-toggle{display:none}
+  .match-center-dialog[data-mobile-mc-active="pitch"] .mc-bench-card{padding:6px 9px;display:flex;flex-direction:column}
+  .match-center-dialog[data-mobile-mc-active="pitch"] .mc-bench-card .mc-card-head{flex:0 0 auto}
+  .match-center-dialog[data-mobile-mc-active="pitch"] #mcGeneralBench{flex:1 1 auto;overflow-y:auto}
+  .match-center-dialog .mc-general-bench-row{min-height:31px;gap:4px;grid-template-columns:23px minmax(0,1fr) auto auto;padding:2px}
+  .match-center-dialog .mc-general-bench-row .num{width:21px;height:21px;font-size:8px}
+  .match-center-dialog .mc-bench-rating{min-width:26px;height:20px;font-size:9px}
+}
