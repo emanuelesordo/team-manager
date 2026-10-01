@@ -251,7 +251,7 @@ function setMobileContentTab(section,tab){
   if(!values.includes(tab))return;
   const view=$("#"+section+"View");
   if(view)view.dataset.mobilePanel=tab;
-  $("[data-mobile-"+section+"-tab]").forEach(button=>{
+  $$("[data-mobile-"+section+"-tab]").forEach(button=>{
     const active=button.dataset["mobile"+(section==="roster"?"Roster":"Stats")+"Tab"]===tab;
     button.classList.toggle("active",active);
     button.setAttribute("aria-pressed",active?"true":"false");
