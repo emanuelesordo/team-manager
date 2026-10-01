@@ -4163,16 +4163,18 @@ function renderPlayerDetail(){
     ["Assist",s.assists??0],
     ["Rating medio",s.avg_rating==null?"—":Number(s.avg_rating).toFixed(2).replace(".",",")],
     ["Gialli",s.yellow_cards??0],["Blu",s.blue_cards??0],["Rossi",s.red_cards??0],
-    ["Entrate",s.sub_in??0],["Uscite",s.sub_out??0],
-    ["Gol da titolare",s.goals_as_starter??0],["Gol da subentrato",s.goals_as_sub??0],
-    ["GF in campo",s.on_field_gf??0],["GS in campo",s.on_field_ga??0],
-    ["Differenziale",((s.plus_minus??0)>0?"+":"")+(s.plus_minus??0)]
+    ["Entrate",s.sub_in??0],["Uscite",s.sub_out??0]
   ];
   host.innerHTML='<div class="pl-profile">'+
     '<header class="pl-top"><div><small>'+safe(currentSeason?.name||"Stagione corrente")+'</small><h2>'+safe(p.first_name+" "+p.last_name)+'</h2><span>'+safe(roleLabel(p.generic_role_manual))+'</span></div><strong>#'+safe(rosterShirtNumber(p)||"—")+'</strong></header>'+
     '<section class="pl-section"><h3>Statistiche stagionali</h3><div class="pl-kpis">'+entries.map(([k,v],i)=>'<div class="pl-kpi"><span>'+safe(k)+'</span><strong data-pl-stat="'+i+'">'+safe(v)+'</strong></div>').join("")+'</div></section>'+
     '<section class="pl-section"><h3>Ultime 5 valutazioni</h3><div id="plLatestRatings" class="pl-chart-host"><div class="empty-state compact">Caricamento…</div></div></section>'+
     '<section class="pl-section"><h3>Posizioni in campo <small>· calcolo futuro</small></h3><div class="pl-pitch"><span class="pl-center"></span><span class="pl-circle"></span><span class="pl-area left"></span><span class="pl-area right"></span><b>Rilevazione in preparazione</b></div></section>'+
+    '<section class="pl-section"><h3>Impatto in campo</h3><div class="pl-kpis">'+[
+      ["Gol da titolare",s.goals_as_starter??0],["Gol da subentrato",s.goals_as_sub??0],
+      ["GF con lui",s.on_field_gf??0],["GS con lui",s.on_field_ga??0],
+      ["Differenziale",(s.plus_minus??0)>0?"+"+(s.plus_minus??0):(s.plus_minus??0)]
+    ].map(([k,v])=>'<div class="pl-kpi"><span>'+safe(k)+'</span><strong>'+safe(v)+'</strong></div>').join("")+'</div></section>'+
     '<section class="pl-section"><h3>Informazioni</h3><div class="pl-meta"><span>Età <b>'+safe(ageFromBirth(p.birth_date))+'</b></span><span>Altezza <b>'+safe(p.height_cm?p.height_cm+" cm":"—")+'</b></span><span>Piede <b>'+safe(p.preferred_foot||"—")+'</b></span><span>Nazionalità <b>'+safe(p.nationality_code||"—")+'</b></span></div></section>'+
     '<section class="pl-section injury-history"><div class="card-section-head"><strong>Storico infortuni</strong><span>'+injuries.length+'</span></div>'+
     (injuries.length?injuries.map(x=>'<div class="injury-history-row"><div><strong>'+safe(x.public_summary||"Infortunio")+'</strong><small>'+fmt(x.injury_date)+' · '+safe(injuryStatusLabel(x.status))+'</small><small>Previsto: '+(x.expected_return?fmt(x.expected_return):"—")+' · Rientro: '+(x.actual_return?fmt(x.actual_return):"—")+'</small></div>'+(admin?'<button type="button" class="icon-btn injury-edit" data-edit-injury="'+safe(x.id)+'" title="Modifica">✎</button>':"")+'</div>').join(""):'<div class="empty-state compact">Nessun infortunio registrato</div>')+'</section>'+
