@@ -296,10 +296,7 @@
       ["Minuti",ss.minutes||0],["Gol",ss.goals||0],["Assist",ss.assists||0],
       ["Rating medio",ss.avg_rating==null?"—":n(ss.avg_rating.toFixed(2))],
       ["Gialli",ss.yellow_cards||0],["Blu",ss.blue_cards||0],["Rossi",ss.red_cards||0],
-      ["Entrate",ss.sub_in||0],["Uscite",ss.sub_out||0],
-      ["Gol da titolare",ss.goals_as_starter||0],["Gol da subentrato",ss.goals_as_sub||0],
-      ["GF in campo",ss.on_field_gf||0],["GS in campo",ss.on_field_ga||0],
-      ["Differenziale",((ss.plus_minus||0)>0?"+":"")+(ss.plus_minus||0)]
+      ["Entrate",ss.sub_in||0],["Uscite",ss.sub_out||0]
     ];
     const coords=last.map((it,i)=>({x:500*i/Math.max(last.length-1,4),y:112-(it.rating-1)/9*94}));
     const curve=coords.reduce((d,pt,i)=>{
@@ -313,6 +310,11 @@
       '<section class="pl-section"><h3>Statistiche stagionali</h3><div class="pl-kpis">'+totals.map(([label,val])=>'<div class="pl-kpi"><span>'+esc(label)+'</span><strong>'+esc(n(val))+'</strong></div>').join("")+'</div></section>'+
       '<section class="pl-section"><h3>Ultime 5 valutazioni</h3>'+chart+'</section>'+
       '<section class="pl-section"><h3>Posizioni in campo <small>· disponibilità futura</small></h3><div class="pl-pitch"><span class="pl-center"></span><span class="pl-circle"></span><span class="pl-area left"></span><span class="pl-area right"></span><b>Rilevazione in preparazione</b></div></section>'+
+      '<section class="pl-section"><h3>Impatto in campo</h3><div class="pl-kpis">'+[
+        ["Gol da titolare",ss.goals_as_starter||0],["Gol da subentrato",ss.goals_as_sub||0],
+        ["GF con lui",ss.on_field_gf||0],["GS con lui",ss.on_field_ga||0],
+        ["Differenziale",(ss.plus_minus||0)>0?"+"+(ss.plus_minus||0):(ss.plus_minus||0)]
+      ].map(([label,val])=>'<div class="pl-kpi"><span>'+esc(label)+'</span><strong>'+esc(n(val))+'</strong></div>').join("")+'</div></section>'+
       '<section class="pl-section"><h3>Informazioni</h3><div class="pl-meta"><span>Età <b>'+esc(n(age(p.birth_date)))+'</b></span><span>Altezza <b>'+esc(p.height_cm?p.height_cm+" cm":"—")+'</b></span><span>Piede <b>'+esc(p.preferred_foot||"—")+'</b></span><span>Nazionalità <b>'+esc(p.nationality_code||"—")+'</b></span></div></section></div>';
   }
 
