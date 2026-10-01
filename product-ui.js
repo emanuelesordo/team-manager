@@ -144,7 +144,7 @@
     if (name === "roster") await loadRoster();
     if (name === "matches") await loadMatches();
     if (name === "events") await loadEvents();
-    if (name === "stats") await loadStats();
+    if (name === "stats") await TM.loadStatsView();
     if (name === "setup") TM.setPanel?.("seasons");
   }
 
