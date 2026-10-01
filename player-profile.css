@@ -1,0 +1,50 @@
+
+/* Scheda giocatore ispirata alla reference, confinata alla Rosa */
+#rosterView .roster-layout{grid-template-columns:minmax(240px, .72fr) minmax(0, 1.8fr);align-items:start}
+#rosterView .player-detail-card{min-width:0;overflow:hidden;padding:0}
+#rosterView .pp-profile{--pp-text:#f4f1f6;background:radial-gradient(circle at 10% 0%,#322138 0%,transparent 40%),linear-gradient(150deg,#211727,#100e18);color:var(--pp-text);padding:clamp(16px,2vw,30px);border-radius:inherit}
+.pp-profile h2,.pp-profile h3,.pp-profile p{margin:0}
+.pp-profile h3{text-transform:uppercase;letter-spacing:.045em;font-size:.82rem;font-weight:800;color:#f7f2f8}
+.pp-top,.pp-header,.pp-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pp-top{font-size:.67rem;letter-spacing:.12em;font-weight:800;color:#a8a0b4;text-transform:uppercase;margin-bottom:20px}
+.pp-status{color:#61cfdf}
+.pp-header{margin-bottom:22px;align-items:flex-start}
+.pp-header h2{text-transform:uppercase;font-size:clamp(1.35rem,2.5vw,2rem);line-height:1.1;overflow-wrap:anywhere}
+.pp-role{font-size:.83rem;color:#c5bbcd}
+.pp-shirt{font-size:1.8rem;font-weight:900;color:#eee8f2;opacity:.8}
+.pp-main{display:grid;grid-template-columns:minmax(95px,.72fr) minmax(150px,1.2fr) minmax(140px,1fr);gap:clamp(12px,2vw,27px);align-items:stretch}
+.pp-ident{position:relative;min-height:230px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden}
+.pp-watermark{position:absolute;inset:-22px 0 auto;font-size:clamp(75px,10vw,140px);font-weight:900;color:#ffffff10;line-height:1}
+.pp-player-icon{position:relative;width:100%;flex:1;min-height:140px;color:#d4bccd;display:grid;place-items:center}
+.pp-player-icon svg{width:100%;height:175px;max-width:155px}
+.pp-measures{display:flex;justify-content:space-around;gap:8px}
+.pp-measures>span{font-size:1.1rem;font-weight:800;display:flex;flex-direction:column;align-items:center;border-right:1px solid #ffffff22;flex:1;min-width:0}
+.pp-measures>span:last-child{border:0}.pp-measures small{font-size:.56rem;font-weight:500;color:#bfb4c9;margin-top:4px}
+.pp-stat-section,.pp-position-section{min-width:0}
+.pp-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:18px}
+.pp-stat{min-width:0;display:flex;flex-direction:column;gap:4px;padding:9px 0;border-bottom:1px solid #ffffff12}
+.pp-stat>span{color:#c8bece;font-size:.75rem}.pp-stat strong{font-size:1.12rem;font-variant-numeric:tabular-nums}
+.pp-stat strong small{font-size:.67rem;color:#bdb5c8;font-weight:500}
+.pp-pitch{position:relative;aspect-ratio:1.48;margin-top:18px;border:1px solid #81758a;background:linear-gradient(90deg,#ffffff04 50%,transparent 50%);overflow:hidden;min-height:125px}
+.pp-pitch:before{content:"";position:absolute;inset:8px;border:1px solid #ffffff20}
+.pp-pitch-mid{position:absolute;left:50%;top:0;bottom:0;border-left:1px solid #ffffff35}
+.pp-pitch-circle{position:absolute;left:50%;top:50%;width:28%;aspect-ratio:1;border:1px solid #ffffff35;border-radius:50%;transform:translate(-50%,-50%)}
+.pp-pitch-box{position:absolute;width:18%;height:50%;top:25%;border:1px solid #ffffff35}
+.pp-box-top{left:0;border-left:0}.pp-box-bottom{right:0;border-right:0}
+.pp-position-note{position:absolute;inset:0;display:grid;place-items:center;text-align:center;color:#cdc0d2;font-size:.69rem;letter-spacing:.1em;font-weight:800;line-height:1.7;background:#100c1870}
+.pp-form{margin-top:30px}.pp-section-title{flex-wrap:wrap}.pp-section-title>span{font-size:.73rem;color:#cec5d3}.pp-section-title b{color:#a0ec84}
+.pp-chart{height:205px;position:relative;margin-top:20px;overflow:hidden}
+.pp-chart svg{width:100%;height:140px;overflow:visible}
+.pp-match-points{position:absolute;inset:0}
+.pp-match-point{position:absolute;top:144px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:3px;min-width:48px;max-width:65px}
+.pp-match-opponent{font-size:.69rem;text-overflow:ellipsis;overflow:hidden;white-space:nowrap;max-width:100%;font-weight:800}
+.pp-match-date{font-size:.64rem;color:#afa5ba}
+.pp-match-grade{position:absolute;top:calc(-144px + var(--point-y) - 30px);background:#6dcc80;color:#111;font-size:.73rem;padding:3px 5px;border-radius:4px;font-weight:850}
+.pp-no-grade{background:#514960;color:#fff}
+.pp-chart-empty{min-height:130px;display:grid;place-items:center;color:#aca2b5;text-align:center;font-size:.86rem}
+.pp-bottom{display:grid;grid-template-columns:1fr 1.3fr;gap:20px;margin-top:25px;padding-top:20px;border-top:1px solid #ffffff18}
+.pp-bottom .detail-list,.pp-bottom .injury-history{background:transparent;color:inherit}
+.pp-profile .player-admin-actions{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+@media(max-width:1100px){#rosterView .roster-layout{grid-template-columns:minmax(200px,.85fr) minmax(0,1.5fr)}.pp-main{grid-template-columns:minmax(80px,.7fr) 1.3fr}.pp-position-section{grid-column:1/-1}.pp-pitch{max-width:350px}}
+@media(max-width:780px){#rosterView .roster-layout{display:block}.pp-main{grid-template-columns:minmax(90px,.65fr) 1.35fr}.pp-position-section{grid-column:1/-1}.pp-ident{min-height:200px}.pp-bottom{grid-template-columns:1fr}.pp-chart{height:205px}.pp-profile{padding:16px!important}}
+@media(max-width:390px){.pp-stat-grid{gap:4px 8px}.pp-header h2{font-size:1.3rem}.pp-measures>span{font-size:.9rem}}
