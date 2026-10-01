@@ -1731,10 +1731,6 @@ function mcExternalChronology(events){
       const before=mcEventOrder(prev),after=mcEventOrder(next);
       const remaining=list.slice(0,i+1).filter(x=>x.minute==null).length;
       sort=before+(after-before)*Math.min(.9,remaining/(remaining+1));
-    }else if(prev&&!next){
-      // Un gol aggiunto per ultimo resta dopo l'ultimo evento noto;
-      // la fascia incognita segnala che il tempo non è documentato.
-      sort=Math.max(999.5,mcEventOrder(prev)+.001);
     }
     return {event:e,sort,index:i};
   });
@@ -1761,8 +1757,10 @@ function mcTimeline(target,limit,filters=null){
     const isHome=mcEventIsHome(e);
     if(isHome)h++;else a++;
   });
-  const halfScore=h+" - "+a;
+  const halfScore=all.some(e=>e.event_type==="goal"&&e.minute==null)?"? - ?":h+" - "+a;
 
+  const allWithoutMinute=!mcOwnFixture()&&all.filter(e=>e.event_type!=="period_end").every(e=>e.minute==null);
+  const unknownExists=!mcOwnFixture()&&all.some(e=>e.event_type!=="period_end"&&e.minute==null);
   const recoveryByPeriod=new Map();
   all.filter(e=>e.event_type==="period_end").forEach(e=>{
     recoveryByPeriod.set(e.payload?.period||"",{minutes:Number(e.payload?.recovery_minutes??e.stoppage_minute??0),event:e});
@@ -1779,15 +1777,15 @@ function mcTimeline(target,limit,filters=null){
   if(mcIsPost()){
     const f=matchCenterState.fixture;
     rows.push('<div class="mc-period-separator mc-ft"><span></span><strong>FT '+esc(f.home_score??0)+' - '+esc(f.away_score??0)+'</strong><span></span></div>');
-    if(rec2?.minutes&&!periodsWithAddedTime.has("second_half"))rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
-  }else if(rec2?.minutes&&!periodsWithAddedTime.has("second_half")){
+    if(!allWithoutMinute&&rec2?.minutes&&!periodsWithAddedTime.has("second_half"))rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
+  }else if(!allWithoutMinute&&rec2?.minutes&&!periodsWithAddedTime.has("second_half")){
     rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec2.event.id)+'" role="button" tabindex="0">Recupero 2T +'+rec2.minutes+'\'</div>');
   }
 
   let halfInserted=false;
   const hasSecondHalf=all.some(e=>e.event_type!=="period_end"&&e.minute!=null&&mcEventPeriod(e)==="second_half")||recoveryByPeriod.has("first_half");
-  const allWithoutMinute=!mcOwnFixture()&&all.filter(e=>e.event_type!=="period_end").every(e=>e.minute==null);
   const recoveryDividerInserted=new Set();
+  let unknownBandShown=false;
 
   for(let index=0;index<regular.length;){
     const e=regular[index];
@@ -1816,8 +1814,9 @@ function mcTimeline(target,limit,filters=null){
     while(j<regular.length&&sameMoment(regular[j])){grouped.push(regular[j]);j++}
 
     const minute=mcDisplayMinute(e);
-    if(!mcOwnFixture()&&e.minute==null&&index===0&&all.some(x=>x.minute!=null)){
+    if(!mcOwnFixture()&&unknownExists&&e.minute==null&&!unknownBandShown&&!allWithoutMinute){
       rows.push('<div class="mc-recovery-divider mc-unknown-events"><span></span><strong>MINUTO INCERTO</strong><span></span></div>');
+      unknownBandShown=true;
     }
     const add=index===0&&!mcFinalLocked()?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
 
@@ -3280,9 +3279,9 @@ function omcOpenEventDialog(event=null,defaultPeriod="first_half"){
   $("#omcEventType").value=recovery?"recovery":(event?.event_type||"goal");
   $("#omcEventSide").value=event?.fixture_side||event?.side||event?.team_side||"home";
   const period=event?mcEventPeriod(event):defaultPeriod;
-  $("#omcEventPeriod").value=period;
+  $("#omcEventPeriod").value=period==="second_half"?"second_half":"first_half";
   if(recovery)$("#omcRecoveryMinutes").value=omcRecoveryMinutes(period);
-  else if(event)$("#omcEventMinute").value=Number(event.minute||0)+Number(event.stoppage_minute||0);
+  else if(event)$("#omcEventMinute").value=event.minute==null?"":Number(event.minute)+Number(event.stoppage_minute||0);
   $("#omcDeleteEventBtn").classList.toggle("hidden",!event);
   omcRefreshEventFormHint();
   $("#otherMatchEventDialog").showModal();
@@ -3330,18 +3329,21 @@ $("#otherMatchEventForm").onsubmit=async e=>{
           :await db.from("app_fixture_events").insert(payload).select("*").single();
       assertSaved(r,"Recupero");
     }else{
-      const entered=Number($("#omcEventMinute").value),regular=omcPeriodMinutes(),recovery=omcRecoveryMinutes(period);
-      if(!Number.isFinite(entered)||entered<0)throw new Error("Inserisci un minuto valido.");
-      if(entered>regular+recovery){
+      const minuteText=$("#omcEventMinute").value.trim();
+      const minuteKnown=minuteText!=="";
+      const entered=minuteKnown?Number(minuteText):null;
+      const regular=omcPeriodMinutes(),recovery=omcRecoveryMinutes(period);
+      if(minuteKnown&&(!Number.isFinite(entered)||entered<0))throw new Error("Inserisci un minuto valido.");
+      if(minuteKnown&&entered>regular+recovery){
         if(!recovery)throw new Error("Per inserire eventi oltre il "+regular+"' registra prima il recupero del "+omcPeriodShort(period)+".");
         throw new Error("Il minuto supera il recupero registrato (+"+recovery+"').");
       }
       scoreAffected=type==="goal"||old?.event_type==="goal";
       payload={
-        fixture_id:f.id,event_type:type,minute:Math.min(entered,regular),stoppage_minute:Math.max(0,entered-regular)||null,side:$("#omcEventSide").value,
+        fixture_id:f.id,event_type:type,minute:minuteKnown?Math.min(entered,regular):null,stoppage_minute:minuteKnown?(Math.max(0,entered-regular)||null):null,side:$("#omcEventSide").value,
         home_score:null,away_score:null,source:"manual",
         source_event_key:old?.source_event_key||`manual_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
-        source_raw:{period},created_by:sessionUser.id
+        source_raw:minuteKnown?{period}:{period:"unknown"},created_by:sessionUser.id
       };
       const r=id
         ?await db.from("app_fixture_events").update(payload).eq("id",id).select("*").maybeSingle()
