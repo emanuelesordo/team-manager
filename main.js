@@ -1595,6 +1595,7 @@ function mcRatingEventIcons(playerId){
       if(e.event_type==="substitution"&&e.player_id===playerId)return '<span class="mc-rating-event sub-out" title="Uscito · '+esc(minute)+'">↘</span>';
       if(e.event_type==="yellow_card"&&e.player_id===playerId)return '<span class="mc-rating-event card yellow" title="Giallo · '+esc(minute)+'"></span>';
       if(e.event_type==="blue_card"&&e.player_id===playerId)return '<span class="mc-rating-event card blue" title="Blu · '+esc(minute)+'"></span>';
+      if(e.event_type==="blue_return"&&e.player_id===playerId)return '<span class="mc-rating-event sub-in" title="Rientro dal blu · '+esc(minute)+'">↩</span>';
       if(e.event_type==="red_card"&&e.player_id===playerId)return '<span class="mc-rating-event card red" title="Rosso · '+esc(minute)+'"></span>';
       return "";
     }).join("");
@@ -2110,6 +2111,10 @@ function mcTimeline(target,limit,filters=null){
         main=x.secondary_player_id?mcTimelinePlayerName(x.secondary_player_id):"Nessun ingresso";
         secondary=x.player_id?mcTimelinePlayerName(x.player_id):"Uscita da completare";
         icon='<span class="mc-event-symbol substitution"><i class="sub-out">←</i><b class="sub-in">→</b></span>';
+      }else if(x.event_type==="blue_return"){
+        main=x.player_id?mcTimelinePlayerName(x.player_id):"Rientro";
+        secondary="Rientro da espulsione temporanea";
+        icon='<span class="mc-event-symbol substitution">↩</span>';
       }else if(x.event_type==="yellow_card"||x.event_type==="blue_card"||x.event_type==="red_card"){
         const shirt=x.payload?.opponent_shirt_number;
         main=!mcOwnFixture()
@@ -2295,7 +2300,7 @@ function mcOpenTimelineQuickEvent(anchor,period=null){
 function mcOpenTimelineEventEditor(eventId,anchor){
   const event=matchCenterState.events.find(x=>String(x.id)===String(eventId));
   if(!event)return;
-  const kind=event.event_type==="substitution"?"substitution":event.event_type==="goal"?"goal":event.event_type==="period_end"?"recovery":"card";
+  const kind=event.event_type==="substitution"?"substitution":event.event_type==="goal"?"goal":event.event_type==="period_end"?"recovery":event.event_type==="blue_return"?"blue_return":"card";
   mcPlayerQuickState={playerId:event.player_id||null,kind,anchor,source:"edit",editingEventId:event.id,side:event.team_side||"team",draft:{playerId:event.player_id||null,period:event.payload?.period||mcEventPeriod(event),minute:event.minute??""}};
   const pop=mcQuickEventShell();
   pop.classList.remove("direct-player","hidden");
@@ -2674,7 +2679,7 @@ function mcSetFormationScene(scene){
   if(scene!=="pitch"&&matchCenterState.fixture)mcRenderGeneralBench();
 }
 $$("[data-mc-formation-scene]").forEach(button=>button.onclick=()=>mcSetFormationScene(button.dataset.mcFormationScene));
-let mcGeneralEventFilters=new Set(["goal","substitution","yellow_card","blue_card","red_card"]);
+let mcGeneralEventFilters=new Set(["goal","substitution","yellow_card","blue_card","blue_return","red_card"]);
 function mcQuickAction(type){
   mcSetTab("events");
   if(type!=="events"){
@@ -4258,7 +4263,7 @@ $("#saveFormationBtn").onclick=async()=>{try{if(!sessionUser)throw new Error("Ac
 async function loadEventsView(){await loadCoreSeasonData();const match=teamMatches.find(x=>x.id===selectedMatchId)||teamMatches[0];if(!match){$("#eventsMatchTop").innerHTML='<div class="empty-state">Nessuna partita</div>';return}selectedMatchId=match.id;const o=opponentVisualById(match.opponent_id);$("#eventsMatchTop").innerHTML=`<div class="match-select-wrap"><select id="eventsMatchSelect">${teamMatches.map(m=>`<option value="${m.id}" ${m.id===match.id?"selected":""}>${localDateTime(m.kickoff_at)} · ${esc(matchLabel(m))}</option>`).join("")}</select></div><div class="match-score-head"><strong>${esc(team?.short_name||"CAS")}</strong><b>${match.home_score} : ${match.away_score}</b><strong>${esc(o?.short_name||o?.name||"AVV")}</strong></div>`;$("#eventsMatchSelect").onchange=e=>{selectedMatchId=e.target.value;loadEventsView()};const ev=await db.from("app_match_events").select("*").eq("match_id",match.id).order("minute",{ascending:true});renderEventsTimeline(ev.data||[]);const opts='<option value="">—</option>'+rosterRows.map(p=>`<option value="${p.player_id}">${esc(p.last_name+" "+p.first_name)}</option>`).join("");$("#newEventPlayer").innerHTML=opts;$("#newEventSecondary").innerHTML=opts;toggleNewEventSecondary()}
 function renderEventsTimeline(events){$("#eventsTimeline").innerHTML=events.length?events.map(e=>`<div class="timeline-row"><time>${e.minute??"–"}'</time><span class="event-icon ${esc(e.event_type)}">${eventIcon(e.event_type)}</span><div><strong>${eventLabel(e.event_type)}</strong><small>${esc(playerNameById(e.player_id))}${e.secondary_player_id?" → "+esc(playerNameById(e.secondary_player_id)):""} · ${e.team_side==="team"?"Caselle":"Avversario"}</small></div></div>`).join(""):'<div class="empty-state">Nessun evento</div>'}
 function eventIcon(t){return t==="goal"?"⚽":t==="yellow_card"?"▮":t==="blue_card"?"▮":t==="red_card"?"▮":t==="substitution"?"↔":"•"}
-function eventLabel(t){return t==="goal"?"Gol":t==="yellow_card"?"Cartellino giallo":t==="blue_card"?"Cartellino blu":t==="red_card"?"Cartellino rosso":t==="substitution"?"Sostituzione":t}
+function eventLabel(t){return t==="goal"?"Gol":t==="yellow_card"?"Cartellino giallo":t==="blue_card"?"Cartellino blu":t==="blue_return"?"Rientro dal blu":t==="red_card"?"Cartellino rosso":t==="substitution"?"Sostituzione":t}
 function toggleNewEventSecondary(){const t=document.querySelector('input[name="newEventType"]:checked')?.value;$("#newEventSecondaryWrap").classList.toggle("hidden",t!=="substitution")}
 $$('input[name="newEventType"]').forEach(x=>x.onchange=toggleNewEventSecondary);
 $("#eventComposeForm").onsubmit=async e=>{e.preventDefault();$("#eventComposeError").classList.add("hidden");try{if(!sessionUser)throw new Error("Accedi per aggiungere eventi.");const type=document.querySelector('input[name="newEventType"]:checked').value,p={match_id:selectedMatchId,event_type:type,minute:+$("#newEventMinute").value,player_id:$("#newEventPlayer").value||null,secondary_player_id:type==="substitution"?($("#newEventSecondary").value||null):null,payload:{},proposed_by:sessionUser.id,validation_status:"proposed",team_side:$("#newEventSide").value};const r=await db.from("app_match_events").insert(p).select("*").single();assertSaved(r,"Evento");$("#eventComposeForm").reset();await loadEventsView()}catch(err){$("#eventComposeError").textContent=err.message||String(err);$("#eventComposeError").classList.remove("hidden")}};
