@@ -598,7 +598,7 @@
       <nav id="mcPostTabs" class="mc-post-tabs hidden" aria-label="Vista partita conclusa">
         <button type="button" class="active" data-mc-post-view="match">EVENTI</button>
         <button type="button" data-mc-post-view="formation">FORMAZIONE</button>
-        <button type="button" data-mc-post-view="rating">RATING · VOTA</button>
+        <button type="button" data-mc-post-view="rating">VOTI</button>
       </nav>
     </header>
     <div class="mc-body">
@@ -626,19 +626,22 @@
             </section>
           </div>
           <section class="mc-card mc-field-card">
-            <div class="mc-card-head"><strong>Formazione in campo</strong><div class="mc-field-tools"><span id="mcGeneralFormationMeta"></span></div></div>
-            <div id="mcGeneralPitch" class="mc-pitch mc-general-pitch"></div>
-          </section>
-          <div class="mc-general-right">
-            <div class="mc-side-team-toggle">
-              <button type="button" class="active" data-mc-bench-side="bench">Panchina</button>
-              <button type="button" data-mc-bench-side="not_called">Non convocati</button>
+            <div class="mc-card-head"><strong id="mcFormationSceneTitle">Formazione in campo</strong><div class="mc-field-tools"><span id="mcGeneralFormationMeta"></span></div></div>
+            <nav class="mc-formation-toggle" aria-label="Visualizza formazione">
+              <button type="button" class="active" data-mc-formation-scene="pitch" aria-pressed="true">Campo</button>
+              <button type="button" data-mc-formation-scene="bench" aria-pressed="false">Panchina</button>
+              <button type="button" data-mc-formation-scene="not_called" aria-pressed="false">Tribuna</button>
+            </nav>
+            <div class="mc-formation-surface">
+              <div id="mcGeneralPitch" class="mc-pitch mc-general-pitch"></div>
+              <div class="mc-general-right">
+                <section class="mc-card mc-bench-card">
+                  <div class="mc-card-head"><strong id="mcGeneralSideTitle">Panchina</strong><span id="mcBenchSideLabel"></span></div>
+                  <div id="mcGeneralBench" class="mc-general-bench"></div>
+                </section>
+              </div>
             </div>
-            <section class="mc-card mc-bench-card">
-              <div class="mc-card-head"><strong id="mcGeneralSideTitle">Panchina</strong><span id="mcBenchSideLabel"></span></div>
-              <div id="mcGeneralBench" class="mc-general-bench"></div>
-            </section>
-          </div>
+          </section>
         </div>
       </section>
       <section data-mc-post-panel="rating" class="mc-rating-panel hidden">
