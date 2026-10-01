@@ -6926,3 +6926,31 @@ dialog form{padding:16px}
 @media screen and (max-width:780px) and (prefers-reduced-motion:reduce){
   .mobile-match-hero-slide,.mobile-match-hero-dot{transition:none!important}
 }
+
+
+/* Rating squadra: piccolo indicatore esterno al nome, senza modificare
+   la colonna del risultato nelle righe partita e nel Match Center. */
+.tm-team-rating{display:inline-flex;align-items:center;justify-content:center;gap:3px;max-width:max-content;
+  padding:3px 6px;border:1px solid rgba(104,151,109,.3);border-radius:7px;
+  background:rgba(211,236,211,.65);color:#285b42;font-size:10px;font-weight:850;
+  line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tm-team-rating::before{content:"★";color:#9c8546;font-size:.8em}
+.tm-team-rating[hidden],#mcHomeTeamRating[hidden],#mcAwayTeamRating[hidden]{display:none!important}
+.mc-scoreboard .mc-team-copy .tm-team-rating{font-size:11px}
+.mc-scoreboard .mc-home .mc-team-copy{justify-items:end}
+.mc-scoreboard .mc-away .mc-team-copy{justify-items:start}
+.score-core .score-team-name{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.score-core .score-home-name{align-items:flex-end}
+.score-core .tm-team-rating{font-size:8px;padding:2px 4px}
+.calendar-team-name .tm-team-rating{display:flex;width:max-content;margin-bottom:4px;font-size:9px}
+.calendar-home-team .tm-team-rating{margin-left:auto}
+.home-match-side .tm-team-rating{width:auto;height:auto;font-size:9px;padding:2px 5px}
+.mini-fixture .mini-team{position:relative}
+.mini-fixture .mini-team .tm-team-rating{position:absolute;top:-9px;right:0;font-size:7px;padding:1px 3px;z-index:1}
+.mini-fixture .mini-team:last-child .tm-team-rating{left:0;right:auto}
+.mobile-match-hero-team .tm-team-rating{margin-top:-3px;font-size:10px;padding:3px 7px}
+@media(max-width:780px){
+ .mc-scoreboard .mc-team-copy .tm-team-rating{font-size:9px;padding:2px 5px}
+ .calendar-team-name .tm-team-rating{font-size:8px;padding:2px 4px}
+ .score-core .score-team-name .tm-team-rating{font-size:7px;padding:2px 3px}
+}
