@@ -4095,23 +4095,87 @@ function renderRosterTable(){
 }
 $("#rosterSearch").oninput=renderRosterTable;
 function injuryStatusLabel(v){return ({active:"Attivo",recovering:"Recupero",fit:"Recuperato",closed:"Chiuso",resolved:"Risolto"}[String(v||"").toLowerCase()]||v||"—")}
+let playerDetailRenderToken=0;
 function renderPlayerDetail(){
-  const p=rosterRows.find(x=>x.player_id===selectedPlayerId);
-  if(!p){$("#playerDetail").innerHTML='<div class="empty-state">Seleziona un giocatore</div>';return}
-  const s=rosterStat(p.player_id),injuries=rosterInjuries.filter(x=>x.player_id===p.player_id).sort((a,b)=>String(b.injury_date).localeCompare(String(a.injury_date)));
+  const host=$("#playerDetail");
+  const p=rosterRows.find(x=>String(x.player_id)===String(selectedPlayerId));
+  const token=++playerDetailRenderToken;
+  if(!host)return;
+  if(!p){host.innerHTML='<div class="empty-state">Seleziona un giocatore</div>';return;}
+  const s=rosterStat(p.player_id);
+  const injuries=rosterInjuries.filter(x=>x.player_id===p.player_id).sort((x,y)=>String(y.injury_date).localeCompare(String(x.injury_date)));
   const admin=currentUserRole==="admin";
-  $("#playerDetail").innerHTML=`<div class="detail-profile"><div class="detail-avatar">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`${esc(p.first_name[0]||"")}${esc(p.last_name[0]||"")}`}</div><div><strong>${esc(p.first_name+" "+p.last_name)}</strong><span>${roleLabel(p.generic_role_manual)}</span></div><b>${rosterShirtNumber(p)}</b></div>
-  ${admin?`<div class="player-admin-actions"><button type="button" class="secondary" data-edit-player="${p.player_id}">Modifica dati</button><button type="button" class="secondary" data-add-injury="${p.player_id}">+ Infortunio</button></div>`:""}
-  <div class="detail-tabs"><span class="active">Dettagli</span></div>
-  <dl class="detail-list"><div><dt>Data di nascita</dt><dd>${p.birth_date?fmt(p.birth_date):"—"}</dd></div><div><dt>Nazionalità</dt><dd>${esc(p.nationality_code||"—")}</dd></div><div><dt>Altezza</dt><dd>${p.height_cm?p.height_cm+" cm":"—"}</dd></div><div><dt>Piede</dt><dd>${esc(p.preferred_foot||"—")}</dd></div></dl>
-  <div class="mini-stat-grid four"><div><strong>${s.appearances??0}</strong><span>Presenze</span></div><div><strong>${s.goals??0}</strong><span>Gol</span></div><div><strong>${s.assists??0}</strong><span>Assist</span></div><div><strong>${s.avg_rating!=null?Number(s.avg_rating).toFixed(1):"—"}</strong><span>Rating</span></div></div>
-  <div class="injury-history"><div class="card-section-head"><strong>Storico infortuni</strong><span>${injuries.length}</span></div>
-  ${injuries.length?injuries.map(x=>`<div class="injury-history-row"><div><strong>${esc(x.public_summary||"Infortunio")}</strong><small>${fmt(x.injury_date)} · ${esc(injuryStatusLabel(x.status))}</small><small>Previsto: ${x.expected_return?fmt(x.expected_return):"—"} · Rientro: ${x.actual_return?fmt(x.actual_return):"—"}</small></div>${admin?`<button type="button" class="icon-btn injury-edit" data-edit-injury="${x.id}" title="Modifica">✎</button>`:""}</div>`).join(""):'<div class="empty-state compact">Nessun infortunio registrato</div>'}</div>`;
+  const safe=x=>esc(String(x??""));
+  const format=x=>x==null||x===""?"—":String(x).replace(".",",");
+  const entries=[
+    ["Presenze",(s.appearances??0)+" ("+(s.starts??s.starting_appearances??"—")+" tit.)"],
+    ["Minuti",s.minutes_played??s.minutes??"—"],
+    ["Gol",s.goals??0],
+    ["Assist",s.assists??0],
+    ["Rating medio",s.avg_rating==null?"—":Number(s.avg_rating).toFixed(2).replace(".",",")],
+    ["Gialli","—"],["Blu","—"],["Rossi","—"]
+  ];
+  host.innerHTML='<div class="pl-profile">'+
+    '<header class="pl-top"><div><small>'+safe(currentSeason?.name||"Stagione corrente")+'</small><h2>'+safe(p.first_name+" "+p.last_name)+'</h2><span>'+safe(roleLabel(p.generic_role_manual))+'</span></div><strong>#'+safe(rosterShirtNumber(p)||"—")+'</strong></header>'+
+    '<section class="pl-section"><h3>Statistiche stagionali</h3><div class="pl-kpis">'+entries.map(([k,v],i)=>'<div class="pl-kpi"><span>'+safe(k)+'</span><strong data-pl-stat="'+i+'">'+safe(v)+'</strong></div>').join("")+'</div></section>'+
+    '<section class="pl-section"><h3>Ultime 5 valutazioni</h3><div id="plLatestRatings" class="pl-chart-host"><div class="empty-state compact">Caricamento…</div></div></section>'+
+    '<section class="pl-section"><h3>Posizioni in campo <small>· calcolo futuro</small></h3><div class="pl-pitch"><span class="pl-center"></span><span class="pl-circle"></span><span class="pl-area left"></span><span class="pl-area right"></span><b>Rilevazione in preparazione</b></div></section>'+
+    '<section class="pl-section"><h3>Informazioni</h3><div class="pl-meta"><span>Età <b>'+safe(ageFromBirth(p.birth_date))+'</b></span><span>Altezza <b>'+safe(p.height_cm?p.height_cm+" cm":"—")+'</b></span><span>Piede <b>'+safe(p.preferred_foot||"—")+'</b></span><span>Nazionalità <b>'+safe(p.nationality_code||"—")+'</b></span></div></section>'+
+    '<section class="pl-section injury-history"><div class="card-section-head"><strong>Storico infortuni</strong><span>'+injuries.length+'</span></div>'+
+    (injuries.length?injuries.map(x=>'<div class="injury-history-row"><div><strong>'+safe(x.public_summary||"Infortunio")+'</strong><small>'+fmt(x.injury_date)+' · '+safe(injuryStatusLabel(x.status))+'</small><small>Previsto: '+(x.expected_return?fmt(x.expected_return):"—")+' · Rientro: '+(x.actual_return?fmt(x.actual_return):"—")+'</small></div>'+(admin?'<button type="button" class="icon-btn injury-edit" data-edit-injury="'+safe(x.id)+'" title="Modifica">✎</button>':"")+'</div>').join(""):'<div class="empty-state compact">Nessun infortunio registrato</div>')+'</section>'+
+    (admin?'<div class="player-admin-actions"><button type="button" class="secondary" data-edit-player>Modifica dati</button><button type="button" class="secondary" data-add-injury>+ Infortunio</button></div>':"")+
+    '</div>';
   if(admin){
-    $("[data-edit-player]")?.addEventListener("click",()=>openPlayerDialog(p));
-    $("[data-add-injury]")?.addEventListener("click",()=>openInjuryDialog(p.player_id));
-    $$("[data-edit-injury]").forEach(b=>b.onclick=()=>openInjuryDialog(p.player_id,rosterInjuries.find(x=>x.id===b.dataset.editInjury)));
+    host.querySelector('[data-edit-player]')?.addEventListener("click",()=>openPlayerDialog(p));
+    host.querySelector('[data-add-injury]')?.addEventListener("click",()=>openInjuryDialog(p.player_id));
+    host.querySelectorAll('[data-edit-injury]').forEach(el=>el.onclick=()=>openInjuryDialog(p.player_id,injuries.find(x=>String(x.id)===el.dataset.editInjury)));
   }
+  (async()=>{
+    const completed=teamMatches.filter(m=>m.status==="finished");
+    if(!completed.length){host.querySelector("#plLatestRatings").innerHTML='<div class="empty-state compact">Nessuna partita conclusa</div>';return;}
+    const ids=completed.map(m=>m.id);
+    const [participants,ratings,events]=await Promise.all([
+      db.from("app_match_players").select("match_id,started,minutes_played").eq("player_id",p.player_id).in("match_id",ids),
+      db.from("app_match_ratings").select("match_id,rating").eq("player_id",p.player_id).in("match_id",ids),
+      db.from("app_match_events").select("match_id,event_type,player_id,secondary_player_id,team_side,validation_status").in("match_id",ids).or("player_id.eq."+p.player_id+",secondary_player_id.eq."+p.player_id)
+    ]);
+    if(token!==playerDetailRenderToken||String(selectedPlayerId)!==String(p.player_id))return;
+    const mp=participants.data||[];
+    if(!participants.error){
+      const starting=mp.filter(x=>x.started).length;
+      const st=host.querySelector('[data-pl-stat="0"]');
+      if(st)st.textContent=(s.appearances??mp.filter(x=>x.started||Number(x.minutes_played)>0).length)+" ("+starting+" tit.)";
+      if(s.minutes_played==null&&s.minutes==null&&mp.some(x=>x.minutes_played!=null)){
+        const el=host.querySelector('[data-pl-stat="1"]');if(el)el.textContent=mp.reduce((sum,x)=>sum+(Number(x.minutes_played)||0),0);
+      }
+    }
+    if(!events.error){
+      const ev=(events.data||[]).filter(x=>x.validation_status!=="rejected"&&x.team_side==="team");
+      const count=(type,secondary=false)=>ev.filter(x=>x.event_type===type&&String(secondary?x.secondary_player_id:x.player_id)===String(p.player_id)).length;
+      const cards=["yellow_card","blue_card","red_card"];
+      cards.forEach((type,i)=>{const el=host.querySelector('[data-pl-stat="'+(i+5)+'"]');if(el)el.textContent=count(type);});
+      if(s.assists==null){const el=host.querySelector('[data-pl-stat="3"]');if(el)el.textContent=count("goal",true);}
+    }
+    const chartHost=host.querySelector("#plLatestRatings");
+    if(!chartHost)return;
+    if(ratings.error||participants.error){chartHost.innerHTML='<div class="empty-state compact">Valutazioni non disponibili</div>';return;}
+    const ratingsByMatch=new Map();
+    (ratings.data||[]).forEach(x=>{const v=Number(x.rating);if(x.rating!=null&&x.rating!==""&&Number.isFinite(v)&&v>=1&&v<=10){const values=ratingsByMatch.get(x.match_id)||[];values.push(v);ratingsByMatch.set(x.match_id,values);}});
+    const participantIds=new Set(mp.map(x=>x.match_id));
+    const last=completed.filter(m=>participantIds.has(m.id)).sort((x,y)=>new Date(y.kickoff_at)-new Date(x.kickoff_at)).slice(0,5).reverse();
+    if(!last.length){chartHost.innerHTML='<div class="empty-state compact">Nessuna presenza nelle ultime partite</div>';return;}
+    const average=arr=>arr?.length?arr.reduce((sum,v)=>sum+v,0)/arr.length:null;
+    const points=last.map((m,i)=>({match:m,rating:average(ratingsByMatch.get(m.id)),x:500*i/Math.max(4,last.length-1)}));
+    points.forEach(pt=>{pt.y=pt.rating==null?null:112-((pt.rating-1)/9)*94;});
+    const runs=[];let run=[];
+    points.forEach(pt=>{if(pt.y==null){if(run.length)runs.push(run);run=[];}else run.push(pt);});if(run.length)runs.push(run);
+    const path=group=>{
+      let d="M"+group[0].x+" "+group[0].y;
+      for(let i=1;i<group.length;i++){const prev=group[i-1],cur=group[i],mid=(prev.x+cur.x)/2;d+=" C"+mid+" "+prev.y+" "+mid+" "+cur.y+" "+cur.x+" "+cur.y;}
+      return group.length===1?d+" l .01 0":d;
+    };
+    chartHost.innerHTML='<div class="pl-wave"><svg viewBox="-6 0 512 125" preserveAspectRatio="none" role="img" aria-label="Andamento delle ultime cinque valutazioni">'+runs.map(group=>'<path d="'+path(group)+'" fill="none" stroke="#62d898" stroke-width="4" stroke-linecap="round"/>').join("")+points.map(pt=>pt.y==null?"":'<circle cx="'+pt.x+'" cy="'+pt.y+'" r="5" fill="#62d898" stroke="#24182d" stroke-width="2"/>').join("")+'</svg><div class="pl-wave-labels">'+points.map(pt=>{const o=opponents.find(x=>x.id===pt.match.opponent_id);return '<div><b class="'+(pt.rating==null?"is-sv":"")+'">'+(pt.rating==null?"SV":pt.rating.toFixed(1).replace(".",","))+'</b><span>'+safe(o?.short_name||o?.name||"AVV")+'</span><small>'+safe(new Date(pt.match.kickoff_at).toLocaleDateString("it-IT",{day:"2-digit",month:"short"}))+'</small></div>';}).join("")+'</div></div>';
+  })().catch(err=>{console.error("PLAYER DETAIL",err);if(token===playerDetailRenderToken){const el=host.querySelector("#plLatestRatings");if(el)el.innerHTML='<div class="empty-state compact">Valutazioni non disponibili</div>';}});
 }
 function openPlayerDialog(p=null){
   const editing=!!p;
