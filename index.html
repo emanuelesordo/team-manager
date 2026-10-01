@@ -380,7 +380,7 @@
         <label class="check"><input id="wExtraTime" type="checkbox"> Supplementari</label>
         <label class="check"><input id="wPenalties" type="checkbox"> Rigori</label>
       </div>
-      <div class="rule-box"><label>Soglie diffida progressive<input id="wYellowThresholds" value="5,4,3,2" placeholder="5,4,3,2"></label></div>
+      <div class="rule-box"><label>Soglie diffida progressive<input id="wYellowThresholds" value="5,4,3,2" placeholder="5,4,3,2"></label><label>Espulsione temporanea (blu) · minuti<input id="wBlueMinutes" type="number" min="1" max="30" step="1" value="8"></label></div>
       <div class="toolbar end"><button type="button" class="secondary" id="addDraftCompetition">+ Aggiungi competizione</button></div>
       <div id="draftCompetitionList" class="draft-list"></div>
     </div>
@@ -749,7 +749,7 @@
       <label class="check"><input id="cExtraTime" type="checkbox"> Supplementari</label>
       <label class="check"><input id="cPenalties" type="checkbox"> Rigori</label>
     </div>
-    <div class="rule-box"><label>Soglie diffida progressive<input id="cYellowThresholds" placeholder="5,4,3,2"></label></div>
+    <div class="rule-box"><label>Soglie diffida progressive<input id="cYellowThresholds" placeholder="5,4,3,2"></label><label>Espulsione temporanea (blu) · minuti<input id="cBlueMinutes" type="number" min="1" max="30" step="1" value="8"></label></div>
     <div class="rule-box"><span class="muted">Avversarie</span><div id="cOpponents" class="choice-grid"></div></div>
     <p id="competitionError" class="form-error hidden"></p>
     <div class="dialog-actions"><button type="button" class="secondary" data-close-competition>Annulla</button><button class="primary" type="submit">Salva</button></div>
