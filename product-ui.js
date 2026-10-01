@@ -234,11 +234,13 @@
       const score=f.status==="finished"?`${f.home_score} - ${f.away_score}`:"\u2013";
       return `<article class="glass-card hero-match-card">
         <div class="section-cap"><strong>${title}</strong><span class="soft-badge">${esc(competitionById(f.competition_id)?.name||"")}</span></div>
-        <div class="hero-score"><div>${badgeLogo(h.name,h.logo,h.short)}<b>${esc(h.short)}</b></div><strong>${score}</strong><div>${badgeLogo(a.name,a.logo,a.short)}<b>${esc(a.short)}</b></div></div>
+        <div class="hero-score"><div>${badgeLogo(h.name,h.logo,h.short)}<b>${esc(h.short)}</b>${TM.teamRatingBadge(f,f.home_team)}</div><strong>${score}</strong><div>${badgeLogo(a.name,a.logo,a.short)}<b>${esc(a.short)}</b>${TM.teamRatingBadge(f,f.away_team)}</div></div>
         <div class="hero-date">${TM.localDateTime(f.kickoff_at)}</div>
       </article>`;
     };
     $("#homeHeroGrid").innerHTML = card(next,"Prossima partita")+card(last,"Ultima partita");
+    TM.paintTeamRatings();
+    void TM.primeTeamRatings();
     $("#homeMetricGrid").innerHTML = [
       ["Partite",finished.length],["Vittorie",wins],["Pareggi",draws],["Sconfitte",losses],["Gol fatti",gf],["Gol subiti",ga]
     ].map(x=>`<article class="metric-card"><strong>${x[1]}</strong><span>${x[0]}</span></article>`).join("");
