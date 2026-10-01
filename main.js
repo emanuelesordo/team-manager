@@ -3699,21 +3699,32 @@ function opponentVisualById(id){return opponents.find(x=>x.id===id)||null}
 function matchLabel(m){const o=opponentVisualById(m.opponent_id);return m.home_away==="home"?(team?.short_name||"CAS")+" - "+(o?.short_name||o?.name||"Avv."):(o?.short_name||o?.name||"Avv.")+" - "+(team?.short_name||"CAS")}
 async function loadCoreSeasonData(){
   await ensureMainTeam();if(!currentSeason)return;
-  const [roster,stats,matchesResult,allPlayers,injuriesResult]=await Promise.all([
+  const [roster,matchesResult,allPlayers,injuriesResult]=await Promise.all([
     db.from("app_roster").select("*").eq("season_id",currentSeason.id),
-    db.from("app_player_season_stats").select("*").eq("season_id",currentSeason.id),
     db.from("app_matches").select("*").eq("season_id",currentSeason.id).order("kickoff_at",{ascending:true}),
     db.from("players").select("*").eq("team_id",currentSeason.team_id).order("last_name",{ascending:true}),
     db.from("injuries").select("*").eq("season_id",currentSeason.id).order("injury_date",{ascending:false})
   ]);
-  const playerMap=new Map((allPlayers.data||[]).map(p=>[p.id,p]));
-  rosterRows=(roster.data||[]).map(r=>({...r,roster_id:r.id,...playerMap.get(r.player_id)}));
-  playerStats=stats.data||[];teamMatches=matchesResult.data||[];players=allPlayers.data||[];rosterInjuries=injuriesResult.data||[];
-  const matchIds=teamMatches.map(m=>m.id);
-  if(matchIds.length){
-    const mp=await db.from("app_match_players").select("match_id,player_id,shirt_number").in("match_id",matchIds);
-    rosterMatchPlayers=mp.data||[];
-  }else rosterMatchPlayers=[];
+  const playerMap=new Map((allPlayers.data||[]).map(p=>[String(p.id),p]));
+  rosterRows=(roster.data||[]).map(r=>({...r,roster_id:r.id,...playerMap.get(String(r.player_id))}));
+  teamMatches=matchesResult.data||[];players=allPlayers.data||[];rosterInjuries=injuriesResult.data||[];
+  const finishedIds=teamMatches.filter(m=>m.status==="finished").map(m=>m.id);
+  const allIds=teamMatches.map(m=>m.id);
+  let mp={data:[]},ev={data:[]},rt={data:[]};
+  if(allIds.length){
+    [mp,ev,rt]=await Promise.all([
+      db.from("app_match_players").select("*").in("match_id",allIds),
+      finishedIds.length?db.from("app_match_events").select("*").in("match_id",finishedIds):Promise.resolve({data:[]}),
+      finishedIds.length?db.from("app_match_ratings").select("match_id,player_id,rating").in("match_id",finishedIds):Promise.resolve({data:[]})
+    ]);
+  }
+  if(mp.error||ev.error||rt.error)console.warn("Statistiche Match Center parziali",mp.error||ev.error||rt.error);
+  rosterMatchPlayers=mp.data||[];
+  const derived=window.TeamSeasonStats.aggregate({
+    matches:teamMatches,matchPlayers:mp.data||[],events:ev.data||[],
+    ratings:rt.data||[],competitions,players
+  });
+  playerStats=players.map(p=>({...p,...(derived.get(String(p.id))||{})}));
   if(!selectedPlayerId&&rosterRows[0])selectedPlayerId=rosterRows[0].player_id;
   if(!selectedMatchId&&teamMatches.length){const upcoming=teamMatches.find(m=>new Date(m.kickoff_at)>=new Date());selectedMatchId=(upcoming||teamMatches[teamMatches.length-1]).id}
 }
@@ -4108,7 +4119,7 @@ function renderPlayerDetail(){
   const safe=x=>esc(String(x??""));
   const format=x=>x==null||x===""?"—":String(x).replace(".",",");
   const entries=[
-    ["Presenze",(s.appearances??0)+" ("+(s.starts??s.starting_appearances??"—")+" tit.)"],
+    ["Presenze",(s.appearances??0)+" ("+(s.starts??0)+" tit.)"],
     ["Minuti",s.minutes_played??s.minutes??"—"],
     ["Gol",s.goals??0],
     ["Assist",s.assists??0],
@@ -4130,52 +4141,19 @@ function renderPlayerDetail(){
     host.querySelector('[data-add-injury]')?.addEventListener("click",()=>openInjuryDialog(p.player_id));
     host.querySelectorAll('[data-edit-injury]').forEach(el=>el.onclick=()=>openInjuryDialog(p.player_id,injuries.find(x=>String(x.id)===el.dataset.editInjury)));
   }
-  (async()=>{
-    const completed=teamMatches.filter(m=>m.status==="finished");
-    if(!completed.length){host.querySelector("#plLatestRatings").innerHTML='<div class="empty-state compact">Nessuna partita conclusa</div>';return;}
-    const ids=completed.map(m=>m.id);
-    const [participants,ratings,events]=await Promise.all([
-      db.from("app_match_players").select("match_id,started,minutes_played").eq("player_id",p.player_id).in("match_id",ids),
-      db.from("app_match_ratings").select("match_id,rating").eq("player_id",p.player_id).in("match_id",ids),
-      db.from("app_match_events").select("match_id,event_type,player_id,secondary_player_id,team_side,validation_status").in("match_id",ids).or("player_id.eq."+p.player_id+",secondary_player_id.eq."+p.player_id)
-    ]);
-    if(token!==playerDetailRenderToken||String(selectedPlayerId)!==String(p.player_id))return;
-    const mp=participants.data||[];
-    if(!participants.error){
-      const starting=mp.filter(x=>x.started).length;
-      const st=host.querySelector('[data-pl-stat="0"]');
-      if(st)st.textContent=(s.appearances??mp.filter(x=>x.started||Number(x.minutes_played)>0).length)+" ("+starting+" tit.)";
-      if(s.minutes_played==null&&s.minutes==null&&mp.some(x=>x.minutes_played!=null)){
-        const el=host.querySelector('[data-pl-stat="1"]');if(el)el.textContent=mp.reduce((sum,x)=>sum+(Number(x.minutes_played)||0),0);
-      }
-    }
-    if(!events.error){
-      const ev=(events.data||[]).filter(x=>x.validation_status!=="rejected"&&x.team_side==="team");
-      const count=(type,secondary=false)=>ev.filter(x=>x.event_type===type&&String(secondary?x.secondary_player_id:x.player_id)===String(p.player_id)).length;
-      const cards=["yellow_card","blue_card","red_card"];
-      cards.forEach((type,i)=>{const el=host.querySelector('[data-pl-stat="'+(i+5)+'"]');if(el)el.textContent=count(type);});
-      if(s.assists==null){const el=host.querySelector('[data-pl-stat="3"]');if(el)el.textContent=count("goal",true);}
-    }
-    const chartHost=host.querySelector("#plLatestRatings");
-    if(!chartHost)return;
-    if(ratings.error||participants.error){chartHost.innerHTML='<div class="empty-state compact">Valutazioni non disponibili</div>';return;}
-    const ratingsByMatch=new Map();
-    (ratings.data||[]).forEach(x=>{const v=Number(x.rating);if(x.rating!=null&&x.rating!==""&&Number.isFinite(v)&&v>=1&&v<=10){const values=ratingsByMatch.get(x.match_id)||[];values.push(v);ratingsByMatch.set(x.match_id,values);}});
-    const participantIds=new Set(mp.map(x=>x.match_id));
-    const last=completed.filter(m=>participantIds.has(m.id)).sort((x,y)=>new Date(y.kickoff_at)-new Date(x.kickoff_at)).slice(0,5).reverse();
-    if(!last.length){chartHost.innerHTML='<div class="empty-state compact">Nessuna presenza nelle ultime partite</div>';return;}
-    const average=arr=>arr?.length?arr.reduce((sum,v)=>sum+v,0)/arr.length:null;
-    const points=last.map((m,i)=>({match:m,rating:average(ratingsByMatch.get(m.id)),x:500*i/Math.max(4,last.length-1)}));
-    points.forEach(pt=>{pt.y=pt.rating==null?null:112-((pt.rating-1)/9)*94;});
-    const runs=[];let run=[];
-    points.forEach(pt=>{if(pt.y==null){if(run.length)runs.push(run);run=[];}else run.push(pt);});if(run.length)runs.push(run);
-    const path=group=>{
-      let d="M"+group[0].x+" "+group[0].y;
-      for(let i=1;i<group.length;i++){const prev=group[i-1],cur=group[i],mid=(prev.x+cur.x)/2;d+=" C"+mid+" "+prev.y+" "+mid+" "+cur.y+" "+cur.x+" "+cur.y;}
-      return group.length===1?d+" l .01 0":d;
-    };
-    chartHost.innerHTML='<div class="pl-wave"><svg viewBox="-6 0 512 125" preserveAspectRatio="none" role="img" aria-label="Andamento delle ultime cinque valutazioni">'+runs.map(group=>'<path d="'+path(group)+'" fill="none" stroke="#62d898" stroke-width="4" stroke-linecap="round"/>').join("")+points.map(pt=>pt.y==null?"":'<circle cx="'+pt.x+'" cy="'+pt.y+'" r="5" fill="#62d898" stroke="#24182d" stroke-width="2"/>').join("")+'</svg><div class="pl-wave-labels">'+points.map(pt=>{const o=opponents.find(x=>x.id===pt.match.opponent_id);return '<div><b class="'+(pt.rating==null?"is-sv":"")+'">'+(pt.rating==null?"SV":pt.rating.toFixed(1).replace(".",","))+'</b><span>'+safe(o?.short_name||o?.name||"AVV")+'</span><small>'+safe(new Date(pt.match.kickoff_at).toLocaleDateString("it-IT",{day:"2-digit",month:"short"}))+'</small></div>';}).join("")+'</div></div>';
-  })().catch(err=>{console.error("PLAYER DETAIL",err);if(token===playerDetailRenderToken){const el=host.querySelector("#plLatestRatings");if(el)el.innerHTML='<div class="empty-state compact">Valutazioni non disponibili</div>';}});
+  const setStat=(index,v)=>{const el=host.querySelector('[data-pl-stat="'+index+'"]');if(el)el.textContent=String(v??"—");};
+  setStat(0,s.appearances+" ("+s.starts+" tit.)");
+  setStat(1,s.minutes);
+  setStat(2,s.goals);
+  setStat(3,s.assists);
+  setStat(4,s.avg_rating==null?"—":s.avg_rating.toFixed(2).replace(".",","));
+  setStat(5,s.yellow_cards);setStat(6,s.blue_cards);setStat(7,s.red_cards);
+  const chartHost=host.querySelector("#plLatestRatings");
+  const last=[...(s.last_ratings||[])].slice(-5);
+  if(!last.length){chartHost.innerHTML='<div class="empty-state compact">Nessuna valutazione disponibile</div>';return;}
+  const points=last.map((entry,i)=>({...entry,x:500*i/Math.max(4,last.length-1),y:112-((entry.rating-1)/9)*94}));
+  const curve=points.length===1?"M"+points[0].x+" "+points[0].y+" l .01 0":points.reduce((str,p,i)=>{if(!i)return "M"+p.x+" "+p.y;const prev=points[i-1],mid=(prev.x+p.x)/2;return str+" C"+mid+" "+prev.y+" "+mid+" "+p.y+" "+p.x+" "+p.y;},"");
+  chartHost.innerHTML='<div class="pl-wave"><svg viewBox="-6 0 512 125" preserveAspectRatio="none" role="img" aria-label="Andamento delle ultime cinque valutazioni"><path d="'+curve+'" fill="none" stroke="#62d898" stroke-width="4" stroke-linecap="round"/>'+points.map(p=>'<circle cx="'+p.x+'" cy="'+p.y+'" r="5" fill="#62d898" stroke="#24182d" stroke-width="2"/>').join("")+'</svg><div class="pl-wave-labels">'+points.map(pt=>{const o=opponents.find(x=>x.id===pt.opponent_id);return '<div><b>'+pt.rating.toFixed(1).replace(".",",")+'</b><span>'+esc(o?.short_name||o?.name||"AVV")+'</span><small>'+esc(new Date(pt.kickoff_at).toLocaleDateString("it-IT",{day:"2-digit",month:"short"}))+'</small></div>';}).join("")+'</div></div>';
 }
 function openPlayerDialog(p=null){
   const editing=!!p;
@@ -4247,7 +4225,7 @@ function eventLabel(t){return t==="goal"?"Gol":t==="yellow_card"?"Cartellino gia
 function toggleNewEventSecondary(){const t=document.querySelector('input[name="newEventType"]:checked')?.value;$("#newEventSecondaryWrap").classList.toggle("hidden",t!=="substitution")}
 $$('input[name="newEventType"]').forEach(x=>x.onchange=toggleNewEventSecondary);
 $("#eventComposeForm").onsubmit=async e=>{e.preventDefault();$("#eventComposeError").classList.add("hidden");try{if(!sessionUser)throw new Error("Accedi per aggiungere eventi.");const type=document.querySelector('input[name="newEventType"]:checked').value,p={match_id:selectedMatchId,event_type:type,minute:+$("#newEventMinute").value,player_id:$("#newEventPlayer").value||null,secondary_player_id:type==="substitution"?($("#newEventSecondary").value||null):null,payload:{},proposed_by:sessionUser.id,validation_status:"proposed",team_side:$("#newEventSide").value};const r=await db.from("app_match_events").insert(p).select("*").single();assertSaved(r,"Evento");$("#eventComposeForm").reset();await loadEventsView()}catch(err){$("#eventComposeError").textContent=err.message||String(err);$("#eventComposeError").classList.remove("hidden")}};
-async function loadStatsView(){await loadCoreSeasonData();const fixtures=await ownFixtures(),finished=fixtures.filter(f=>f.status==="finished"),t=finished.reduce((a,f)=>{const o=fixtureOutcome(f);if(!o)return a;a.m++;a.gf+=o.gf;a.ga+=o.ga;if(o.result==="W")a.w++;else if(o.result==="D")a.d++;else a.l++;return a},{m:0,w:0,d:0,l:0,gf:0,ga:0});$("#statsKpis").innerHTML=[["Partite",t.m],["Vittorie",t.w],["Gol fatti",t.gf],["Gol subiti",t.ga]].map(([l,v])=>`<div class="kpi-card"><strong>${v}</strong><span>${l}</span></div>`).join("");const sorted=[...playerStats].sort((a,b)=>(b.appearances||0)-(a.appearances||0)||(b.goals||0)-(a.goals||0));$("#statsPlayers").innerHTML=`<table class="data-table"><thead><tr><th>Giocatore</th><th>Pres.</th><th>Tit.</th><th>Gol</th><th>Assist</th><th>Gialli</th><th>Blu</th><th>Disc.</th><th>Rossi</th></tr></thead><tbody>${sorted.map(p=>`<tr><td><strong>${esc(p.last_name+" "+p.first_name)}</strong></td><td>${p.appearances||0}</td><td>${p.starts||0}</td><td>${p.goals||0}</td><td>${p.assists||0}</td><td>${p.yellow_cards||0}</td><td>${p.blue_cards||0}</td><td><strong>${p.disciplinary_cards||0}</strong></td><td>${p.red_cards||0}</td></tr>`).join("")}</tbody></table>`;$("#statsScorers").innerHTML=[...playerStats].sort((a,b)=>(b.goals||0)-(a.goals||0)).slice(0,8).map((p,i)=>`<div class="scorer-row"><span>${i+1}</span><strong>${esc(p.last_name+" "+p.first_name)}</strong><b>${p.goals||0}</b></div>`).join("")}
+async function loadStatsView(){await loadCoreSeasonData();const fixtures=await ownFixtures(),finished=fixtures.filter(f=>f.status==="finished"),t=finished.reduce((a,f)=>{const o=fixtureOutcome(f);if(!o)return a;a.m++;a.gf+=o.gf;a.ga+=o.ga;if(o.result==="W")a.w++;else if(o.result==="D")a.d++;else a.l++;return a},{m:0,w:0,d:0,l:0,gf:0,ga:0});$("#statsKpis").innerHTML=[["Partite",t.m],["Vittorie",t.w],["Gol fatti",t.gf],["Gol subiti",t.ga]].map(([l,v])=>`<div class="kpi-card"><strong>${v}</strong><span>${l}</span></div>`).join("");const sorted=[...playerStats].sort((a,b)=>(b.appearances||0)-(a.appearances||0)||(b.goals||0)-(a.goals||0));const playerStatsReady=playerStats.filter(p=>p.appearances||p.starts||p.goals||p.assists||p.yellow_cards||p.blue_cards||p.red_cards||p.rated_matches);$("#statsPlayers").innerHTML=`<table class="data-table"><thead><tr><th>Giocatore</th><th>Pres.</th><th>Tit.</th><th>Gol</th><th>Assist</th><th>Gialli</th><th>Blu</th><th>Disc.</th><th>Rossi</th></tr></thead><tbody>${sorted.map(p=>`<tr><td><strong>${esc(p.last_name+" "+p.first_name)}</strong></td><td>${p.appearances||0}</td><td>${p.starts||0}</td><td>${p.goals||0}</td><td>${p.assists||0}</td><td>${p.yellow_cards||0}</td><td>${p.blue_cards||0}</td><td><strong>${p.disciplinary_cards||0}</strong></td><td>${p.red_cards||0}</td></tr>`).join("")}</tbody></table>`;$("#statsScorers").innerHTML=[...playerStats].sort((a,b)=>(b.goals||0)-(a.goals||0)).slice(0,8).map((p,i)=>`<div class="scorer-row"><span>${i+1}</span><strong>${esc(p.last_name+" "+p.first_name)}</strong><b>${p.goals||0}</b></div>`).join("")}
 
 async function boot(){
   // L'accesso non deve bloccare il caricamento dei dati pubblici.
