@@ -1332,8 +1332,19 @@ function playerOptions(selected){
 }
 let matchCenterState={fixture:null,match:null,matchPlayers:[],events:[],ratings:[],injuries:[],suspensions:[],tab:"general",editMode:false,postView:"match",ownFixture:true};
 let matchCenterTimer=null;
-function mcPlayer(id){return rosterRows.find(p=>p.player_id===id)||players.find(p=>p.id===id)||null}
-function mcPlayerName(id){const p=mcPlayer(id);return p?(p.last_name+" "+p.first_name):"—"}
+function mcPlayer(id){
+  if(!id)return null;
+  const key=String(id);
+  const roster=rosterRows.find(p=>String(p.player_id)===key)||null;
+  const detail=players.find(p=>String(p.id)===key)||null;
+  // Roster rows may contain only IDs and shirt numbers: prefer actual player data.
+  return detail?{...(roster||{}),...detail}:roster;
+}
+function mcPlayerName(id){
+  const p=mcPlayer(id);
+  const full=[p?.last_name,p?.first_name].map(x=>String(x??"").trim()).filter(Boolean).join(" ");
+  return full||"—";
+}
 function mcMatchPlayer(id){return matchCenterState.matchPlayers.find(x=>x.player_id===id)||null}
 function mcOwnFixture(){return matchCenterState.ownFixture!==false}
 function mcIsPost(){return matchCenterState.fixture?.status==="finished"||matchCenterState.match?.status==="finished"||!!matchCenterState.match?.finalized_at}
@@ -3831,7 +3842,7 @@ window.TM={
 function roleLabel(code){return code==="P"?"POR":code==="D"?"DIF":code==="C"?"CEN":"ATT"}
 function roleClass(code){return code==="P"?"gk":code==="D"?"def":code==="C"?"mid":"att"}
 function ageFromBirth(d){if(!d)return "—";const b=new Date(d+"T12:00:00"),n=new Date();let a=n.getFullYear()-b.getFullYear();if(n<new Date(n.getFullYear(),b.getMonth(),b.getDate()))a--;return a}
-function playerNameById(id){const p=rosterRows.find(x=>x.player_id===id)||players.find(x=>x.id===id);return p?(p.first_name+" "+p.last_name):"—"}
+function playerNameById(id){const p=mcPlayer(id);return [p?.first_name,p?.last_name].map(x=>String(x??"").trim()).filter(Boolean).join(" ")||"—"}
 function opponentVisualById(id){return opponents.find(x=>x.id===id)||null}
 function matchLabel(m){const o=opponentVisualById(m.opponent_id);return m.home_away==="home"?(team?.short_name||"CAS")+" - "+(o?.short_name||o?.name||"Avv."):(o?.short_name||o?.name||"Avv.")+" - "+(team?.short_name||"CAS")}
 let seasonTeamEvents=[],seasonMatchPlayers=[],seasonMatchRatings=[];
@@ -3843,6 +3854,7 @@ async function loadCoreSeasonData(){
     db.from("players").select("*").eq("team_id",currentSeason.team_id).order("last_name",{ascending:true}),
     db.from("injuries").select("*").eq("season_id",currentSeason.id).order("injury_date",{ascending:false})
   ]);
+  if(allPlayers.error)console.warn("Anagrafica giocatori non disponibile",allPlayers.error);
   const playerMap=new Map((allPlayers.data||[]).map(p=>[String(p.id),p]));
   rosterRows=(roster.data||[]).map(r=>({...r,roster_id:r.id,...playerMap.get(String(r.player_id))}));
   teamMatches=matchesResult.data||[];players=allPlayers.data||[];rosterInjuries=injuriesResult.data||[];
