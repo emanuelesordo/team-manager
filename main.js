@@ -3747,6 +3747,7 @@ async function loadDashboard(){
 
   $("#homeTeamOverview").innerHTML=renderHomeTeamIdentity();
   $("#homeTeamMetrics").innerHTML=renderHomeMetrics(totals);
+  renderMobileMatchHero(last,next);
   $("#homeLastMatch").innerHTML=last?renderHomeMatch(last,true):'<div class="home-empty">Nessuna partita conclusa</div>';
   $("#homeFormChart").innerHTML=renderHomeForm(finished.slice(-7));
 
@@ -3812,6 +3813,77 @@ function renderHomeMetrics(t){
     <div><span>Goals</span><b>GF ${t.gf}</b><i>GA ${t.ga}</i></div>
     <div><span>Clean Sheets</span><b>CS ${t.clean}</b></div>
   </div>`;
+}
+
+
+/* Mobile Home match hero: independent of the desktop KPI and schedule cards. */
+let mobileMatchHeroTimer=null,mobileMatchHeroIndex=0;
+function renderMobileMatchHero(last,next){
+  const root=$("#mobileMatchHero"),slidesBox=$("#mobileMatchHeroSlides"),dots=$("#mobileMatchHeroDots");
+  if(!root||!slidesBox||!dots)return;
+  if(mobileMatchHeroTimer){clearInterval(mobileMatchHeroTimer);mobileMatchHeroTimer=null}
+  const items=[{fixture:last,label:"Ultima partita",kind:"played"},{fixture:next,label:"Prossima partita",kind:"upcoming"}];
+  const formatDate=f=>{
+    if(!f?.kickoff_at)return "Data da definire";
+    return localDateTime(f.kickoff_at);
+  };
+  slidesBox.innerHTML=items.map(({fixture:f,label,kind},i)=>{
+    if(!f)return '<article class="mobile-match-hero-slide'+(i===0?' is-active':'')+'" data-hero-slide="'+i+'" aria-hidden="'+(i!==0)+'"><div class="mobile-match-hero-status">'+label+'</div><div class="mobile-match-hero-empty">Nessuna '+(kind==="played"?"partita conclusa":"partita programmata")+'</div></article>';
+    const home=teamVisual(f.home_team),away=teamVisual(f.away_team);
+    const badge=name=>fixtureLogo(name);
+    const score=kind==="played"?esc(String(f.home_score??"–"))+'<span class="mobile-match-hero-separator">:</span>'+esc(String(f.away_score??"–")):'<span class="mobile-match-hero-versus">VS</span>';
+    const foot=kind==="played"?"Risultato finale":formatDate(f);
+    return '<article class="mobile-match-hero-slide'+(i===0?' is-active':'')+'" data-hero-slide="'+i+'" aria-hidden="'+(i!==0)+'">'+
+      '<div class="mobile-match-hero-status"><span class="mobile-match-hero-status-dot"></span>'+label+'</div>'+
+      '<div class="mobile-match-hero-teams">'+
+        '<div class="mobile-match-hero-team"><span class="mobile-match-hero-crest">'+badge(f.home_team)+'</span><strong>'+esc(home.name)+'</strong></div>'+
+        '<div class="mobile-match-hero-center"><small>'+(kind==="played"?"FT":"IN PROGRAMMA")+'</small><strong>'+score+'</strong></div>'+
+        '<div class="mobile-match-hero-team"><span class="mobile-match-hero-crest">'+badge(f.away_team)+'</span><strong>'+esc(away.name)+'</strong></div>'+
+      '</div><div class="mobile-match-hero-date">'+esc(foot)+'</div>'+
+      '<button type="button" class="mobile-match-hero-open" data-hero-match="'+esc(f.id)+'">Dettaglio partita <span aria-hidden="true">↗</span></button></article>';
+  }).join("");
+  dots.innerHTML=items.map((item,i)=>'<button type="button" class="mobile-match-hero-dot'+(i===0?' is-active':'')+'" data-hero-dot="'+i+'" aria-label="'+item.label+'" aria-pressed="'+(i===0?'true':'false')+'"></button>').join("");
+  mobileMatchHeroIndex=0;
+  const go=index=>{
+    mobileMatchHeroIndex=(index+items.length)%items.length;
+    slidesBox.querySelectorAll("[data-hero-slide]").forEach((el,i)=>{
+      const active=i===mobileMatchHeroIndex;
+      el.classList.toggle("is-active",active);
+      el.setAttribute("aria-hidden",String(!active));
+      if("inert" in el)el.inert=!active;
+    });
+    dots.querySelectorAll("[data-hero-dot]").forEach((el,i)=>{
+      const active=i===mobileMatchHeroIndex;
+      el.classList.toggle("is-active",active);
+      el.setAttribute("aria-pressed",String(active));
+    });
+    $("#mobileMatchHeroCounter").textContent=(mobileMatchHeroIndex+1)+" / "+items.length;
+  };
+  const resetTimer=()=>{
+    if(mobileMatchHeroTimer)clearInterval(mobileMatchHeroTimer);
+    if(window.matchMedia("(max-width:780px)").matches){
+      mobileMatchHeroTimer=setInterval(()=>{
+        if(document.hidden||$("#homeView").classList.contains("hidden"))return;
+        go(mobileMatchHeroIndex+1);
+      },7000);
+    }
+  };
+  $("#mobileMatchHeroPrev").onclick=()=>{go(mobileMatchHeroIndex-1);resetTimer()};
+  $("#mobileMatchHeroNext").onclick=()=>{go(mobileMatchHeroIndex+1);resetTimer()};
+  dots.querySelectorAll("[data-hero-dot]").forEach(button=>button.onclick=()=>{go(Number(button.dataset.heroDot));resetTimer()});
+  slidesBox.querySelectorAll("[data-hero-match]").forEach(button=>button.onclick=()=>{
+    const f=items.map(x=>x.fixture).find(x=>x?.id===button.dataset.heroMatch);
+    if(f)openMatchDetail(f);
+  });
+  let startX=null;
+  slidesBox.ontouchstart=e=>{startX=e.touches[0]?.clientX??null};
+  slidesBox.ontouchend=e=>{
+    if(startX==null)return;
+    const dx=(e.changedTouches[0]?.clientX??startX)-startX;
+    startX=null;
+    if(Math.abs(dx)>55){go(mobileMatchHeroIndex+(dx<0?1:-1));resetTimer()}
+  };
+  go(0);resetTimer();
 }
 
 function renderHomeMatch(f,showScore){
