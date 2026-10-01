@@ -39,50 +39,75 @@ window.TeamSeasonStats=(()=>{
       const ev=perMatchEvents.get(mid)||[],votes=perMatchRatings.get(mid)||new Map();
       const competition=competitions.find(c=>key(c.id)===key(match.competition_id));
       const period=Number(competition?.minutes_per_period)||45;
-      const getPeriod=e=>e.payload?.period==="first_half"||e.payload?.period==="second_half"?e.payload.period:(Number(e.minute)>period?"second_half":"first_half");
-      const recovery=part=>{
-        const explicit=ev.find(e=>e.event_type==="period_end"&&e.payload?.period===part);
-        return explicit?Math.max(0,Number(explicit.payload?.recovery_minutes??explicit.stoppage_minute)||0):0;
+      // Il Match Center registra un minuto relativo al tempo e, quando presente,
+      // un recupero separato. La linea temporale è continua: 1T + rec1 + 2T + rec2.
+      const getPeriod=e=>{
+        if(e.payload?.period==="first_half"||e.payload?.period==="second_half")return e.payload.period;
+        const minute=Number(e.minute);
+        return Number.isFinite(minute)&&minute>period?"second_half":"first_half";
       };
-      const r1=recovery("first_half"),r2=recovery("second_half");
+      const explicitRecovery=part=>{
+        const entry=ev.filter(e=>e.event_type==="period_end"&&e.payload?.period===part).at(-1);
+        const value=entry?.payload?.recovery_minutes??entry?.stoppage_minute;
+        return finite(value)?Math.max(0,Number(value)):null;
+      };
+      const inferredRecovery=part=>{
+        const additional=ev.filter(e=>e.event_type!=="period_end"&&e.minute!=null&&getPeriod(e)===part)
+          .map(e=>{
+            const minute=Number(e.minute),stoppage=Math.max(0,Number(e.stoppage_minute)||0);
+            return minute>=period?Math.max(minute-period,stoppage):0;
+          }).filter(Number.isFinite);
+        return Math.max(0,...additional);
+      };
+      const r1=explicitRecovery("first_half")??inferredRecovery("first_half");
+      const r2=explicitRecovery("second_half")??inferredRecovery("second_half");
       const end=period*2+r1+r2;
       const elapsed=e=>{
-        const minute=Number(e.minute);
-        if(!Number.isFinite(minute))return null;
-        return getPeriod(e)==="second_half"?period+r1+minute:minute;
+        if(!finite(e.minute))return null;
+        const minute=Math.max(0,Number(e.minute));
+        const plus=Math.max(0,Number(e.stoppage_minute)||0);
+        const within=minute>=period?minute+plus:minute;
+        // Es.: 45+3 => 48; 2T 20' => 45 + recupero 1T + 20.
+        const absolute=minute===period&&plus>0?minute+plus:within;
+        return Math.min(end,getPeriod(e)==="second_half"?period+r1+absolute:absolute);
       };
       const active=new Set([...participants.values()].filter(p=>p.started).map(p=>key(p.player_id)));
       const played=new Set(active);
       const durations=new Map([...active].map(id=>[id,0]));
       const timeline=ev.filter(e=>e.minute!=null&&(e.event_type==="substitution"||e.event_type==="red_card"))
         .map(e=>({e,t:elapsed(e)})).filter(x=>x.t!=null)
-        .sort((a,b)=>a.t-b.t);
+        .sort((a,b)=>a.t-b.t||String(a.e.created_at||"").localeCompare(String(b.e.created_at||"")));
       let cursor=0;
       for(const {e,t} of timeline){
-        const at=Math.min(Math.max(t,cursor),Math.max(end,t));
-        const delta=Math.max(0,at-cursor);
+        const at=Math.max(cursor,Math.min(end,t));
+        const delta=at-cursor;
         active.forEach(id=>durations.set(id,(durations.get(id)||0)+delta));
         if(e.event_type==="substitution"){
           if(e.player_id!=null)active.delete(key(e.player_id));
-          if(e.secondary_player_id!=null){const id=key(e.secondary_player_id);active.add(id);played.add(id);if(!durations.has(id))durations.set(id,0);ensure(e.secondary_player_id);}
+          if(e.secondary_player_id!=null){
+            const id=key(e.secondary_player_id);
+            if(!active.has(id)){active.add(id);played.add(id);}
+            if(!durations.has(id))durations.set(id,0);
+            ensure(e.secondary_player_id);
+          }
         }else if(e.player_id!=null)active.delete(key(e.player_id));
         cursor=at;
       }
       active.forEach(id=>durations.set(id,(durations.get(id)||0)+Math.max(0,end-cursor)));
+      // Il tabellone (titolari, cambi, rossi, fine tempi) è autorevole.
+      // minutes_played del DB non sovrascrive mai il tempo derivato.
       participants.forEach((p,pid)=>{
-        const stored=finite(p.minutes_played)?Number(p.minutes_played):null;
-        const derived=durations.get(pid)||0;
-        // Non confondere un valore 0 predefinito con minuti realmente giocati.
-        const minutes=derived>0?derived:(stored!=null?Math.max(0,stored):0);
-        if(stored>0||minutes>0||p.started)played.add(pid);
+        const minutes=Math.max(0,Math.round(durations.get(pid)||0));
+        if(minutes>0||p.started)played.add(pid);
         const stat=ensure(p.player_id);
-        if(played.has(pid)){stat.appearances++;stat.minutes+=Math.round(minutes);}
+        if(played.has(pid)){stat.appearances++;stat.minutes+=minutes;}
         if(p.started)stat.starts++;
       });
-      // Gestisce anche subentrati presenti negli eventi ma mancanti nella lista convocati.
+      // Entrati nei cambi ma non ancora riconciliati in app_match_players.
       played.forEach(pid=>{
         if(participants.has(pid))return;
-        const stat=stats.get(pid);if(stat){stat.appearances++;stat.minutes+=Math.round(durations.get(pid)||0);}
+        const stat=stats.get(pid);
+        if(stat){stat.appearances++;stat.minutes+=Math.max(0,Math.round(durations.get(pid)||0));}
       });
       ev.forEach(e=>{
         if(e.event_type==="goal"){
