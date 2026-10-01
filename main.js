@@ -2112,8 +2112,8 @@ function mcTimeline(target,limit,filters=null){
         secondary=x.player_id?mcTimelinePlayerName(x.player_id):"Uscita da completare";
         icon='<span class="mc-event-symbol substitution"><i class="sub-out">←</i><b class="sub-in">→</b></span>';
       }else if(x.event_type==="blue_return"){
-        main=x.player_id?mcTimelinePlayerName(x.player_id):"Rientro";
-        secondary="Rientro da espulsione temporanea";
+        main=x.team_side==="opponent"?"Rientro avversario"+(x.payload?.opponent_shirt_number?" #"+x.payload.opponent_shirt_number:""):x.player_id?mcTimelinePlayerName(x.player_id):"Rientro";
+        secondary="Fine espulsione temporanea";
         icon='<span class="mc-event-symbol substitution">↩</span>';
       }else if(x.event_type==="yellow_card"||x.event_type==="blue_card"||x.event_type==="red_card"){
         const shirt=x.payload?.opponent_shirt_number;
@@ -2211,6 +2211,7 @@ function mcQuickEventShell(){
       '<button type="button" data-quick-kind="substitution" title="Cambio">↔</button>'+
       '<button type="button" data-quick-kind="goal" title="Gol">⚽</button>'+
       '<button type="button" data-quick-kind="card" title="Cartellino">'+mcCardStackIcon()+'</button>'+
+      '<button type="button" data-quick-kind="blue_return" title="Rientro dal blu">↩</button>'+
       '<button type="button" data-quick-kind="recovery" title="Recupero">+′</button>'+
     '</div>'+
     '<form id="mcPlayerQuickForm"><div id="mcPlayerQuickFields"></div><p id="mcPlayerQuickError" class="form-error hidden"></p>'+
@@ -2413,8 +2414,14 @@ function mcSetPlayerQuickKind(kind){
     const recoveryMinutes=editing?Number(editing.payload?.recovery_minutes??editing.stoppage_minute??0):0;
     html='<div class="mc-player-event-grid"><label>Tempo<select id="mcQuickPeriod">'+mcQuickPeriodOptions(recoveryPeriod)+'</select></label><label>Recupero (minuti)<input id="mcQuickRecovery" type="number" min="0" max="30" value="'+recoveryMinutes+'"></label></div>';
   }else if(kind==="blue_return"){
-    html+='<p class="muted">Registra il rientro effettivo dopo la sanzione temporanea. Durata minima: '+(competitions.find(c=>c.id===matchCenterState.fixture?.competition_id)?.discipline_rules?.blue_card_minutes??8)+' minuti di gioco.</p>';
-    html+='<label>Giocatore>'+ (source==="player"?mcQuickPlayerChip(id,"Rientra"):mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore",draft.playerId||editing?.player_id||""))+'</label>';
+    html+='<p class="muted">Rientro effettivo dopo la sanzione temporanea. Durata minima: '+(competitions.find(c=>c.id===matchCenterState.fixture?.competition_id)?.discipline_rules?.blue_card_minutes??8)+' minuti di gioco.</p>';
+    if(side==="opponent"){
+      const blues=matchCenterState.events.filter(e=>e.team_side==="opponent"&&e.event_type==="blue_card"&&e.validation_status!=="rejected");
+      const lastId=editing?.payload?.blue_card_id||"";
+      html+='<label>Cartellino blu avversario<select id="mcQuickBlueEvent">'+blues.map(e=>'<option value="'+esc(e.id)+'" '+(String(e.id)===String(lastId)?"selected":"")+'>'+(e.payload?.opponent_shirt_number?"#"+esc(e.payload.opponent_shirt_number)+" · ":"")+mcDisplayMinute(e)+'</option>').join("")+'</select></label>';
+    }else{
+      html+='<label>Giocatore>'+ (source==="player"?mcQuickPlayerChip(id,"Rientra"):mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore",draft.playerId||editing?.player_id||""))+'</label>';
+    }
   }else if(kind==="substitution"){
     if(side==="opponent"){
       html+='<div class="mc-opponent-disabled">Cambio avversario non disponibile senza rosa avversaria.</div>';
@@ -2540,21 +2547,35 @@ async function mcSubmitPlayerQuickEvent(e){
     const base={match_id:matchCenterState.match.id,minute,stoppage_minute:null,team_side:side,proposed_by:sessionUser.id,validation_status:"proposed"};
 
     if(kind==="blue_return"){
-      const playerId=source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer")?.value||null);
-      if(!playerId||minute==null)throw new Error("Seleziona il giocatore e il minuto effettivo del rientro.");
-      const blues=matchCenterState.events.filter(e=>e.team_side==="team"&&e.player_id===playerId&&e.event_type==="blue_card"&&e.validation_status!=="rejected")
-        .sort((a,b)=>mcEventOrder(a)-mcEventOrder(b));
-      const lastBlue=blues.at(-1);
-      if(!lastBlue)throw new Error("Non risulta alcun cartellino blu per questo giocatore.");
-      if(!mcBlueSuspendedIds().includes(String(playerId)))throw new Error("Il giocatore non risulta temporaneamente espulso.");
+      if(minute==null)throw new Error("Indica il minuto effettivo del rientro.");
       const firstRecovery=mcMatchRecoveryMinutes("first_half");
       const returnTime=mcParticipationElapsed({minute,payload:{period}},firstRecovery);
-      const startTime=mcParticipationElapsed(lastBlue,firstRecovery);
       const minimum=Number(competitions.find(c=>c.id===matchCenterState.fixture?.competition_id)?.discipline_rules?.blue_card_minutes)||8;
-      if(returnTime==null||startTime==null||returnTime-startTime<minimum)
-        throw new Error("Il rientro è consentito dopo "+minimum+" minuti effettivi di penalità.");
-      const payload={...base,event_type:"blue_return",team_side:"team",player_id:playerId,secondary_player_id:null,payload:{period},substitution_reason:null};
-      if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
+      if(side==="opponent"){
+        const blueId=$("#mcQuickBlueEvent")?.value||null;
+        const card=matchCenterState.events.find(e=>String(e.id)===String(blueId)&&e.event_type==="blue_card"&&e.team_side==="opponent");
+        if(!card)throw new Error("Seleziona il cartellino blu avversario.");
+        const duplicated=matchCenterState.events.some(e=>e.event_type==="blue_return"&&e.team_side==="opponent"&&String(e.payload?.blue_card_id)===String(blueId)&&String(e.id)!==String(editingId||""));
+        if(duplicated)throw new Error("Questo cartellino blu ha già un evento di rientro.");
+        const startTime=mcParticipationElapsed(card,firstRecovery);
+        if(returnTime==null||startTime==null||returnTime-startTime<minimum)
+          throw new Error("Il rientro è consentito dopo "+minimum+" minuti effettivi di penalità.");
+        const payload={...base,event_type:"blue_return",team_side:"opponent",player_id:null,secondary_player_id:null,payload:{period,blue_card_id:blueId,opponent_shirt_number:card.payload?.opponent_shirt_number??null},substitution_reason:null};
+        if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
+      }else{
+        const playerId=source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer")?.value||null);
+        if(!playerId)throw new Error("Seleziona il giocatore.");
+        const blues=matchCenterState.events.filter(e=>e.team_side==="team"&&e.player_id===playerId&&e.event_type==="blue_card"&&e.validation_status!=="rejected")
+          .sort((a,b)=>mcEventOrder(a)-mcEventOrder(b));
+        const lastBlue=blues.at(-1);
+        if(!lastBlue)throw new Error("Non risulta alcun cartellino blu per questo giocatore.");
+        if(!editingId&&!mcBlueSuspendedIds().includes(String(playerId)))throw new Error("Il giocatore non risulta temporaneamente espulso.");
+        const startTime=mcParticipationElapsed(lastBlue,firstRecovery);
+        if(returnTime==null||startTime==null||returnTime-startTime<minimum)
+          throw new Error("Il rientro è consentito dopo "+minimum+" minuti effettivi di penalità.");
+        const payload={...base,event_type:"blue_return",team_side:"team",player_id:playerId,secondary_player_id:null,payload:{period},substitution_reason:null};
+        if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
+      }
       mcClosePlayerQuickEvent();await mcReload();return;
     }
     if(kind==="substitution"){
