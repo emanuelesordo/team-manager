@@ -1732,7 +1732,7 @@ function mcExternalChronology(events){
       const remaining=list.slice(0,i+1).filter(x=>x.minute==null).length;
       sort=before+(after-before)*Math.min(.9,remaining/(remaining+1));
     }
-    return {event:e,sort,index:i};
+    return {event:{...e,mc_unknown_zone:same?"inline":"unknown"},sort,index:i};
   });
   const periods=events.filter(e=>e.event_type==="period_end").map(e=>({event:e,sort:mcEventOrder(e),index:-1}));
   return [...slots,...periods].sort((a,b)=>a.sort-b.sort||a.index-b.index).map(x=>x.event);
@@ -1760,7 +1760,7 @@ function mcTimeline(target,limit,filters=null){
   const halfScore=all.some(e=>e.event_type==="goal"&&e.minute==null)?"? - ?":h+" - "+a;
 
   const allWithoutMinute=!mcOwnFixture()&&all.filter(e=>e.event_type!=="period_end").every(e=>e.minute==null);
-  const unknownExists=!mcOwnFixture()&&all.some(e=>e.event_type!=="period_end"&&e.minute==null);
+  const unknownExists=!mcOwnFixture()&&all.some(e=>e.event_type!=="period_end"&&e.minute==null&&e.mc_unknown_zone!=="inline");
   const recoveryByPeriod=new Map();
   all.filter(e=>e.event_type==="period_end").forEach(e=>{
     recoveryByPeriod.set(e.payload?.period||"",{minutes:Number(e.payload?.recovery_minutes??e.stoppage_minute??0),event:e});
@@ -1814,7 +1814,7 @@ function mcTimeline(target,limit,filters=null){
     while(j<regular.length&&sameMoment(regular[j])){grouped.push(regular[j]);j++}
 
     const minute=mcDisplayMinute(e);
-    if(!mcOwnFixture()&&unknownExists&&e.minute==null&&!unknownBandShown&&!allWithoutMinute){
+    if(!mcOwnFixture()&&unknownExists&&e.minute==null&&e.mc_unknown_zone!=="inline"&&!unknownBandShown&&!allWithoutMinute){
       rows.push('<div class="mc-recovery-divider mc-unknown-events"><span></span><strong>MINUTO INCERTO</strong><span></span></div>');
       unknownBandShown=true;
     }
