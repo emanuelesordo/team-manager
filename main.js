@@ -552,7 +552,7 @@ function setCompetitionViewTab(view){
   competitionViewTab=view;
   const split=$("#competitionsView .competition-split");
   if(split)split.dataset.activeCompetitionView=view;
-  $("[data-competition-view]").forEach(button=>{
+  $$("[data-competition-view]").forEach(button=>{
     const active=button.dataset.competitionView===view;
     button.classList.toggle("active",active);
     button.setAttribute("aria-selected",active?"true":"false");
@@ -562,7 +562,7 @@ function setCompetitionViewTab(view){
   if(tools)tools.classList.toggle("hidden",view!=="fixtures");
   syncCompetitionViewportHeight();
 }
-$("[data-competition-view]").forEach(button=>button.onclick=()=>setCompetitionViewTab(button.dataset.competitionView));
+$$("[data-competition-view]").forEach(button=>button.onclick=()=>setCompetitionViewTab(button.dataset.competitionView));
 async function loadCompetitionHub(){
   await loadCompetitions();
   await ensureMainTeam();
@@ -600,9 +600,9 @@ async function loadCompetitionHub(){
   setCompetitionViewTab(competitionViewTab);
   syncCompetitionViewportHeight();
 }
-$("[data-comp-fixture-filter]").forEach(b=>b.onclick=()=>{
+$$("[data-comp-fixture-filter]").forEach(b=>b.onclick=()=>{
   competitionFixtureFilter=b.dataset.compFixtureFilter;
-  $$("[data-comp-fixture-filter]").forEach(x=>x.classList.toggle("active",x===b));
+  $$$("[data-comp-fixture-filter]").forEach(x=>x.classList.toggle("active",x===b));
   renderCompetitionFixtures(window.__competitionFixtureRows||[]);
 });
 async function renderCompetitionHub(){
