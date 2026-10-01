@@ -129,12 +129,13 @@ window.TeamSeasonStats=(()=>{
         stat.last_ratings.push({match_id:match.id,rating:values.reduce((sum,v)=>sum+v,0)/values.length,kickoff_at:match.kickoff_at,opponent_id:match.opponent_id});
       });
     }
-    stats.forEach(s=>{s.minutes=0;s.minutes_played=0;s.on_field_gf=0;s.on_field_ga=0;s.plus_minus=0;s.goals_as_starter=0;s.goals_as_sub=0;});
+    stats.forEach(s=>{s.minutes=0;s.minutes_played=0;s.on_field_gf=0;s.on_field_ga=0;s.plus_minus=0;s.goals_as_starter=0;s.goals_as_sub=0;s.comebacks_positive=0;s.comebacks_negative=0;s.results_maintained=0;s.results_improved=0;s.results_worsened=0;});
     completed.forEach(match=>{
       const matchAnalysis=analyzeMatch({match,matchPlayers,events,ratings,competitions});
       matchAnalysis.impact.forEach((impact,id)=>{
         const st=stats.get(id);if(!st)return;
         st.minutes+=Math.round(impact.minutes);st.on_field_gf+=impact.goalsFor;
+        for(const field of ["comebacksPositive","comebacksNegative","resultsMaintained","resultsImproved","resultsWorsened"]){const keyName={comebacksPositive:"comebacks_positive",comebacksNegative:"comebacks_negative",resultsMaintained:"results_maintained",resultsImproved:"results_improved",resultsWorsened:"results_worsened"}[field];st[keyName]+=(impact[field]||0);}
         st.on_field_ga+=impact.goalsAgainst;st.plus_minus+=impact.plusMinus;
       });
       matchAnalysis.goalSplit.forEach((g,id)=>{
@@ -255,10 +256,27 @@ window.TeamSeasonStats=(()=>{
     const countStatus=()=>oppOut>ownOut?"superior":oppOut<ownOut?"inferior":"equal";
     const ensureImpact=id=>{
       const k=key(id);
-      if(!impact.has(k))impact.set(k,{minutes:0,goalsFor:0,goalsAgainst:0,plusMinus:0,goalsAsStarter:0,goalsAsSub:0});
+      if(!impact.has(k))impact.set(k,{minutes:0,goalsFor:0,goalsAgainst:0,plusMinus:0,goalsAsStarter:0,goalsAsSub:0,comebacksPositive:0,comebacksNegative:0,resultsMaintained:0,resultsImproved:0,resultsWorsened:0,spells:[]});
       return impact.get(k);
     };
-    starts.forEach(id=>{minutes.set(id,0);ensureImpact(id)});
+    const onFieldFrom=new Map();
+    const resultLevel=diff=>diff>0?2:diff===0?1:0;
+    const beginSpell=id=>onFieldFrom.set(key(id),{startGap:gap(),startFor:ownTotals.for,startAgainst:ownTotals.against,at:cursor});
+    const closeSpell=id=>{
+      const k=key(id),entry=onFieldFrom.get(k);if(!entry)return;
+      const imp=ensureImpact(k),ending=gap(),was=resultLevel(entry.startGap),now=resultLevel(ending);
+      const difference=ending-entry.startGap;
+      // Baseline: risultato al momento dell'ingresso (o al calcio d'inizio).
+      // Rimonte e mantenimenti non equivalgono a causalità individuale.
+      if(entry.startGap<0&&ending>=0)imp.comebacksPositive++;
+      if(entry.startGap>0&&ending<=0)imp.comebacksNegative++;
+      if(now>was)imp.resultsImproved++;
+      else if(now<was)imp.resultsWorsened++;
+      else if(ending>=0)imp.resultsMaintained++;
+      imp.spells.push({from:entry.at,to:cursor,scoreAtEntry:entry.startGap,scoreAtExit:ending,goalsFor:ownTotals.for-entry.startFor,goalsAgainst:ownTotals.against-entry.startAgainst,difference});
+      onFieldFrom.delete(k);
+    };
+    starts.forEach(id=>{minutes.set(id,0);ensureImpact(id);beginSpell(id)});
     const addTime=until=>{
       const delta=Math.max(0,until-cursor);
       field.forEach(id=>{minutes.set(id,(minutes.get(id)||0)+delta);ensureImpact(id).minutes+=delta;});
@@ -300,28 +318,29 @@ window.TeamSeasonStats=(()=>{
         if(gap()<0)everBehind=true;
         if(gap()>0)everAhead=true;
       }else if(e.event_type==="substitution"&&side==="team"){
-        if(pid){field.delete(pid);if(ownBlue.has(pid))clearOwnBlue(pid);}
+        if(pid){if(field.has(pid))closeSpell(pid);field.delete(pid);if(ownBlue.has(pid))clearOwnBlue(pid);}
         if(e.secondary_player_id!=null){
           const incoming=key(e.secondary_player_id);
           if(suspended.has(incoming))clearOwnBlue(incoming);
-          field.add(incoming);touch.add(incoming);ensureImpact(incoming);
+          field.add(incoming);touch.add(incoming);ensureImpact(incoming);beginSpell(incoming);
         }
       }else if(e.event_type==="red_card"){
-        if(side==="team"){if(pid){field.delete(pid);if(ownBlue.has(pid))clearOwnBlue(pid);if(!redOwn.has(pid)){redOwn.add(pid);ownOut++;}}else ownOut++;}
+        if(side==="team"){if(pid){if(field.has(pid))closeSpell(pid);field.delete(pid);if(ownBlue.has(pid))clearOwnBlue(pid);if(!redOwn.has(pid)){redOwn.add(pid);ownOut++;}}else ownOut++;}
         else {
           const ident=pid||key(e.payload?.opponent_shirt_number);
           if(oppBlue.has(ident))clearOppBlue(ident);
           oppOut++;
         }
       }else if(e.event_type==="blue_card"){
-        if(side==="team"&&pid&&!ownBlue.has(pid)){field.delete(pid);suspended.add(pid);ownBlue.set(pid,t+blueDuration);ownOut++;}
+        if(side==="team"&&pid&&!ownBlue.has(pid)){if(field.has(pid))closeSpell(pid);field.delete(pid);suspended.add(pid);ownBlue.set(pid,t+blueDuration);ownOut++;}
         if(side==="opponent"){const ident=pid||key(e.payload?.opponent_shirt_number??e.id??("blue-"+t));if(!oppBlue.has(ident)){oppBlue.set(ident,t+blueDuration);oppOut++;}}
       }else if(returnEvent(e)){
-        if(side==="team"&&pid&&ownBlue.has(pid)&&!redOwn.has(pid)&&t>=ownBlue.get(pid)){clearOwnBlue(pid);field.add(pid);touch.add(pid);ensureImpact(pid);}
+        if(side==="team"&&pid&&ownBlue.has(pid)&&!redOwn.has(pid)&&t>=ownBlue.get(pid)){clearOwnBlue(pid);field.add(pid);touch.add(pid);ensureImpact(pid);beginSpell(pid);}
         if(side==="opponent"){const ident=pid||key(e.payload?.opponent_shirt_number??e.payload?.blue_card_id);if(oppBlue.has(ident)&&t>=oppBlue.get(ident))clearOppBlue(ident);}
       }
     }
     addTime(end);
+    [...field].forEach(closeSpell);
     team.remontadaFor=recovered;team.remontadaAgainst=lostLead;
     team.comebackWin=everBehind&&recovered&&gap()>0;
     team.comebackLoss=everAhead&&lostLead&&gap()<0;
