@@ -1628,7 +1628,7 @@ function mcPitch(target,rows,remove){
     ].join("");
     return '<div class="pitch-player modern" data-mc-pitch-player="'+x.player_id+'" draggable="'+(!remove)+'" style="left:'+q[0]+'%;top:'+q[1]+'%">'+
 
-      (rating!=null?'<span class="pitch-rating" style="background:'+mcRatingColor(rating)+';color:'+mcRatingTextColor(rating)+'">'+rating.toFixed(1)+'</span>':"")+
+      (rating!=null?'<span class="pitch-rating" style="--rating-bg:'+mcRatingColor(rating)+';--rating-fg:'+mcRatingTextColor(rating)+';background:'+mcRatingColor(rating)+';color:'+mcRatingTextColor(rating)+'">'+rating.toFixed(1)+'</span>':"")+
       '<span class="kit-shirt kit-'+esc(kit.style)+'" style="--kit-primary:'+esc(kit.primary)+';--kit-secondary:'+esc(kit.secondary)+';--kit-number:'+esc(kit.number)+'"><b>'+(x.shirt_number??p?.shirt_number??"–")+'</b></span>'+
       '<strong>'+esc(p?.last_name||"—")+'</strong>'+
       '<span class="pitch-events pitch-events-bottom">'+topBadges+bottomBadges+'</span>'+
