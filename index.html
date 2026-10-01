@@ -32,6 +32,7 @@
       <button class="side-link side-setup" data-app-view="setup" aria-label="Setup" title="Setup"><svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.2 13.5a7.7 7.7 0 0 0 0-3l2-1.5-2-3.4-2.4 1a8.5 8.5 0 0 0-2.6-1.5L14 2.5h-4l-.2 2.6a8.5 8.5 0 0 0-2.6 1.5l-2.4-1-2 3.4 2 1.5a7.7 7.7 0 0 0 0 3l-2 1.5 2 3.4 2.4-1a8.5 8.5 0 0 0 2.6 1.5l.2 2.6h4l.2-2.6a8.5 8.5 0 0 0 2.6-1.5l2.4 1 2-3.4z"/></svg>Setup</button>
       <div class="side-session">
         <span id="authState" class="auth-state">Sessione…</span>
+        <button id="profileButton" class="auth-button hidden" type="button" title="Profilo personale">Profilo</button>
         <button id="authButton" class="auth-button" type="button">Accedi</button>
       </div>
     </div>
@@ -292,13 +293,23 @@
 <dialog id="authDialog">
   <form id="authForm">
     <div class="dialog-head"><strong>Accedi</strong><button type="button" class="icon-btn" data-close-auth>×</button></div>
-    <label>Username<input id="authUsername" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+    <label>Username <small>Usa nome.cognome (solo il primo nome e il primo cognome, anche per nomi composti).</small><input id="authUsername" type="text" placeholder="nome.cognome" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
     <label>Password<input id="authPassword" type="password" autocomplete="current-password" required></label>
     <p id="authError" class="form-error hidden"></p>
     <div class="dialog-actions"><button type="button" class="secondary" data-close-auth>Annulla</button><button class="primary" type="submit">Accedi</button></div>
   </form>
 </dialog>
 
+<dialog id="profileDialog" class="wizard">
+  <div class="sheet">
+    <div class="dialog-head"><strong>Il mio profilo</strong><button type="button" class="icon-btn" id="closeProfileButton" aria-label="Chiudi">×</button></div>
+    <div id="profileContent"></div>
+    <section id="profileAdminRequests" class="hidden">
+      <h3>Richieste amministratore da valutare</h3>
+      <div id="profilePendingAdminList"></div>
+    </section>
+  </div>
+</dialog>
 <dialog id="seasonWizard" class="wizard">
   <form id="wizardForm">
     <div class="dialog-head"><div><strong id="wizardTitle">Nuova stagione</strong><small id="wizardStepLabel">1/5 · Annata</small></div><button type="button" class="icon-btn" data-close-wizard>×</button></div>
