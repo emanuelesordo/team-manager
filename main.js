@@ -217,7 +217,7 @@ async function setAppView(name){
   if(name==="events")await loadEventsView();
   if(name==="stats")await loadStatsView();
 }
-$(".side-link[data-app-view]").forEach(b=>b.onclick=()=>setAppView(b.dataset.appView));
+$$(".side-link[data-app-view]").forEach(b=>b.onclick=()=>setAppView(b.dataset.appView));
 
 /* Mobile: a single visible panel avoids nested horizontal/vertical scroll. */
 let mobileHomeTab="team",mobileMcTab="history";
@@ -226,7 +226,7 @@ function setMobileHomeTab(name){
   mobileHomeTab=name;
   const view=$("#homeView");
   if(view)view.dataset.mobileHomeActive=name;
-  $("[data-mobile-home-tab]").forEach(button=>{
+  $$("[data-mobile-home-tab]").forEach(button=>{
     const active=button.dataset.mobileHomeTab===name;
     button.classList.toggle("active",active);
     button.setAttribute("aria-pressed",active?"true":"false");
@@ -237,14 +237,14 @@ function setMobileMcTab(name){
   mobileMcTab=!mcOwnFixture()?"history":name;
   const dialog=$("#matchDetailDialog");
   if(dialog)dialog.dataset.mobileMcActive=mobileMcTab;
-  $("[data-mobile-mc-tab]").forEach(button=>{
+  $$("[data-mobile-mc-tab]").forEach(button=>{
     const active=button.dataset.mobileMcTab===mobileMcTab;
     button.classList.toggle("active",active);
     button.setAttribute("aria-pressed",active?"true":"false");
   });
 }
-$("[data-mobile-home-tab]").forEach(button=>button.onclick=()=>setMobileHomeTab(button.dataset.mobileHomeTab));
-$("[data-mobile-mc-tab]").forEach(button=>button.onclick=()=>setMobileMcTab(button.dataset.mobileMcTab));
+$$("[data-mobile-home-tab]").forEach(button=>button.onclick=()=>setMobileHomeTab(button.dataset.mobileHomeTab));
+$$("[data-mobile-mc-tab]").forEach(button=>button.onclick=()=>setMobileMcTab(button.dataset.mobileMcTab));
 setMobileHomeTab("team");
 function setMobileContentTab(section,tab){
   const values=section==="roster"?["list","detail"]:["players","scorers"];
@@ -257,8 +257,8 @@ function setMobileContentTab(section,tab){
     button.setAttribute("aria-pressed",active?"true":"false");
   });
 }
-$("[data-mobile-roster-tab]").forEach(button=>button.onclick=()=>setMobileContentTab("roster",button.dataset.mobileRosterTab));
-$("[data-mobile-stats-tab]").forEach(button=>button.onclick=()=>setMobileContentTab("stats",button.dataset.mobileStatsTab));
+$$("[data-mobile-roster-tab]").forEach(button=>button.onclick=()=>setMobileContentTab("roster",button.dataset.mobileRosterTab));
+$$("[data-mobile-stats-tab]").forEach(button=>button.onclick=()=>setMobileContentTab("stats",button.dataset.mobileStatsTab));
 setMobileContentTab("roster","list");
 setMobileContentTab("stats","players");
 
@@ -3773,7 +3773,7 @@ function renderRosterTable(){
     <td>${ageFromBirth(p.birth_date)}</td><td>${s.appearances??0}</td><td>${s.goals??0}</td><td>${s.avg_rating!=null?Number(s.avg_rating).toFixed(1):"—"}</td>
     <td><span class="status-dot ${p.active===false?"inactive":"active"}" title="${p.active===false?"Inattivo":"Attivo"}"></span></td>
   </tr>`}).join("")}</tbody></table>`;
-  $("[data-player-row]").forEach(r=>r.onclick=()=>{selectedPlayerId=r.dataset.playerRow;renderRosterTable();renderPlayerDetail();if(window.matchMedia?.("(max-width:780px)")?.matches)setMobileContentTab("roster","detail")});
+  $$("[data-player-row]").forEach(r=>r.onclick=()=>{selectedPlayerId=r.dataset.playerRow;renderRosterTable();renderPlayerDetail();if(window.matchMedia?.("(max-width:780px)")?.matches)setMobileContentTab("roster","detail")});
   $$("[data-roster-sort]").forEach(b=>b.onclick=e=>{e.stopPropagation();const key=b.dataset.rosterSort;if(rosterSort.key===key)rosterSort.dir=rosterSort.dir==="asc"?"desc":"asc";else rosterSort={key,dir:key==="surname"||key==="role"?"asc":"desc"};renderRosterTable()});
 }
 $("#rosterSearch").oninput=renderRosterTable;
