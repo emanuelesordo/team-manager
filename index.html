@@ -296,11 +296,11 @@
     <label>Username <small>Usa nome.cognome (solo il primo nome e il primo cognome, anche per nomi composti).</small><input id="authUsername" type="text" placeholder="nome.cognome" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
     <label>Password<input id="authPassword" type="password" autocomplete="current-password" required></label>
     <p id="authError" class="form-error hidden"></p>
-    <div class="dialog-actions"><button type="button" class="secondary" data-close-auth>Annulla</button><button class="secondary" type="button" id="openRegisterButton">Registrati</button><button class="primary" type="submit">Accedi</button></div>
+    <div class="dialog-actions"><button type="button" class="secondary" data-close-auth>Annulla</button><button class="secondary" type="button" id="requestPasswordResetButton">Password dimenticata?</button><button class="secondary" type="button" id="openRegisterButton">Registrati</button><button class="primary" type="submit">Accedi</button></div>
   </form>
 </dialog>
 
-<dialog id="registerDialog" class="wizard">
+<dialog id="resetRequestDialog" class="wizard"><form id="resetRequestForm" class="sheet"><div class="dialog-head"><strong>Richiedi ripristino password</strong><button id="closeResetRequestButton" type="button" class="icon-btn" aria-label="Chiudi">×</button></div><p class="muted">La richiesta sarà valutata da un amministratore. La password attuale non cambia finché la richiesta non viene autorizzata.</p><label>Username<input id="resetUsername" required placeholder="nome.cognome" autocomplete="username"></label><p id="resetRequestMessage" class="form-message hidden"></p><div class="dialog-actions"><button type="submit" class="primary">Invia richiesta</button></div></form></dialog><dialog id="registerDialog" class="wizard">
   <form id="registerForm" class="sheet">
     <div class="dialog-head"><strong>Nuovo account</strong><button type="button" class="icon-btn" id="closeRegisterButton" aria-label="Chiudi">×</button></div>
     <p class="muted">Lo username viene creato automaticamente nel formato nome.cognome. Con nomi composti vengono utilizzati soltanto il primo nome e il primo cognome.</p>
@@ -319,7 +319,7 @@
     <div id="profileContent"></div>
     <section id="profileAdminRequests" class="hidden">
       <h3>Richieste amministratore da valutare</h3>
-      <div id="profilePendingAdminList"></div>
+      <div id="profilePendingAdminList"></div><h3>Richieste ripristino password</h3><div id="profilePendingPasswordResets"></div>
     </section>
   </div>
 </dialog>
