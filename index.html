@@ -504,70 +504,6 @@
   </form>
 </dialog>
 
-<dialog id="otherMatchCenterDialog" class="match-center-dialog other-match-center-dialog">
-  <div class="match-center-shell other-match-center-shell">
-    <input type="hidden" id="omcFixtureId">
-    <header class="mc-header">
-      <button type="button" class="icon-btn mc-close" data-close-other-match-center>×</button>
-      <div class="mc-scoreboard">
-        <div class="mc-team mc-home">
-          <div class="mc-team-copy">
-            <strong id="omcHomeName">Casa</strong>
-            <div id="omcHomeMatchEvents" class="mc-header-events"></div>
-          </div>
-          <span id="omcHomeLogo" class="mc-logo"></span>
-        </div>
-
-        <div class="mc-score omc-score-editor">
-          <div class="omc-score-inputs">
-            <input id="omcHomeScore" type="number" min="0" inputmode="numeric" aria-label="Gol casa">
-            <span>–</span>
-            <input id="omcAwayScore" type="number" min="0" inputmode="numeric" aria-label="Gol ospite">
-          </div>
-          <span id="omcState">PRE</span>
-        </div>
-
-        <div class="mc-team mc-away">
-          <span id="omcAwayLogo" class="mc-logo"></span>
-          <div class="mc-team-copy">
-            <strong id="omcAwayName">Ospite</strong>
-            <div id="omcAwayMatchEvents" class="mc-header-events"></div>
-          </div>
-        </div>
-      </div>
-
-      <div id="omcMeta" class="mc-meta"></div>
-
-      <nav class="mc-tabs omc-tabs" aria-label="Match center altri match">
-        <button type="button" class="active">EVENTI</button>
-      </nav>
-    </header>
-
-    <div class="mc-body other-match-center-body">
-      <section class="mc-card mc-history-card other-match-history-card">
-        <div class="mc-card-head">
-          <strong>Storico eventi</strong>
-          <div class="omc-history-actions">
-            <span id="omcGoalProgress"></span>
-            <button id="omcAddEventBtn" type="button" class="secondary small">+ Evento</button>
-            <button id="omcConfirmResultBtn" type="button" class="primary small">Conferma risultato</button>
-          </div>
-        </div>
-
-        <div class="mc-event-filters" aria-label="Filtra eventi">
-          <button type="button" class="active" data-omc-event-filter="goal">Gol</button>
-          <button type="button" class="active" data-omc-event-filter="yellow_card">Gialli</button>
-          <button type="button" class="active" data-omc-event-filter="blue_card">Blu</button>
-          <button type="button" class="active" data-omc-event-filter="red_card">Rossi</button>
-        </div>
-
-        <div id="omcTimeline" class="mc-general-timeline"></div>
-        <p id="omcError" class="form-error hidden"></p>
-      </section>
-    </div>
-  </div>
-</dialog>
-
 <dialog id="otherMatchEventDialog" class="other-match-event-dialog">
   <form id="otherMatchEventForm">
     <div class="dialog-head">
@@ -648,7 +584,15 @@
         <div class="mc-general-grid">
           <div class="mc-general-left">
             <section class="mc-card mc-history-card">
-              <div class="mc-card-head"><strong id="mcHistoryTitle">Cronologia partita</strong><span id="mcGoalProgress"></span></div>
+              <div class="mc-card-head">
+  <strong id="mcHistoryTitle">Cronologia partita</strong>
+  <div class="mc-history-tools">
+    <span id="mcGoalProgress"></span>
+    <button id="mcExternalAddEvent" type="button" class="secondary small hidden">+ Evento</button>
+    <button id="mcExternalConfirmResult" type="button" class="primary small hidden">Conferma risultato</button>
+  </div>
+</div>
+<p id="mcExternalError" class="form-error hidden"></p>
               <div class="mc-event-filters" aria-label="Filtra eventi">
                 <button type="button" class="active" data-mc-event-filter="goal">Gol</button>
                 <button type="button" class="active" data-mc-event-filter="substitution">Cambi</button>
