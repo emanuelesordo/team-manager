@@ -137,7 +137,7 @@
     visibleIds().forEach(id => $("#"+id)?.classList.toggle("hidden", id !== map[name]));
     $$("[data-product-view]").forEach(b => b.classList.toggle("active", b.dataset.productView === name));
 
-    if (name === "home") await loadHome();
+    if (name === "home" && !$("#homeTeamOverview")) await loadHome();
     if (name === "competitions") await TM.loadCompetitionHub();
     if (name === "calendar") await TM.loadCalendarHub();
     if (name === "roster") await loadRoster();
