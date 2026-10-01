@@ -129,6 +129,19 @@ window.TeamSeasonStats=(()=>{
         stat.last_ratings.push({match_id:match.id,rating:values.reduce((sum,v)=>sum+v,0)/values.length,kickoff_at:match.kickoff_at,opponent_id:match.opponent_id});
       });
     }
+    stats.forEach(s=>{s.minutes=0;s.minutes_played=0;s.on_field_gf=0;s.on_field_ga=0;s.plus_minus=0;s.goals_as_starter=0;s.goals_as_sub=0;});
+    completed.forEach(match=>{
+      const matchAnalysis=analyzeMatch({match,matchPlayers,events,ratings,competitions});
+      matchAnalysis.impact.forEach((impact,id)=>{
+        const st=stats.get(id);if(!st)return;
+        st.minutes+=Math.round(impact.minutes);st.on_field_gf+=impact.goalsFor;
+        st.on_field_ga+=impact.goalsAgainst;st.plus_minus+=impact.plusMinus;
+      });
+      matchAnalysis.goalSplit.forEach((g,id)=>{
+        const st=stats.get(id);if(!st)return;
+        st.goals_as_starter+=g.starter;st.goals_as_sub+=g.sub;
+      });
+    });
     stats.forEach(s=>{
       s.minutes_played=s.minutes;
       s.disciplinary_cards=s.yellow_cards+s.blue_cards+s.red_cards;
@@ -138,16 +151,42 @@ window.TeamSeasonStats=(()=>{
     });
     return stats;
   }
-  function summarizeTeam({matches=[],events=[],players=[],playerStats=[],competitions=[]}={}){
+  function summarizeTeam({matches=[],matchPlayers=[],events=[],ratings=[],players=[],playerStats=[],competitions=[]}={}){
     const valid=matches.filter(m=>m.status==="finished").sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
     const matchIds=new Set(valid.map(m=>key(m.id)));
     const records=events.filter(e=>matchIds.has(key(e.match_id))&&e.validation_status!=="rejected");
     const totals={played:valid.length,wins:0,draws:0,losses:0,goalsFor:0,goalsAgainst:0,cleanSheets:0,
       yellows:0,blues:0,reds:0,assists:0,substitutions:0,goalsByPeriod:[0,0],concededByPeriod:[0,0],
+      goalsStarters:0,goalsSubs:0,extraGoalsFor:[0,0],extraGoalsAgainst:[0,0],
+      scoredWhile:{leading:0,drawing:0,trailing:0},concededWhile:{leading:0,drawing:0,trailing:0},
+      goalsForNumerical:{superior:0,equal:0,inferior:0},goalsAgainstNumerical:{superior:0,equal:0,inferior:0},
+      timeByScore:{leading:0,drawing:0,trailing:0},timeByNumbers:{superior:0,equal:0,inferior:0},
+      comebacksFor:0,comebacksAgainst:0,comebackWins:0,comebackLosses:0,
+      weightedRating:null,ratingWeight:0,ratingSum:0,analyzedMatches:[],
       goalIntervals:[0,0,0,0],home:{played:0,goals:0,conceded:0},away:{played:0,goals:0,conceded:0},matches:[],players:[]};
     const byPlayer=new Map(playerStats.map(p=>[key(p.player_id??p.id),p]));
     totals.players=players.map(p=>({...p,...(byPlayer.get(key(p.id))||{})}));
     valid.forEach(m=>{
+      const analysis=analyzeMatch({match:m,matchPlayers,events:records,ratings,competitions});
+      const v=analysis.team;
+      totals.analyzedMatches.push(v);
+      totals.goalsStarters+=v.goalsStarters;totals.goalsSubs+=v.goalsSubs;
+      for(let i=0;i<2;i++){totals.extraGoalsFor[i]+=v.extraGoalsFor[i];totals.extraGoalsAgainst[i]+=v.extraGoalsAgainst[i];}
+      for(const status of ["leading","drawing","trailing"]){
+        totals.scoredWhile[status]+=v.scoredWhile[status];
+        totals.concededWhile[status]+=v.concededWhile[status];
+        totals.timeByScore[status]+=v.timeByScore[status];
+      }
+      for(const status of ["superior","equal","inferior"]){
+        totals.goalsForNumerical[status]+=v.goalsForNumerical[status];
+        totals.goalsAgainstNumerical[status]+=v.goalsAgainstNumerical[status];
+        totals.timeByNumbers[status]+=v.timeByNumbers[status];
+      }
+      totals.comebacksFor+=Number(v.remontadaFor);
+      totals.comebacksAgainst+=Number(v.remontadaAgainst);
+      totals.comebackWins+=Number(v.comebackWin);
+      totals.comebackLosses+=Number(v.comebackLoss);
+      if(v.ratingWeighted!=null){totals.ratingSum+=v.ratingWeighted*v.ratingMinutes;totals.ratingWeight+=v.ratingMinutes;}
       const ev=records.filter(e=>key(e.match_id)===key(m.id));
       const gfEvents=ev.filter(e=>e.event_type==="goal"&&e.team_side==="team");
       const gaEvents=ev.filter(e=>e.event_type==="goal"&&e.team_side==="opponent");
@@ -173,6 +212,7 @@ window.TeamSeasonStats=(()=>{
       totals.matches.push({id:m.id,kickoff_at:m.kickoff_at,opponent_id:m.opponent_id,competition_id:m.competition_id,home_away:m.home_away,
         goals:gf,conceded:ga,result:gf>ga?"W":gf<ga?"L":"D",source:hasGoalEvents?"tabellino":"risultato"});
     });
+    totals.weightedRating=totals.ratingWeight?totals.ratingSum/totals.ratingWeight:null;
     return totals;
   }
 
@@ -245,7 +285,7 @@ window.TeamSeasonStats=(()=>{
         if(forUs){
           team.scoredWhile[from]++;team.goalsForNumerical[numeric]++;
           if(pid){const goal=goalSplit.get(pid)||{starter:0,sub:0};goal[starts.has(pid)?"starter":"sub"]++;goalSplit.set(pid,goal);}
-          if(pid&&goalType!=="own_goal")team[starts.has(pid)?"goalsStarters":"goalsSubs"]++;
+          if(pid)team[starts.has(pid)?"goalsStarters":"goalsSubs"]++;
           field.forEach(id=>{ensureImpact(id).goalsFor++;ensureImpact(id).plusMinus++;});
           ownTotals.for++;
           if(everBehind&&gap()>=0)recovered=true;
