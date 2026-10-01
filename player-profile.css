@@ -92,3 +92,78 @@
   .pl-profile .pl-section{padding-top:17px}
   .pl-profile .pl-wave svg{height:112px}
 }
+
+
+/* Profilo giocatore mobile: light glass in continuità con Team Manager.
+   Isolato alla vista "detail": non altera il layout desktop né la lista. */
+@media (max-width:780px){
+  #rosterView[data-mobile-panel="detail"] .view-toolbar,
+  #rosterView[data-mobile-panel="detail"] #rosterRoleTabs,
+  #rosterView[data-mobile-panel="detail"] .view-actions{display:none!important}
+  #rosterView[data-mobile-panel="detail"] .mobile-detail-tabs{margin:0 0 8px;gap:3px;padding:3px}
+  #rosterView[data-mobile-panel="detail"] .mobile-detail-tabs button{padding:8px 5px}
+  #rosterView[data-mobile-panel="detail"] .roster-layout{display:block!important;min-width:0!important}
+  #rosterView[data-mobile-panel="detail"] .roster-table-card{display:none!important}
+  #rosterView[data-mobile-panel="detail"] .player-detail-card{
+    display:block!important;min-width:0;width:100%;max-width:100%;
+    padding:0!important;margin:0!important;background:transparent!important;
+    border:0!important;box-shadow:none!important;backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;overflow:visible!important
+  }
+  #rosterView[data-mobile-panel="detail"] .pl-profile{
+    width:100%;min-width:0;padding:13px 12px 18px!important;
+    color:var(--tm-soft-ink,#25392f)!important;
+    background:var(--tm-glass-bg,rgba(255,255,255,.30))!important;
+    border:1px solid var(--tm-glass-line,rgba(255,255,255,.64))!important;
+    border-radius:22px!important;
+    box-shadow:var(--tm-glass-shadow,0 10px 28px rgba(31,48,41,.09))!important;
+    backdrop-filter:blur(18px) saturate(118%);
+    -webkit-backdrop-filter:blur(18px) saturate(118%);
+  }
+  #rosterView .pl-profile .pl-top{padding:0 0 10px;margin:0 0 3px;border-bottom:1px solid rgba(36,49,43,.13)}
+  #rosterView .pl-profile .pl-top h2{font-size:clamp(1.2rem,5.2vw,1.55rem);margin:3px 0 2px;color:var(--tm-soft-ink,#21362b)!important}
+  #rosterView .pl-profile .pl-top strong{font-size:1.3rem;color:#315346!important}
+  #rosterView .pl-profile .pl-top small,
+  #rosterView .pl-profile .pl-top span{font-size:.68rem;color:#63776e!important}
+  #rosterView .pl-profile .pl-section{padding-top:12px!important}
+  #rosterView .pl-profile .pl-section>h3{font-size:.72rem;margin-bottom:8px;color:#254136!important}
+  #rosterView .pl-profile .pl-section>h3 small{color:#6c8077!important}
+  #rosterView .pl-profile .pl-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  #rosterView .pl-profile .pl-kpi{
+    padding:8px 5px;gap:4px;min-height:63px;
+    background:rgba(255,255,255,.26)!important;
+    border:1px solid rgba(255,255,255,.68)!important;
+    border-radius:10px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.24)
+  }
+  #rosterView .pl-profile .pl-kpi span{font-size:.61rem;line-height:1.1;color:#5f756b!important;overflow-wrap:normal}
+  #rosterView .pl-profile .pl-kpi strong{font-size:clamp(.79rem,3.1vw,1rem);line-height:1.15;color:#203b30!important}
+  #rosterView .pl-profile .pl-wave{margin-top:0}
+  #rosterView .pl-profile .pl-wave svg{height:84px}
+  #rosterView .pl-profile .pl-wave-labels{gap:2px}
+  #rosterView .pl-profile .pl-wave-labels>div{gap:2px}
+  #rosterView .pl-profile .pl-wave-labels b{font-size:.7rem;padding:2px 5px;color:#1b4936;background:rgba(148,218,174,.55)}
+  #rosterView .pl-profile .pl-wave-labels b.is-sv{color:#6c7772;background:rgba(215,224,217,.7)}
+  #rosterView .pl-profile .pl-wave-labels span{font-size:.64rem;color:#345549!important}
+  #rosterView .pl-profile .pl-wave-labels small{font-size:.58rem;color:#6e8077!important}
+  #rosterView .pl-profile .pl-pitch{
+    max-width:100%;width:100%;aspect-ratio:1.75;height:auto;min-height:0;
+    margin:0 auto;border:1px solid rgba(46,84,67,.32);
+    border-radius:12px;background:rgba(147,191,160,.13);overflow:hidden;
+  }
+  #rosterView .pl-profile .pl-pitch:before,
+  #rosterView .pl-profile .pl-center,
+  #rosterView .pl-profile .pl-circle,
+  #rosterView .pl-profile .pl-area{border-color:rgba(46,84,67,.3)!important}
+  #rosterView .pl-profile .pl-pitch b{
+    font-size:.69rem;color:#577366!important;
+    background:linear-gradient(180deg,rgba(221,238,219,.05),rgba(221,238,219,.30))
+  }
+  #rosterView .pl-profile .pl-meta>span{
+    color:#61756a!important;
+    border-bottom:1px solid rgba(47,75,59,.15)
+  }
+  #rosterView .pl-profile .pl-meta b{color:#2a4437!important}
+  #rosterView .pl-profile .injury-history{color:#264337!important}
+  #rosterView .pl-profile .injury-history-row{border-color:rgba(31,67,44,.14)}
+}
