@@ -48,3 +48,47 @@
 @media(max-width:1100px){#rosterView .roster-layout{grid-template-columns:minmax(200px,.85fr) minmax(0,1.5fr)}.pp-main{grid-template-columns:minmax(80px,.7fr) 1.3fr}.pp-position-section{grid-column:1/-1}.pp-pitch{max-width:350px}}
 @media(max-width:780px){#rosterView .roster-layout{display:block}.pp-main{grid-template-columns:minmax(90px,.65fr) 1.35fr}.pp-position-section{grid-column:1/-1}.pp-ident{min-height:200px}.pp-bottom{grid-template-columns:1fr}.pp-chart{height:205px}.pp-profile{padding:16px!important}}
 @media(max-width:390px){.pp-stat-grid{gap:4px 8px}.pp-header h2{font-size:1.3rem}.pp-measures>span{font-size:.9rem}}
+
+
+/* Lite profile actually used by product-ui.js: no avatar, no horizontal scroll */
+#rosterView .pl-profile{width:100%;min-width:0;box-sizing:border-box;color:#f3edf7;background:linear-gradient(145deg,#23182c,#15131e);border-radius:12px;padding:clamp(14px,2vw,24px);overflow:hidden}
+.pl-profile *{box-sizing:border-box}
+.pl-profile h2,.pl-profile h3{margin:0}
+.pl-top{display:flex;align-items:start;justify-content:space-between;gap:14px;padding:4px 0 18px;border-bottom:1px solid #ffffff24}
+.pl-top>div{min-width:0}
+.pl-top h2{font-size:clamp(1.2rem,3vw,1.85rem);line-height:1.15;overflow-wrap:anywhere;text-transform:uppercase;color:#fff;margin:5px 0}
+.pl-top small{font-size:.7rem;color:#ada1ba;text-transform:uppercase}
+.pl-top span{font-size:.78rem;color:#c4bacd}
+.pl-top>strong{flex-shrink:0;font-size:1.4rem;color:#e3dae9}
+.pl-section{padding-top:20px}
+.pl-section>h3{text-transform:uppercase;font-size:.81rem;color:#eee8f5;letter-spacing:.04em;margin-bottom:12px}
+.pl-section>h3 small{font-size:.65rem;font-weight:400;color:#9e94ad;text-transform:none}
+.pl-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.pl-kpi{min-width:0;padding:11px 8px;border:1px solid #ffffff18;background:#ffffff08;border-radius:7px;display:flex;flex-direction:column;justify-content:space-between;gap:8px}
+.pl-kpi span{font-size:.7rem;color:#c0b5c8;line-height:1.25}
+.pl-kpi strong{font-size:clamp(.98rem,2vw,1.3rem);color:#fff;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.pl-wave{width:100%;min-width:0;overflow:hidden}
+.pl-wave svg{display:block;width:100%;height:125px;overflow:visible}
+.pl-wave-labels{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;text-align:center}
+.pl-wave-labels>div{min-width:0;display:flex;align-items:center;flex-direction:column;gap:5px}
+.pl-wave-labels b{font-size:.83rem;color:#8beca6;background:#263b35;padding:3px 6px;border-radius:4px}
+.pl-wave-labels b.is-sv{color:#c7becf;background:#383343}
+.pl-wave-labels span{font-size:.69rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pl-wave-labels small{font-size:.63rem;color:#b6a9bd;white-space:nowrap}
+.pl-pitch{position:relative;width:100%;max-width:440px;aspect-ratio:1.75;border:1px solid #796a83;margin-inline:auto;background:#ffffff05;overflow:hidden}
+.pl-pitch:before{content:"";position:absolute;inset:8px;border:1px solid #ffffff22}
+.pl-center{position:absolute;left:50%;height:100%;border-left:1px solid #ffffff38}
+.pl-circle{position:absolute;left:50%;top:50%;width:22%;aspect-ratio:1;border:1px solid #ffffff38;border-radius:50%;transform:translate(-50%,-50%)}
+.pl-area{position:absolute;top:25%;width:15%;height:50%;border:1px solid #ffffff38}
+.pl-area.left{left:0;border-left:0}.pl-area.right{right:0;border-right:0}
+.pl-pitch b{position:absolute;inset:0;display:grid;place-items:center;color:#d4c7dc;font-size:.75rem;background:#19152188}
+.pl-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.pl-meta>span{display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #ffffff1c;padding:10px 2px;font-size:.73rem;color:#c4bacd;min-width:0}
+.pl-meta b{color:#fff;font-size:.8rem;text-align:right;overflow-wrap:anywhere}
+@media(max-width:780px){
+  #rosterView .player-detail-card{overflow:hidden!important;padding:0!important;background:transparent!important;border:0!important;box-shadow:none!important}
+  #rosterView .pl-profile{padding:14px!important;border-radius:10px}
+  .pl-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pl-profile .pl-section{padding-top:17px}
+  .pl-profile .pl-wave svg{height:112px}
+}
