@@ -775,6 +775,12 @@
     const statsEngineRes=await fetch("./season-stats.js",{cache:"no-store"});
     if(!statsEngineRes.ok)throw new Error("season-stats.js HTTP "+statsEngineRes.status);
     (0,eval)(await statsEngineRes.text());
+    const statsCss=await fetch("./stats-dashboard.css",{cache:"no-store"});
+    if(!statsCss.ok)throw new Error("stats-dashboard.css HTTP "+statsCss.status);
+    document.querySelector("#appStyles").textContent+="\n"+await statsCss.text();
+    const statsJs=await fetch("./stats-dashboard.js",{cache:"no-store"});
+    if(!statsJs.ok)throw new Error("stats-dashboard.js HTTP "+statsJs.status);
+    (0,eval)(await statsJs.text());
     const res=await fetch("./main.js",{cache:"no-store"});
     if(!res.ok) throw new Error("main.js HTTP "+res.status);
     const code=await res.text();
