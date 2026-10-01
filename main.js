@@ -39,9 +39,10 @@ async function apiHeaders(extra={}){
   return {"apikey":SUPABASE_KEY,"Authorization":"Bearer "+(session?.access_token||SUPABASE_KEY),...extra};
 }
 class Query{
-  constructor(table){this.table=table;this.action="select";this.columns="*";this.filters=[];this.orderBy=null;this.body=null;this.singleMode=null}
+  constructor(table){this.table=table;this.action="select";this.columns="*";this.filters=[];this.orderBy=null;this.body=null;this.singleMode=null;this.conflictColumns=null}
   select(cols="*"){this.columns=cols;return this}
   insert(body){this.action="insert";this.body=body;return this}
+  upsert(body,{onConflict}={}){this.action="upsert";this.body=body;this.conflictColumns=onConflict||null;return this}
   update(body){this.action="update";this.body=body;return this}
   delete(){this.action="delete";return this}
   eq(col,val){this.filters.push([col,"eq",val]);return this}
@@ -52,7 +53,8 @@ class Query{
   then(resolve,reject){return this.execute().then(resolve,reject)}
   async execute(){
     const qs=new URLSearchParams();
-    if(this.action==="select"||this.action==="insert"||this.action==="update")qs.set("select",this.columns||"*");
+    if(["select","insert","upsert","update"].includes(this.action))qs.set("select",this.columns||"*");
+    if(this.action==="upsert"&&this.conflictColumns)qs.set("on_conflict",this.conflictColumns);
     for(const [c,op,v] of this.filters){
       if(op==="in"){
         const vals=(v||[]).map(x=>String(x).replace(/"/g,'\\\"'));
@@ -61,8 +63,8 @@ class Query{
     }
     if(this.orderBy)qs.set("order",this.orderBy[0]+"."+(this.orderBy[1]?"asc":"desc"));
     const url=SUPABASE_URL+"/rest/v1/"+this.table+(qs.toString()?"?"+qs.toString():"");
-    const method=this.action==="select"?"GET":this.action==="insert"?"POST":this.action==="update"?"PATCH":"DELETE";
-    const headers=await apiHeaders({"Content-Type":"application/json","Prefer":"return=representation"});
+    const method=this.action==="select"?"GET":(this.action==="insert"||this.action==="upsert")?"POST":this.action==="update"?"PATCH":"DELETE";
+    const headers=await apiHeaders({"Content-Type":"application/json","Prefer":this.action==="upsert"?"resolution=merge-duplicates,return=representation":"return=representation"});
     const opts={method,headers};
     if(this.body!==null)opts.body=JSON.stringify(this.body);
     try{
@@ -1746,17 +1748,18 @@ async function mcSaveRating(playerId,value,control){
     const rating=mcParseRatingInput(value);
     if(rating==null)throw new Error("Voto non valido: usa SV oppure valori da 1 a 10 con incrementi di 0,5.");
     control.disabled=true;
-    const existing=matchCenterState.ratings.find(r=>r.player_id===playerId&&r.voter_id===sessionUser.id);
+    const matchId=matchCenterState.match.id;
+    const voterId=sessionUser.id;
     if(rating==="SV"){
-      if(existing){
-        const result=await db.from("app_match_ratings").delete().eq("match_id",matchCenterState.match.id).eq("player_id",playerId).eq("voter_id",sessionUser.id);
-        if(result.error)throw result.error;
-      }
+      const result=await db.from("app_match_ratings").delete().eq("match_id",matchId).eq("player_id",playerId).eq("voter_id",voterId);
+      if(result.error)throw result.error;
     }else{
-      const result=existing
-        ?await db.from("app_match_ratings").update({rating}).eq("match_id",matchCenterState.match.id).eq("player_id",playerId).eq("voter_id",sessionUser.id).select("*").maybeSingle()
-        :await db.from("app_match_ratings").insert({match_id:matchCenterState.match.id,player_id:playerId,voter_id:sessionUser.id,rating}).select("*").single();
-      assertSaved(result,"Rating");
+      // Atomic write: the same voter can change an existing vote without an INSERT race.
+      const result=await db.from("app_match_ratings")
+        .upsert({match_id:matchId,player_id:playerId,voter_id:voterId,rating},
+                {onConflict:"match_id,player_id,voter_id"})
+        .select("id,rating").single();
+      assertSaved(result,"Voto");
     }
     const refreshed=await db.from("app_match_ratings").select("player_id,rating,voter_id").eq("match_id",matchCenterState.match.id);
     if(refreshed.error)throw refreshed.error;
