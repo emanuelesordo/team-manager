@@ -17,7 +17,7 @@
     const impact='<section class="ts-card ts-advanced"><h3>Impatto individuale · +/−</h3><div class="ts-ratings">'+played.map(p=>'<div class="ts-grade"><strong>'+esc((p.last_name||"")+" "+(p.first_name||""))+'</strong><b>'+(val(p.plus_minus)>0?"+":"")+val(p.plus_minus)+'</b><small>'+val(p.on_field_gf)+' GF · '+val(p.on_field_ga)+' GS con il giocatore in campo</small></div>').join("")+'</div></section>';
     root.insertAdjacentHTML("beforeend",
       two("Gol titolari / subentrati",["Titolari",val(t.goalsStarters),"Gol segnati"],["Subentrati",val(t.goalsSubs),"Gol segnati"])+
-      two("Gol nel recupero",["1° tempo",val(t.extraGoalsFor?.[0])+" / "+val(t.extraGoalsAgainst?.[0]),"Fatti / Subiti"],["2° tempo",val(t.extraGoalsFor?.[1])+" / "+val(t.extraGoalsAgainst?.[1]),"Fatti / Subiti"])+
+      two("Gol nel recupero · totale "+(val(t.extraGoalsFor?.[0])+val(t.extraGoalsFor?.[1]))+" GF / "+(val(t.extraGoalsAgainst?.[0])+val(t.extraGoalsAgainst?.[1]))+" GS",["1° tempo",val(t.extraGoalsFor?.[0])+" / "+val(t.extraGoalsAgainst?.[0]),"Fatti / Subiti"],["2° tempo",val(t.extraGoalsFor?.[1])+" / "+val(t.extraGoalsAgainst?.[1]),"Fatti / Subiti"])+
       group("Gol segnati per situazione",bars(t.scoredWhile,sum(Object.values(t.scoredWhile||{}))))+
       group("Gol subiti per situazione",bars(t.concededWhile,sum(Object.values(t.concededWhile||{}))))+
       group("Gol fatti · numero di giocatori",bars(t.goalsForNumerical,sum(Object.values(t.goalsForNumerical||{}))))+
