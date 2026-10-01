@@ -178,7 +178,12 @@
         <button id="csiGlobalSyncBtn" class="secondary small" type="button">Aggiorna tutto da CSI</button>
       </div>
     </div>
-    <div class="competition-split">
+    <nav id="competitionViewTabs" class="competition-view-tabs" role="tablist" aria-label="Sezione competizioni">
+      <button type="button" class="active" data-competition-view="standings" role="tab" aria-selected="true">Classifica</button>
+      <button type="button" data-competition-view="projection" role="tab" aria-selected="false">Classifica pronosticata</button>
+      <button type="button" data-competition-view="fixtures" role="tab" aria-selected="false">Calendario</button>
+    </nav>
+    <div class="competition-split" data-active-competition-view="standings">
       <section class="competition-third standings-card">
         <div class="competition-column-head"><strong>Classifica</strong></div>
         <div id="competitionStandings"></div>
