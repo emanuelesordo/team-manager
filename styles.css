@@ -6494,3 +6494,11 @@ dialog form{padding:16px}
  .match-center-dialog[data-mc-view="formation"] #mcGeneralBench{overflow-y:auto;min-height:0}
  .match-center-dialog .mc-rating-panel:not(.hidden){display:block}
 }
+
+/* Override the legacy mobile-tab visibility for the dedicated FORMATION tab. */
+@media(max-width:780px){
+ .match-center-dialog[data-mc-view="formation"][data-mobile-mc-active] .mc-field-card,
+ .match-center-dialog[data-mc-view="formation"][data-mobile-mc-active] .mc-general-right{display:flex!important}
+ .match-center-dialog[data-mc-view="formation"][data-mobile-mc-active] .mc-general-left{display:none!important}
+ .match-center-dialog[data-mc-view="match"][data-mobile-mc-active] .mc-general-left{display:flex!important}
+}
