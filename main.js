@@ -1166,7 +1166,7 @@ function renderCompetitionFixtures(rows){
         ${group.list.map(r=>{
           const own=isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team);
           const provisional=r.status!=="finished"&&r.home_score!=null&&r.away_score!=null; const score=(r.status==="finished"||provisional)?esc(r.home_score)+"-"+esc(r.away_score):"–";
-          return `<div class="mini-fixture mc-openable ${own?"own-fixture":""}" data-fixture-center="${r.id}">${teamRatingBadge(r,r.home_team)}${compactTeamHtml(r.home_team)}<button type="button" class="score-link ${provisional?"provisional-score":""}" ${own?`data-match-center-score="${r.id}"`:`data-fixture-score="${r.id}"`}>${score}</button>${compactTeamHtml(r.away_team)}${teamRatingBadge(r,r.away_team)}</div>`;
+          return `<div class="mini-fixture mc-openable ${own?"own-fixture":""}" data-fixture-center="${r.id}">${compactTeamHtml(r.home_team).replace("</span>",teamRatingBadge(r,r.home_team)+"</span>")}<button type="button" class="score-link ${provisional?"provisional-score":""}" ${own?`data-match-center-score="${r.id}"`:`data-fixture-score="${r.id}"`}>${score}</button>${compactTeamHtml(r.away_team).replace("</span>",teamRatingBadge(r,r.away_team)+"</span>")}</div>`;
         }).join("")}
       </section>`).join("")}</div>`
     :'<div class="muted">Calendario non disponibile.</div>';
@@ -1208,7 +1208,9 @@ function linkedMatchForFixture(f){
 let teamFixtureRatings=new Map(),teamRatingLoad=null,teamRatingSeason=null;
 function teamRatingBadge(f,side){
   if(!f||f.status!=="finished"||!isOwnTeamName(side))return "";
-  return '<span class="tm-team-rating" data-team-rating-fixture="'+esc(f.id)+'" title="Rating medio squadra ponderato sui minuti" hidden></span>';
+  const value=teamFixtureRatings.get(String(f.id));
+  const visible=typeof value==="number"&&Number.isFinite(value);
+  return '<span class="tm-team-rating" data-team-rating-fixture="'+esc(f.id)+'" title="Rating medio squadra ponderato sui minuti"'+(visible?'':' hidden')+'>'+(visible?value.toFixed(2).replace(".",","):"")+'</span>';
 }
 function paintTeamRatings(){
   document.querySelectorAll("[data-team-rating-fixture]").forEach(el=>{
@@ -1302,11 +1304,11 @@ function renderCalendarRows(){
       </div>
 
       <div class="calendar-match-line">
-        ${teamRatingBadge(r,r.home_team)}<strong class="calendar-team-name calendar-home-team">${esc(home.name)}</strong>
+        <strong class="calendar-team-name calendar-home-team">${teamRatingBadge(r,r.home_team)}${esc(home.name)}</strong>
         <span class="calendar-team-logo">${homeLogo}</span>
         <button type="button" class="score-link calendar-score ${provisional?"provisional-score":""}" data-match-score="${r.id}">${score}</button>
         <span class="calendar-team-logo">${awayLogo}</span>
-        <strong class="calendar-team-name calendar-away-team">${esc(away.name)}</strong>${teamRatingBadge(r,r.away_team)}
+        <strong class="calendar-team-name calendar-away-team">${esc(away.name)}${teamRatingBadge(r,r.away_team)}</strong>
       </div>
 
       <div class="calendar-venue" title="${esc(venue||"Indirizzo non indicato")}">${esc(venue||"—")}</div>
@@ -3810,7 +3812,7 @@ $("#previewCalendarBtn").onclick=async()=>{const f=$("#calendarFile").files[0];i
 
 window.TM={
   db,esc,assertSaved,
-  loadAll,loadCompetitions,loadCompetitionHub,loadCalendarHub,loadStatsView,ensureMainTeam,
+  loadAll,loadCompetitions,loadCompetitionHub,loadCalendarHub,loadStatsView,ensureMainTeam,teamRatingBadge,primeTeamRatings,paintTeamRatings,
   setPanel,localDateTime,isOwnTeamName,teamVisual,linkedMatchForFixture,openMatchDetail,openFixture,
   getState:()=>({
     seasons,competitions,opponents,currentSeason,team,sessionUser,
@@ -4173,11 +4175,11 @@ function renderHomeScoreRow(f){
 
   return `<div class="home-score-row mc-openable" data-match-center="${f.id}" role="button" tabindex="0" aria-label="Apri dettaglio partita ${esc(home.name)} - ${esc(away.name)}">
     <div class="score-core">
-      ${teamRatingBadge(f,f.home_team)}<span class="score-team-name score-home-name">${esc(home.short||home.name)}</span>
+      <span class="score-team-name score-home-name">${teamRatingBadge(f,f.home_team)}${esc(home.short||home.name)}</span>
       <span class="score-crest">${homeLogo}</span>
       <strong>${esc(value)}</strong>
       <span class="score-crest">${awayLogo}</span>
-      <span class="score-team-name score-away-name">${esc(away.short||away.name)}</span>${teamRatingBadge(f,f.away_team)}
+      <span class="score-team-name score-away-name">${esc(away.short||away.name)}${teamRatingBadge(f,f.away_team)}</span>
     </div>
     <small>${done?"FIN":"PROSSIMA"}</small>
   </div>`;
