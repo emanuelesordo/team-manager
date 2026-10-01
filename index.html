@@ -772,6 +772,9 @@
     const cssRes=await fetch("./styles.css",{cache:"no-store"});
     if(!cssRes.ok) throw new Error("styles.css HTTP "+cssRes.status);
     document.querySelector("#appStyles").textContent=await cssRes.text();
+    const statsEngineRes=await fetch("./season-stats.js",{cache:"no-store"});
+    if(!statsEngineRes.ok)throw new Error("season-stats.js HTTP "+statsEngineRes.status);
+    (0,eval)(await statsEngineRes.text());
     const res=await fetch("./main.js",{cache:"no-store"});
     if(!res.ok) throw new Error("main.js HTTP "+res.status);
     const code=await res.text();
