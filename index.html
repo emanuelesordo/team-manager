@@ -781,6 +781,9 @@
     const statsJs=await fetch("./stats-dashboard.js",{cache:"no-store"});
     if(!statsJs.ok)throw new Error("stats-dashboard.js HTTP "+statsJs.status);
     (0,eval)(await statsJs.text());
+    const advancedJs=await fetch("./stats-advanced.js",{cache:"no-store"});
+    if(!advancedJs.ok)throw new Error("stats-advanced.js HTTP "+advancedJs.status);
+    (0,eval)(await advancedJs.text());
     const res=await fetch("./main.js",{cache:"no-store"});
     if(!res.ok) throw new Error("main.js HTTP "+res.status);
     const code=await res.text();
