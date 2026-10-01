@@ -4126,7 +4126,8 @@ function renderPlayerDetail(){
     ["Gol",s.goals??0],
     ["Assist",s.assists??0],
     ["Rating medio",s.avg_rating==null?"—":Number(s.avg_rating).toFixed(2).replace(".",",")],
-    ["Gialli","—"],["Blu","—"],["Rossi","—"]
+    ["Gialli",s.yellow_cards??0],["Blu",s.blue_cards??0],["Rossi",s.red_cards??0],
+    ["Entrate",s.sub_in??0],["Uscite",s.sub_out??0]
   ];
   host.innerHTML='<div class="pl-profile">'+
     '<header class="pl-top"><div><small>'+safe(currentSeason?.name||"Stagione corrente")+'</small><h2>'+safe(p.first_name+" "+p.last_name)+'</h2><span>'+safe(roleLabel(p.generic_role_manual))+'</span></div><strong>#'+safe(rosterShirtNumber(p)||"—")+'</strong></header>'+
