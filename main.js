@@ -277,6 +277,7 @@ async function checkRequiredPasswordChange(){
  const dialog=$("#temporaryPasswordDialog");
  if(!dialog.open)dialog.showModal();
 }
+$("#temporaryPasswordDialog").addEventListener("cancel",event=>event.preventDefault());
 $("#temporaryLogout").onclick=async()=>{
  $("#temporaryPasswordDialog").close();
  await db.auth.signOut();sessionUser=null;currentUserRole=null;await loadAuthState();
@@ -4111,7 +4112,7 @@ async function loadStatsView(){await loadCoreSeasonData();const fixtures=await o
 
 async function boot(){
   // L'accesso non deve bloccare il caricamento dei dati pubblici.
-  const authTask=loadAuthState().catch(err=>{
+  const authTask=loadAuthState().then(()=>checkRequiredPasswordChange()).catch(err=>{
     console.error("AUTH INIT ERROR",err);
     $("#authState").textContent="Accesso non disponibile";
     $("#authState").className="auth-state error";
