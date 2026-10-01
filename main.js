@@ -4280,6 +4280,13 @@ function renderPlayerDetail(){
       ["GF con lui",s.on_field_gf??0],["GS con lui",s.on_field_ga??0],
       ["Differenziale",(s.plus_minus??0)>0?"+"+(s.plus_minus??0):(s.plus_minus??0)]
     ].map(([k,v])=>'<div class="pl-kpi"><span>'+safe(k)+'</span><strong>'+safe(v)+'</strong></div>').join("")+'</div></section>'+
+    '<section class="pl-section"><h3>Impatto sul risultato</h3><p class="pl-impact-note">Esiti osservati durante la sua presenza in campo; non indicano un merito o una responsabilità individuale.</p><div class="pl-kpis">'+[
+      ["Rimonte positive",s.comebacks_positive??0],
+      ["Rimonte subite",s.comebacks_negative??0],
+      ["Risultato mantenuto",s.results_maintained??0],
+      ["Esito migliorato",s.results_improved??0],
+      ["Esito peggiorato",s.results_worsened??0]
+    ].map(([k,v])=>'<div class="pl-kpi"><span>'+safe(k)+'</span><strong>'+safe(v)+'</strong></div>').join("")+'</div></section>'+
     '<section class="pl-section"><h3>Informazioni</h3><div class="pl-meta"><span>Età <b>'+safe(ageFromBirth(p.birth_date))+'</b></span><span>Altezza <b>'+safe(p.height_cm?p.height_cm+" cm":"—")+'</b></span><span>Piede <b>'+safe(p.preferred_foot||"—")+'</b></span><span>Nazionalità <b>'+safe(p.nationality_code||"—")+'</b></span></div></section>'+
     '<section class="pl-section injury-history"><div class="card-section-head"><strong>Storico infortuni</strong><span>'+injuries.length+'</span></div>'+
     (injuries.length?injuries.map(x=>'<div class="injury-history-row"><div><strong>'+safe(x.public_summary||"Infortunio")+'</strong><small>'+fmt(x.injury_date)+' · '+safe(injuryStatusLabel(x.status))+'</small><small>Previsto: '+(x.expected_return?fmt(x.expected_return):"—")+' · Rientro: '+(x.actual_return?fmt(x.actual_return):"—")+'</small></div>'+(admin?'<button type="button" class="icon-btn injury-edit" data-edit-injury="'+safe(x.id)+'" title="Modifica">✎</button>':"")+'</div>').join(""):'<div class="empty-state compact">Nessun infortunio registrato</div>')+'</section>'+
