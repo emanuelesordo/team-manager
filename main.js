@@ -1796,8 +1796,20 @@ function mcPlayerEventSummary(playerId){
   const red=events.some(e=>e.event_type==="red_card"&&e.player_id===playerId);
   return {goals,assists,entered,exited,yellow,blue,red};
 }
+function mcBlueSuspendedIds(){
+  const pending=new Set();
+  [...matchCenterState.events].filter(e=>e.team_side==="team"&&e.validation_status!=="rejected")
+    .sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0))
+    .forEach(e=>{
+      if(!e.player_id)return;
+      if(e.event_type==="blue_card")pending.add(String(e.player_id));
+      else if(["blue_return","red_card"].includes(e.event_type))pending.delete(String(e.player_id));
+    });
+  return [...pending];
+}
 function mcCurrentFieldRows(){
   const map=new Map(matchCenterState.matchPlayers.filter(x=>x.started).map(x=>[x.player_id,{...x}]));
+  const temporaryOut=new Map();
   [...matchCenterState.events].filter(e=>e.team_side==="team").sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)).forEach(e=>{
     if(e.event_type==="substitution"){
       const outgoing=e.player_id?map.get(e.player_id):null;
@@ -1808,7 +1820,17 @@ function mcCurrentFieldRows(){
         map.set(e.secondary_player_id,{...source,started:true,tactical_slot:inheritedSlot});
       }
     }
-    if(e.event_type==="red_card"&&e.player_id)map.delete(e.player_id);
+    if(e.event_type==="blue_card"&&e.player_id){
+      const previous=map.get(e.player_id)||mcMatchPlayer(e.player_id);
+      if(previous)temporaryOut.set(e.player_id,previous);
+      map.delete(e.player_id);
+    }
+    if(e.event_type==="blue_return"&&e.player_id){
+      const prior=temporaryOut.get(e.player_id)||mcMatchPlayer(e.player_id);
+      if(prior)map.set(e.player_id,{...prior,started:true});
+      temporaryOut.delete(e.player_id);
+    }
+    if(e.event_type==="red_card"&&e.player_id){map.delete(e.player_id);temporaryOut.delete(e.player_id);}
   });
   return [...map.values()];
 }
@@ -2175,7 +2197,8 @@ function mcPlayerQuickButtons(playerId,mode){
   return '<span class="mc-player-quick mc-player-quick-'+mode+'" aria-label="Eventi rapidi">'+
     '<button type="button" data-mc-player-event="substitution" data-player-id="'+playerId+'" title="Cambio">↔</button>'+
     '<button type="button" data-mc-player-event="goal" data-player-id="'+playerId+'" title="Gol">⚽</button>'+
-    '<button type="button" data-mc-player-event="card" data-player-id="'+playerId+'" title="Cartellino">'+mcCardStackIcon()+'</button>'+
+    '<button type="button" data-mc-player-event="card" data-player-id="'+playerId+'" title="Cartellino">'+mcCardStackIcon()+'</button>'+ 
+    (mcBlueSuspendedIds().includes(String(playerId))?'<button type="button" data-mc-player-event="blue_return" data-player-id="'+playerId+'" title="Rientro da espulsione temporanea">↩</button>':'')+
   '</span>';
 }
 function mcBindPlayerQuickActions(root=document){
@@ -2384,7 +2407,7 @@ function mcSetPlayerQuickKind(kind){
   const editing=source==="edit"?matchCenterState.events.find(x=>String(x.id)===String(mcPlayerQuickState.editingEventId)):null;
   const fieldRows=mcCurrentFieldRows(),activeIds=new Set(fieldRows.map(x=>x.player_id)),isActive=id?activeIds.has(id):false;
   $$("[data-quick-kind]").forEach(b=>b.classList.toggle("active",b.dataset.quickKind===kind));
-  const label=kind==="substitution"?"Cambio":kind==="goal"?"Gol":kind==="recovery"?"Recupero":"Cartellino";
+  const label=kind==="substitution"?"Cambio":kind==="goal"?"Gol":kind==="recovery"?"Recupero":kind==="blue_return"?"Rientro dal blu":"Cartellino";
   $("#mcPlayerQuickTitle").textContent=source==="edit"?("Modifica evento · "+label):source==="player"?(label+" · "+(p?.last_name||mcPlayerName(id))):("Aggiungi evento · "+label);
   const side=source==="player"?"team":(mcPlayerQuickState.side||editing?.team_side||"team");
   mcPlayerQuickState.side=side;
@@ -2400,6 +2423,9 @@ function mcSetPlayerQuickKind(kind){
     const recoveryPeriod=draft.period||(editing?(editing.payload?.period||"first_half"):mcQuickPeriodDefault());
     const recoveryMinutes=editing?Number(editing.payload?.recovery_minutes??editing.stoppage_minute??0):0;
     html='<div class="mc-player-event-grid"><label>Tempo<select id="mcQuickPeriod">'+mcQuickPeriodOptions(recoveryPeriod)+'</select></label><label>Recupero (minuti)<input id="mcQuickRecovery" type="number" min="0" max="30" value="'+recoveryMinutes+'"></label></div>';
+  }else if(kind==="blue_return"){
+    html+='<p class="muted">Registra il rientro effettivo dopo la sanzione temporanea. Durata minima: '+(competitions.find(c=>c.id===matchCenterState.fixture?.competition_id)?.discipline_rules?.blue_card_minutes??8)+' minuti di gioco.</p>';
+    html+='<label>Giocatore>'+ (source==="player"?mcQuickPlayerChip(id,"Rientra"):mcQuickSelect(mcQuickAllSelectableRows(),"mcQuickPlayer","Seleziona giocatore",draft.playerId||editing?.player_id||""))+'</label>';
   }else if(kind==="substitution"){
     if(side==="opponent"){
       html+='<div class="mc-opponent-disabled">Cambio avversario non disponibile senza rosa avversaria.</div>';
@@ -2524,6 +2550,24 @@ async function mcSubmitPlayerQuickEvent(e){
     const rawMinute=$("#mcQuickMinute").value,minute=rawMinute===""?null:Number(rawMinute);
     const base={match_id:matchCenterState.match.id,minute,stoppage_minute:null,team_side:side,proposed_by:sessionUser.id,validation_status:"proposed"};
 
+    if(kind==="blue_return"){
+      const playerId=source==="player"?mcPlayerQuickState.playerId:($("#mcQuickPlayer")?.value||null);
+      if(!playerId||minute==null)throw new Error("Seleziona il giocatore e il minuto effettivo del rientro.");
+      const blues=matchCenterState.events.filter(e=>e.team_side==="team"&&e.player_id===playerId&&e.event_type==="blue_card"&&e.validation_status!=="rejected")
+        .sort((a,b)=>mcEventOrder(a)-mcEventOrder(b));
+      const lastBlue=blues.at(-1);
+      if(!lastBlue)throw new Error("Non risulta alcun cartellino blu per questo giocatore.");
+      if(!mcBlueSuspendedIds().includes(String(playerId)))throw new Error("Il giocatore non risulta temporaneamente espulso.");
+      const firstRecovery=mcMatchRecoveryMinutes("first_half");
+      const returnTime=mcParticipationElapsed({minute,payload:{period}},firstRecovery);
+      const startTime=mcParticipationElapsed(lastBlue,firstRecovery);
+      const minimum=Number(competitions.find(c=>c.id===matchCenterState.fixture?.competition_id)?.discipline_rules?.blue_card_minutes)||8;
+      if(returnTime==null||startTime==null||returnTime-startTime<minimum)
+        throw new Error("Il rientro è consentito dopo "+minimum+" minuti effettivi di penalità.");
+      const payload={...base,event_type:"blue_return",team_side:"team",player_id:playerId,secondary_player_id:null,payload:{period},substitution_reason:null};
+      if(editingId)await mcUpdateDirectEvent(editingId,payload);else await mcInsertDirectEvent(payload);
+      mcClosePlayerQuickEvent();await mcReload();return;
+    }
     if(kind==="substitution"){
       if(side==="opponent")throw new Error("Cambio avversario non disponibile senza rosa avversaria.");
       let outgoing,incoming;
@@ -2585,7 +2629,7 @@ async function mcSubmitPlayerQuickEvent(e){
       const existingRed=matchCenterState.events.some(x=>sameSubject(x)&&x.event_type==="red_card");
 
       const explicitAccumulation=side==="opponent"&&cardMode==="second_card";
-      const automaticAccumulation=(type==="yellow_card"||type==="blue_card")&&cautions.length>=1&&!existingRed;
+      const automaticAccumulation=type==="yellow_card"&&cautions.some(x=>x.event_type==="yellow_card")&&!existingRed;
       const shouldUnify=explicitAccumulation||automaticAccumulation;
 
       let eventType=type;
@@ -2608,7 +2652,7 @@ async function mcSubmitPlayerQuickEvent(e){
           card_type:cardType,
           ...(shouldUnify?{automatic:!explicitAccumulation,trigger_event_type:type,accumulated_cards:accumulatedCards,unified:true}:{}),
           ...(opponentShirt?{opponent_shirt_number:opponentShirt}:{}),
-          ...(eventType==="blue_card"?{temporary_suspension_minutes:10}:{})
+          ...(eventType==="blue_card"?{temporary_suspension_minutes:Number(competitions.find(c=>c.id===matchCenterState.fixture?.competition_id)?.discipline_rules?.blue_card_minutes)||8}:{})
         },
         substitution_reason:null
       };
@@ -2753,7 +2797,7 @@ function mcRenderGeneralBench(){
   const unused=matchCenterState.matchPlayers.filter(x=>
     x.selection_status==="bench"&&!activeIds.has(x.player_id)&&!enteredIds.has(x.player_id)&&!redIds.has(x.player_id)
   );
-  const returnedIds=[...outEvents.keys()].filter(id=>!activeIds.has(id)&&!redIds.has(id));
+  const returnedIds=[...new Set([...outEvents.keys(),...mcBlueSuspendedIds()])].filter(id=>!activeIds.has(id)&&!redIds.has(id));
   const returned=returnedIds.map(id=>mcMatchPlayer(id)||{player_id:id}).filter(Boolean);
 
   const renderRow=(x,status)=>{
