@@ -5880,3 +5880,106 @@ dialog form{padding:16px}
   border-color:#b51f3d!important;
   box-shadow:none!important;
 }
+
+
+/* Competizioni: un'unica sezione per volta, stessa struttura dati. */
+#competitionsView{
+  grid-template-rows:46px 42px minmax(0,1fr);
+}
+.competition-view-tabs{
+  min-width:0;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:4px;
+  padding:4px;
+  margin:0 0 7px;
+  border-radius:13px;
+  background:rgba(20,27,31,.055);
+}
+.competition-view-tabs button{
+  min-width:0;
+  padding:7px 8px;
+  border:0;
+  border-radius:10px;
+  color:#73787c;
+  background:transparent;
+  font-size:10px;
+  font-weight:850;
+  cursor:pointer;
+}
+.competition-view-tabs button.active{
+  background:#fff;
+  color:#15191c;
+  box-shadow:0 1px 5px rgba(20,30,40,.10);
+}
+#competitionsView .competition-split{
+  display:block;
+  height:100%;
+  min-height:0;
+}
+#competitionsView .competition-third{
+  display:flex;
+  width:100%;
+  height:100%;
+  min-height:0;
+}
+#competitionsView .competition-split[data-active-competition-view="standings"] > :not(.standings-card),
+#competitionsView .competition-split[data-active-competition-view="projection"] > :not(.projection-card),
+#competitionsView .competition-split[data-active-competition-view="fixtures"] > :not(.fixtures-card){
+  display:none!important;
+}
+#competitionsView .mini-calendar-tools.hidden{
+  display:none!important;
+}
+
+/* Match Center: dal minuto centrale verso il bordo della squadra. */
+#mcGeneralEvents .mc-event-row{
+  grid-template-columns:minmax(0,1fr) 52px minmax(0,1fr);
+}
+#mcGeneralEvents .mc-event-half-home,
+#mcGeneralEvents .mc-event-half-away{
+  min-width:0;
+}
+#mcGeneralEvents .mc-event-half-home{
+  justify-content:flex-end!important;
+}
+#mcGeneralEvents .mc-event-half-away{
+  justify-content:flex-start!important;
+}
+#mcGeneralEvents .mc-event-half-home .mc-minute-stack{
+  align-items:flex-end!important;
+}
+#mcGeneralEvents .mc-event-half-away .mc-minute-stack{
+  align-items:flex-start!important;
+}
+#mcGeneralEvents .mc-minute-event,
+#mcGeneralEvents .mc-substitution-pair{
+  width:max-content;
+  max-width:100%;
+  flex:0 1 auto;
+}
+#mcGeneralEvents .mc-event-half-home .mc-event-content{
+  flex-direction:row-reverse!important;
+  justify-content:flex-start!important;
+}
+#mcGeneralEvents .mc-event-half-away .mc-event-content{
+  flex-direction:row!important;
+  justify-content:flex-start!important;
+}
+#mcGeneralEvents .mc-event-content{
+  width:max-content;
+  max-width:100%;
+}
+@media(max-width:1120px){
+  #competitionsView{display:block;height:auto;max-height:none}
+  #competitionsView .competition-view-tabs{margin:8px 0}
+  #competitionsView .competition-split{height:auto;min-height:380px}
+  #competitionsView .competition-third{height:auto;min-height:380px}
+  #competitionsView #competitionFixtures{min-height:380px;height:min(65dvh,660px)}
+}
+@media(max-width:600px){
+  .competition-view-tabs button{font-size:9px;padding:9px 3px}
+  #mcGeneralEvents .mc-event-row{
+    grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);
+  }
+}
