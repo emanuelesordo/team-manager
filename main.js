@@ -680,6 +680,7 @@ async function openCompetitionEdit(id){
   $("#cPlayoff").checked=!!c.playoff_playout_enabled;$("#cTwoLegged").checked=!!c.knockout_two_legged;
   $("#cExtraTime").checked=!!c.extra_time_enabled;$("#cPenalties").checked=!!c.penalties_enabled;
   $("#cYellowThresholds").value=(c.discipline_rules?.yellow_thresholds||[5,4,3,2]).join(",");
+  $("#cBlueMinutes").value=c.discipline_rules?.blue_card_minutes??8;
   const links=await db.from("app_competition_opponents").select("opponent_id").eq("competition_id",id);
   const selected=new Set((links.data||[]).map(x=>x.opponent_id));
   $("#cOpponents").innerHTML=opponents.map(o=>`<label class="choice"><input type="checkbox" value="${o.id}" ${selected.has(o.id)?"checked":""}><span>${esc(o.name)}</span></label>`).join("");
@@ -697,7 +698,7 @@ $$("[data-close-competition]").forEach(b=>b.onclick=()=>$("#competitionDialog").
 $("#competitionForm").onsubmit=async e=>{
   e.preventDefault();$("#competitionError").classList.add("hidden");
   const id=$("#competitionId").value;
-  const payload={name:$("#cName").value.trim(),kind:$("#cKind").value,format:$("#cFormat").value,periods:+$("#cPeriods").value||2,minutes_per_period:+$("#cMinutes").value||45,win_points:+$("#cWinPts").value||0,draw_points:+$("#cDrawPts").value||0,loss_points:+$("#cLossPts").value||0,playoff_playout_enabled:$("#cPlayoff").checked,knockout_two_legged:$("#cTwoLegged").checked,extra_time_enabled:$("#cExtraTime").checked,penalties_enabled:$("#cPenalties").checked,discipline_rules:{yellow_thresholds:$("#cYellowThresholds").value.split(",").map(x=>+x.trim()).filter(Boolean),suspension_matches:1}};
+  const payload={name:$("#cName").value.trim(),kind:$("#cKind").value,format:$("#cFormat").value,periods:+$("#cPeriods").value||2,minutes_per_period:+$("#cMinutes").value||45,win_points:+$("#cWinPts").value||0,draw_points:+$("#cDrawPts").value||0,loss_points:+$("#cLossPts").value||0,playoff_playout_enabled:$("#cPlayoff").checked,knockout_two_legged:$("#cTwoLegged").checked,extra_time_enabled:$("#cExtraTime").checked,penalties_enabled:$("#cPenalties").checked,discipline_rules:{...(competitions.find(c=>c.id===id)?.discipline_rules||{}),yellow_thresholds:$("#cYellowThresholds").value.split(",").map(x=>+x.trim()).filter(Boolean),suspension_matches:1,blue_card_minutes:Math.max(1,Number($("#cBlueMinutes").value)||8)}};
   try{
     const r=await db.from("app_competitions").update(payload).eq("id",id).select("*").maybeSingle();assertSaved(r,"Competizione");
     const del=await db.from("app_competition_opponents").delete().eq("competition_id",id);if(del.error)throw del.error;
@@ -716,7 +717,7 @@ function refreshFormat(){
 }
 $("#wCompetitionKind").onchange=refreshFormat;
 $("#addDraftCompetition").onclick=()=>{const name=$("#wCompetitionName").value.trim();if(!name)return;draftCompetitions.push(readCompetitionDraft());$("#wCompetitionName").value="";renderDrafts()};
-function readCompetitionDraft(){return{name:$("#wCompetitionName").value.trim(),kind:$("#wCompetitionKind").value,format:$("#wCompetitionFormat").value,periods:+$("#wPeriods").value||2,minutes_per_period:+$("#wMinutes").value||35,win_points:+$("#wWinPts").value||0,draw_points:+$("#wDrawPts").value||0,loss_points:+$("#wLossPts").value||0,knockout_two_legged:$("#wTwoLegged").checked,extra_time_enabled:$("#wExtraTime").checked,penalties_enabled:$("#wPenalties").checked,playoff_playout_enabled:$("#wPlayoff").checked,discipline_rules:{yellow_thresholds:$("#wYellowThresholds").value.split(",").map(x=>+x.trim()).filter(Boolean),suspension_matches:1}}}
+function readCompetitionDraft(){return{name:$("#wCompetitionName").value.trim(),kind:$("#wCompetitionKind").value,format:$("#wCompetitionFormat").value,periods:+$("#wPeriods").value||2,minutes_per_period:+$("#wMinutes").value||35,win_points:+$("#wWinPts").value||0,draw_points:+$("#wDrawPts").value||0,loss_points:+$("#wLossPts").value||0,knockout_two_legged:$("#wTwoLegged").checked,extra_time_enabled:$("#wExtraTime").checked,penalties_enabled:$("#wPenalties").checked,playoff_playout_enabled:$("#wPlayoff").checked,discipline_rules:{yellow_thresholds:$("#wYellowThresholds").value.split(",").map(x=>+x.trim()).filter(Boolean),suspension_matches:1,blue_card_minutes:Math.max(1,Number($("#wBlueMinutes").value)||8)}}}
 function renderDrafts(){$("#draftCompetitionList").innerHTML=draftCompetitions.map((c,i)=>`<div class="draft-item"><strong>${esc(c.name)}</strong> · ${c.kind==="league"?"Campionato":c.kind==="cup"?"Coppa":"Amichevoli"} · ${c.periods}×${c.minutes_per_period}' <button type="button" class="text-btn" data-rm-draft="${i}">rimuovi</button></div>`).join("");$$("[data-rm-draft]").forEach(b=>b.onclick=()=>{draftCompetitions.splice(+b.dataset.rmDraft,1);renderDrafts()})}
 function renderWizardOpponents(){$("#wizardOpponents").innerHTML=opponents.map(o=>`<label class="choice"><input type="checkbox" value="${o.id}" ${wizardOpponentIds.has(o.id)?"checked":""}> <span>${esc(o.name)}</span></label>`).join("");$("#wizardOpponents").querySelectorAll("input").forEach(i=>i.onchange=()=>i.checked?wizardOpponentIds.add(i.value):wizardOpponentIds.delete(i.value))}
 $("#quickOpponentBtn").onclick=()=>openOpponent();
@@ -3697,7 +3698,7 @@ function ageFromBirth(d){if(!d)return "—";const b=new Date(d+"T12:00:00"),n=ne
 function playerNameById(id){const p=rosterRows.find(x=>x.player_id===id)||players.find(x=>x.id===id);return p?(p.first_name+" "+p.last_name):"—"}
 function opponentVisualById(id){return opponents.find(x=>x.id===id)||null}
 function matchLabel(m){const o=opponentVisualById(m.opponent_id);return m.home_away==="home"?(team?.short_name||"CAS")+" - "+(o?.short_name||o?.name||"Avv."):(o?.short_name||o?.name||"Avv.")+" - "+(team?.short_name||"CAS")}
-let seasonTeamEvents=[];
+let seasonTeamEvents=[],seasonMatchPlayers=[],seasonMatchRatings=[];
 async function loadCoreSeasonData(){
   await ensureMainTeam();if(!currentSeason)return;
   const [roster,matchesResult,allPlayers,injuriesResult]=await Promise.all([
@@ -3722,6 +3723,8 @@ async function loadCoreSeasonData(){
   if(mp.error||ev.error||rt.error)console.warn("Statistiche Match Center parziali",mp.error||ev.error||rt.error);
   rosterMatchPlayers=mp.data||[];
   seasonTeamEvents=ev.data||[];
+  seasonMatchPlayers=mp.data||[];
+  seasonMatchRatings=rt.data||[];
   const derived=window.TeamSeasonStats.aggregate({
     matches:teamMatches,matchPlayers:mp.data||[],events:ev.data||[],
     ratings:rt.data||[],competitions,players
@@ -4127,7 +4130,10 @@ function renderPlayerDetail(){
     ["Assist",s.assists??0],
     ["Rating medio",s.avg_rating==null?"—":Number(s.avg_rating).toFixed(2).replace(".",",")],
     ["Gialli",s.yellow_cards??0],["Blu",s.blue_cards??0],["Rossi",s.red_cards??0],
-    ["Entrate",s.sub_in??0],["Uscite",s.sub_out??0]
+    ["Entrate",s.sub_in??0],["Uscite",s.sub_out??0],
+    ["Gol da titolare",s.goals_as_starter??0],["Gol da subentrato",s.goals_as_sub??0],
+    ["GF in campo",s.on_field_gf??0],["GS in campo",s.on_field_ga??0],
+    ["Differenziale",((s.plus_minus??0)>0?"+":"")+(s.plus_minus??0)]
   ];
   host.innerHTML='<div class="pl-profile">'+
     '<header class="pl-top"><div><small>'+safe(currentSeason?.name||"Stagione corrente")+'</small><h2>'+safe(p.first_name+" "+p.last_name)+'</h2><span>'+safe(roleLabel(p.generic_role_manual))+'</span></div><strong>#'+safe(rosterShirtNumber(p)||"—")+'</strong></header>'+
@@ -4233,7 +4239,7 @@ async function loadStatsView(){
   const target=$("#statsView");
   if(!target)return;
   const teamSummary=window.TeamSeasonStats.summarizeTeam({
-    matches:teamMatches,events:seasonTeamEvents,players,playerStats,competitions
+    matches:teamMatches,matchPlayers:seasonMatchPlayers,ratings:seasonMatchRatings,events:seasonTeamEvents,players,playerStats,competitions
   });
   window.TeamStatsDashboard.render({
     target,team:teamSummary,playerStats,opponents,
