@@ -1236,7 +1236,7 @@ function mcHeaderEventItems(side){
         return '<span class="red"><b>■</b> '+esc(who)+' '+minute+'</span>';
       }
       const who=mcOwnFixture()&&e.team_side==="team"?(mcPlayerName(e.player_id)||"Gol"):"Gol";
-      return '<span>'+esc(who)+' '+minute+'</span>';
+      return '<span class="mc-header-goal"><b class="mc-header-goal-icon">⚽</b><strong>'+esc(who)+'</strong> <time>'+esc(minute)+'</time></span>';
     }).join("");
 }
 function mcHeader(){
@@ -1377,7 +1377,7 @@ function mcRatingParticipants(){
   });
 }
 function mcSetPostView(view){
-  matchCenterState.postView=view==="rating"&&mcIsPost()?"rating":"match";
+  matchCenterState.postView=(view==="rating"||view==="vote")&&mcIsPost()?view:"match";
   mcRenderAll();
 }
 function mcRatingEventIcons(playerId){
@@ -1623,7 +1623,7 @@ function mcPitch(target,rows,remove){
     ].join("");
     return '<div class="pitch-player modern" data-mc-pitch-player="'+x.player_id+'" draggable="'+(!remove)+'" style="left:'+q[0]+'%;top:'+q[1]+'%">'+
       '<span class="pitch-events pitch-events-top">'+topBadges+'</span>'+
-      (rating!=null?'<span class="pitch-rating">'+rating.toFixed(1)+'</span>':"")+
+      (rating!=null?'<span class="pitch-rating" style="background:'+mcRatingColor(rating)+';color:'+mcRatingTextColor(rating)+'">'+rating.toFixed(1)+'</span>':"")+
       '<span class="kit-shirt kit-'+esc(kit.style)+'" style="--kit-primary:'+esc(kit.primary)+';--kit-secondary:'+esc(kit.secondary)+';--kit-number:'+esc(kit.number)+'"><b>'+(x.shirt_number??p?.shirt_number??"–")+'</b></span>'+
       '<strong>'+esc(p?.last_name||"—")+'</strong>'+
       '<span class="pitch-events pitch-events-bottom">'+bottomBadges+'</span>'+
@@ -2518,7 +2518,9 @@ function mcRenderGeneralBench(){
   const renderRow=(x,status)=>{
     const p=mcPlayer(x.player_id),injured=!!mcInjury(x.player_id)||x.unavailability_reason==="injury";
     const finalStatus=x.unavailability_reason==="injury"?"Infortunio":x.unavailability_reason==="technical_choice"?"Scelta tecnica":x.unavailability_reason==="changes_finished"?"Cambi finiti":x.unavailability_reason==="physical"?"Problema fisico":status;
-    return '<div class="mc-general-bench-row"><span class="num">'+(x.shirt_number??p?.shirt_number??"–")+'</span><span class="mc-bench-player-copy"><strong>'+esc(mcPlayerName(x.player_id))+(injured?'<i class="mc-injury-icon" title="Infortunio">✚</i>':'')+'</strong><small>'+esc(finalStatus||roleLabel(p?.generic_role_manual))+'</small></span>'+mcPlayerQuickButtons(x.player_id,"bench")+'</div>';
+    const rating=mcAverageRating(x.player_id);
+    const badge=rating==null?'':'<span class="mc-bench-rating" style="background:'+mcRatingColor(rating)+';color:'+mcRatingTextColor(rating)+'">'+rating.toFixed(1)+'</span>';
+    return '<div class="mc-general-bench-row"><span class="num">'+(x.shirt_number??p?.shirt_number??"–")+'</span><span class="mc-bench-player-copy"><strong>'+esc(mcPlayerName(x.player_id))+(injured?'<i class="mc-injury-icon" title="Infortunio">✚</i>':'')+'</strong><small>'+esc(finalStatus||roleLabel(p?.generic_role_manual))+'</small></span>'+badge+mcPlayerQuickButtons(x.player_id,"bench")+'</div>';
   };
   const unusedHtml=unused.map(x=>renderRow(x,roleLabel(mcPlayer(x.player_id)?.generic_role_manual))).join("");
   const returnedHtml=returned.map(x=>{
@@ -2557,7 +2559,7 @@ function mcRenderAll(){
   });
   const matchPanel=$('[data-mc-post-panel="match"]'),ratingPanel=$('[data-mc-post-panel="rating"]');
   matchPanel?.classList.toggle("hidden",post&&matchCenterState.postView==="rating");
-  ratingPanel?.classList.toggle("hidden",!mcOwnFixture()||!post||matchCenterState.postView!=="rating");
+  ratingPanel?.classList.toggle("hidden",!mcOwnFixture()||!post||!["rating","vote"].includes(matchCenterState.postView));
   const errors=[];
   try{
     mcTimeline("#mcGeneralEvents",0,mcGeneralEventFilters);
