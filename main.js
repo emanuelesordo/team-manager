@@ -217,7 +217,36 @@ async function setAppView(name){
   if(name==="events")await loadEventsView();
   if(name==="stats")await loadStatsView();
 }
-$$(".side-link[data-app-view]").forEach(b=>b.onclick=()=>setAppView(b.dataset.appView));
+$(".side-link[data-app-view]").forEach(b=>b.onclick=()=>setAppView(b.dataset.appView));
+
+/* Mobile: a single visible panel avoids nested horizontal/vertical scroll. */
+let mobileHomeTab="team",mobileMcTab="history";
+function setMobileHomeTab(name){
+  if(!["team","player","schedule","scores","standings"].includes(name))return;
+  mobileHomeTab=name;
+  const view=$("#homeView");
+  if(view)view.dataset.mobileHomeActive=name;
+  $("[data-mobile-home-tab]").forEach(button=>{
+    const active=button.dataset.mobileHomeTab===name;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",active?"true":"false");
+  });
+}
+function setMobileMcTab(name){
+  if(!["history","pitch","bench"].includes(name))return;
+  mobileMcTab=!mcOwnFixture()?"history":name;
+  const dialog=$("#matchDetailDialog");
+  if(dialog)dialog.dataset.mobileMcActive=mobileMcTab;
+  $("[data-mobile-mc-tab]").forEach(button=>{
+    const active=button.dataset.mobileMcTab===mobileMcTab;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",active?"true":"false");
+  });
+}
+$("[data-mobile-home-tab]").forEach(button=>button.onclick=()=>setMobileHomeTab(button.dataset.mobileHomeTab));
+$("[data-mobile-mc-tab]").forEach(button=>button.onclick=()=>setMobileMcTab(button.dataset.mobileMcTab));
+setMobileHomeTab("team");
+
 
 function setPanel(name){
   $$(".setup-link").forEach(b=>b.classList.toggle("active",b.dataset.section===name));
@@ -2637,6 +2666,7 @@ async function openMatchDetail(fixture){
     injuries=inj.data||[];suspensions=sus.data||[];
   }
   matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries,suspensions,tab:"general",editMode:false,postView:"match",ownFixture:own};
+  setMobileMcTab("history");
   $("#matchDetailFixtureId").value=fixture.id;
   $("#matchDetailMatchId").value=match?.id||"";
   const dialog=$("#matchDetailDialog");
