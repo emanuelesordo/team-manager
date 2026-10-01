@@ -219,6 +219,10 @@
   </section>
 
   <section id="rosterView" class="hidden">
+    <nav class="mobile-detail-tabs" aria-label="Vista rosa">
+      <button type="button" class="active" data-mobile-roster-tab="list" aria-pressed="true">Elenco giocatori</button>
+      <button type="button" data-mobile-roster-tab="detail" aria-pressed="false">Scheda giocatore</button>
+    </nav>
     <div class="view-toolbar">
       <div id="rosterRoleTabs" class="pill-tabs"></div>
       <div class="view-actions"><input id="rosterSearch" class="compact-search" placeholder="Cerca giocatore"><button id="addPlayerBtn" class="primary" type="button">+ Giocatore</button></div>
@@ -265,6 +269,10 @@
   </section>
 
   <section id="statsView" class="hidden">
+    <nav class="mobile-detail-tabs" aria-label="Vista statistiche">
+      <button type="button" class="active" data-mobile-stats-tab="players" aria-pressed="true">Giocatori</button>
+      <button type="button" data-mobile-stats-tab="scorers" aria-pressed="false">Marcatori</button>
+    </nav>
     <div id="statsKpis" class="kpi-grid stats-kpis"></div>
     <div class="stats-layout">
       <section class="ui-card"><div class="card-section-head"><strong>Giocatori</strong></div><div id="statsPlayers"></div></section>
