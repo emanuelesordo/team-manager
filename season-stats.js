@@ -3,7 +3,7 @@
 window.TeamSeasonStats=(()=>{
   const key=v=>String(v??"");
   const finite=v=>v!==null&&v!==""&&Number.isFinite(Number(v));
-  const empty=id=>({player_id:id,appearances:0,starts:0,minutes:0,minutes_played:0,goals:0,assists:0,yellow_cards:0,blue_cards:0,red_cards:0,disciplinary_cards:0,avg_rating:null,rated_matches:0,last_ratings:[]});
+  const empty=id=>({player_id:id,appearances:0,starts:0,minutes:0,minutes_played:0,goals:0,assists:0,yellow_cards:0,blue_cards:0,red_cards:0,disciplinary_cards:0,sub_in:0,sub_out:0,expulsions:0,goal_first_half:0,goal_second_half:0,avg_rating:null,rated_matches:0,last_ratings:[]});
   function aggregate({matches=[],matchPlayers=[],events=[],ratings=[],competitions=[],players=[]}={}){
     const completed=matches.filter(m=>m.status==="finished");
     const byId=new Map(completed.map(m=>[key(m.id),m]));
@@ -110,6 +110,13 @@ window.TeamSeasonStats=(()=>{
         if(stat){stat.appearances++;stat.minutes+=Math.max(0,Math.round(durations.get(pid)||0));}
       });
       ev.forEach(e=>{
+        if(e.event_type==="substitution"){
+          if(e.player_id!=null)ensure(e.player_id).sub_out++;
+          if(e.secondary_player_id!=null)ensure(e.secondary_player_id).sub_in++;
+        }
+        if(e.event_type==="red_card"&&e.player_id!=null)ensure(e.player_id).expulsions++;
+        if(e.event_type==="goal"&&e.player_id!=null)
+          ensure(e.player_id)[getPeriod(e)==="second_half"?"goal_second_half":"goal_first_half"]++;
         if(e.event_type==="goal"){
           if(e.player_id!=null)ensure(e.player_id).goals++;
           if(e.secondary_player_id!=null&&key(e.secondary_player_id)!==key(e.player_id))ensure(e.secondary_player_id).assists++;
@@ -131,5 +138,42 @@ window.TeamSeasonStats=(()=>{
     });
     return stats;
   }
-  return {aggregate};
+  function summarizeTeam({matches=[],events=[],players=[],playerStats=[],competitions=[]}={}){
+    const valid=matches.filter(m=>m.status==="finished").sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
+    const matchIds=new Set(valid.map(m=>key(m.id)));
+    const records=events.filter(e=>matchIds.has(key(e.match_id))&&e.validation_status!=="rejected");
+    const totals={played:valid.length,wins:0,draws:0,losses:0,goalsFor:0,goalsAgainst:0,cleanSheets:0,
+      yellows:0,blues:0,reds:0,assists:0,substitutions:0,goalsByPeriod:[0,0],concededByPeriod:[0,0],
+      goalIntervals:[0,0,0,0],home:{played:0,goals:0,conceded:0},away:{played:0,goals:0,conceded:0},matches:[],players:[]};
+    const byPlayer=new Map(playerStats.map(p=>[key(p.player_id??p.id),p]));
+    totals.players=players.map(p=>({...p,...(byPlayer.get(key(p.id))||{})}));
+    valid.forEach(m=>{
+      const ev=records.filter(e=>key(e.match_id)===key(m.id));
+      const gfEvents=ev.filter(e=>e.event_type==="goal"&&e.team_side==="team");
+      const gaEvents=ev.filter(e=>e.event_type==="goal"&&e.team_side==="opponent");
+      const hasGoalEvents=gfEvents.length+gaEvents.length>0;
+      const isHome=m.home_away==="home";
+      const fallbackFor=Number(isHome?m.home_score:m.away_score);
+      const fallbackAgainst=Number(isHome?m.away_score:m.home_score);
+      const gf=hasGoalEvents?gfEvents.length:(Number.isFinite(fallbackFor)?fallbackFor:0);
+      const ga=hasGoalEvents?gaEvents.length:(Number.isFinite(fallbackAgainst)?fallbackAgainst:0);
+      const periodMinutes=Number(competitions.find(c=>key(c.id)===key(m.competition_id))?.minutes_per_period)||45;
+      const period=e=>e.payload?.period==="second_half"?"second_half":e.payload?.period==="first_half"?"first_half":Number(e.minute)>periodMinutes?"second_half":"first_half";
+      gfEvents.forEach(e=>{const second=period(e)==="second_half";totals.goalsByPeriod[second?1:0]++;totals.goalIntervals[(second?2:0)+(Number(e.minute)>periodMinutes/2?1:0)]++;});
+      gaEvents.forEach(e=>totals.concededByPeriod[period(e)==="second_half"?1:0]++);
+      totals.yellows+=ev.filter(e=>e.event_type==="yellow_card"&&e.team_side==="team").length;
+      totals.blues+=ev.filter(e=>e.event_type==="blue_card"&&e.team_side==="team").length;
+      totals.reds+=ev.filter(e=>e.event_type==="red_card"&&e.team_side==="team").length;
+      totals.substitutions+=ev.filter(e=>e.event_type==="substitution"&&e.team_side==="team").length;
+      totals.assists+=gfEvents.filter(e=>e.secondary_player_id!=null).length;
+      totals.goalsFor+=gf;totals.goalsAgainst+=ga;
+      if(gf>ga)totals.wins++;else if(gf<ga)totals.losses++;else totals.draws++;
+      if(ga===0)totals.cleanSheets++;
+      const side=isHome?totals.home:totals.away;side.played++;side.goals+=gf;side.conceded+=ga;
+      totals.matches.push({id:m.id,kickoff_at:m.kickoff_at,opponent_id:m.opponent_id,competition_id:m.competition_id,home_away:m.home_away,
+        goals:gf,conceded:ga,result:gf>ga?"W":gf<ga?"L":"D",source:hasGoalEvents?"tabellino":"risultato"});
+    });
+    return totals;
+  }
+  return {aggregate,summarizeTeam};
 })();
