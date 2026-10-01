@@ -2511,13 +2511,29 @@ async function mcReload(){
     if(ev.error)throw ev.error;
     matchCenterState.matchPlayers=[];
     matchCenterState.ratings=[];
-    matchCenterState.events=(ev.data||[]).map(e=>({
-      ...e,
-      fixture_side:e.side,
-      team_side:e.side,
-      payload:{...(e.source_raw||{}),period:e.source_raw?.period,recovery_minutes:e.source_raw?.recovery_minutes},
-      validation_status:"official"
-    }));
+    const base=mcPeriodMinutes();
+    matchCenterState.events=(ev.data||[]).map(e=>{
+      const period=e.source_raw?.period||((Number(e.minute)||0)>base?"second_half":"first_half");
+      let minute=e.minute,stoppage=Number(e.stoppage_minute||0)||null;
+      if(e.event_type!=="period_end"&&minute!=null){
+        let raw=Number(minute);
+        if(period==="second_half"&&raw>base)raw-=base;
+        if(raw>base){
+          stoppage=Math.max(Number(stoppage||0),raw-base)||null;
+          raw=base;
+        }
+        minute=raw;
+      }
+      return {
+        ...e,
+        minute,
+        stoppage_minute:stoppage,
+        fixture_side:e.side,
+        team_side:e.side,
+        payload:{...(e.source_raw||{}),period,recovery_minutes:e.source_raw?.recovery_minutes},
+        validation_status:"official"
+      };
+    });
     mcRenderAll();
     await mcSyncProvisionalScore();
     return;
