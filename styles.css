@@ -6954,3 +6954,19 @@ dialog form{padding:16px}
  .calendar-team-name .tm-team-rating{font-size:8px;padding:2px 4px}
  .score-core .score-team-name .tm-team-rating{font-size:7px;padding:2px 3px}
 }
+
+
+/* Match Center: la valutazione sta orizzontalmente all'esterno del nome,
+   come richiesto, senza spostare il punteggio e con simmetria casa/ospite. */
+.match-center-dialog .mc-scoreboard .mc-team-copy{
+  display:flex;flex-direction:row;align-items:center;gap:7px;min-width:0;
+}
+.match-center-dialog .mc-scoreboard .mc-home .mc-team-copy{justify-content:flex-end}
+.match-center-dialog .mc-scoreboard .mc-away .mc-team-copy{justify-content:flex-start}
+.match-center-dialog .mc-scoreboard .mc-team-copy>.tm-team-rating{flex:0 0 auto}
+.pl-impact-note{color:#638071;font-size:.72rem;line-height:1.4;margin:0 0 11px}
+.hero-score .tm-team-rating{font-size:9px;padding:2px 5px}
+@media(max-width:780px){
+  .match-center-dialog .mc-scoreboard .mc-team-copy{gap:4px}
+  .match-center-dialog .mc-scoreboard .mc-team-copy>.tm-team-rating{font-size:8px;padding:2px 4px}
+}
