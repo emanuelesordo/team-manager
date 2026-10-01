@@ -2722,7 +2722,7 @@ function csiRenderPreview(){
   const m=p.match||{},all=p.events||[],goals=all.filter(e=>e.type==="goal");
   $("#csiImportSummary").innerHTML='<strong>'+esc(m.home_team||f.home_team)+' '+esc(m.home_score??"–")+' - '+esc(m.away_score??"–")+' '+esc(m.away_team||f.away_team)+'</strong><br>'+
     esc(m.date||"")+' '+esc(m.time||"")+(m.match_code?' · '+esc(m.match_code):"")+'<br>'+
-    (own?all.filter(e=>["goal","substitution","yellow_card","blue_card","red_card"].includes(e.type)).length+' eventi ufficiali da importare':'Solo '+goals.length+' gol/minuti da importare per questa partita');
+    (own?all.filter(e=>["goal","substitution","yellow_card","blue_card","red_card"].includes(e.type)).length+' eventi ufficiali da importare':all.filter(e=>["goal","yellow_card","blue_card","red_card"].includes(e.type)).length+' eventi da importare per questa partita');
   csiImportState.mapping=new Map();
   const playersToMap=csiMappingPlayers();
   playersToMap.forEach(p=>csiImportState.mapping.set(csiAliasKey(p),csiResolvePlayer(p)));
@@ -3259,6 +3259,10 @@ $("#otherMatchEventForm").onsubmit=async e=>{
     if(type==="recovery"){
       const recovery=Math.max(0,Number($("#omcRecoveryMinutes").value||0));
       if(recovery>30)throw new Error("Il recupero massimo consentito è 30 minuti.");
+      const maxUsed=matchCenterState.events
+        .filter(x=>x.event_type!=="period_end"&&mcEventPeriod(x)===period&&String(x.id)!==String(id||""))
+        .reduce((m,x)=>Math.max(m,Number(x.stoppage_minute||0)),0);
+      if(recovery<maxUsed)throw new Error("Recupero non valido: esiste già un evento al +"+maxUsed+"'.");
       const existing=omcRecoveryEvent(period);
       if(id&&existing&&String(existing.id)!==String(id))throw new Error("Il recupero del "+omcPeriodShort(period)+" è già registrato.");
       payload={
