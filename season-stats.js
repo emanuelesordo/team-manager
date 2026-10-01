@@ -248,7 +248,7 @@ window.TeamSeasonStats=(()=>{
       timeByScore:{leading:0,drawing:0,trailing:0},timeByNumbers:{superior:0,equal:0,inferior:0},
       remontadaFor:false,remontadaAgainst:false,comebackWin:false,comebackLoss:false,
       ratingWeighted:null,ratingMinutes:0,goalsKnown:0,unknownTimedEvents:0};
-    const line=records.map((e,i)=>({e,t:time(e),i})).filter(x=>x.t!=null&&x.e.event_type!=="period_end").sort((a,b)=>a.t-b.t||a.i-b.i);
+    const line=records.map((e,i)=>({e,t:time(e),i})).filter(x=>x.t!=null&&x.e.event_type!=="period_end").sort((a,b)=>a.t-b.t||String(a.e.created_at||"").localeCompare(String(b.e.created_at||""))||a.i-b.i);
     let ownOut=0,oppOut=0,everBehind=false,everAhead=false,recovered=false,lostLead=false,cursor=0;
     const gap=()=>ownTotals.for-ownTotals.against;
     const scoreStatus=()=>gap()>0?"leading":gap()<0?"trailing":"drawing";
@@ -318,7 +318,7 @@ window.TeamSeasonStats=(()=>{
         if(side==="opponent"){const ident=pid||key(e.payload?.opponent_shirt_number??e.id??("blue-"+t));if(!oppBlue.has(ident)){oppBlue.set(ident,t+blueDuration);oppOut++;}}
       }else if(returnEvent(e)){
         if(side==="team"&&pid&&ownBlue.has(pid)&&!redOwn.has(pid)&&t>=ownBlue.get(pid)){clearOwnBlue(pid);field.add(pid);touch.add(pid);ensureImpact(pid);}
-        if(side==="opponent"){const ident=pid||key(e.payload?.opponent_shirt_number);if(oppBlue.has(ident)&&t>=oppBlue.get(ident))clearOppBlue(ident);}
+        if(side==="opponent"){const ident=pid||key(e.payload?.opponent_shirt_number??e.payload?.blue_card_id);if(oppBlue.has(ident)&&t>=oppBlue.get(ident))clearOppBlue(ident);}
       }
     }
     addTime(end);
