@@ -1225,18 +1225,24 @@ async function mcConfirmFinalScore(){
     renderCalendarRows();
   }catch(err){error.textContent=err.message||String(err);error.classList.remove("hidden")}
 }
+function mcHeaderShortName(playerId,fallback){
+  const player=mcPlayer(playerId);
+  if(!player)return fallback;
+  const first=String(player.first_name||"").trim();
+  const surname=String(player.last_name||"").trim();
+  return ((first?first.charAt(0).toUpperCase()+". ":"")+surname).trim()||fallback;
+}
 function mcHeaderEventItems(side){
-  return matchCenterState.events
+  return [...matchCenterState.events]
     .filter(e=>mcEventIsHome(e)===(side==="home")&&(e.event_type==="goal"||e.event_type==="red_card"))
     .sort((a,b)=>mcEventOrder(a)-mcEventOrder(b))
     .map(e=>{
-      const minute=e.minute==null?"":mcDisplayMinute(e);
-      if(e.event_type==="red_card"){
-        const who=mcOwnFixture()&&e.team_side==="team"?mcPlayerName(e.player_id):"Espulsione";
-        return '<span class="red"><b>■</b> '+esc(who)+' '+minute+'</span>';
-      }
-      const who=mcOwnFixture()&&e.team_side==="team"?(mcPlayerName(e.player_id)||"Gol"):"Gol";
-      return '<span class="mc-header-goal"><b class="mc-header-goal-icon">⚽</b><strong>'+esc(who)+'</strong> <time>'+esc(minute)+'</time></span>';
+      const minute=e.minute==null?"?":mcDisplayMinute(e);
+      const goal=e.event_type==="goal";
+      const fallback=goal?"Gol avversario":"Espulsione";
+      const who=mcOwnFixture()&&e.team_side==="team"?mcHeaderShortName(e.player_id,fallback):fallback;
+      const ico=goal?"⚽":"■";
+      return '<div class="mc-header-event '+(goal?"goal":"red")+'"><span class="mc-header-event-icon">'+ico+'</span><time>'+esc(minute)+'</time><strong>'+esc(who)+'</strong></div>';
     }).join("");
 }
 function mcHeader(){
@@ -1377,7 +1383,7 @@ function mcRatingParticipants(){
   });
 }
 function mcSetPostView(view){
-  matchCenterState.postView=(view==="rating"||view==="vote")&&mcIsPost()?view:"match";
+  matchCenterState.postView=view==="formation"&&mcOwnFixture()?"formation":view==="rating"&&mcIsPost()&&mcOwnFixture()?"rating":"match";
   mcRenderAll();
 }
 function mcRatingEventIcons(playerId){
@@ -1421,12 +1427,11 @@ function mcRenderRatingRow(item){
   const averageStyle=average==null?"":' style="--rating-bg:'+mcRatingColor(average)+';--rating-fg:'+mcRatingTextColor(average)+'"';
   const currentColor=current==null?"#e4e6e5":mcRatingColor(current);
   const currentFg=current==null?"#6e7579":mcRatingTextColor(current);
-  const events=mcRatingEventIcons(playerId);
   return '<div class="mc-rating-row" data-rating-row="'+playerId+'">'+
     '<div class="mc-rating-player">'+
       '<span class="num">'+esc(matchPlayer?.shirt_number??player?.shirt_number??"–")+'</span>'+
       '<span class="mc-rating-player-copy">'+
-        '<span class="mc-rating-name-line"><strong>'+esc(mcPlayerName(playerId))+'</strong><span class="mc-rating-events">'+events+'</span></span>'+
+        '<span class="mc-rating-name-line"><strong>'+esc(mcPlayerName(playerId))+'</strong></span>'+
         '<small>'+Math.round(minutes)+"' giocati"+'</small>'+
       '</span>'+
     '</div>'+
@@ -2550,16 +2555,18 @@ function mcRenderAll(){
   dialog?.classList.toggle("mc-external-fixture",!mcOwnFixture());
   mcHeader();
   const post=mcIsPost();
-  if(!post)matchCenterState.postView="match";
+  if(!post&&matchCenterState.postView==="rating")matchCenterState.postView="match";
   const tabs=$("#mcPostTabs");
-  tabs?.classList.toggle("hidden",!post||!mcOwnFixture());
+  tabs?.classList.toggle("hidden",!mcOwnFixture());
+  dialog.dataset.mcView=matchCenterState.postView;
   document.querySelectorAll("[data-mc-post-view]").forEach(b=>{
     b.classList.toggle("active",b.dataset.mcPostView===matchCenterState.postView);
+    b.classList.toggle("hidden",b.dataset.mcPostView==="rating"&&!post);
     b.onclick=()=>mcSetPostView(b.dataset.mcPostView);
   });
   const matchPanel=$('[data-mc-post-panel="match"]'),ratingPanel=$('[data-mc-post-panel="rating"]');
-  matchPanel?.classList.toggle("hidden",post&&matchCenterState.postView==="rating");
-  ratingPanel?.classList.toggle("hidden",!mcOwnFixture()||!post||!["rating","vote"].includes(matchCenterState.postView));
+  matchPanel?.classList.toggle("hidden",matchCenterState.postView==="rating");
+  ratingPanel?.classList.toggle("hidden",!mcOwnFixture()||!post||matchCenterState.postView!=="rating");
   const errors=[];
   try{
     mcTimeline("#mcGeneralEvents",0,mcGeneralEventFilters);
