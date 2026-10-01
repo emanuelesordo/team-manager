@@ -1225,7 +1225,7 @@ async function primeTeamRatings(){
   teamRatingLoad=(async()=>{
     const [mr,fx]=await Promise.all([
       db.from("app_matches").select("*").eq("season_id",seasonId).eq("status","finished"),
-      db.from("app_competition_fixtures").select("id,competition_id,opponent_id,kickoff_at,home_team,away_team,status").eq("season_id",seasonId).eq("status","finished")
+      db.from("app_competition_fixtures").select("id,competition_id,kickoff_at,home_team,away_team,status").eq("season_id",seasonId).eq("status","finished")
     ]);
     if(mr.error||fx.error)throw mr.error||fx.error;
     const m=mr.data||[],ids=m.map(x=>x.id);
@@ -1241,7 +1241,7 @@ async function primeTeamRatings(){
     }).team.ratingWeighted]));
     for(const f of fx.data||[]){
       if(!isOwnTeamName(f.home_team)&&!isOwnTeamName(f.away_team))continue;
-      const match=m.find(x=>String(x.competition_id)===String(f.competition_id)&&new Date(x.kickoff_at).getTime()===new Date(f.kickoff_at).getTime()&&(f.opponent_id==null||String(f.opponent_id)===String(x.opponent_id)));
+      const match=m.find(x=>String(x.competition_id)===String(f.competition_id)&&new Date(x.kickoff_at).getTime()===new Date(f.kickoff_at).getTime());
       const value=match&&values.get(String(match.id));
       if(value!=null)teamFixtureRatings.set(String(f.id),value);
     }
