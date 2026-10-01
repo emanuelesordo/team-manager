@@ -6901,7 +6901,7 @@ dialog form{padding:16px}
   .mobile-match-hero-dot{width:8px;height:8px;border:0;padding:0;border-radius:50%;background:rgba(54,88,59,.26);transition:width .22s ease,background .22s ease}
   .mobile-match-hero-dot.is-active{width:24px;border-radius:99px;background:#2f5540}
   /* Personal card is always the section directly beneath the hero. */
-  #homeView.home-reference-grid>.home-player-panel{
+  #homeView.home-reference-grid[data-mobile-home-active]>.home-panel.home-player-panel{
     order:1;
     display:flex!important;
     flex-direction:column;
@@ -6920,7 +6920,7 @@ dialog form{padding:16px}
   #homeView.home-reference-grid>.home-schedule-panel,
   #homeView.home-reference-grid>.home-scores-panel,
   #homeView.home-reference-grid>.home-standings-panel{order:3}
-  #homeView .home-team-panel>.home-subhead:first-of-type,
+  #homeView .home-team-panel>.home-subhead:has(+ #homeLastMatch),
   #homeView .home-team-panel>#homeLastMatch{display:none}
 }
 @media screen and (max-width:780px) and (prefers-reduced-motion:reduce){
