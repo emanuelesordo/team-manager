@@ -1627,11 +1627,11 @@ function mcPitch(target,rows,remove){
       ...Array.from({length:ev.assists},()=>'<span class="pitch-event assist">👟</span>')
     ].join("");
     return '<div class="pitch-player modern" data-mc-pitch-player="'+x.player_id+'" draggable="'+(!remove)+'" style="left:'+q[0]+'%;top:'+q[1]+'%">'+
-      '<span class="pitch-events pitch-events-top">'+topBadges+'</span>'+
+
       (rating!=null?'<span class="pitch-rating" style="background:'+mcRatingColor(rating)+';color:'+mcRatingTextColor(rating)+'">'+rating.toFixed(1)+'</span>':"")+
       '<span class="kit-shirt kit-'+esc(kit.style)+'" style="--kit-primary:'+esc(kit.primary)+';--kit-secondary:'+esc(kit.secondary)+';--kit-number:'+esc(kit.number)+'"><b>'+(x.shirt_number??p?.shirt_number??"–")+'</b></span>'+
       '<strong>'+esc(p?.last_name||"—")+'</strong>'+
-      '<span class="pitch-events pitch-events-bottom">'+bottomBadges+'</span>'+
+      '<span class="pitch-events pitch-events-bottom">'+topBadges+bottomBadges+'</span>'+
       (!remove?mcPlayerQuickButtons(x.player_id,"pitch"):"")+
       (remove?'<button type="button" data-mc-unassign="'+x.player_id+'">×</button>':"")+
     '</div>';
@@ -2410,6 +2410,23 @@ async function mcSubmitPlayerQuickEvent(e){
 }
 
 let mcGeneralBenchSide="bench";
+let mcFormationScene="pitch";
+function mcSetFormationScene(scene){
+  if(!["pitch","bench","not_called"].includes(scene))return;
+  mcFormationScene=scene;
+  mcGeneralBenchSide=scene==="not_called"?"not_called":"bench";
+  const dlg=$("#matchDetailDialog");
+  if(dlg)dlg.dataset.mcFormationScene=scene;
+  $(".mc-formation-toggle [data-mc-formation-scene]").forEach(button=>{
+    const active=button.dataset.mcFormationScene===scene;
+    button.classList.toggle("active",active);
+    button.setAttribute("aria-pressed",String(active));
+  });
+  const label=$("#mcFormationSceneTitle");
+  if(label)label.textContent=scene==="pitch"?"Formazione in campo":scene==="bench"?"Panchina":"Tribuna · non convocati";
+  if(scene!=="pitch"&&matchCenterState.fixture)mcRenderGeneralBench();
+}
+$("[data-mc-formation-scene]").forEach(button=>button.onclick=()=>mcSetFormationScene(button.dataset.mcFormationScene));
 let mcGeneralEventFilters=new Set(["goal","substitution","yellow_card","blue_card","red_card"]);
 function mcQuickAction(type){
   mcSetTab("events");
@@ -2691,6 +2708,7 @@ async function openMatchDetail(fixture){
   }
   matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries,suspensions,tab:"general",editMode:false,postView:"match",ownFixture:own};
   setMobileMcTab("history");
+  mcSetFormationScene("pitch");
   $("#matchDetailFixtureId").value=fixture.id;
   $("#matchDetailMatchId").value=match?.id||"";
   const dialog=$("#matchDetailDialog");
