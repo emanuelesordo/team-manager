@@ -19,7 +19,7 @@ window.TeamSeasonStats=(()=>{
     });
     events.forEach(e=>{
       const mid=key(e.match_id);
-      if(!byId.has(mid)||e.validation_status==="rejected"||e.validation_status==="proposed"||e.team_side!=="team")return;
+      if(!byId.has(mid)||e.validation_status==="rejected"||e.team_side!=="team")return;
       if(!perMatchEvents.has(mid))perMatchEvents.set(mid,[]);
       perMatchEvents.get(mid).push(e);
       if(e.player_id!=null)ensure(e.player_id);
