@@ -3369,9 +3369,10 @@ async function ownFixtures(){const r=await db.from("app_competition_fixtures").s
 function fixtureOutcome(f){if(f.status!=="finished")return null;const ownHome=isOwnTeamName(f.home_team),gf=ownHome?f.home_score:f.away_score,ga=ownHome?f.away_score:f.home_score;return {gf,ga,result:gf>ga?"W":gf<ga?"L":"D"}}
 function fixtureLogo(name){const v=teamVisual(name);return v.logo?`<img src="${esc(v.logo)}" alt="">`:`<span>${esc(v.short)}</span>`}
 async function loadDashboard(){
-  await loadCoreSeasonData();
+  // Il caricamento della rosa non deve impedire il primo rendering della Home.
+  await ensureMainTeam();
   await loadCompetitions();
-
+  if(!currentSeason)throw new Error("Stagione non selezionata.");
   const fixtures=await ownFixtures();
   const now=Date.now();
   const finished=fixtures.filter(f=>f.status==="finished"&&new Date(f.kickoff_at).getTime()<=now).sort((a,b)=>new Date(a.kickoff_at)-new Date(b.kickoff_at));
@@ -3397,8 +3398,15 @@ async function loadDashboard(){
   $("#homeLastMatch").innerHTML=last?renderHomeMatch(last,true):'<div class="home-empty">Nessuna partita conclusa</div>';
   $("#homeFormChart").innerHTML=renderHomeForm(finished.slice(-7));
 
-  await loadLoggedPlayer();
-  $("#homePlayerStats").innerHTML=renderLoggedPlayerCard();
+  $("#homePlayerStats").innerHTML='<div class="muted">Caricamento giocatori…</div>';
+  try{
+    await loadCoreSeasonData();
+    await loadLoggedPlayer();
+    $("#homePlayerStats").innerHTML=renderLoggedPlayerCard();
+  }catch(err){
+    console.error("HOME PLAYER ERROR",err);
+    $("#homePlayerStats").innerHTML='<div class="home-empty">Statistiche giocatori temporaneamente non disponibili.</div>';
+  }
 
   $("#homeMiniCalendar").innerHTML=renderHomeCalendar(next?.kickoff_at||new Date(),fixtures);
   $("#homeNextMatch").innerHTML=next?renderHomeNextMatch(next):'<div class="home-empty">Nessuna partita programmata</div>';
@@ -3752,8 +3760,15 @@ $("#eventComposeForm").onsubmit=async e=>{e.preventDefault();$("#eventComposeErr
 async function loadStatsView(){await loadCoreSeasonData();const fixtures=await ownFixtures(),finished=fixtures.filter(f=>f.status==="finished"),t=finished.reduce((a,f)=>{const o=fixtureOutcome(f);if(!o)return a;a.m++;a.gf+=o.gf;a.ga+=o.ga;if(o.result==="W")a.w++;else if(o.result==="D")a.d++;else a.l++;return a},{m:0,w:0,d:0,l:0,gf:0,ga:0});$("#statsKpis").innerHTML=[["Partite",t.m],["Vittorie",t.w],["Gol fatti",t.gf],["Gol subiti",t.ga]].map(([l,v])=>`<div class="kpi-card"><strong>${v}</strong><span>${l}</span></div>`).join("");const sorted=[...playerStats].sort((a,b)=>(b.appearances||0)-(a.appearances||0)||(b.goals||0)-(a.goals||0));$("#statsPlayers").innerHTML=`<table class="data-table"><thead><tr><th>Giocatore</th><th>Pres.</th><th>Tit.</th><th>Gol</th><th>Assist</th><th>Gialli</th><th>Blu</th><th>Disc.</th><th>Rossi</th></tr></thead><tbody>${sorted.map(p=>`<tr><td><strong>${esc(p.last_name+" "+p.first_name)}</strong></td><td>${p.appearances||0}</td><td>${p.starts||0}</td><td>${p.goals||0}</td><td>${p.assists||0}</td><td>${p.yellow_cards||0}</td><td>${p.blue_cards||0}</td><td><strong>${p.disciplinary_cards||0}</strong></td><td>${p.red_cards||0}</td></tr>`).join("")}</tbody></table>`;$("#statsScorers").innerHTML=[...playerStats].sort((a,b)=>(b.goals||0)-(a.goals||0)).slice(0,8).map((p,i)=>`<div class="scorer-row"><span>${i+1}</span><strong>${esc(p.last_name+" "+p.first_name)}</strong><b>${p.goals||0}</b></div>`).join("")}
 
 async function boot(){
+  // L'accesso non deve bloccare il caricamento dei dati pubblici.
+  const authTask=loadAuthState().catch(err=>{
+    console.error("AUTH INIT ERROR",err);
+    $("#authState").textContent="Accesso non disponibile";
+    $("#authState").className="auth-state error";
+  });
   try{
-    await Promise.all([loadAuthState(),loadAll()]);
+    await loadAll();
+    if(!currentSeason)throw new Error("Nessuna stagione disponibile: verifica accesso dati e connessione.");
     await loadCompetitions();
     await ensureMainTeam();
     await setAppView("home");
@@ -3761,7 +3776,18 @@ async function boot(){
     console.error("BOOT ERROR",err);
     const msg=err?.message||String(err);
     if($("#connectionState")){$("#connectionState").textContent="Errore: "+msg;$("#connectionState").className="status-pill error"}
-    if($("#authState")&&$("#authState").textContent==="Sessione…"){$("#authState").textContent="Errore avvio";$("#authState").className="auth-state error"}
+    showHomeLoadError(msg);
   }
+  return authTask;
+}
+function showHomeLoadError(message){
+  const id="homeLoadDiagnostic";
+  let el=document.getElementById(id);
+  if(!el){
+    el=document.createElement("p");el.id=id;el.className="form-error";
+    const target=document.getElementById("homeTeamOverview")||document.getElementById("homeView");
+    target?.prepend(el);
+  }
+  if(el)el.textContent="Caricamento dati interrotto: "+message;
 }
 window.TM.bootReady=boot();
