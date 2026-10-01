@@ -1243,7 +1243,15 @@ async function primeTeamRatings(){
     }).team.ratingWeighted]));
     for(const f of fx.data||[]){
       if(!isOwnTeamName(f.home_team)&&!isOwnTeamName(f.away_team))continue;
-      const match=m.find(x=>String(x.competition_id)===String(f.competition_id)&&new Date(x.kickoff_at).getTime()===new Date(f.kickoff_at).getTime());
+      const ownHome=isOwnTeamName(f.home_team);
+      const opponentName=ownHome?f.away_team:f.home_team;
+      const opponent=fixtureOpponent(opponentName);
+      // Non attribuire a più partite il voto solo perché hanno lo stesso orario.
+      if(!opponent)continue;
+      const match=m.find(x=>String(x.competition_id)===String(f.competition_id)&&
+        new Date(x.kickoff_at).getTime()===new Date(f.kickoff_at).getTime()&&
+        String(x.opponent_id)===String(opponent.id)&&
+        x.home_away===(ownHome?"home":"away"));
       const value=match&&values.get(String(match.id));
       if(value!=null)teamFixtureRatings.set(String(f.id),value);
     }
