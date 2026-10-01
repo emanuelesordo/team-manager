@@ -276,17 +276,58 @@
           <span><em class="role-chip">${esc(p.generic_role_manual||"\u2014")}</em></span><span>${age(p.birth_date)}</span><span>${s.apps}</span><span>${s.goals}</span>
         </button>`;
       }).join("");
-    $$("[data-player-id]",$("#rosterTable")).forEach(b=>b.onclick=()=>{selectedPlayerId=b.dataset.playerId;renderRoster($("#rosterSearch").value);renderPlayerDetail();});
+    $$("[data-player-id]",$("#rosterTable")).forEach(b=>b.onclick=()=>{selectedPlayerId=b.dataset.playerId;renderRoster($("#rosterSearch").value);renderPlayerDetail();const view=$("#rosterView");if(view)view.dataset.mobilePanel="detail";$("[data-mobile-roster-tab]").forEach(tab=>{const yes=tab.dataset.mobileRosterTab==="detail";tab.classList.toggle("active",yes);tab.setAttribute("aria-pressed",String(yes));});});
     if (!selectedPlayerId && list[0]) selectedPlayerId=list[0].id;
     renderPlayerDetail();
   }
   function renderPlayerDetail() {
-    const p=players.find(x=>x.id===selectedPlayerId);
-    if (!p) { $("#playerDetail").innerHTML='<div class="empty-state">Seleziona un giocatore</div>'; return; }
-    const s=pstats(p.id);
-    $("#playerDetail").innerHTML=`<div class="player-hero">${p.photo_url?`<img src="${esc(p.photo_url)}" alt="">`:`<div class="player-placeholder">${esc((p.first_name[0]||"")+(p.last_name[0]||""))}</div>`}<div><strong>${esc(p.first_name+" "+p.last_name)}</strong><span>${esc(p.generic_role_manual||"Ruolo non impostato")}</span></div></div>
-      <div class="player-meta"><div><span>Et\xe0</span><b>${age(p.birth_date)}</b></div><div><span>Altezza</span><b>${p.height_cm?esc(p.height_cm)+" cm":"\u2014"}</b></div><div><span>Piede</span><b>${esc(p.preferred_foot||"\u2014")}</b></div><div><span>Nazionalit\xe0</span><b>${esc(p.nationality_code||"\u2014")}</b></div></div>
-      <div class="player-kpis"><div><strong>${s.apps}</strong><span>Presenze</span></div><div><strong>${s.goals}</strong><span>Gol</span></div><div><strong>${s.yellows}</strong><span>Gialli</span></div><div><strong>${s.reds}</strong><span>Rossi</span></div></div>`;
+    const p=players.find(x=>String(x.id)===String(selectedPlayerId));
+    const root=$("#playerDetail");
+    if(!p){root.innerHTML='<div class="empty-state">Seleziona un giocatore</div>';return;}
+    const seasonMatches=matches.filter(m=>m.status==="finished");
+    const matchIds=new Set(seasonMatches.map(m=>m.id));
+    const mp=matchPlayers.filter(x=>String(x.player_id)===String(p.id)&&matchIds.has(x.match_id));
+    const ev=events.filter(x=>String(x.player_id)===String(p.id)&&matchIds.has(x.match_id)&&x.team_side==="team");
+    const ratingRows=ratings.filter(x=>String(x.player_id)===String(p.id)&&matchIds.has(x.match_id));
+    const validRating=x=>x.rating!==null&&x.rating!==""&&Number.isFinite(+x.rating)&&+x.rating>=1&&+x.rating<=10;
+    const grouped=new Map();
+    ratingRows.filter(validRating).forEach(x=>{const a=grouped.get(x.match_id)||[];a.push(+x.rating);grouped.set(x.match_id,a);});
+    const average=a=>a.length?a.reduce((sum,v)=>sum+v,0)/a.length:null;
+    const graded=ratingRows.filter(validRating).map(x=>+x.rating);
+    const ratedMatches=Array.from(grouped.values()).map(average);
+    const avg=average(ratedMatches);
+    const last=seasonMatches.filter(m=>mp.some(row=>row.match_id===m.id)).sort((a,b)=>new Date(b.kickoff_at)-new Date(a.kickoff_at)).slice(0,5).reverse();
+    const n=v=>v==null?"—":String(v).replace(".",",");
+    const totals=[
+      ["Presenze",mp.filter(x=>x.started||Number(x.minutes_played)>0).length+" ("+mp.filter(x=>x.started).length+" tit.)"],
+      ["Minuti",mp.some(x=>x.minutes_played!=null)?mp.reduce((sum,x)=>sum+(Number(x.minutes_played)||0),0):"—"],
+      ["Gol",ev.filter(x=>x.event_type==="goal").length],
+      ["Assist",ev.filter(x=>x.event_type==="goal"&&x.secondary_player_id===p.id).length],
+      ["Rating medio",avg==null?"—":n(avg.toFixed(2))],
+      ["Gialli",ev.filter(x=>x.event_type==="yellow_card").length],
+      ["Blu",ev.filter(x=>x.event_type==="blue_card").length],
+      ["Rossi",ev.filter(x=>x.event_type==="red_card").length]
+    ];
+    // Goal assist: secondary_player_id belongs to a goal event with a different scorer.
+    totals[3][1]=events.filter(x=>matchIds.has(x.match_id)&&x.event_type==="goal"&&x.team_side==="team"&&String(x.secondary_player_id)===String(p.id)).length;
+    const steps=last.map(m=>({match:m,rating:average(grouped.get(m.id)||[])}));
+    const width=500,height=125,spacing=width/Math.max(steps.length-1,1);
+    const coords=steps.map((it,i)=>({x:i*spacing,y:it.rating==null?null:height-12-(it.rating-1)/9*95}));
+    const paths=[];let segment=[];
+    coords.forEach(v=>{if(v.y==null){if(segment.length)paths.push(segment);segment=[];}else segment.push(v);});if(segment.length)paths.push(segment);
+    const curve=group=>{
+      if(group.length===1)return "M"+group[0].x+" "+group[0].y+" l .01 0";
+      let d="M"+group[0].x+" "+group[0].y;
+      for(let i=1;i<group.length;i++){const prev=group[i-1],cur=group[i],mid=(prev.x+cur.x)/2;d+=" C"+mid+" "+prev.y+" "+mid+" "+cur.y+" "+cur.x+" "+cur.y;}
+      return d;
+    };
+    const chart=steps.length?'<div class="pl-wave"><svg viewBox="-6 0 512 135" preserveAspectRatio="none" role="img" aria-label="Andamento delle ultime cinque valutazioni">'+paths.map(group=>'<path d="'+curve(group)+'" fill="none" stroke="#62d898" stroke-width="4" stroke-linecap="round"/>').join("")+coords.map(v=>v.y==null?"":'<circle cx="'+v.x+'" cy="'+v.y+'" r="5" fill="#62d898" stroke="#24182d" stroke-width="2"/>').join("")+'</svg><div class="pl-wave-labels">'+steps.map(it=>'<div><b class="'+(it.rating==null?"is-sv":"")+'">'+(it.rating==null?"SV":n(it.rating.toFixed(1)))+'</b><span>'+esc(opponentById(it.match.opponent_id)?.short_name||opponentById(it.match.opponent_id)?.name||"AVV")+'</span><small>'+shortDate(it.match.kickoff_at)+'</small></div>').join("")+'</div></div>':'<div class="empty-state compact">Nessuna valutazione disponibile</div>';
+    root.innerHTML='<div class="pl-profile">'+
+      '<div class="pl-top"><div><small>'+esc(currentSeason()?.name||"Stagione corrente")+'</small><h2>'+esc(p.first_name+" "+p.last_name)+'</h2><span>'+esc(p.generic_role_manual||"Ruolo non definito")+'</span></div><strong>#'+esc(p.shirt_number||"—")+'</strong></div>'+
+      '<section class="pl-section"><h3>Statistiche stagionali</h3><div class="pl-kpis">'+totals.map(([label,val])=>'<div class="pl-kpi"><span>'+esc(label)+'</span><strong>'+esc(n(val))+'</strong></div>').join("")+'</div></section>'+
+      '<section class="pl-section"><h3>Ultime 5 valutazioni</h3>'+chart+'</section>'+
+      '<section class="pl-section"><h3>Posizioni in campo <small>· disponibilità futura</small></h3><div class="pl-pitch"><span class="pl-center"></span><span class="pl-circle"></span><span class="pl-area left"></span><span class="pl-area right"></span><b>Rilevazione in preparazione</b></div></section>'+
+      '<section class="pl-section"><h3>Informazioni</h3><div class="pl-meta"><span>Età <b>'+esc(n(age(p.birth_date)))+'</b></span><span>Altezza <b>'+esc(p.height_cm?p.height_cm+" cm":"—")+'</b></span><span>Piede <b>'+esc(p.preferred_foot||"—")+'</b></span><span>Nazionalità <b>'+esc(p.nationality_code||"—")+'</b></span></div></section></div>';
   }
 
   async function loadMatches() {
