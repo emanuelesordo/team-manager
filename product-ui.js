@@ -296,7 +296,10 @@
       ["Minuti",ss.minutes||0],["Gol",ss.goals||0],["Assist",ss.assists||0],
       ["Rating medio",ss.avg_rating==null?"—":n(ss.avg_rating.toFixed(2))],
       ["Gialli",ss.yellow_cards||0],["Blu",ss.blue_cards||0],["Rossi",ss.red_cards||0],
-      ["Entrate",ss.sub_in||0],["Uscite",ss.sub_out||0]
+      ["Entrate",ss.sub_in||0],["Uscite",ss.sub_out||0],
+      ["Gol da titolare",ss.goals_as_starter||0],["Gol da subentrato",ss.goals_as_sub||0],
+      ["GF in campo",ss.on_field_gf||0],["GS in campo",ss.on_field_ga||0],
+      ["Differenziale",((ss.plus_minus||0)>0?"+":"")+(ss.plus_minus||0)]
     ];
     const coords=last.map((it,i)=>({x:500*i/Math.max(last.length-1,4),y:112-(it.rating-1)/9*94}));
     const curve=coords.reduce((d,pt,i)=>{
