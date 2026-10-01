@@ -6818,3 +6818,111 @@ dialog form{padding:16px}
   .mobile-home-tabs button,.mobile-detail-tabs button,
   .competition-view-tabs button,.setup-nav .setup-link{transition:none!important}
 }
+
+
+/* === MOBILE HOME: MATCH HERO + PLAYER CARD | 2026-10-01 === */
+.mobile-match-hero{display:none}
+@media screen and (max-width:780px){
+  /* The hero and personal player card always lead the Home. Desktop untouched. */
+  #homeView.home-reference-grid{gap:12px}
+  #homeView.home-reference-grid>.mobile-match-hero{
+    order:0;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    isolation:isolate;
+    width:100%;
+    min-height:278px;
+    padding:15px 14px 12px;
+    border:1px solid rgba(255,255,255,.85);
+    border-radius:29px;
+    background:
+      radial-gradient(circle at 90% 4%,rgba(223,237,113,.68),transparent 56%),
+      linear-gradient(150deg,rgba(213,227,171,.75),rgba(180,213,205,.78));
+    box-shadow:0 14px 37px rgba(35,70,48,.12),inset 0 1px 0 rgba(255,255,255,.75);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    overflow:hidden;
+    color:#26382d;
+  }
+  .mobile-match-hero-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .mobile-match-hero-head>div{display:flex;flex-direction:column;gap:2px}
+  .mobile-match-hero-head small{font-size:9px;letter-spacing:.14em;color:#57705a;font-weight:750}
+  .mobile-match-hero-head strong{font-size:18px;font-weight:800;letter-spacing:-.045em}
+  .mobile-match-hero-counter{font-size:11px;color:#55705a;font-variant-numeric:tabular-nums}
+  .mobile-match-hero-slides{position:relative;flex:1 1 auto;min-height:189px;width:100%}
+  .mobile-match-hero-slide{
+    position:absolute;inset:5px 0 0;
+    display:flex;flex-direction:column;justify-content:center;
+    opacity:0;transform:translateX(12px);visibility:hidden;
+    transition:opacity .42s ease,transform .42s ease,visibility .42s;
+    pointer-events:none;
+  }
+  .mobile-match-hero-slide.is-active{opacity:1;transform:translateX(0);visibility:visible;pointer-events:auto}
+  .mobile-match-hero-status{
+    align-self:center;display:flex;align-items:center;gap:7px;
+    padding:5px 15px;border-radius:99px;background:rgba(255,255,255,.56);
+    border:1px solid rgba(255,255,255,.76);
+    color:#415e48;font-size:11px;font-weight:800;
+  }
+  .mobile-match-hero-status-dot{width:7px;height:7px;border-radius:50%;background:#e75b4d}
+  .mobile-match-hero-teams{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;margin-top:12px}
+  .mobile-match-hero-team{min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:7px}
+  .mobile-match-hero-team>strong{max-width:100%;min-height:27px;font-size:clamp(10px,3vw,13px);line-height:1.13;font-weight:750;overflow-wrap:break-word}
+  .mobile-match-hero-crest{
+    width:53px;height:53px;display:grid;place-items:center;
+    border-radius:50%;border:1px solid rgba(255,255,255,.80);
+    background:rgba(246,255,238,.34);
+    box-shadow:inset 0 1px 7px rgba(42,70,41,.05);
+    overflow:hidden;
+  }
+  .mobile-match-hero-crest img{width:37px;height:37px;object-fit:contain}
+  .mobile-match-hero-crest span{font-size:12px;font-weight:800}
+  .mobile-match-hero-center{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:95px}
+  .mobile-match-hero-center>small{font-size:9px;font-weight:800;color:#657b61}
+  .mobile-match-hero-center>strong{font-variant-numeric:tabular-nums;font-size:clamp(29px,9vw,44px);letter-spacing:-.075em;white-space:nowrap;line-height:1}
+  .mobile-match-hero-separator{padding-inline:5px;color:#6e8b70;font-weight:400}
+  .mobile-match-hero-versus{font-size:29px;letter-spacing:-.07em}
+  .mobile-match-hero-date{text-align:center;font-size:11px;color:#4c6754;margin:8px 0 2px;line-height:1.35;font-weight:650}
+  .mobile-match-hero-open{
+    align-self:center;padding:5px 12px;
+    border:1px solid rgba(255,255,255,.64);border-radius:99px;
+    background:rgba(255,255,255,.33);font-size:10px;font-weight:750;
+    color:#35523e;
+  }
+  .mobile-match-hero-empty{text-align:center;padding:35px 12px;color:#536a58;font-size:13px}
+  .mobile-match-hero-foot{display:flex;justify-content:center;align-items:center;gap:16px;margin-top:5px}
+  .mobile-match-hero-arrow{
+    display:grid;place-items:center;width:31px;height:27px;line-height:1;
+    border:1px solid rgba(255,255,255,.68);border-radius:99px;
+    background:rgba(255,255,255,.34);font-size:22px;color:#405c46;
+  }
+  .mobile-match-hero-dots{display:flex;align-items:center;justify-content:center;gap:7px}
+  .mobile-match-hero-dot{width:8px;height:8px;border:0;padding:0;border-radius:50%;background:rgba(54,88,59,.26);transition:width .22s ease,background .22s ease}
+  .mobile-match-hero-dot.is-active{width:24px;border-radius:99px;background:#2f5540}
+  /* Personal card is always the section directly beneath the hero. */
+  #homeView.home-reference-grid>.home-player-panel{
+    order:1;
+    display:flex!important;
+    flex-direction:column;
+    min-height:155px;
+    gap:9px;
+    border-radius:25px;
+  }
+  #homeView .home-player-panel .home-panel-head strong{font-size:14px}
+  #homeView .home-player-panel .home-player-card{min-width:0}
+  #homeView.home-reference-grid>.mobile-home-tabs{
+    order:2;grid-template-columns:repeat(4,minmax(0,1fr));
+    position:relative;top:auto;margin:0;
+  }
+  #homeView .mobile-home-tabs [data-mobile-home-tab="player"]{display:none}
+  #homeView.home-reference-grid>.home-team-panel,
+  #homeView.home-reference-grid>.home-schedule-panel,
+  #homeView.home-reference-grid>.home-scores-panel,
+  #homeView.home-reference-grid>.home-standings-panel{order:3}
+  #homeView .home-team-panel>.home-subhead:first-of-type,
+  #homeView .home-team-panel>#homeLastMatch{display:none}
+}
+@media screen and (max-width:780px) and (prefers-reduced-motion:reduce){
+  .mobile-match-hero-slide,.mobile-match-hero-dot{transition:none!important}
+}
