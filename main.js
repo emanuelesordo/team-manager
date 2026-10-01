@@ -152,6 +152,7 @@ async function loadAuthState(){
     $("#authState").textContent="Non autenticato";
     $("#authState").className="auth-state error";
     $("#authButton").textContent="Accedi";
+    $("#profileButton").classList.add("hidden");
     return;
   }
   const role=await db.from("app_user_roles").select("role").eq("user_id",sessionUser.id).maybeSingle();
@@ -159,6 +160,7 @@ async function loadAuthState(){
   $("#authState").textContent=currentUserRole==="admin"?"Admin":"Autenticato";
   $("#authState").className="auth-state ok";
   $("#authButton").textContent="Esci";
+  $("#profileButton").classList.remove("hidden");
 }
 function assertSaved(result,label){
   if(result.error) throw result.error;
@@ -199,6 +201,77 @@ $("#authForm").onsubmit=async e=>{
   closeAuth();
   await loadAuthState();
 };
+
+
+function profileRoleLabel(role){
+  return ({admin:"Amministratore",player:"Calciatore",fan:"Membro esterno / fan",coach:"Allenatore",manager:"Staff"})[role]||"Membro esterno / fan";
+}
+async function loadProfileDialog(){
+  if(!sessionUser)return;
+  const uid=sessionUser.id, content=$("#profileContent");
+  content.innerHTML='<p class="muted">Caricamento profilo…</p>';
+  const [p,r,requests]=await Promise.all([
+    db.from("profiles").select("username,first_name,last_name,display_name").eq("id",uid).maybeSingle(),
+    db.from("app_user_roles").select("role,player_id").eq("user_id",uid).maybeSingle(),
+    db.from("tm_admin_requests").select("*").eq("user_id",uid).order("created_at",{ascending:false})
+  ]);
+  if(p.error||r.error||requests.error){
+    content.textContent="Impossibile caricare il profilo: "+(p.error||r.error||requests.error).message;
+    return;
+  }
+  const profile=p.data||{},role=r.data?.role||"fan";
+  let playerLine="Nessun calciatore associato";
+  if(r.data?.player_id){
+    const player=await db.from("players").select("first_name,last_name").eq("id",r.data.player_id).maybeSingle();
+    if(player.data)playerLine=(player.data.first_name||"")+" "+(player.data.last_name||"");
+  }
+  const pending=(requests.data||[]).find(x=>x.status==="pending");
+  const latest=(requests.data||[])[0];
+  content.innerHTML='<div class="sheet"><div><small>Username</small><div><strong>'+esc(profile.username||"—")+'</strong></div></div>'+
+   '<div><small>Nominativo</small><div>'+esc([profile.first_name,profile.last_name].filter(Boolean).join(" ")||profile.display_name||"—")+'</div></div>'+
+   '<div><small>Ruolo</small><div>'+esc(profileRoleLabel(role))+'</div></div>'+
+   '<div><small>Giocatore</small><div>'+esc(playerLine.trim())+'</div></div>'+
+   (role==="admin"?'<p class="muted">Hai già i permessi amministratore.</p>':
+    pending?'<p class="muted">Richiesta amministratore in attesa di approvazione.</p>':
+    '<div><button id="requestAdminButton" class="secondary" type="button">Richiedi ruolo amministratore</button>'+
+    (latest?.status==="rejected"?'<small>La richiesta precedente non è stata approvata.</small>':"")+'</div>')+
+   '<p id="profileActionMessage" class="form-message hidden"></p></div>';
+  $("#requestAdminButton")?.addEventListener("click",async()=>{
+    const b=$("#requestAdminButton");b.disabled=true;
+    const result=await db.from("tm_admin_requests").insert({user_id:uid,status:"pending"}).select("id").single();
+    if(result.error){b.disabled=false;$("#profileActionMessage").textContent=result.error.message;$("#profileActionMessage").classList.remove("hidden");return}
+    await loadProfileDialog();
+  });
+  const adminSection=$("#profileAdminRequests");
+  adminSection.classList.toggle("hidden",role!=="admin");
+  if(role!=="admin")return;
+  const pend=await db.from("tm_admin_requests").select("*").eq("status","pending").order("created_at",{ascending:true});
+  const panel=$("#profilePendingAdminList");
+  if(pend.error){panel.textContent=pend.error.message;return}
+  if(!pend.data?.length){panel.innerHTML='<p class="muted">Nessuna richiesta in sospeso.</p>';return}
+  const entries=await Promise.all(pend.data.map(async row=>{
+    const p=await db.from("profiles").select("username,first_name,last_name").eq("id",row.user_id).maybeSingle();
+    return {row,profile:p.data||{}};
+  }));
+  panel.innerHTML=entries.map(({row,profile})=>'<div class="toolbar" style="gap:8px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line, #ddd)">'+
+    '<strong>'+esc(profile.username||[profile.first_name,profile.last_name].filter(Boolean).join(" ")||"Utente")+'</strong>'+
+    '<button type="button" class="secondary small" data-admin-decision="rejected" data-admin-request="'+esc(row.id)+'">Rifiuta</button>'+
+    '<button type="button" class="primary small" data-admin-decision="approved" data-admin-request="'+esc(row.id)+'">Approva</button></div>').join("");
+  panel.querySelectorAll("[data-admin-request]").forEach(btn=>btn.onclick=async()=>{
+    btn.disabled=true;
+    const entry=entries.find(x=>x.row.id===btn.dataset.adminRequest);if(!entry)return;
+    const decision=btn.dataset.adminDecision;
+    if(decision==="approved"){
+      const result=await db.from("app_user_roles").update({role:"admin"}).eq("user_id",entry.row.user_id).select("user_id").maybeSingle();
+      if(result.error||!result.data){alert("Ruolo non aggiornato: "+(result.error?.message||"Nessuna riga aggiornata"));btn.disabled=false;return}
+    }
+    const result=await db.from("tm_admin_requests").update({status:decision,reviewed_at:new Date().toISOString(),reviewed_by:uid}).eq("id",entry.row.id).eq("status","pending").select("id").maybeSingle();
+    if(result.error||!result.data){alert("Esito non salvato: "+(result.error?.message||"Nessuna riga aggiornata"));btn.disabled=false;return}
+    await loadProfileDialog();
+  });
+}
+$("#profileButton").onclick=()=>{if(!sessionUser)return;$("#profileDialog").showModal();loadProfileDialog()};
+$("#closeProfileButton").onclick=()=>$("#profileDialog").close();
 
 async function setAppView(name){
   const views=["home","setup","competitions","calendar","roster","matches","events","stats"];
