@@ -885,14 +885,14 @@ function renderCompetitionFixtures(rows){
         ${group.list.map(r=>{
           const own=isOwnTeamName(r.home_team)||isOwnTeamName(r.away_team);
           const provisional=r.status!=="finished"&&r.home_score!=null&&r.away_score!=null; const score=(r.status==="finished"||provisional)?esc(r.home_score)+"-"+esc(r.away_score):"–";
-          return `<div class="mini-fixture ${own?"own-fixture mc-openable":""}" ${own?`data-match-center="${r.id}"`:""}>${compactTeamHtml(r.home_team)}<button type="button" class="score-link ${provisional?"provisional-score":""}" ${own?`data-match-center-score="${r.id}"`:`data-fixture-score="${r.id}"`}>${score}</button>${compactTeamHtml(r.away_team)}</div>`;
+          return `<div class="mini-fixture mc-openable ${own?"own-fixture":""}" data-fixture-center="${r.id}">${compactTeamHtml(r.home_team)}<button type="button" class="score-link ${provisional?"provisional-score":""}" ${own?`data-match-center-score="${r.id}"`:`data-fixture-score="${r.id}"`}>${score}</button>${compactTeamHtml(r.away_team)}</div>`;
         }).join("")}
       </section>`).join("")}</div>`
     :'<div class="muted">Calendario non disponibile.</div>';
 
   $("[data-fixture-score]").forEach(b=>b.onclick=()=>openMatchDetail(rows.find(r=>r.id===b.dataset.fixtureScore)));
   $$("[data-match-center-score]").forEach(b=>b.onclick=async e=>{e.stopPropagation();const fixture=rows.find(r=>r.id===b.dataset.matchCenterScore);await openMatchDetail(fixture);if(fixture?.status!=="finished"&&fixture?.home_score!=null&&fixture?.away_score!=null)mcOpenFinalScore()});
-  $$("[data-match-center]").forEach(row=>row.onclick=e=>{if(e.target.closest("button"))return;openMatchDetail(rows.find(r=>r.id===row.dataset.matchCenter))});
+  $("[data-fixture-center]").forEach(row=>row.onclick=e=>{if(e.target.closest("button"))return;openMatchDetail(rows.find(r=>r.id===row.dataset.fixtureCenter))});
 
   if(focusIndex>=0){
     requestAnimationFrame(()=>{
@@ -1742,7 +1742,7 @@ function mcTimeline(target,limit,filters=null){
       recoveryDividerInserted.add(period);
     }
     if(!halfInserted&&hasSecondHalf&&period==="first_half"){
-      rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><button type="button" class="mc-period-add" data-mc-timeline-add-period="first_half" title="Aggiungi evento 1° tempo">+</button><span></span></div>');
+      rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong>'+(mcFinalLocked()?'':'<button type="button" class="mc-period-add" data-mc-timeline-add-period="first_half" title="Aggiungi evento 1° tempo">+</button>')+'<span></span></div>');
       const rec1=recoveryByPeriod.get("first_half");
       if(rec1?.minutes&&!periodsWithAddedTime.has("first_half"))rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec1.event.id)+'" role="button" tabindex="0">Recupero 1T +'+rec1.minutes+'&#39;</div>');
       halfInserted=true;
@@ -1759,7 +1759,7 @@ function mcTimeline(target,limit,filters=null){
     while(j<regular.length&&sameMoment(regular[j])){grouped.push(regular[j]);j++}
 
     const minute=mcDisplayMinute(e);
-    const add=index===0?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
+    const add=index===0&&!mcFinalLocked()?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
 
     const renderMomentEvent=x=>{
       const isHome=mcEventIsHome(x);
@@ -1813,13 +1813,13 @@ function mcTimeline(target,limit,filters=null){
   }
 
   if(!halfInserted&&hasSecondHalf){
-    rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong><button type="button" class="mc-period-add" data-mc-timeline-add-period="first_half" title="Aggiungi evento 1° tempo">+</button><span></span></div>');
+    rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+halfScore+'</strong>'+(mcFinalLocked()?'':'<button type="button" class="mc-period-add" data-mc-timeline-add-period="first_half" title="Aggiungi evento 1° tempo">+</button>')+'<span></span></div>');
     const rec1=recoveryByPeriod.get("first_half");
     if(rec1?.minutes)rows.push('<div class="mc-recovery-chip" data-mc-event-id="'+esc(rec1.event.id)+'" role="button" tabindex="0">Recupero 1T +'+rec1.minutes+'\'</div>');
   }
 
   const box=$(target);
-  box.innerHTML=rows.length?rows.join(""):'<div class="empty-state mc-timeline-empty">Nessun evento<button type="button" class="mc-timeline-add empty-add" data-mc-timeline-add title="Aggiungi evento">+</button></div>';
+  box.innerHTML=rows.length?rows.join(""):'<div class="empty-state mc-timeline-empty">Nessun evento'+(mcFinalLocked()?'':'<button type="button" class="mc-timeline-add empty-add" data-mc-timeline-add title="Aggiungi evento">+</button>')+'</div>';
   const add=box.querySelector("[data-mc-timeline-add]");
   if(add)add.onclick=e=>{
     e.stopPropagation();
@@ -2565,6 +2565,7 @@ async function openMatchDetail(fixture){
   $("#matchDetailFixtureId").value=fixture.id;
   $("#matchDetailMatchId").value=match?.id||"";
   const dialog=$("#matchDetailDialog");
+  dialog.classList.toggle("mc-external-fixture",!own);
   if(!dialog.open)dialog.showModal();
   await mcReload();
 }
