@@ -261,19 +261,21 @@ window.TeamSeasonStats=(()=>{
     };
     const onFieldFrom=new Map();
     const resultLevel=diff=>diff>0?2:diff===0?1:0;
-    const beginSpell=id=>onFieldFrom.set(key(id),{startGap:gap(),startFor:ownTotals.for,startAgainst:ownTotals.against,at:cursor});
+    const beginSpell=id=>onFieldFrom.set(key(id),{startGap:gap(),startFor:ownTotals.for,startAgainst:ownTotals.against,
+      at:cursor,everBehind:gap()<0,everAhead:gap()>0,positiveRecovery:false,negativeRecovery:false});
     const closeSpell=id=>{
       const k=key(id),entry=onFieldFrom.get(k);if(!entry)return;
       const imp=ensureImpact(k),ending=gap(),was=resultLevel(entry.startGap),now=resultLevel(ending);
       const difference=ending-entry.startGap;
       // Baseline: risultato al momento dell'ingresso (o al calcio d'inizio).
       // Rimonte e mantenimenti non equivalgono a causalità individuale.
-      if(entry.startGap<0&&ending>=0)imp.comebacksPositive++;
-      if(entry.startGap>0&&ending<=0)imp.comebacksNegative++;
+      if(entry.positiveRecovery)imp.comebacksPositive++;
+      if(entry.negativeRecovery)imp.comebacksNegative++;
       if(now>was)imp.resultsImproved++;
       else if(now<was)imp.resultsWorsened++;
-      else if(ending>=0)imp.resultsMaintained++;
-      imp.spells.push({from:entry.at,to:cursor,scoreAtEntry:entry.startGap,scoreAtExit:ending,goalsFor:ownTotals.for-entry.startFor,goalsAgainst:ownTotals.against-entry.startAgainst,difference});
+      else if(now===was&&ending>=0&&!entry.positiveRecovery&&!entry.negativeRecovery&&cursor>entry.at)
+        imp.resultsMaintained++;
+      imp.spells.push({from:entry.at,to:cursor,scoreAtEntry:entry.startGap,scoreAtExit:ending,comeback:entry.positiveRecovery,lostLead:entry.negativeRecovery,goalsFor:ownTotals.for-entry.startFor,goalsAgainst:ownTotals.against-entry.startAgainst,difference});
       onFieldFrom.delete(k);
     };
     starts.forEach(id=>{minutes.set(id,0);ensureImpact(id);beginSpell(id)});
@@ -317,6 +319,14 @@ window.TeamSeasonStats=(()=>{
         team.goalsKnown++;
         if(gap()<0)everBehind=true;
         if(gap()>0)everAhead=true;
+        // La rimonta conta anche se il giocatore era entrato sullo 0-0:
+        // verifica gli stati attraversati durante ciascun intervallo in campo.
+        onFieldFrom.forEach(entry=>{
+          if(gap()<0)entry.everBehind=true;
+          if(gap()>0)entry.everAhead=true;
+          if(entry.everBehind&&gap()>=0)entry.positiveRecovery=true;
+          if(entry.everAhead&&gap()<=0)entry.negativeRecovery=true;
+        });
       }else if(e.event_type==="substitution"&&side==="team"){
         if(pid){if(field.has(pid))closeSpell(pid);field.delete(pid);if(ownBlue.has(pid))clearOwnBlue(pid);}
         if(e.secondary_player_id!=null){
