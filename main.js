@@ -200,6 +200,7 @@ $("#authForm").onsubmit=async e=>{
   }
   closeAuth();
   await loadAuthState();
+  await checkRequiredPasswordChange();
 };
 
 
@@ -261,6 +262,54 @@ $("#resetRequestForm").onsubmit=async e=>{
  finally{button.disabled=false}
 };
 
+
+$("#closeProfileResetResult").onclick=$("#ackProfileResetResult").onclick=()=>$("#profileResetResultDialog").close();
+$("#copyProfileResetCode").onclick=async()=>{
+ try{await navigator.clipboard.writeText($("#profileResetCode").textContent||"")}catch{
+ const range=document.createRange();range.selectNodeContents($("#profileResetCode"));
+ const selection=window.getSelection();selection?.removeAllRanges();selection?.addRange(range);
+ }
+};
+async function checkRequiredPasswordChange(){
+ if(!sessionUser)return;
+ const {data,error}=await db.from("profiles").select("must_change_password").eq("id",sessionUser.id).maybeSingle();
+ if(error||!data?.must_change_password)return;
+ const dialog=$("#temporaryPasswordDialog");
+ if(!dialog.open)dialog.showModal();
+}
+$("#temporaryLogout").onclick=async()=>{
+ $("#temporaryPasswordDialog").close();
+ await db.auth.signOut();sessionUser=null;currentUserRole=null;await loadAuthState();
+};
+$("#temporaryPasswordForm").onsubmit=async e=>{
+ e.preventDefault();
+ const first=$("#temporaryNewPassword").value,second=$("#temporaryConfirmPassword").value;
+ const errorBox=$("#temporaryPasswordError");
+ errorBox.classList.add("hidden");
+ if(first!==second||first.length<8){
+  errorBox.textContent=first!==second?"Le password non coincidono.":"La password deve contenere almeno 8 caratteri.";
+  errorBox.classList.remove("hidden");return;
+ }
+ const button=$("#temporaryPasswordForm button[type=submit]");button.disabled=true;
+ try{
+  const session=await getValidSession();
+  if(!session?.access_token)throw new Error("Sessione scaduta: esegui nuovamente l'accesso.");
+  const res=await fetch(SUPABASE_URL+"/auth/v1/user",{
+   method:"PUT",
+   headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},
+   body:JSON.stringify({password:first})
+  });
+  const data=await res.json();
+  if(!res.ok)throw new Error(data.msg||data.message||"Password non aggiornata.");
+  const finish=await fetch(SUPABASE_URL+"/rest/v1/rpc/complete_password_change",{
+   method:"POST",headers:{"apikey":SUPABASE_KEY,"Authorization":"Bearer "+session.access_token,"Content-Type":"application/json"},body:"{}"
+  });
+  if(!finish.ok)throw new Error("Password aggiornata, ma conferma non completata. Riprova.");
+  $("#temporaryPasswordForm").reset();$("#temporaryPasswordDialog").close();
+ }catch(error){errorBox.textContent=error.message||String(error);errorBox.classList.remove("hidden")}
+ finally{button.disabled=false}
+};
+
 function profileRoleLabel(role){
   return ({admin:"Amministratore",player:"Calciatore",fan:"Membro esterno / fan",coach:"Allenatore",manager:"Staff"})[role]||"Membro esterno / fan";
 }
@@ -310,9 +359,32 @@ async function loadProfileDialog(){
  else{
   const owners=await Promise.all(resets.data.map(async item=>{
    const r=await db.from("profiles").select("username").eq("id",item.user_id).maybeSingle();
-   return '<div class="toolbar"><strong>'+esc(r.data?.username||"Utente")+'</strong><span class="muted">In attesa di verifica dell’amministratore</span></div>';
+   return '<div class="toolbar" style="gap:8px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line,#ddd)"><strong>'+esc(r.data?.username||"Utente")+'</strong><button type="button" class="primary small" data-reset-action="resolve" data-reset-id="'+esc(item.id)+'">Ripristina</button><button type="button" class="secondary small" data-reset-action="reject" data-reset-id="'+esc(item.id)+'">Rifiuta</button></div>';
   }));
   resetPanel.innerHTML=owners.join("");
+  resetPanel.querySelectorAll("[data-reset-id]").forEach(button=>button.onclick=async()=>{
+   const requestId=button.dataset.resetId,decision=button.dataset.resetAction;
+   resetPanel.querySelectorAll("button").forEach(b=>b.disabled=true);
+   try{
+    const headers=await apiHeaders({"Content-Type":"application/json"});
+    const response=await fetch(SUPABASE_URL+"/functions/v1/tm-password-admin",{
+     method:"POST",headers,body:JSON.stringify({request_id:requestId,decision})
+    });
+    const payload=await response.json();
+    if(!response.ok||!payload.ok)throw new Error(payload.error||"Operazione non riuscita");
+    if(payload.temporary_password){
+     const value=payload.temporary_password;
+     const modal=$("#profileResetResultDialog");
+     if(modal){
+      $("#profileResetCode").textContent=value;
+      modal.showModal();
+     }else{
+      alert("Password provvisoria: "+value+" — Comunicala privatamente all'utente.");
+     }
+    }
+    await loadProfileDialog();
+   }catch(error){alert(error.message||String(error));resetPanel.querySelectorAll("button").forEach(b=>b.disabled=false)}
+  });
  }
  const pend=await db.from("tm_admin_requests").select("*").eq("status","pending").order("created_at",{ascending:true});
   const panel=$("#profilePendingAdminList");
