@@ -3012,7 +3012,7 @@ function fixtureRenderEvents(){
   const ordered=[...fixtureEditorEvents].sort((a,b)=>(Number(a.minute||0)+Number(a.stoppage_minute||0)/100)-(Number(b.minute||0)+Number(b.stoppage_minute||0)/100));
   list.innerHTML=ordered.length?ordered.map(e=>{
     const side=e.side==="home"?(fixtureEditorCurrent?.home_team||"Casa"):(fixtureEditorCurrent?.away_team||"Ospite");
-    const minute=Number.isFinite(Number(e.minute))?Number(e.minute):0;
+    const minute=e.minute==null?"?":Number(e.minute);
     const stop=Number(e.stoppage_minute||0);
     return `<div class="fixture-event-item ${fixtureEventClass(e.event_type)}">
       <div class="fixture-event-minute">${minute}'${stop?+"+"+stop:""}</div>
@@ -3105,19 +3105,20 @@ $("#fixtureSaveEventBtn").onclick=async()=>{
     if(!fixtureId)throw new Error("Salva prima la partita, poi aggiungi gli eventi.");
     const eventType=$("#fixtureEventType").value;
     const side=$("#fixtureEventSide").value;
-    const minute=Number($("#fixtureEventMinute").value);
+    const minuteRaw=$("#fixtureEventMinute").value.trim();
+    const minute=minuteRaw===""?null:Number(minuteRaw);
     const stoppage=Number($("#fixtureEventStoppage").value||0);
-    if(!Number.isFinite(minute)||minute<0)throw new Error("Inserisci un minuto valido.");
+    if(minute!==null&&(!Number.isFinite(minute)||minute<0))throw new Error("Inserisci un minuto valido.");
     const goalsBefore=fixtureScoreFromEvents();
     const homeScore=eventType==="goal"&&side==="home"?goalsBefore.home+1:goalsBefore.home;
     const awayScore=eventType==="goal"&&side==="away"?goalsBefore.away+1:goalsBefore.away;
     const payload={
-      fixture_id:fixtureId,event_type:eventType,minute,stoppage_minute:stoppage||null,side,
+      fixture_id:fixtureId,event_type:eventType,minute,stoppage_minute:minute===null?null:(stoppage||null),side,
       home_score:eventType==="goal"?homeScore:null,
       away_score:eventType==="goal"?awayScore:null,
       source:"manual",
       source_event_key:`manual_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
-      source_raw:{},
+      source_raw:minute===null?{period:"unknown"}:{},
       created_by:sessionUser.id
     };
     const r=await db.from("app_fixture_events").insert(payload).select("*").single();
