@@ -3851,13 +3851,19 @@ async function loadCoreSeasonData(){
   const [roster,matchesResult,allPlayers,injuriesResult]=await Promise.all([
     db.from("app_roster").select("*").eq("season_id",currentSeason.id),
     db.from("app_matches").select("*").eq("season_id",currentSeason.id).order("kickoff_at",{ascending:true}),
-    db.from("players").select("*").eq("team_id",currentSeason.team_id).order("last_name",{ascending:true}),
+    (sessionUser
+      ? db.from("players").select("*").eq("team_id",currentSeason.team_id).order("last_name",{ascending:true})
+      : db.from("players").select("id,first_name,last_name,photo_url,generic_role_manual,preferred_foot").order("last_name",{ascending:true})),
     db.from("injuries").select("*").eq("season_id",currentSeason.id).order("injury_date",{ascending:false})
   ]);
   if(allPlayers.error)console.warn("Anagrafica giocatori non disponibile",allPlayers.error);
-  const playerMap=new Map((allPlayers.data||[]).map(p=>[String(p.id),p]));
+  // Anonymous users may query public player fields only. Keep the season roster as
+  // the source of truth for which player IDs belong to this team and season.
+  const seasonRosterIds=new Set((roster.data||[]).map(x=>String(x.player_id)));
+  const readablePlayers=(allPlayers.data||[]).filter(p=>sessionUser||seasonRosterIds.has(String(p.id)));
+  const playerMap=new Map(readablePlayers.map(p=>[String(p.id),p]));
   rosterRows=(roster.data||[]).map(r=>({...r,roster_id:r.id,...playerMap.get(String(r.player_id))}));
-  teamMatches=matchesResult.data||[];players=allPlayers.data||[];rosterInjuries=injuriesResult.data||[];
+  teamMatches=matchesResult.data||[];players=readablePlayers;rosterInjuries=injuriesResult.data||[];
   const finishedIds=teamMatches.filter(m=>m.status==="finished").map(m=>m.id);
   const allIds=teamMatches.map(m=>m.id);
   let mp={data:[]},ev={data:[]},rt={data:[]};
