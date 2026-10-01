@@ -424,10 +424,10 @@
 
   async function init() {
     injectViews();
-    await TM.loadAll();
-    await TM.loadCompetitions();
-    await TM.ensureMainTeam();
-    showView("home");
+    // Il bootstrap del gestionale è l'unica fonte di verità: non ricaricare
+    // stagione, competizioni e squadra mentre la Home sta già renderizzando.
+    if (TM.bootReady) await TM.bootReady;
+    await showView("home");
   }
 
   init().catch(err=>{
