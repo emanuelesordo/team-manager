@@ -3399,14 +3399,6 @@ async function loadDashboard(){
   $("#homeFormChart").innerHTML=renderHomeForm(finished.slice(-7));
 
   $("#homePlayerStats").innerHTML='<div class="muted">Caricamento giocatori…</div>';
-  try{
-    await loadCoreSeasonData();
-    await loadLoggedPlayer();
-    $("#homePlayerStats").innerHTML=renderLoggedPlayerCard();
-  }catch(err){
-    console.error("HOME PLAYER ERROR",err);
-    $("#homePlayerStats").innerHTML='<div class="home-empty">Statistiche giocatori temporaneamente non disponibili.</div>';
-  }
 
   $("#homeMiniCalendar").innerHTML=renderHomeCalendar(next?.kickoff_at||new Date(),fixtures);
   $("#homeNextMatch").innerHTML=next?renderHomeNextMatch(next):'<div class="home-empty">Nessuna partita programmata</div>';
@@ -3429,7 +3421,17 @@ async function loadDashboard(){
   });
   Array.from($("#homeView").querySelectorAll("[data-go-calendar]")).forEach(b=>b.onclick=()=>setAppView("calendar"));
   $$("#homeView [data-go-competition]").forEach(b=>b.onclick=()=>setAppView("competitions"));
-  $$("#homeView [data-go-roster]").forEach(b=>b.onclick=()=>setAppView("roster"));
+  $("#homeView [data-go-roster]").forEach(b=>b.onclick=()=>setAppView("roster"));
+
+  // La rosa può essere lenta/non disponibile: il resto della dashboard è già visibile.
+  try{
+    await loadCoreSeasonData();
+    await loadLoggedPlayer();
+    $("#homePlayerStats").innerHTML=renderLoggedPlayerCard();
+  }catch(err){
+    console.error("HOME PLAYER ERROR",err);
+    $("#homePlayerStats").innerHTML='<div class="home-empty">Statistiche giocatori temporaneamente non disponibili.</div>';
+  }
 }
 
 async function loadLoggedPlayer(){
