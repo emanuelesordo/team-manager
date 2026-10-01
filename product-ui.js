@@ -317,6 +317,13 @@
         ["GF con lui",ss.on_field_gf||0],["GS con lui",ss.on_field_ga||0],
         ["Differenziale",(ss.plus_minus||0)>0?"+"+(ss.plus_minus||0):(ss.plus_minus||0)]
       ].map(([label,val])=>'<div class="pl-kpi"><span>'+esc(label)+'</span><strong>'+esc(n(val))+'</strong></div>').join("")+'</div></section>'+
+      '<section class="pl-section"><h3>Impatto sul risultato</h3><p class="pl-impact-note">Esiti osservati mentre il giocatore era in campo, non attribuzioni di responsabilità individuale.</p><div class="pl-kpis">'+[
+        ["Rimonte positive",ss.comebacks_positive||0],
+        ["Rimonte subite",ss.comebacks_negative||0],
+        ["Risultato mantenuto",ss.results_maintained||0],
+        ["Esito migliorato",ss.results_improved||0],
+        ["Esito peggiorato",ss.results_worsened||0]
+      ].map(([label,val])=>'<div class="pl-kpi"><span>'+esc(label)+'</span><strong>'+esc(n(val))+'</strong></div>').join("")+'</div></section>'+
       '<section class="pl-section"><h3>Informazioni</h3><div class="pl-meta"><span>Età <b>'+esc(n(age(p.birth_date)))+'</b></span><span>Altezza <b>'+esc(p.height_cm?p.height_cm+" cm":"—")+'</b></span><span>Piede <b>'+esc(p.preferred_foot||"—")+'</b></span><span>Nazionalità <b>'+esc(p.nationality_code||"—")+'</b></span></div></section></div>';
   }
 
