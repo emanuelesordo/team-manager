@@ -100,6 +100,12 @@
       [...dots.children].forEach((dot,i)=>dot.classList.toggle("active",i===current));
       footer.querySelector(".ts-page-prev").disabled=current===0;
       footer.querySelector(".ts-page-next").disabled=current===chapters.length-1;
+      const syncHeight=()=>{
+        const active=elements[current]?.section;
+        if(active)stage.style.height=Math.ceil(active.scrollHeight)+"px";
+      };
+      syncHeight();
+      requestAnimationFrame(syncHeight);
       const first=elements[current].btn;
       if(first&&nav.scrollWidth>nav.clientWidth)first.scrollIntoView({behavior:"smooth",block:"nearest",inline:"nearest"});
     }
@@ -117,6 +123,18 @@
       if(Math.abs(dx)>48&&Math.abs(dx)>Math.abs(dy)*1.4)go(Math.max(0,Math.min(chapters.length-1,current+(dx<0?1:-1))));
     },{passive:true});
     // Non forzare un'altezza fissa: soltanto il gruppo attivo occupa spazio.
+    if(typeof ResizeObserver!=="undefined"){
+      const observer=new ResizeObserver(()=>{
+        const active=elements[current]?.section;
+        if(active)stage.style.height=Math.ceil(active.scrollHeight)+"px";
+      });
+      elements.forEach(({section})=>observer.observe(section));
+    }else{
+      window.addEventListener("resize",()=>{
+        const active=elements[current]?.section;
+        if(active)stage.style.height=Math.ceil(active.scrollHeight)+"px";
+      },{passive:true});
+    }
     go(0);
   }
   const groupRender=window.TeamStatsDashboard.render;
