@@ -203,6 +203,41 @@ $("#authForm").onsubmit=async e=>{
 };
 
 
+
+const tmNameToken=v=>String(v||"").trim().split(/\s+/)[0].normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+function updateRegistrationPreview(){
+  const first=tmNameToken($("#registerFirstName").value);
+  const last=tmNameToken($("#registerLastName").value);
+  $("#registerUsernamePreview").textContent=first&&last?"Username: "+first+"."+last:"";
+}
+$("#openRegisterButton").onclick=()=>{
+  closeAuth();$("#registerForm").reset();$("#registerMessage").classList.add("hidden");
+  updateRegistrationPreview();$("#registerDialog").showModal();
+};
+$("#closeRegisterButton").onclick=$("#cancelRegisterButton").onclick=()=>$("#registerDialog").close();
+["registerFirstName","registerLastName"].forEach(id=>$("#"+id).addEventListener("input",updateRegistrationPreview));
+$("#registerForm").onsubmit=async e=>{
+  e.preventDefault();
+  const msg=$("#registerMessage"),btn=$("#submitRegisterButton");
+  msg.classList.add("hidden");
+  if($("#registerPassword").value!==$("#registerConfirmPassword").value){
+    msg.textContent="Le password non coincidono.";msg.classList.remove("hidden");return;
+  }
+  btn.disabled=true;
+  try{
+    const res=await fetch(SUPABASE_URL+"/functions/v1/fan-register",{
+      method:"POST",headers:{"apikey":SUPABASE_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({first_name:$("#registerFirstName").value.trim(),last_name:$("#registerLastName").value.trim(),password:$("#registerPassword").value})
+    });
+    const result=await res.json();
+    if(!res.ok||!result.ok)throw new Error(result.error||"Registrazione non riuscita");
+    $("#registerDialog").close();
+    openAuth();$("#authUsername").value=result.username;
+    $("#authPassword").value="";
+  }catch(error){msg.textContent=error.message||String(error);msg.classList.remove("hidden")}
+  finally{btn.disabled=false}
+};
+
 function profileRoleLabel(role){
   return ({admin:"Amministratore",player:"Calciatore",fan:"Membro esterno / fan",coach:"Allenatore",manager:"Staff"})[role]||"Membro esterno / fan";
 }
