@@ -778,8 +778,6 @@
     (0,eval)(code);
     const ppCss=await fetch("./player-profile.css",{cache:"no-store"});
     if(ppCss.ok)document.querySelector("#appStyles").textContent+="\n"+await ppCss.text();
-    const ppJs=await fetch("./player-profile.js",{cache:"no-store"});
-    if(ppJs.ok){(0,eval)(await ppJs.text());(0,eval)("renderPlayerDetail=function(){window.TeamPlayerProfile.render()}");}
     const uiRes=await fetch("./product-ui.js",{cache:"no-store"});
     if(!uiRes.ok) throw new Error("product-ui.js HTTP "+uiRes.status);
     const uiCode=await uiRes.text();
