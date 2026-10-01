@@ -308,12 +308,16 @@ window.TeamSeasonStats=(()=>{
         }
       }else if(e.event_type==="red_card"){
         if(side==="team"){if(pid){field.delete(pid);if(ownBlue.has(pid))clearOwnBlue(pid);if(!redOwn.has(pid)){redOwn.add(pid);ownOut++;}}else ownOut++;}
-        else oppOut++;
+        else {
+          const ident=pid||key(e.payload?.opponent_shirt_number);
+          if(oppBlue.has(ident))clearOppBlue(ident);
+          oppOut++;
+        }
       }else if(e.event_type==="blue_card"){
         if(side==="team"&&pid&&!ownBlue.has(pid)){field.delete(pid);suspended.add(pid);ownBlue.set(pid,t+blueDuration);ownOut++;}
         if(side==="opponent"){const ident=pid||key(e.payload?.opponent_shirt_number??e.id??("blue-"+t));if(!oppBlue.has(ident)){oppBlue.set(ident,t+blueDuration);oppOut++;}}
       }else if(returnEvent(e)){
-        if(side==="team"&&pid&&ownBlue.has(pid)&&t>=ownBlue.get(pid)){clearOwnBlue(pid);field.add(pid);touch.add(pid);ensureImpact(pid);}
+        if(side==="team"&&pid&&ownBlue.has(pid)&&!redOwn.has(pid)&&t>=ownBlue.get(pid)){clearOwnBlue(pid);field.add(pid);touch.add(pid);ensureImpact(pid);}
         if(side==="opponent"){const ident=pid||key(e.payload?.opponent_shirt_number);if(oppBlue.has(ident)&&t>=oppBlue.get(ident))clearOppBlue(ident);}
       }
     }
