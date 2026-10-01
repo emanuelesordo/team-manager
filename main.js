@@ -238,6 +238,29 @@ $("#registerForm").onsubmit=async e=>{
   finally{btn.disabled=false}
 };
 
+
+$("#requestPasswordResetButton").onclick=()=>{
+ const current=$("#authUsername").value.trim();closeAuth();$("#resetRequestForm").reset();
+ $("#resetUsername").value=current;$("#resetRequestMessage").classList.add("hidden");
+ $("#resetRequestDialog").showModal();
+};
+$("#closeResetRequestButton").onclick=()=>$("#resetRequestDialog").close();
+$("#resetRequestForm").onsubmit=async e=>{
+ e.preventDefault();
+ const msg=$("#resetRequestMessage");msg.classList.add("hidden");
+ const button=$("#resetRequestForm button[type=submit]");button.disabled=true;
+ try{
+  const result=await fetch(SUPABASE_URL+"/functions/v1/tm-password-request",{
+   method:"POST",headers:{"apikey":SUPABASE_KEY,"Content-Type":"application/json"},
+   body:JSON.stringify({username:$("#resetUsername").value.trim()})
+  });
+  if(!result.ok)throw new Error("Impossibile inoltrare la richiesta.");
+  msg.textContent="Se l'account esiste, la richiesta sarà esaminata da un amministratore.";
+  msg.classList.remove("hidden");
+ }catch(err){msg.textContent=err.message||String(err);msg.classList.remove("hidden")}
+ finally{button.disabled=false}
+};
+
 function profileRoleLabel(role){
   return ({admin:"Amministratore",player:"Calciatore",fan:"Membro esterno / fan",coach:"Allenatore",manager:"Staff"})[role]||"Membro esterno / fan";
 }
@@ -280,7 +303,18 @@ async function loadProfileDialog(){
   const adminSection=$("#profileAdminRequests");
   adminSection.classList.toggle("hidden",role!=="admin");
   if(role!=="admin")return;
-  const pend=await db.from("tm_admin_requests").select("*").eq("status","pending").order("created_at",{ascending:true});
+  const resets=await db.from("tm_password_reset_requests").select("id,user_id,requested_at,status").eq("status","pending").order("requested_at",{ascending:true});
+ const resetPanel=$("#profilePendingPasswordResets");
+ if(resets.error){resetPanel.textContent="Richieste non disponibili: "+resets.error.message}
+ else if(!resets.data?.length){resetPanel.innerHTML='<p class="muted">Nessuna richiesta in attesa.</p>'}
+ else{
+  const owners=await Promise.all(resets.data.map(async item=>{
+   const r=await db.from("profiles").select("username").eq("id",item.user_id).maybeSingle();
+   return '<div class="toolbar"><strong>'+esc(r.data?.username||"Utente")+'</strong><span class="muted">In attesa di verifica dell’amministratore</span></div>';
+  }));
+  resetPanel.innerHTML=owners.join("");
+ }
+ const pend=await db.from("tm_admin_requests").select("*").eq("status","pending").order("created_at",{ascending:true});
   const panel=$("#profilePendingAdminList");
   if(pend.error){panel.textContent=pend.error.message;return}
   if(!pend.data?.length){panel.innerHTML='<p class="muted">Nessuna richiesta in sospeso.</p>';return}
