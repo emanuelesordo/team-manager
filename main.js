@@ -1764,6 +1764,13 @@ async function mcSaveRating(playerId,value,control){
       }
       if(count)count.textContent=values.length+" "+(values.length===1?"voto":"voti");
     }
+    const currentAnalysis=window.TeamSeasonStats.analyzeMatch({
+      match:matchCenterState.match,matchPlayers:matchCenterState.matchPlayers,
+      events:matchCenterState.events,ratings:matchCenterState.ratings,competitions
+    });
+    const totalLabel=$("#mcRatingCount");
+    if(totalLabel)totalLabel.textContent=mcRatingParticipants().length+" giocatori · Rating medio ponderato: "+
+      (currentAnalysis.team.ratingWeighted==null?"—":currentAnalysis.team.ratingWeighted.toFixed(2).replace(".",","));
     control.disabled=false;
   }catch(err){
     if(control)control.disabled=false;
