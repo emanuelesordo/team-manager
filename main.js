@@ -2794,9 +2794,9 @@ function mcRenderGeneralBench(){
   const unusedHtml=unused.map(x=>renderRow(x,roleLabel(mcPlayer(x.player_id)?.generic_role_manual))).join("");
   const returnedHtml=returned.map(x=>{
     const e=outEvents.get(x.player_id);
-    return renderRow(x,"Uscito "+(e?mcDisplayMinute(e):""));
+    return renderRow(x,mcBlueSuspendedIds().includes(String(x.player_id))?"Espulsione temporanea · blu":"Uscito "+(e?mcDisplayMinute(e):""));
   }).join("");
-  const divider=unusedHtml&&returnedHtml?'<div class="mc-bench-subbed-divider"><span></span><b>Sostituiti</b><span></span></div>':"";
+  const divider=unusedHtml&&returnedHtml?'<div class="mc-bench-subbed-divider"><span></span><b>Fuori dal campo</b><span></span></div>':"";
   box.innerHTML=(unusedHtml+divider+returnedHtml)||'<div class="empty-state">Panchina vuota</div>';
   mcBindPlayerQuickActions(box);
 }
