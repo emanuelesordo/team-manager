@@ -887,6 +887,7 @@ async function renderCompetitionHub(){
     const meta=$("#projectionScenarioMeta");if(meta)meta.textContent="";
   }
   syncCompetitionViewportHeight();
+  void primeTeamRatings();
 }
 function syncCompetitionViewportHeight(){
   const view=$("#competitionsView");
@@ -1202,6 +1203,52 @@ function linkedMatchForFixture(f){
     (!opp||m.opponent_id===opp.id)
   )||null;
 }
+// Rating medio della squadra: calcolo unico ponderato sui minuti, caricato
+// in modo non bloccante per la Home. Non assegnare rating alle avversarie.
+let teamFixtureRatings=new Map(),teamRatingLoad=null,teamRatingSeason=null;
+function teamRatingBadge(f,side){
+  if(!f||f.status!=="finished"||!isOwnTeamName(side))return "";
+  return '<span class="tm-team-rating" data-team-rating-fixture="'+esc(f.id)+'" title="Rating medio squadra ponderato sui minuti" hidden></span>';
+}
+function paintTeamRatings(){
+  document.querySelectorAll("[data-team-rating-fixture]").forEach(el=>{
+    const r=teamFixtureRatings.get(String(el.dataset.teamRatingFixture));
+    el.hidden=!(typeof r==="number"&&Number.isFinite(r));
+    if(!el.hidden)el.textContent=r.toFixed(2).replace(".",",");
+  });
+}
+async function primeTeamRatings(){
+  if(!currentSeason)return;
+  const seasonId=String(currentSeason.id);
+  if(teamRatingLoad&&teamRatingSeason===seasonId)return teamRatingLoad;
+  teamRatingSeason=seasonId;teamFixtureRatings=new Map();
+  teamRatingLoad=(async()=>{
+    const [mr,fx]=await Promise.all([
+      db.from("app_matches").select("*").eq("season_id",seasonId).eq("status","finished"),
+      db.from("app_competition_fixtures").select("id,competition_id,opponent_id,kickoff_at,home_team,away_team,status").eq("season_id",seasonId).eq("status","finished")
+    ]);
+    if(mr.error||fx.error)throw mr.error||fx.error;
+    const m=mr.data||[],ids=m.map(x=>x.id);
+    if(!ids.length)return;
+    const [mp,ev,rt]=await Promise.all([
+      db.from("app_match_players").select("*").in("match_id",ids),
+      db.from("app_match_events").select("*").in("match_id",ids),
+      db.from("app_match_ratings").select("match_id,player_id,rating").in("match_id",ids)
+    ]);
+    if(mp.error||ev.error||rt.error)throw mp.error||ev.error||rt.error;
+    const values=new Map(m.map(match=>[String(match.id),window.TeamSeasonStats.analyzeMatch({
+      match,matchPlayers:mp.data||[],events:ev.data||[],ratings:rt.data||[],competitions
+    }).team.ratingWeighted]));
+    for(const f of fx.data||[]){
+      if(!isOwnTeamName(f.home_team)&&!isOwnTeamName(f.away_team))continue;
+      const match=m.find(x=>String(x.competition_id)===String(f.competition_id)&&new Date(x.kickoff_at).getTime()===new Date(f.kickoff_at).getTime()&&(f.opponent_id==null||String(f.opponent_id)===String(x.opponent_id)));
+      const value=match&&values.get(String(match.id));
+      if(value!=null)teamFixtureRatings.set(String(f.id),value);
+    }
+    paintTeamRatings();
+  })().catch(err=>{console.warn("Rating squadra non disponibile",err);});
+  return teamRatingLoad;
+}
 async function loadCalendarHub(){
   await loadCompetitions();
   await ensureMainTeam();
@@ -1221,6 +1268,7 @@ async function loadCalendarHub(){
   if(!calendarCompetitionIds.size)competitions.forEach(c=>calendarCompetitionIds.add(c.id));
   renderCalendarCompetitionFilters();
   renderCalendarRows();
+  void primeTeamRatings();
 }
 function renderCalendarCompetitionFilters(){
   $("#calendarCompetitionFilters").innerHTML=competitions.map(c=>`<label class="competition-filter"><input type="checkbox" value="${c.id}" ${calendarCompetitionIds.has(c.id)?"checked":""}><span>${esc(c.name)}</span></label>`).join("");
@@ -1750,6 +1798,15 @@ async function mcSaveRating(playerId,value,control){
     const refreshed=await db.from("app_match_ratings").select("player_id,rating,voter_id").eq("match_id",matchCenterState.match.id);
     if(refreshed.error)throw refreshed.error;
     matchCenterState.ratings=refreshed.data||[];
+    if(matchCenterState.fixture){
+      const refreshedRating=window.TeamSeasonStats.analyzeMatch({
+        match:matchCenterState.match,matchPlayers:matchCenterState.matchPlayers,
+        events:matchCenterState.events,ratings:matchCenterState.ratings,competitions
+      }).team.ratingWeighted;
+      if(refreshedRating!=null)teamFixtureRatings.set(String(matchCenterState.fixture.id),refreshedRating);
+      else teamFixtureRatings.delete(String(matchCenterState.fixture.id));
+      paintTeamRatings();
+    }
     const row=$('[data-rating-row="'+playerId+'"]');
     if(row){
       const ratings=matchCenterState.ratings.filter(r=>r.player_id===playerId);
@@ -3825,6 +3882,7 @@ async function loadDashboard(){
   $("#homeTeamOverview").innerHTML=renderHomeTeamIdentity();
   $("#homeTeamMetrics").innerHTML=renderHomeMetrics(totals);
   renderMobileMatchHero(last,next);
+  void primeTeamRatings();
   $("#homeLastMatch").innerHTML=last?renderHomeMatch(last,true):'<div class="home-empty">Nessuna partita conclusa</div>';
   $("#homeFormChart").innerHTML=renderHomeForm(finished.slice(-7));
 
