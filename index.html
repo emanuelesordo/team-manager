@@ -41,6 +41,18 @@
   <section class="workspace">
 <main class="main">
   <section id="homeView" class="home-reference-grid">
+    <section id="mobileMatchHero" class="mobile-match-hero" aria-label="Ultima partita e prossima partita" aria-roledescription="carosello">
+      <div class="mobile-match-hero-head">
+        <div><small>CALCIO CASELLE</small><strong>Match Center</strong></div>
+        <span id="mobileMatchHeroCounter" class="mobile-match-hero-counter">1 / 2</span>
+      </div>
+      <div id="mobileMatchHeroSlides" class="mobile-match-hero-slides" aria-live="off"></div>
+      <div class="mobile-match-hero-foot">
+        <button type="button" id="mobileMatchHeroPrev" class="mobile-match-hero-arrow" aria-label="Partita precedente">‹</button>
+        <div id="mobileMatchHeroDots" class="mobile-match-hero-dots" aria-label="Seleziona partita"></div>
+        <button type="button" id="mobileMatchHeroNext" class="mobile-match-hero-arrow" aria-label="Partita successiva">›</button>
+      </div>
+    </section>
     <nav class="mobile-home-tabs" aria-label="Sezioni Home">
       <button type="button" class="active" data-mobile-home-tab="team" aria-pressed="true">Squadra</button>
       <button type="button" data-mobile-home-tab="player" aria-pressed="false">Giocatore</button>
