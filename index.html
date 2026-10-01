@@ -40,6 +40,13 @@
   <section class="workspace">
 <main class="main">
   <section id="homeView" class="home-reference-grid">
+    <nav class="mobile-home-tabs" aria-label="Sezioni Home">
+      <button type="button" class="active" data-mobile-home-tab="team" aria-pressed="true">Squadra</button>
+      <button type="button" data-mobile-home-tab="player" aria-pressed="false">Giocatore</button>
+      <button type="button" data-mobile-home-tab="schedule" aria-pressed="false">Calendario</button>
+      <button type="button" data-mobile-home-tab="scores" aria-pressed="false">Risultati</button>
+      <button type="button" data-mobile-home-tab="standings" aria-pressed="false">Classifica</button>
+    </nav>
     <section id="homeTeamPanel" class="home-panel home-team-panel glass">
       <div class="home-panel-head">
         <strong>Team KPIs</strong>
@@ -585,6 +592,11 @@
       </nav>
     </header>
     <div class="mc-body">
+      <nav class="mobile-mc-tabs" aria-label="Sezioni Match Center">
+        <button type="button" class="active" data-mobile-mc-tab="history" aria-pressed="true">Eventi</button>
+        <button type="button" data-mobile-mc-tab="pitch" aria-pressed="false">Campo</button>
+        <button type="button" data-mobile-mc-tab="bench" aria-pressed="false">Rosa</button>
+      </nav>
       <section data-mc-panel="general" data-mc-post-panel="match">
         <div class="mc-general-grid">
           <div class="mc-general-left">
