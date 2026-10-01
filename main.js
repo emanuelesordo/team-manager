@@ -1567,39 +1567,18 @@ function mcParticipationElapsed(event,firstHalfRecovery){
   return mcEventPeriod(event)==="second_half"?mcPeriodMinutes()+firstHalfRecovery+minute:minute;
 }
 function mcRatingParticipants(){
-  const firstRecovery=mcMatchRecoveryMinutes("first_half"),secondRecovery=mcMatchRecoveryMinutes("second_half");
-  const regulation=mcPeriodMinutes();
-  const active=new Set(matchCenterState.matchPlayers.filter(x=>x.started).map(x=>x.player_id));
-  const touched=new Set(active);
-  const minutes=new Map([...active].map(id=>[id,0]));
-  const ordered=matchCenterState.events
-    .filter(e=>e.team_side==="team"&&e.minute!=null&&(e.event_type==="substitution"||e.event_type==="red_card"))
-    .map(e=>({event:e,elapsed:mcParticipationElapsed(e,firstRecovery)}))
-    .filter(x=>Number.isFinite(x.elapsed))
-    .sort((a,b)=>a.elapsed-b.elapsed||new Date(a.event.created_at||0)-new Date(b.event.created_at||0));
-  let cursor=0;
-  for(const item of ordered){
-    const t=Math.max(cursor,item.elapsed),delta=Math.max(0,t-cursor);
-    active.forEach(id=>minutes.set(id,(minutes.get(id)||0)+delta));
-    const e=item.event;
-    if(e.event_type==="substitution"){
-      if(e.player_id)active.delete(e.player_id);
-      if(e.secondary_player_id){
-        touched.add(e.secondary_player_id);
-        if(!minutes.has(e.secondary_player_id))minutes.set(e.secondary_player_id,0);
-        active.add(e.secondary_player_id);
-      }
-    }else if(e.event_type==="red_card"&&e.player_id)active.delete(e.player_id);
-    cursor=t;
-  }
-  const effectiveEnd=Math.max(regulation*2+firstRecovery+secondRecovery,cursor);
-  const tail=Math.max(0,effectiveEnd-cursor);
-  active.forEach(id=>minutes.set(id,(minutes.get(id)||0)+tail));
-  return [...touched].map(playerId=>({playerId,minutes:Math.max(0,minutes.get(playerId)||0)})).sort((a,b)=>{
-    if(b.minutes!==a.minutes)return b.minutes-a.minutes;
-    return mcPlayerName(a.playerId).localeCompare(mcPlayerName(b.playerId),"it",{sensitivity:"base"});
+  if(!matchCenterState.match)return [];
+  const analysis=window.TeamSeasonStats.analyzeMatch({
+    match:matchCenterState.match,
+    matchPlayers:matchCenterState.matchPlayers,
+    events:matchCenterState.events,
+    ratings:matchCenterState.ratings,
+    competitions
   });
+  return [...analysis.touch].map(playerId=>({playerId,minutes:Math.max(0,Math.round(analysis.minutes.get(playerId)||0))}))
+    .sort((a,b)=>b.minutes-a.minutes||mcPlayerName(a.playerId).localeCompare(mcPlayerName(b.playerId),"it",{sensitivity:"base"}));
 }
+
 function mcSetPostView(view){
   matchCenterState.postView=view==="formation"&&mcOwnFixture()?"formation":view==="rating"&&mcIsPost()&&mcOwnFixture()?"rating":"match";
   mcRenderAll();
@@ -1677,7 +1656,12 @@ function mcRenderRating(){
   const participants=mcRatingParticipants();
   const starters=participants.filter(x=>mcMatchPlayer(x.playerId)?.started);
   const bench=participants.filter(x=>!mcMatchPlayer(x.playerId)?.started);
-  count.textContent=participants.length+" giocatori";
+  const analysis=window.TeamSeasonStats.analyzeMatch({
+    match:matchCenterState.match,matchPlayers:matchCenterState.matchPlayers,
+    events:matchCenterState.events,ratings:matchCenterState.ratings,competitions
+  });
+  count.textContent=participants.length+" giocatori · Rating medio ponderato: "+
+    (analysis.team.ratingWeighted==null?"—":analysis.team.ratingWeighted.toFixed(2).replace(".",","));
 
   const column=(title,items,kind)=>
     '<section class="mc-rating-column mc-rating-'+kind+'">'+
