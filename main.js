@@ -3421,7 +3421,7 @@ async function loadDashboard(){
   });
   Array.from($("#homeView").querySelectorAll("[data-go-calendar]")).forEach(b=>b.onclick=()=>setAppView("calendar"));
   $$("#homeView [data-go-competition]").forEach(b=>b.onclick=()=>setAppView("competitions"));
-  $("#homeView [data-go-roster]").forEach(b=>b.onclick=()=>setAppView("roster"));
+  $$("#homeView [data-go-roster]").forEach(b=>b.onclick=()=>setAppView("roster"));
 
   // La rosa può essere lenta/non disponibile: il resto della dashboard è già visibile.
   try{
