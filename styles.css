@@ -6377,3 +6377,43 @@ dialog form{padding:16px}
   .side-link .nav-icon{width:17px;height:17px}
   .mobile-home-tabs button{font-size:8px}
 }
+
+/* Mobile compact list/detail and statistics toggles */
+.mobile-detail-tabs{display:none}
+@media(max-width:780px){
+  .mobile-detail-tabs{
+    display:grid;
+    width:100%;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:4px;
+    margin-bottom:8px;
+    padding:4px;
+    border-radius:13px;
+    background:rgba(20,27,31,.07);
+  }
+  .mobile-detail-tabs button{
+    min-width:0;
+    border:0;
+    border-radius:10px;
+    padding:10px 6px;
+    background:transparent;
+    color:#777d81;
+    font-size:10px;
+    font-weight:850;
+  }
+  .mobile-detail-tabs button.active{
+    background:#fff;color:#111;
+    box-shadow:0 1px 5px rgba(0,0,0,.10);
+  }
+  #rosterView .roster-layout{display:block}
+  #rosterView[data-mobile-panel="list"] .player-detail-card,
+  #rosterView[data-mobile-panel="detail"] .roster-table-card{display:none!important}
+  #rosterView .roster-table-card,
+  #rosterView .player-detail-card{width:100%;max-width:100%;min-width:0}
+  #rosterView .player-detail-card{padding:10px;overflow-x:clip}
+  #statsView .stats-layout{display:block}
+  #statsView[data-mobile-panel="players"] .stats-layout>.ui-card:nth-child(2),
+  #statsView[data-mobile-panel="scorers"] .stats-layout>.ui-card:nth-child(1){display:none!important}
+  #statsView .stats-layout>.ui-card{width:100%;min-width:0;overflow-x:clip}
+  #statsView #statsPlayers,#statsView #statsScorers{min-width:0;max-width:100%}
+}
