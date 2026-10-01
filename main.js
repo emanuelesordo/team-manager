@@ -890,7 +890,7 @@ function renderCompetitionFixtures(rows){
       </section>`).join("")}</div>`
     :'<div class="muted">Calendario non disponibile.</div>';
 
-  $$("[data-fixture-score]").forEach(b=>b.onclick=()=>openOtherMatchCenter(rows.find(r=>r.id===b.dataset.fixtureScore)));
+  $("[data-fixture-score]").forEach(b=>b.onclick=()=>openMatchDetail(rows.find(r=>r.id===b.dataset.fixtureScore)));
   $$("[data-match-center-score]").forEach(b=>b.onclick=async e=>{e.stopPropagation();const fixture=rows.find(r=>r.id===b.dataset.matchCenterScore);await openMatchDetail(fixture);if(fixture?.status!=="finished"&&fixture?.home_score!=null&&fixture?.away_score!=null)mcOpenFinalScore()});
   $$("[data-match-center]").forEach(row=>row.onclick=e=>{if(e.target.closest("button"))return;openMatchDetail(rows.find(r=>r.id===row.dataset.matchCenter))});
 
@@ -992,12 +992,18 @@ function renderCalendarRows(){
 function playerOptions(selected){
   return '<option value="">—</option>'+players.map(p=>`<option value="${p.id}" ${p.id===selected?"selected":""}>${esc(p.last_name+" "+p.first_name)}</option>`).join("");
 }
-let matchCenterState={fixture:null,match:null,matchPlayers:[],events:[],ratings:[],injuries:[],suspensions:[],tab:"general",editMode:false,postView:"match"};
+let matchCenterState={fixture:null,match:null,matchPlayers:[],events:[],ratings:[],injuries:[],suspensions:[],tab:"general",editMode:false,postView:"match",ownFixture:true};
 let matchCenterTimer=null;
 function mcPlayer(id){return rosterRows.find(p=>p.player_id===id)||players.find(p=>p.id===id)||null}
 function mcPlayerName(id){const p=mcPlayer(id);return p?(p.last_name+" "+p.first_name):"—"}
 function mcMatchPlayer(id){return matchCenterState.matchPlayers.find(x=>x.player_id===id)||null}
+function mcOwnFixture(){return matchCenterState.ownFixture!==false}
 function mcIsPost(){return matchCenterState.fixture?.status==="finished"||matchCenterState.match?.status==="finished"||!!matchCenterState.match?.finalized_at}
+function mcEventIsHome(e){
+  if(!mcOwnFixture())return (e.fixture_side||e.side||e.team_side)==="home";
+  const ownHome=isOwnTeamName(matchCenterState.fixture?.home_team);
+  return (e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
+}
 function mcIsLive(){const m=matchCenterState.match;return !!(m&&m.live_started_at&&!m.finalized_at&&m.status!=="finished")}
 function mcSetTab(tab){matchCenterState.tab="general"}
 
@@ -1049,10 +1055,11 @@ async function mcEditFixtureMeta(kind){
 }
 
 function mcEventScore(){
-  const ownHome=isOwnTeamName(matchCenterState.fixture?.home_team);
-  const teamGoals=matchCenterState.events.filter(e=>e.event_type==="goal"&&e.team_side==="team"&&e.validation_status!=="rejected").length;
-  const oppGoals=matchCenterState.events.filter(e=>e.event_type==="goal"&&e.team_side==="opponent"&&e.validation_status!=="rejected").length;
-  return ownHome?{home:teamGoals,away:oppGoals}:{home:oppGoals,away:teamGoals};
+  return matchCenterState.events.reduce((score,e)=>{
+    if(e.event_type!=="goal"||e.validation_status==="rejected")return score;
+    if(mcEventIsHome(e))score.home++;else score.away++;
+    return score;
+  },{home:0,away:0});
 }
 function mcHasProvisionalScore(){
   return !mcIsPost()&&matchCenterState.events.some(e=>e.event_type!=="period_end"&&e.validation_status!=="rejected");
@@ -1081,8 +1088,36 @@ function mcFinalScoreDialog(){
   $("#matchDetailDialog .match-center-shell").appendChild(pop);
   return pop;
 }
+function mcOpenExternalFinalScore(){
+  const pop=mcFinalScoreDialog(),score=mcEventScore(),f=matchCenterState.fixture;
+  const suggestedHome=matchCenterState.editMode&&f.home_score!=null?Number(f.home_score):score.home;
+  const suggestedAway=matchCenterState.editMode&&f.away_score!=null?Number(f.away_score):score.away;
+  pop.innerHTML='<div class="mc-final-score-head"><div><strong>Conferma risultato</strong><small>Il punteggio deve coincidere con gli eventi gol registrati.</small></div><button type="button" data-close-final-score>×</button></div>'+
+    '<div class="mc-external-final-score"><input id="mcExternalFinalHome" type="number" min="0" value="'+suggestedHome+'"><span>–</span><input id="mcExternalFinalAway" type="number" min="0" value="'+suggestedAway+'"></div>'+
+    '<p id="mcFinalScoreError" class="form-error hidden"></p>'+
+    '<div class="mc-final-score-actions"><button type="button" class="secondary" data-close-final-score>Annulla</button><button type="button" class="primary" id="mcConfirmExternalFinalScore">Rendi definitivo</button></div>';
+  pop.classList.remove("hidden");
+  pop.querySelectorAll("[data-close-final-score]").forEach(b=>b.onclick=()=>pop.classList.add("hidden"));
+  $("#mcConfirmExternalFinalScore").onclick=mcConfirmExternalFinalScore;
+}
+async function mcConfirmExternalFinalScore(){
+  const error=$("#mcFinalScoreError");error.classList.add("hidden");
+  try{
+    if(!sessionUser)throw new Error("Accedi per confermare il risultato.");
+    const home=Number($("#mcExternalFinalHome").value),away=Number($("#mcExternalFinalAway").value),score=mcEventScore();
+    if(!Number.isFinite(home)||!Number.isFinite(away)||home<0||away<0)throw new Error("Inserisci un risultato valido.");
+    if(home!==score.home||away!==score.away)throw new Error("Risultato non coerente con gli eventi gol: eventi "+score.home+"-"+score.away+", risultato "+home+"-"+away+".");
+    const r=await db.from("app_competition_fixtures").update({home_score:home,away_score:away,status:"finished",manual_result_override:true}).eq("id",matchCenterState.fixture.id).select("*").maybeSingle();
+    matchCenterState.fixture=assertSaved(r,"Risultato");
+    matchCenterState.editMode=false;
+    $("#mcFinalScorePopover").classList.add("hidden");
+    await mcReload();
+    await renderCompetitionHub();
+  }catch(err){error.textContent=err.message||String(err);error.classList.remove("hidden")}
+}
 function mcOpenFinalScore(){
   if(mcIsPost()&&!matchCenterState.editMode)return;
+  if(!mcOwnFixture())return mcOpenExternalFinalScore();
   const score=mcEventScore(),active=new Set(mcCurrentFieldRows().map(x=>x.player_id));
   const entered=new Set(matchCenterState.events.filter(e=>e.team_side==="team"&&e.event_type==="substitution").map(e=>e.secondary_player_id).filter(Boolean));
   const unused=matchCenterState.matchPlayers.filter(x=>x.selection_status==="bench"&&!active.has(x.player_id)&&!entered.has(x.player_id));
@@ -1126,19 +1161,16 @@ async function mcConfirmFinalScore(){
   }catch(err){error.textContent=err.message||String(err);error.classList.remove("hidden")}
 }
 function mcHeaderEventItems(side){
-  const f=matchCenterState.fixture;
-  const ownHome=isOwnTeamName(f.home_team);
-  const eventSide=side==="home"?(ownHome?"team":"opponent"):(ownHome?"opponent":"team");
   return matchCenterState.events
-    .filter(e=>e.team_side===eventSide&&(e.event_type==="goal"||e.event_type==="red_card"))
-    .sort((a,b)=>(a.minute??999)-(b.minute??999))
+    .filter(e=>mcEventIsHome(e)===(side==="home")&&(e.event_type==="goal"||e.event_type==="red_card"))
+    .sort((a,b)=>mcEventOrder(a)-mcEventOrder(b))
     .map(e=>{
       const minute=e.minute==null?"":mcDisplayMinute(e);
       if(e.event_type==="red_card"){
-        const who=eventSide==="team"?mcPlayerName(e.player_id):"Espulsione";
+        const who=mcOwnFixture()&&e.team_side==="team"?mcPlayerName(e.player_id):"Espulsione";
         return '<span class="red"><b>■</b> '+esc(who)+' '+minute+'</span>';
       }
-      const who=eventSide==="team"?(mcPlayerName(e.player_id)||"Gol"):"Gol";
+      const who=mcOwnFixture()&&e.team_side==="team"?(mcPlayerName(e.player_id)||"Gol"):"Gol";
       return '<span>'+esc(who)+' '+minute+'</span>';
     }).join("");
 }
@@ -1190,7 +1222,15 @@ function mcEligible(kind,minute,side){
 }
 function mcOptions(rows,empty){return `<option value="">${empty}</option>`+rows.map(p=>`<option value="${p.player_id}">${esc(p.last_name+" "+p.first_name)}</option>`).join("")}
 function mcReasonOptions(v){return [["","Nessun motivo"],["work","Lavoro"],["travel","Viaggio"],["personal","Personale"],["technical","Scelta tecnica"],["other","Altro"]].map(([x,l])=>`<option value="${x}" ${x===(v||"")?"selected":""}>${l}</option>`).join("")}
-function mcGoalInfo(){const f=matchCenterState.fixture,ownHome=isOwnTeamName(f.home_team),team=matchCenterState.events.filter(e=>e.event_type==="goal"&&e.team_side==="team").length,opp=matchCenterState.events.filter(e=>e.event_type==="goal"&&e.team_side==="opponent").length;return {team,opp,expectedTeam:Number(ownHome?f.home_score:f.away_score)||0,expectedOpp:Number(ownHome?f.away_score:f.home_score)||0}}
+function mcGoalInfo(){
+  const f=matchCenterState.fixture;
+  if(!mcOwnFixture()){
+    const s=mcEventScore();
+    return {team:s.home,opp:s.away,expectedTeam:Number(f?.home_score)||0,expectedOpp:Number(f?.away_score)||0};
+  }
+  const ownHome=isOwnTeamName(f.home_team),team=matchCenterState.events.filter(e=>e.event_type==="goal"&&e.team_side==="team").length,opp=matchCenterState.events.filter(e=>e.event_type==="goal"&&e.team_side==="opponent").length;
+  return {team,opp,expectedTeam:Number(ownHome?f.home_score:f.away_score)||0,expectedOpp:Number(ownHome?f.away_score:f.home_score)||0};
+}
 function mcRoleRank(row){
   const p=mcPlayer(row.player_id);
   const role=String(p?.generic_role_manual||"").toUpperCase();
@@ -1600,13 +1640,16 @@ function mcEventOrder(e){
 }
 function mcDisplayMinute(e){
   if(e?.minute==null)return "–";
-  const base=mcEventPeriod(e)==="second_half"?mcPeriodMinutes():0;
-  const minute=base+Number(e.minute||0);
+  const period=mcEventPeriod(e);
+  const local=Number(e.minute||0);
+  if(!mcOwnFixture())return (period==="second_half"?"2T ":"1T ")+local+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
+  const base=period==="second_half"?mcPeriodMinutes():0;
+  const minute=base+local;
   return minute+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
 }
 function mcIsAddedTimeEvent(e){
   if(e?.event_type==="period_end"||e?.minute==null)return false;
-  return Number(e.minute)>mcPeriodMinutes();
+  return Number(e.stoppage_minute||0)>0||Number(e.minute)>mcPeriodMinutes();
 }
 function mcRecoveryDividerLabel(period,recoveryByPeriod,events){
   const explicit=recoveryByPeriod.get(period)?.minutes;
@@ -1646,13 +1689,12 @@ function mcTimelineCardIcon(event,events){
 }
 function mcTimeline(target,limit,filters=null){
   const all=[...matchCenterState.events].sort((a,b)=>mcEventOrder(a)-mcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0));
-  const ownHome=isOwnTeamName(matchCenterState.fixture.home_team);
   const scoreAt=new Map();
   let homeGoals=0,awayGoals=0;
 
   all.forEach(e=>{
     if(e.event_type==="goal"){
-      const isHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
+      const isHome=mcEventIsHome(e);
       if(isHome)homeGoals++;else awayGoals++;
       scoreAt.set(e,homeGoals+" - "+awayGoals);
     }
@@ -1660,7 +1702,7 @@ function mcTimeline(target,limit,filters=null){
 
   let h=0,a=0;
   all.filter(e=>e.event_type==="goal"&&mcEventPeriod(e)==="first_half").forEach(e=>{
-    const isHome=(e.team_side==="team"&&ownHome)||(e.team_side==="opponent"&&!ownHome);
+    const isHome=mcEventIsHome(e);
     if(isHome)h++;else a++;
   });
   const halfScore=h+" - "+a;
@@ -1720,17 +1762,16 @@ function mcTimeline(target,limit,filters=null){
     const add=index===0?'<button type="button" class="mc-timeline-add" data-mc-timeline-add title="Aggiungi evento">+</button>':"";
 
     const renderMomentEvent=x=>{
-      const isHome=(x.team_side==="team"&&ownHome)||(x.team_side==="opponent"&&!ownHome);
+      const isHome=mcEventIsHome(x);
       const partial=x.event_type==="goal"?(scoreAt.get(x)||""):"";
       let main="",secondary="",icon="";
 
       if(x.event_type==="goal"){
-        if(x.team_side==="team"){
+        if(!mcOwnFixture())main="Gol";
+        else if(x.team_side==="team"){
           main=x.player_id?mcTimelinePlayerName(x.player_id):"Gol";
           secondary=x.secondary_player_id?mcTimelinePlayerName(x.secondary_player_id):"";
-        }else{
-          main="Gol avversario";
-        }
+        }else main="Gol avversario";
         icon='<span class="mc-event-symbol goal">⚽</span>';
       }else if(x.event_type==="substitution"){
         main=x.secondary_player_id?mcTimelinePlayerName(x.secondary_player_id):"Nessun ingresso";
@@ -1738,9 +1779,11 @@ function mcTimeline(target,limit,filters=null){
         icon='<span class="mc-event-symbol substitution"><i class="sub-out">←</i><b class="sub-in">→</b></span>';
       }else if(x.event_type==="yellow_card"||x.event_type==="blue_card"||x.event_type==="red_card"){
         const shirt=x.payload?.opponent_shirt_number;
-        main=x.team_side==="team"
-          ?(x.player_id?mcTimelinePlayerName(x.player_id):"Giocatore")
-          :(shirt?"#"+shirt:"Avversario");
+        main=!mcOwnFixture()
+          ?"Cartellino"
+          :x.team_side==="team"
+            ?(x.player_id?mcTimelinePlayerName(x.player_id):"Giocatore")
+            :(shirt?"#"+shirt:"Avversario");
         icon=mcTimelineCardIcon(x,all);
       }
 
@@ -1778,11 +1821,21 @@ function mcTimeline(target,limit,filters=null){
   const box=$(target);
   box.innerHTML=rows.length?rows.join(""):'<div class="empty-state mc-timeline-empty">Nessun evento<button type="button" class="mc-timeline-add empty-add" data-mc-timeline-add title="Aggiungi evento">+</button></div>';
   const add=box.querySelector("[data-mc-timeline-add]");
-  if(add)add.onclick=e=>{e.stopPropagation();mcOpenTimelineQuickEvent(add,hasSecondHalf?"second_half":"first_half")};
-  box.querySelectorAll("[data-mc-timeline-add-period]").forEach(btn=>btn.onclick=e=>{e.stopPropagation();mcOpenTimelineQuickEvent(btn,btn.dataset.mcTimelineAddPeriod)});
+  if(add)add.onclick=e=>{
+    e.stopPropagation();
+    if(mcOwnFixture())mcOpenTimelineQuickEvent(add,hasSecondHalf?"second_half":"first_half");
+    else omcOpenEventDialog(null,hasSecondHalf?"second_half":"first_half");
+  };
+  box.querySelectorAll("[data-mc-timeline-add-period]").forEach(btn=>btn.onclick=e=>{
+    e.stopPropagation();
+    if(mcOwnFixture())mcOpenTimelineQuickEvent(btn,btn.dataset.mcTimelineAddPeriod);
+    else omcOpenEventDialog(null,btn.dataset.mcTimelineAddPeriod);
+  });
   box.querySelectorAll("[data-mc-event-id]").forEach(row=>{
     if(mcFinalLocked()){row.removeAttribute("tabindex");row.removeAttribute("role");row.onclick=null;row.onkeydown=null;return}
-    const open=()=>mcOpenTimelineEventEditor(row.dataset.mcEventId,row);
+    const open=()=>mcOwnFixture()
+      ?mcOpenTimelineEventEditor(row.dataset.mcEventId,row)
+      :omcOpenEventDialog(matchCenterState.events.find(e=>String(e.id)===String(row.dataset.mcEventId)));
     row.onclick=e=>{if(e.target.closest("[data-mc-timeline-add]"))return;open()};
     row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open()}};
   });
@@ -2389,18 +2442,19 @@ function mcRenderEvents(){mcTimeline("#mcEventsTimeline",0);$("#mcEventsCount").
 function mcRenderAll(){
   const dialog=$("#matchDetailDialog");
   dialog?.classList.toggle("mc-final-locked",mcFinalLocked());
+  dialog?.classList.toggle("mc-external-fixture",!mcOwnFixture());
   mcHeader();
   const post=mcIsPost();
   if(!post)matchCenterState.postView="match";
   const tabs=$("#mcPostTabs");
-  tabs?.classList.toggle("hidden",!post);
+  tabs?.classList.toggle("hidden",!post||!mcOwnFixture());
   document.querySelectorAll("[data-mc-post-view]").forEach(b=>{
     b.classList.toggle("active",b.dataset.mcPostView===matchCenterState.postView);
     b.onclick=()=>mcSetPostView(b.dataset.mcPostView);
   });
   const matchPanel=$('[data-mc-post-panel="match"]'),ratingPanel=$('[data-mc-post-panel="rating"]');
   matchPanel?.classList.toggle("hidden",post&&matchCenterState.postView==="rating");
-  ratingPanel?.classList.toggle("hidden",!post||matchCenterState.postView!=="rating");
+  ratingPanel?.classList.toggle("hidden",!mcOwnFixture()||!post||matchCenterState.postView!=="rating");
   const errors=[];
   try{
     mcTimeline("#mcGeneralEvents",0,mcGeneralEventFilters);
@@ -2409,24 +2463,35 @@ function mcRenderAll(){
     console.error("Match Center timeline render",err);
     const box=$("#mcGeneralEvents");if(box)box.innerHTML='<div class="empty-state">Errore caricamento cronologia</div>';
   }
-  try{
-    const starters=mcCurrentFieldRows();
-    $("#mcGeneralFormationMeta").textContent=(matchCenterState.match?.formation||"—")+" · "+starters.length+" in campo";
-    mcPitch($("#mcGeneralPitch"),starters,false);
-    mcBindPlayerQuickActions($("#mcGeneralPitch"));
-  }catch(err){
-    errors.push("campo");
-    console.error("Match Center pitch render",err);
-  }
-  try{
-    mcRenderGeneralBench();
-  }catch(err){
-    errors.push("panchina");
-    console.error("Match Center bench render",err);
+  if(mcOwnFixture()){
+    try{
+      const starters=mcCurrentFieldRows();
+      $("#mcGeneralFormationMeta").textContent=(matchCenterState.match?.formation||"—")+" · "+starters.length+" in campo";
+      mcPitch($("#mcGeneralPitch"),starters,false);
+      mcBindPlayerQuickActions($("#mcGeneralPitch"));
+    }catch(err){
+      errors.push("campo");
+      console.error("Match Center pitch render",err);
+    }
+    try{
+      mcRenderGeneralBench();
+    }catch(err){
+      errors.push("panchina");
+      console.error("Match Center bench render",err);
+    }
   }
   $("#mcHistoryTitle").textContent=mcIsLive()?"Cronologia live":"Cronologia partita";
   const g=mcGoalInfo();
-  $("#mcGoalProgress").textContent=mcIsPost()?("CAS "+g.team+"/"+g.expectedTeam+" · AVV "+g.opp+"/"+g.expectedOpp):(g.team+"-"+g.opp);
+  $("#mcGoalProgress").textContent=!mcOwnFixture()
+    ?(mcIsPost()?("Gol "+g.team+"-"+g.opp+" · risultato "+g.expectedTeam+"-"+g.expectedOpp):(g.team+"-"+g.opp))
+    :(mcIsPost()?("CAS "+g.team+"/"+g.expectedTeam+" · AVV "+g.opp+"/"+g.expectedOpp):(g.team+"-"+g.opp));
+  $("#mcExternalAddEvent")?.classList.toggle("hidden",mcOwnFixture()||mcFinalLocked());
+  $("#mcExternalConfirmResult")?.classList.toggle("hidden",mcOwnFixture());
+  if($("#mcExternalConfirmResult")){
+    $("#mcExternalConfirmResult").textContent=mcFinalLocked()?"Modifica":"Conferma risultato";
+    $("#mcExternalConfirmResult").onclick=mcFinalLocked()?mcEnableEditMode:mcOpenFinalScore;
+  }
+  document.querySelector('[data-mc-event-filter="substitution"]')?.classList.toggle("hidden",!mcOwnFixture());
   $$("[data-mc-bench-side]").forEach(b=>b.onclick=()=>{mcGeneralBenchSide=b.dataset.mcBenchSide;mcRenderGeneralBench()});
   $$("[data-mc-event-filter]").forEach(b=>{
     b.classList.toggle("active",mcGeneralEventFilters.has(b.dataset.mcEventFilter));
@@ -2437,11 +2502,27 @@ function mcRenderAll(){
       mcTimeline("#mcGeneralEvents",0,mcGeneralEventFilters);
     };
   });
-  if(post)mcRenderRating();
+  if(post&&mcOwnFixture())mcRenderRating();
   if(errors.length)console.warn("Match Center partial render:",errors.join(", "));
 }
 async function mcReload(){
-  if(!matchCenterState.match){matchCenterState.ratings=[];mcRenderAll();return}
+  if(!mcOwnFixture()){
+    const ev=await db.from("app_fixture_events").select("*").eq("fixture_id",matchCenterState.fixture.id);
+    if(ev.error)throw ev.error;
+    matchCenterState.matchPlayers=[];
+    matchCenterState.ratings=[];
+    matchCenterState.events=(ev.data||[]).map(e=>({
+      ...e,
+      fixture_side:e.side,
+      team_side:e.side,
+      payload:{...(e.source_raw||{}),period:e.source_raw?.period,recovery_minutes:e.source_raw?.recovery_minutes},
+      validation_status:"official"
+    }));
+    mcRenderAll();
+    await mcSyncProvisionalScore();
+    return;
+  }
+  if(!matchCenterState.match){matchCenterState.ratings=[];matchCenterState.events=[];mcRenderAll();return}
   const [mp,ev,rt]=await Promise.all([
     db.from("app_match_players").select("*").eq("match_id",matchCenterState.match.id),
     db.from("app_match_events").select("*").eq("match_id",matchCenterState.match.id).order("minute",{ascending:true}),
@@ -2465,22 +2546,30 @@ async function mcReload(){
   await mcSyncProvisionalScore();
 }
 async function openMatchDetail(fixture){
-  if(!fixture||!(isOwnTeamName(fixture.home_team)||isOwnTeamName(fixture.away_team)))return;
+  if(!fixture)return;
   clearInterval(matchCenterTimer);
   mcClosePlayerQuickEvent();
-  await loadCoreSeasonData();await loadCompetitions();await ensureMainTeam();
-  const match=linkedMatchForFixture(fixture);
-  const [inj,sus]=await Promise.all([
-    db.from("injuries").select("*").eq("season_id",currentSeason.id),
-    db.from("suspensions").select("*").eq("season_id",currentSeason.id)
-  ]);
-  matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries:inj.data||[],suspensions:sus.data||[],tab:"general",editMode:false,postView:"match"};
+  await loadCompetitions();await ensureMainTeam();
+  const own=isOwnTeamName(fixture.home_team)||isOwnTeamName(fixture.away_team);
+  let match=null,injuries=[],suspensions=[];
+  if(own){
+    await loadCoreSeasonData();
+    match=linkedMatchForFixture(fixture);
+    const [inj,sus]=await Promise.all([
+      db.from("injuries").select("*").eq("season_id",currentSeason.id),
+      db.from("suspensions").select("*").eq("season_id",currentSeason.id)
+    ]);
+    injuries=inj.data||[];suspensions=sus.data||[];
+  }
+  matchCenterState={fixture,match,matchPlayers:[],events:[],ratings:[],injuries,suspensions,tab:"general",editMode:false,postView:"match",ownFixture:own};
   $("#matchDetailFixtureId").value=fixture.id;
   $("#matchDetailMatchId").value=match?.id||"";
-  $("#matchDetailDialog").showModal();
+  const dialog=$("#matchDetailDialog");
+  if(!dialog.open)dialog.showModal();
   await mcReload();
 }
-$$( "[data-close-match-detail]" ).forEach(b=>b.onclick=()=>{clearInterval(matchCenterTimer);$("#matchDetailDialog").close()});
+$( "[data-close-match-detail]" ).forEach(b=>b.onclick=()=>{clearInterval(matchCenterTimer);$("#matchDetailDialog").close()});
+$("#mcExternalAddEvent").onclick=()=>{if(!mcFinalLocked())omcOpenEventDialog()};
 async function mcSaveAvailability(id){try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");if(!sessionUser)throw new Error("Accedi per modificare.");const row=$(`[data-mc-avail="${id}"]`),reason=row.querySelector("[data-reason]").value,note=row.querySelector("[data-note]").value.trim(),old=mcMatchPlayer(id),p=reason?{selection_status:"unavailable",started:false,unavailability_reason:reason,unavailability_note:note||null}:{selection_status:"available",started:false,unavailability_reason:null,unavailability_note:null};const r=old?await db.from("app_match_players").update(p).eq("id",old.id).select("*").maybeSingle():await db.from("app_match_players").insert({match_id:matchCenterState.match.id,player_id:id,...p}).select("*").single();assertSaved(r,"Disponibilità");await mcReload()}catch(e){alert(e.message||String(e))}}
 async function mcSaveNotCalled(id){const sel=$(`[data-nc="${id}"]`),row=$(`[data-mc-avail="${id}"]`);if(row){row.querySelector("[data-reason]").value=sel.value;return mcSaveAvailability(id)}}
 async function mcSetSelection(id,state){try{if(!matchCenterState.match)throw new Error("Partita operativa non collegata.");if(!sessionUser)throw new Error("Accedi per modificare.");if((state==="starter"||state==="bench")&&mcSuspension(id))throw new Error("Giocatore squalificato: convocazione bloccata.");const old=mcMatchPlayer(id),p={selection_status:state,started:state==="starter",unavailability_reason:null,unavailability_note:null};const r=old?await db.from("app_match_players").update(p).eq("id",old.id).select("*").maybeSingle():await db.from("app_match_players").insert({match_id:matchCenterState.match.id,player_id:id,...p}).select("*").single();assertSaved(r,"Formazione");await mcReload()}catch(e){alert(e.message||String(e))}}
@@ -3083,233 +3172,40 @@ $("#fixtureConfirmBtn").onclick=async()=>{
   }
 };
 
-let otherMatchCenterState={fixture:null,events:[],filters:new Set(["goal","yellow_card","blue_card","red_card"]),editMode:false};
-
-function omcPeriodMinutes(){
-  const comp=competitions.find(x=>x.id===otherMatchCenterState.fixture?.competition_id);
-  return Number(comp?.minutes_per_period)||45;
-}
-function omcEventPeriod(e){
-  const explicit=e?.source_raw?.period;
-  if(explicit==="first_half"||explicit==="second_half")return explicit;
-  if(e?.event_type==="period_end")return explicit||"first_half";
-  const m=Number(e?.minute);
-  return Number.isFinite(m)&&m>omcPeriodMinutes()?"second_half":"first_half";
-}
-function omcLocalMinute(e){
-  if(e?.minute==null)return null;
-  const explicit=e?.source_raw?.period;
-  const raw=Number(e.minute);
-  if(explicit==="second_half")return raw;
-  if(!explicit&&raw>omcPeriodMinutes())return raw-omcPeriodMinutes();
-  return raw;
-}
-function omcEventOrder(e){
-  const period=omcEventPeriod(e);
-  if(e?.event_type==="period_end")return period==="second_half"?1998:998;
-  const local=Number(omcLocalMinute(e));
-  return (period==="second_half"?1000:0)+(Number.isFinite(local)?local:999)+(Number(e?.stoppage_minute||0)/100);
-}
+function omcPeriodMinutes(){return mcPeriodMinutes()}
 function omcPeriodShort(period){return period==="second_half"?"2T":"1T"}
-function omcDisplayMinute(e){
-  const local=omcLocalMinute(e);
-  if(local==null)return "–";
-  return omcPeriodShort(omcEventPeriod(e))+" "+local+(e.stoppage_minute?"+"+e.stoppage_minute:"")+"'";
-}
 function omcRecoveryEvent(period){
-  return otherMatchCenterState.events.find(e=>e.event_type==="period_end"&&omcEventPeriod(e)===period)||null;
+  return matchCenterState.events.find(e=>e.event_type==="period_end"&&mcEventPeriod(e)===period)||null;
 }
 function omcRecoveryMinutes(period){
   const e=omcRecoveryEvent(period);
-  return Number(e?.source_raw?.recovery_minutes??e?.stoppage_minute??0)||0;
-}
-function omcGoalCounts(){
-  return otherMatchCenterState.events.reduce((a,e)=>{
-    if(e.event_type!=="goal")return a;
-    if(e.side==="home")a.home++;
-    if(e.side==="away")a.away++;
-    return a;
-  },{home:0,away:0});
-}
-function omcScoreAtMap(events){
-  let home=0,away=0;
-  const map=new Map();
-  [...events].sort((a,b)=>omcEventOrder(a)-omcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0)).forEach(e=>{
-    if(e.event_type!=="goal")return;
-    if(e.side==="home")home++;else if(e.side==="away")away++;
-    map.set(e,home+" - "+away);
-  });
-  return map;
-}
-function omcTeamLogo(name){
-  const v=teamVisual(name);
-  return v.logo?`<img src="${esc(v.logo)}" alt="">`:`<span>${esc(v.short)}</span>`;
-}
-function omcEventIcon(e){
-  if(e.event_type==="goal")return '<span class="mc-event-symbol goal">⚽</span>';
-  const cls=e.event_type==="yellow_card"?"yellow":e.event_type==="blue_card"?"blue":"red";
-  return '<span class="mc-event-symbol card '+cls+'"></span>';
-}
-function omcRenderHeaderEventSide(side){
-  const box=$(side==="home"?"#omcHomeMatchEvents":"#omcAwayMatchEvents");
-  if(!box)return;
-  const rows=[...otherMatchCenterState.events]
-    .filter(e=>e.side===side&&e.event_type!=="period_end")
-    .sort((a,b)=>omcEventOrder(a)-omcEventOrder(b))
-    .slice(-4);
-  box.innerHTML=rows.map(e=>'<span>'+omcDisplayMinute(e)+' · '+(e.event_type==="goal"?"⚽":e.event_type==="yellow_card"?"■ Giallo":e.event_type==="blue_card"?"■ Blu":"■ Rosso")+'</span>').join("");
-}
-function omcLocked(){
-  return otherMatchCenterState.fixture?.status==="finished"&&!otherMatchCenterState.editMode;
-}
-function omcApplyLockState(){
-  const locked=omcLocked();
-  $("#omcHomeScore").disabled=locked;
-  $("#omcAwayScore").disabled=locked;
-  $("#omcAddEventBtn").classList.toggle("hidden",locked);
-  const confirm=$("#omcConfirmResultBtn");
-  confirm.textContent=locked?"Modifica":"Conferma risultato";
-  confirm.classList.toggle("secondary",locked);
-  confirm.classList.toggle("primary",!locked);
-}
-function omcUpdateHeader(){
-  const f=otherMatchCenterState.fixture;if(!f)return;
-  $("#omcHomeName").textContent=f.home_team;
-  $("#omcAwayName").textContent=f.away_team;
-  $("#omcHomeLogo").innerHTML=omcTeamLogo(f.home_team);
-  $("#omcAwayLogo").innerHTML=omcTeamLogo(f.away_team);
-  $("#omcHomeScore").value=f.home_score??"";
-  $("#omcAwayScore").value=f.away_score??"";
-  $("#omcState").textContent=f.status==="finished"?"FT":f.status==="postponed"?"RIN":f.status==="cancelled"?"ANN":"PRE";
-  const comp=competitions.find(x=>x.id===f.competition_id);
-  $("#omcMeta").innerHTML='<span><b>'+(comp?esc(comp.name):"Competizione")+'</b></span><span>Turno '+esc(f.round_no??"–")+'</span><span>'+esc(localDateTime(f.kickoff_at))+'</span>';
-  omcRenderHeaderEventSide("home");
-  omcRenderHeaderEventSide("away");
-  omcApplyLockState();
-}
-function omcRenderGoalProgress(){
-  const goals=omcGoalCounts();
-  const h=$("#omcHomeScore").value,a=$("#omcAwayScore").value;
-  const ready=h!==""&&a!=="";
-  const ok=ready&&Number(h)===goals.home&&Number(a)===goals.away;
-  const box=$("#omcGoalProgress");
-  if(!box)return;
-  box.textContent=ready?(ok?"Gol coerenti · "+goals.home+"-"+goals.away:"Eventi gol "+goals.home+"-"+goals.away+" · risultato "+h+"-"+a):"Gol eventi "+goals.home+"-"+goals.away;
-  box.className=ok?"omc-goal-progress ok":ready?"omc-goal-progress warning":"omc-goal-progress";
-}
-function omcTimelineRow(e,scoreAt){
-  const home=e.side==="home";
-  const partial=e.event_type==="goal"?(scoreAt.get(e)||""):"";
-  const label=e.event_type==="goal"?"Gol":e.event_type==="yellow_card"?"Giallo":e.event_type==="blue_card"?"Blu":"Rosso";
-  const content='<span class="mc-event-content">'+omcEventIcon(e)+(partial?'<span class="mc-goal-score">'+esc(partial)+'</span>':"")+'<span class="mc-event-names"><strong>'+label+'</strong></span></span>';
-  return '<div class="mc-event-row mc-minute-group" data-omc-event-id="'+esc(e.id)+'" role="button" tabindex="0">'+
-    '<div class="mc-event-half mc-event-half-home">'+(home?'<div class="mc-minute-stack"><div class="mc-minute-event">'+content+'</div></div>':"")+'</div>'+
-    '<time>'+esc(omcDisplayMinute(e))+'</time>'+
-    '<div class="mc-event-half mc-event-half-away">'+(!home?'<div class="mc-minute-stack"><div class="mc-minute-event">'+content+'</div></div>':"")+'</div>'+
-  '</div>';
-}
-function omcRenderTimeline(){
-  const all=[...otherMatchCenterState.events].sort((a,b)=>omcEventOrder(a)-omcEventOrder(b)||new Date(a.created_at||0)-new Date(b.created_at||0));
-  const scoreAt=omcScoreAtMap(all);
-  const regular=all.filter(e=>e.event_type!=="period_end"&&otherMatchCenterState.filters.has(e.event_type));
-  const first=regular.filter(e=>omcEventPeriod(e)==="first_half");
-  const second=regular.filter(e=>omcEventPeriod(e)==="second_half");
-  const firstGoals=all.filter(e=>e.event_type==="goal"&&omcEventPeriod(e)==="first_half").reduce((a,e)=>{if(e.side==="home")a.home++;else a.away++;return a},{home:0,away:0});
-  const rows=[];
-  if(otherMatchCenterState.fixture?.status==="finished"){
-    rows.push('<div class="mc-period-separator mc-ft"><span></span><strong>FT '+esc(otherMatchCenterState.fixture.home_score??0)+' - '+esc(otherMatchCenterState.fixture.away_score??0)+'</strong><span></span></div>');
-  }
-  const rec2=omcRecoveryMinutes("second_half");
-  if(rec2)rows.push('<div class="mc-recovery-chip" data-omc-recovery-period="second_half" role="button" tabindex="0">Recupero 2T +'+rec2+'\'</div>');
-  [...second].reverse().forEach(e=>rows.push(omcTimelineRow(e,scoreAt)));
-  if(second.length||omcRecoveryEvent("first_half")){
-    rows.push('<div class="mc-period-separator mc-ht"><span></span><strong>HT '+firstGoals.home+' - '+firstGoals.away+'</strong><span></span></div>');
-  }
-  const rec1=omcRecoveryMinutes("first_half");
-  if(rec1)rows.push('<div class="mc-recovery-chip" data-omc-recovery-period="first_half" role="button" tabindex="0">Recupero 1T +'+rec1+'\'</div>');
-  [...first].reverse().forEach(e=>rows.push(omcTimelineRow(e,scoreAt)));
-  const box=$("#omcTimeline");
-  box.innerHTML=rows.length?rows.join(""):'<div class="empty-state mc-timeline-empty">Nessun evento<button type="button" class="mc-timeline-add empty-add" data-omc-add-event>+</button></div>';
-  box.querySelector("[data-omc-add-event]")?.addEventListener("click",()=>omcOpenEventDialog());
-  box.querySelectorAll("[data-omc-event-id]").forEach(row=>{
-    if(omcLocked()){row.removeAttribute("role");row.removeAttribute("tabindex");return}
-    row.onclick=()=>omcOpenEventDialog(otherMatchCenterState.events.find(e=>String(e.id)===String(row.dataset.omcEventId)));
-    row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();row.click()}};
-  });
-  box.querySelectorAll("[data-omc-recovery-period]").forEach(row=>{
-    if(omcLocked()){row.removeAttribute("role");row.removeAttribute("tabindex");return}
-    row.onclick=()=>omcOpenEventDialog(omcRecoveryEvent(row.dataset.omcRecoveryPeriod));
-    row.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();row.click()}};
-  });
-  omcRenderGoalProgress();
-  omcRenderHeaderEventSide("home");
-  omcRenderHeaderEventSide("away");
-}
-async function omcLoadEvents(){
-  const f=otherMatchCenterState.fixture;
-  otherMatchCenterState.events=[];
-  if(!f)return;
-  const r=await db.from("app_fixture_events").select("*").eq("fixture_id",f.id);
-  if(r.error)throw r.error;
-  otherMatchCenterState.events=r.data||[];
-  omcRenderTimeline();
-}
-async function openOtherMatchCenter(f){
-  if(!f)return;
-  otherMatchCenterState.fixture=f;
-  otherMatchCenterState.editMode=false;
-  otherMatchCenterState.filters=new Set(["goal","yellow_card","blue_card","red_card"]);
-  $$("[data-omc-event-filter]").forEach(b=>b.classList.add("active"));
-  $("#omcError").classList.add("hidden");
-  omcUpdateHeader();
-  $("#otherMatchCenterDialog").showModal();
-  try{await omcLoadEvents()}catch(err){
-    $("#omcError").textContent=err.message||String(err);
-    $("#omcError").classList.remove("hidden");
-  }
-}
-$$("[data-close-other-match-center]").forEach(b=>b.onclick=()=>$("#otherMatchCenterDialog").close());
-$$("[data-omc-event-filter]").forEach(b=>b.onclick=()=>{
-  const type=b.dataset.omcEventFilter;
-  if(otherMatchCenterState.filters.has(type))otherMatchCenterState.filters.delete(type);
-  else otherMatchCenterState.filters.add(type);
-  b.classList.toggle("active",otherMatchCenterState.filters.has(type));
-  omcRenderTimeline();
-});
-$("#omcAddEventBtn").onclick=()=>{if(!omcLocked())omcOpenEventDialog()};
-
-function omcEventInputLimit(period){
-  return omcPeriodMinutes()+omcRecoveryMinutes(period);
+  return Number(e?.payload?.recovery_minutes??e?.stoppage_minute??0)||0;
 }
 function omcRefreshEventFormHint(){
   const type=$("#omcEventType").value,period=$("#omcEventPeriod").value;
   const recovery=omcRecoveryMinutes(period),regular=omcPeriodMinutes();
-  const sideWrap=$("#omcEventSide").closest("label");
   const recoveryMode=type==="recovery";
-  sideWrap.classList.toggle("hidden",recoveryMode);
+  $("#omcEventSide").closest("label").classList.toggle("hidden",recoveryMode);
   $("#omcMinuteWrap").classList.toggle("hidden",recoveryMode);
   $("#omcRecoveryWrap").classList.toggle("hidden",!recoveryMode);
   $("#omcEventMinute").max=String(regular+recovery);
   $("#omcEventHint").textContent=recoveryMode
     ?omcPeriodShort(period)+" · indica i minuti di recupero concessi (0–30)."
-    :omcPeriodShort(period)+" · minuto 0–"+regular+(recovery?" oppure fino a "+(regular+recovery)+" durante il recupero +"+recovery+".":"; per oltrepassare "+regular+" registra prima il recupero.");
+    :omcPeriodShort(period)+" · minuto 0–"+regular+(recovery?" oppure fino a "+(regular+recovery)+" nel recupero +"+recovery+".":"; per oltrepassare "+regular+" registra prima il recupero.");
 }
-function omcOpenEventDialog(event=null){
+function omcOpenEventDialog(event=null,defaultPeriod="first_half"){
+  if(mcOwnFixture())return;
   $("#otherMatchEventForm").reset();
   $("#omcEventError").classList.add("hidden");
   $("#omcEventId").value=event?.id||"";
   $("#omcEventDialogTitle").textContent=event?"Modifica evento":"Nuovo evento";
   const recovery=event?.event_type==="period_end";
   $("#omcEventType").value=recovery?"recovery":(event?.event_type||"goal");
-  $("#omcEventSide").value=event?.side||"home";
-  const period=event?omcEventPeriod(event):"first_half";
+  $("#omcEventSide").value=event?.fixture_side||event?.side||event?.team_side||"home";
+  const period=event?mcEventPeriod(event):defaultPeriod;
   $("#omcEventPeriod").value=period;
-  if(recovery){
-    $("#omcRecoveryMinutes").value=omcRecoveryMinutes(period);
-  }else if(event){
-    const local=omcLocalMinute(event);
-    $("#omcEventMinute").value=local==null?"":local+Number(event.stoppage_minute||0);
-  }
+  if(recovery)$("#omcRecoveryMinutes").value=omcRecoveryMinutes(period);
+  else if(event)$("#omcEventMinute").value=Number(event.minute||0)+Number(event.stoppage_minute||0);
   $("#omcDeleteEventBtn").classList.toggle("hidden",!event);
   omcRefreshEventFormHint();
   $("#otherMatchEventDialog").showModal();
@@ -3319,37 +3215,21 @@ $("#omcEventType").onchange=omcRefreshEventFormHint;
 $("#omcEventPeriod").onchange=omcRefreshEventFormHint;
 
 async function omcReopenIfNeeded(){
-  if(otherMatchCenterState.fixture?.status!=="finished")return;
-  const r=await db.from("app_competition_fixtures")
-    .update({status:"scheduled",manual_result_override:true})
-    .eq("id",otherMatchCenterState.fixture.id)
-    .select("*")
-    .maybeSingle();
-  otherMatchCenterState.fixture=assertSaved(r,"Riapertura risultato");
-  omcUpdateHeader();
-}
-async function omcPersistProvisionalScoreFromGoals(){
-  const f=otherMatchCenterState.fixture;if(!f)return;
-  const goals=omcGoalCounts();
-  const r=await db.from("app_competition_fixtures")
-    .update({home_score:goals.home,away_score:goals.away,manual_result_override:true})
-    .eq("id",f.id)
-    .select("*")
-    .maybeSingle();
-  if(!r.error&&r.data)otherMatchCenterState.fixture=r.data;
-  omcUpdateHeader();
+  if(matchCenterState.fixture?.status!=="finished")return;
+  const r=await db.from("app_competition_fixtures").update({status:"scheduled",manual_result_override:true}).eq("id",matchCenterState.fixture.id).select("*").maybeSingle();
+  matchCenterState.fixture=assertSaved(r,"Riapertura risultato");
+  matchCenterState.editMode=true;
 }
 $("#otherMatchEventForm").onsubmit=async e=>{
   e.preventDefault();
   $("#omcEventError").classList.add("hidden");
   try{
+    if(mcOwnFixture())throw new Error("Questa maschera è riservata agli altri match.");
     if(!sessionUser)throw new Error("Accedi per inserire eventi.");
-    const f=otherMatchCenterState.fixture;if(!f)throw new Error("Partita non disponibile.");
-    const id=$("#omcEventId").value;
-    const type=$("#omcEventType").value;
-    const period=$("#omcEventPeriod").value;
-    let payload;
-    let scoreAffected=false;
+    const f=matchCenterState.fixture;if(!f)throw new Error("Partita non disponibile.");
+    const id=$("#omcEventId").value,type=$("#omcEventType").value,period=$("#omcEventPeriod").value;
+    const old=id?matchCenterState.events.find(x=>String(x.id)===String(id)):null;
+    let payload,scoreAffected=false;
 
     if(type==="recovery"){
       const recovery=Math.max(0,Number($("#omcRecoveryMinutes").value||0));
@@ -3359,28 +3239,25 @@ $("#otherMatchEventForm").onsubmit=async e=>{
       payload={
         fixture_id:f.id,event_type:"period_end",minute:null,stoppage_minute:recovery,side:"home",
         home_score:null,away_score:null,source:"manual",
-        source_event_key:id?(otherMatchCenterState.events.find(x=>String(x.id)===String(id))?.source_event_key||`manual_${Date.now()}`):`manual_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
+        source_event_key:old?.source_event_key||`manual_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
         source_raw:{period,recovery_minutes:recovery},created_by:sessionUser.id
       };
-      let r;
-      if(id)r=await db.from("app_fixture_events").update(payload).eq("id",id).select("*").maybeSingle();
-      else if(existing)r=await db.from("app_fixture_events").update(payload).eq("id",existing.id).select("*").maybeSingle();
-      else r=await db.from("app_fixture_events").insert(payload).select("*").single();
+      const r=id
+        ?await db.from("app_fixture_events").update(payload).eq("id",id).select("*").maybeSingle()
+        :existing
+          ?await db.from("app_fixture_events").update(payload).eq("id",existing.id).select("*").maybeSingle()
+          :await db.from("app_fixture_events").insert(payload).select("*").single();
       assertSaved(r,"Recupero");
     }else{
-      const entered=Number($("#omcEventMinute").value);
-      const regular=omcPeriodMinutes(),recovery=omcRecoveryMinutes(period);
+      const entered=Number($("#omcEventMinute").value),regular=omcPeriodMinutes(),recovery=omcRecoveryMinutes(period);
       if(!Number.isFinite(entered)||entered<0)throw new Error("Inserisci un minuto valido.");
       if(entered>regular+recovery){
         if(!recovery)throw new Error("Per inserire eventi oltre il "+regular+"' registra prima il recupero del "+omcPeriodShort(period)+".");
         throw new Error("Il minuto supera il recupero registrato (+"+recovery+"').");
       }
-      const minute=Math.min(entered,regular);
-      const stoppage=Math.max(0,entered-regular);
-      const old=id?otherMatchCenterState.events.find(x=>String(x.id)===String(id)):null;
       scoreAffected=type==="goal"||old?.event_type==="goal";
       payload={
-        fixture_id:f.id,event_type:type,minute,stoppage_minute:stoppage||null,side:$("#omcEventSide").value,
+        fixture_id:f.id,event_type:type,minute:Math.min(entered,regular),stoppage_minute:Math.max(0,entered-regular)||null,side:$("#omcEventSide").value,
         home_score:null,away_score:null,source:"manual",
         source_event_key:old?.source_event_key||`manual_${Date.now()}_${Math.random().toString(36).slice(2,9)}`,
         source_raw:{period},created_by:sessionUser.id
@@ -3393,8 +3270,7 @@ $("#otherMatchEventForm").onsubmit=async e=>{
     }
 
     $("#otherMatchEventDialog").close();
-    await omcLoadEvents();
-    if(scoreAffected)await omcPersistProvisionalScoreFromGoals();
+    await mcReload();
     await renderCompetitionHub();
   }catch(err){
     $("#omcEventError").textContent=err.message||String(err);
@@ -3406,54 +3282,16 @@ $("#omcDeleteEventBtn").onclick=async()=>{
   try{
     if(!sessionUser)throw new Error("Accedi per eliminare eventi.");
     const id=$("#omcEventId").value;if(!id)return;
-    const old=otherMatchCenterState.events.find(x=>String(x.id)===String(id));
+    const old=matchCenterState.events.find(x=>String(x.id)===String(id));
     if(!confirm("Eliminare definitivamente questo evento?"))return;
-    const r=await db.from("app_fixture_events").delete().eq("id",id);
-    if(r.error)throw r.error;
-    const scoreAffected=old?.event_type==="goal";
-    if(scoreAffected)await omcReopenIfNeeded();
+    const r=await db.from("app_fixture_events").delete().eq("id",id);if(r.error)throw r.error;
+    if(old?.event_type==="goal")await omcReopenIfNeeded();
     $("#otherMatchEventDialog").close();
-    await omcLoadEvents();
-    if(scoreAffected)await omcPersistProvisionalScoreFromGoals();
+    await mcReload();
     await renderCompetitionHub();
   }catch(err){
     $("#omcEventError").textContent=err.message||String(err);
     $("#omcEventError").classList.remove("hidden");
-  }
-};
-
-$("#omcHomeScore").oninput=omcRenderGoalProgress;
-$("#omcAwayScore").oninput=omcRenderGoalProgress;
-$("#omcConfirmResultBtn").onclick=async()=>{
-  $("#omcError").classList.add("hidden");
-  try{
-    if(!sessionUser)throw new Error("Accedi per confermare il risultato.");
-    const f=otherMatchCenterState.fixture;if(!f)throw new Error("Partita non disponibile.");
-    if(omcLocked()){
-      otherMatchCenterState.editMode=true;
-      omcApplyLockState();
-      omcRenderTimeline();
-      return;
-    }
-    const h=$("#omcHomeScore").value,a=$("#omcAwayScore").value;
-    if(h===""||a==="")throw new Error("Inserisci il risultato.");
-    const goals=omcGoalCounts();
-    if(Number(h)!==goals.home||Number(a)!==goals.away){
-      throw new Error("Risultato non coerente con gli eventi gol: eventi "+goals.home+"-"+goals.away+", risultato "+h+"-"+a+".");
-    }
-    const r=await db.from("app_competition_fixtures")
-      .update({status:"finished",home_score:Number(h),away_score:Number(a),manual_result_override:true})
-      .eq("id",f.id)
-      .select("*")
-      .maybeSingle();
-    otherMatchCenterState.fixture=assertSaved(r,"Risultato definitivo");
-    otherMatchCenterState.editMode=false;
-    omcUpdateHeader();
-    omcRenderTimeline();
-    await renderCompetitionHub();
-  }catch(err){
-    $("#omcError").textContent=err.message||String(err);
-    $("#omcError").classList.remove("hidden");
   }
 };
 
@@ -3465,7 +3303,7 @@ $("#previewCalendarBtn").onclick=async()=>{const f=$("#calendarFile").files[0];i
 window.TM={
   db,esc,assertSaved,
   loadAll,loadCompetitions,loadCompetitionHub,loadCalendarHub,ensureMainTeam,
-  setPanel,localDateTime,isOwnTeamName,teamVisual,linkedMatchForFixture,openMatchDetail,openFixture,openOtherMatchCenter,
+  setPanel,localDateTime,isOwnTeamName,teamVisual,linkedMatchForFixture,openMatchDetail,openFixture,
   getState:()=>({
     seasons,competitions,opponents,currentSeason,team,sessionUser,
     competitionHubId,competitionFixtureFilter,calendarRows,teamMatches,calendarCompetitionIds,players
